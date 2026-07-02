@@ -1,0 +1,2895 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Klinik Anvaya v1.3 - Dashboard Dokter</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 900px; background: white; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
+        h3 { color: #2980b9; margin-top: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        
+        /* Dashboard Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { padding: 15px; border-radius: 6px; text-align: center; color: white; font-weight: bold; }
+        .bg-total { background-color: #34495e; }
+        .bg-belum { background-color: #f1c40f; color: #333; }
+        .bg-sedang { background-color: #e67e22; }
+        .bg-sudah { background-color: #2ecc71; }
+        .stat-card h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card p { margin: 8px 0 0 0; font-size: 28px; }
+
+        /* Queue Table Style */
+        .table-responsive { overflow-x: auto; margin-bottom: 25px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        
+        /* Badges & Buttons */
+        .badge { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
+        .badge-belum { background-color: #f1c40f; color: #333; }
+        .badge-sedang { background-color: #e67e22; }
+        .badge-sudah { background-color: #2ecc71; }
+        .btn-action { width: auto; padding: 6px 12px; font-size: 12px; font-weight: bold; margin-right: 5px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-start { background-color: #e67e22; }
+        .btn-done { background-color: #2ecc71; }
+        .btn-rme { background-color: #9b59b6; }
+        .btn-action:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+        /* Form Layout */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* KELOMPOK FORM VERTIKAL (Untuk Input Kamus) */
+        .form-v {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+        .form-v input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-v button {
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #a9a9a9;
+            border-radius: 4px;
+            cursor: pointer;
+            align-self: flex-start;
+        }
+
+        /* KELOMPOK FORM HORIZONTAL (Untuk Pencarian Pasien di Gambar) */
+        .form-h {
+            display: flex;
+            flex-direction: row;   /* Menyusun elemen ke samping */
+            align-items: flex-end; /* Menyelaraskan bagian bawah input dan tombol */
+            gap: 10px;             /* Jarak antar elemen */
+            flex-wrap: wrap;       /* Agar responsif jika layar sekecil smartphone */
+        }
+        .form-h .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-h label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-h input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 250px;
+        }
+        .form-h .btn-group {
+            display: flex;
+            gap: 8px;              /* Jarak antara tombol Cari dan Reset */
+        }
+        .form-h button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .form-h .btn-cari { background-color: #3498db; color: white; }
+        .form-h .btn-reset { background-color: #95a5a6; color: white; }
+
+        .form-group button:hover {
+            background-color: #e0e0e0; /* Efek saat tombol diarahkan kursor */
+        }
+        .full-width { grid-column: span 2; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 14px; }
+        input[type="text"], input[type="password"], input[type="date"], input[type="email"], textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 80px; resize: vertical; }
+        .radio-group { display: flex; gap: 15px; margin-top: 8px; }
+        button[type="submit"] { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; }
+        button[type="submit"]:hover { background-color: #2980b9; }
+        
+        /* Structure Layout */
+        .login-box { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #mainPage { display: none; }
+        .header-area { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; margin-bottom: 20px; padding-bottom: 10px;}
+        .nav-tabs { display: flex; }
+        .tab-link { padding: 10px 20px; cursor: pointer; background: #e0e0e0; border: none; margin-right: 5px; border-radius: 5px 5px 0 0; font-weight: bold; width: auto; color: #333;}
+        .tab-link.active { background: #3498db; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .btn-logout { background-color: #e74c3c; width: auto; padding: 8px 15px; font-size: 12px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .btn-voice { background-color: #2ecc71; margin-top: 5px; width: auto; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .btn-voice.recording { background-color: #e74c3c; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .user-info { font-size: 14px; color: #7f8c8d; font-style: italic; }
+        #sectionRME { display: none; background: #f9f9f9; padding: 20px; border-radius: 6px; border-left: 5px solid #9b59b6; margin-top: 25px; }
+        
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin: 20px 0 30px 0; }
+        .menu-card { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); border-color: #3498db; }
+        .menu-card h4 { margin: 10px 0 5px 0; color: #2c3e50; font-size: 16px; }
+        .menu-card p { margin: 0; font-size: 12px; color: #7f8c8d; line-height: 1.4; }
+
+        /* CSS DESAIN FILTER ANTREN (DESKTOP) */
+        .antrean-filter-wrapper { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-group { display: flex; align-items: center; gap: 10px; }
+        .date-range-inputs { display: flex; align-items: center; gap: 10px; }
+        #filterStatusAntrean { width: 300px; }
+
+        /* CSS DESAIN MODAL REKAM MEDIS (DESKTOP) */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
+        .modal-content-box { background: white; max-width: 95%; margin: 30px auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); box-sizing: border-box; }
+        .modal-custom-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #9b59b6; margin-bottom: 15px; padding-bottom: 10px; gap: 15px; }
+        .modal-custom-header h2 { color: #9b59b6; margin: 0; font-size: 20px; border: none; border-bottom: none; padding: 0; }
+        .btn-close-modal { background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; flex-shrink: 0; }
+
+        /* =========================================================
+           🔥 ATURAN RESPONSIVE UNTUK LAYAR HP & TABLET 🔥
+           ========================================================= */
+        @media screen and (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; margin: 10px auto; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .header-area { flex-direction: column; align-items: flex-start; gap: 15px; }
+            
+            .nav-tabs { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; width: 100%; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+            .tab-link { flex: 0 0 auto; font-size: 13px; padding: 10px 15px; }
+            
+            th, td { font-size: 12px; padding: 8px; }
+            .btn-action { font-size: 11px; padding: 6px 8px; margin-bottom: 5px; width: 100%; display: block; text-align: center; box-sizing: border-box; }
+
+            /* 🔥 FIX RESPONSIVE: Filter Antrean di HP */
+            .antrean-filter-wrapper { flex-direction: column; align-items: stretch; gap: 12px; padding: 10px; }
+            .filter-group { flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
+            .date-range-inputs { width: 100%; justify-content: space-between; }
+            .date-range-inputs input { flex: 1; min-width: 0; } /* Mencegah kotak tanggal meluber */
+            #filterStatusAntrean { width: 100% !important; } /* Dropdown otomatis melebar penuh */
+
+            /* 🔥 FIX RESPONSIVE: Jendela Modal di HP */
+            .modal-backdrop { padding: 8px; }
+            .modal-content-box { max-width: 100%; margin: 10px auto; padding: 15px; }
+            .modal-custom-header { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+            .modal-custom-header h2 { font-size: 15px; line-height: 1.4; text-align: left; }
+            .btn-close-modal { width: 100%; text-align: center; padding: 10px; }
+        }
+
+        @media screen and (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Style untuk Latar Belakang Pop-up (Overlay) */
+.modal-popup-container {
+    display: none; /* Tersembunyi secara default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Efek gelap transparan */
+    z-index: 9999; /* Memastikan pop-up berada di paling depan */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Style untuk Kotak Form di Dalam Pop-up */
+.modal-popup-content {
+    background-color: #fff3cd; /* Mempertahankan warna kuning khas form edit Anda */
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 450px; /* Batas lebar kotak pop-up */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: popMasuk 0.3s ease; /* Efek animasi muncul */
+}
+
+/* Animasi Smooth Pop-up */
+@keyframes popMasuk {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Merapikan susunan input di dalam pop-up agar vertikal ke bawah */
+.modal-popup-content input, 
+.modal-popup-content select {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.modal-action-buttons {
+    text-align: right;
+    margin-top: 15px;
+}
+</style>
+</head>
+<body>
+
+<!-- <div id="loginPage" class="login-box"> -->
+<div id="loginPage" class="login-box">
+    <h2 style="text-align: center; border: none;">Login Sistem Anvaya</h2>
+    <form id="formLogin" class="form-v">
+        <div >
+            <label>Username</label>
+            <input type="text" id="loginUser" required>
+        </div>
+        <div >
+            <label>Password</label>
+            <input type="password" id="loginPass" required>
+        </div>
+        <button type="submit" id="btnLogin">Masuk</button>
+    </form>
+</div>
+
+<div id="mainPage" class="container">
+    <div class="header-area">
+        <div class="nav-tabs">
+            <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">Beranda Utama</button>
+            <button id="tabPasienBtn" class="tab-link" onclick="switchTab('pasien')">Form Pendaftaran</button>
+            <button id="tabDokterBtn" class="tab-link" onclick="switchTab('dokter')">Antrian Pasien</button>
+            <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">Riwayat Medis Pasien</button>
+            <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">Database Pasien</button>
+            <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">Kamus Dikte</button>
+            <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">Pengaturan Sistem</button>
+        </div>
+        <div>
+            <span id="txtUserStatus" class="user-info"></span>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="beranda" class="tab-content">
+        <h2>Dashboard Klinik Anvaya</h2>
+        <p style="font-size: 16px; color: #555; margin-bottom: 25px;">
+            Selamat datang, <strong id="lblNamaUser">-</strong>! Anda masuk sebagai <span id="lblRoleUser" style="color:#3498db; font-weight:bold;">-</span>.
+        </p>
+        
+        <h3>Menu Pintasan Fitur</h3>
+        <div class="menu-grid">
+            <div id="menuPendaftaranCard" class="menu-card" onclick="switchTab('pasien')">
+                <div style="font-size: 40px;">📝</div>
+                <h4>Form Pendaftaran Pasien</h4>
+                <p>Registrasi identitas, riwayat medis, dan keluhan pasien baru.</p>
+            </div>
+            <div id="menuAntreanCard" class="menu-card" onclick="switchTab('dokter')">
+                <div style="font-size: 40px;">🏥</div>
+                <h4>Antrean & Rekam Medis</h4>
+                <p>Manajemen antrean periksa hari ini serta pengisian form RME.</p>
+            </div>
+            <div id="menuRiwayatCard" class="menu-card" onclick="switchTab('riwayatMedis')">
+                <div style="font-size: 40px;">🕒</div>
+                <h4>Riwayat Medis Pasien</h4>
+                <p>Pencarian data rekam medis dan histori perawatan seluruh pasien.</p>
+            </div>
+            <div id="menuDaftarPasienCard" class="menu-card" onclick="switchTab('daftarPasien')">
+                <div style="font-size: 40px;">📇</div>
+                <h4>Database Pasien</h4>
+                <p>Lihat daftar nama pasien yang terdaftar untuk mencari riwayat medis.</p>
+            </div>
+        </div>
+
+        <h3>Ringkasan Operasional Hari Ini</h3>
+        <div class="stats-grid">
+            <div class="stat-card bg-total">
+                <h4>Total Antrean Hari Ini</h4>
+                <p id="homeStatTotal">0</p>
+            </div>
+            <div class="stat-card bg-sudah">
+                <h4>Pasien Selesai Diperiksa</h4>
+                <p id="homeStatSudah">0</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="pasien" class="tab-content">
+        <h2>Formulir Pendaftaran Pasien Baru</h2>
+        <form id="formPasien">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Jenis Pasien:</label>
+                <label><input type="radio" name="tipePasien" value="baru" checked onclick="aturTipePasien('baru')"> Pasien Baru</label> &nbsp;&nbsp;
+                <label><input type="radio" name="tipePasien" value="lama" onclick="aturTipePasien('lama')"> Pasien Lama</label>
+            </div>
+
+            <div id="boxPasienLama" style="display: none;">
+                <label for="txtCariPasien">Cari Nama / No. RM Pasien Lama:</label>
+                <input type="text" id="txtCariPasien" 
+                       list="listPasienLama" 
+                       oninput="handlePencarianPasien(this.value)" 
+                       onchange="eksekusiAutoFill(this.value)" 
+                       placeholder="Ketik nama atau No. RM di sini..." class="form-control">
+                <datalist id="listPasienLama"></datalist>
+            </div>
+
+            <div class="form-group">
+                <label>No. Rekam Medis (RM):</label>
+                <input type="text" id="txtNoRM" readonly placeholder="Otomatis digenerate sistem">
+            </div>
+    
+            <h3>A. Identitas Pasien</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="nama" required>
+                </div>
+                <div class="form-group">
+                    <label>No. KTP / NIK (16 Digit)</label>
+                    <input type="text" id="txtKTP" placeholder="Contoh: 3507123456780001" required maxlength="16" pattern="\d{16}" title="NIK harus berupa 16 digit angka">
+                </div>
+                <div class="form-group">
+                    <label>Jenis Kelamin</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="gender" id="rbLaki" value="Laki-laki" checked> Laki-Laki</label>
+                        <label><input type="radio" name="gender" id="rbPerempuan" value="Perempuan"> Perempuan</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tempat Lahir</label>
+                    <input type="text" id="tempatLahir" required>
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Lahir</label>
+                    <input type="date" id="tanggalLahir" required>
+                </div>
+                <div class="form-group">
+                    <label>Pekerjaan / Pendidikan</label>
+                    <input type="text" id="pekerjaan" placeholder="Misal: Mahasiswa, Swasta">
+                </div>
+                <div class="form-group">
+                    <label>Nomor WhatsApp</label>
+                    <input type="text" id="whatsapp" required>
+                </div>
+                <div class="form-group full-width">
+                    <label>Email</label>
+                    <input type="email" id="email">
+                </div>
+                <div class="form-group full-width">
+                    <label>Alamat Lengkap</label>
+                    <textarea id="alamat" required></textarea>
+                </div>
+            </div>
+
+            <h3>B. Riwayat Medis & Kunjungan</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Tujuan Perawatan / Keluhan</label>
+                    <select id="tujuan">
+                        <option value="Konsultasi Orthodontic">Konsultasi Orthodontic</option>
+                        <option value="Scaling">Scaling (Pembersihan Karang)</option>
+                        <option value="Tambal Gigi">Tambal Gigi</option>
+                        <option value="Cabut Gigi">Cabut Gigi</option>
+                        <option value="Aesthetic (Veneer/Bleaching)">Aesthetic (Veneer/Bleaching)</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Riwayat Alergi Obat</label>
+                    <input type="text" id="riwayatAlergi" placeholder="Kosongkan jika tidak ada">
+                </div>
+                <div class="form-group full-width">
+                    <label>Riwayat Konsumsi Obat Rutin</label>
+                    <input type="text" id="riwayatObat" placeholder="Misal: Obat Darah Tinggi, dll">
+                </div>
+                <div class="form-group">
+                    <label>Rencana Tanggal Kunjungan</label>
+                    <input type="date" id="tglKunjungan" required>
+                </div>
+                <div class="form-group">
+                    <label>Pilihan Waktu</label>
+                    <select id="waktuKunjungan">
+                        <option value="Siang (11.00 - 15.00)">Siang (11.00 - 15.00)</option>
+                        <option value="Sore/Malam (15.00 - Selesai)">Sore/Malam (15.00 - Selesai)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="pilihDokter">Dokter yang Bertugas</label>
+                    <select id="pilihDokter" required disabled>
+                        <option value="">-- Pilih Tanggal Kunjungan Terlebih Dahulu --</option>
+                    </select>
+                </div>
+            </div>
+            <br>
+            <button type="submit">Kirim & Simpan Pendaftaran</button>
+        </form>
+    </div>
+
+    <div id="riwayatMedis" class="tab-content">
+        <h2>Pencarian Riwayat Medis Pasien</h2>
+        <p style="color: #666;">Cari rekam medis pasien Klinik Anvaya berdasarkan Nama atau No. RM.</p>
+        
+        <!-- Form Pencarian Baru dengan Tombol -->
+        <div class="form-group" style="background: white; padding: 20px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+                <label for="txtCariRiwayatGlobal" style="font-weight: bold; margin-bottom: 8px; display: block;">Masukkan Nama / Nomor RM Pasien:</label>
+                <input type="text" id="txtCariRiwayatGlobal" placeholder="Ketik nama atau No. RM di sini...">
+            </div>
+            <button type="button" onclick="cariPasienGlobal()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔍 Cari</button>
+        </div>
+    
+        <!-- Tabel Daftar Pasien (Hasil Pencarian) -->
+        <div id="boxDaftarPasienGlobal" style="display: none; margin-top: 25px;">
+            <h3 style="color: #2980b9;">👥 Hasil Pencarian Pasien</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No. RM</th>
+                            <th>Nama Pasien</th>
+                            <th>Gender</th>
+                            <th>No. WhatsApp</th>
+                            <th>Alamat Lengkap</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelDaftarPasienBody">
+                        <tr><td colspan="6" style="text-align:center; color:#7f8c8d;">Memuat hasil pencarian...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Tambahkan Elemen Kontrol Pagination di Bawah Ini -->
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                <div>
+                    <span style="font-size: 14px; color: #555;">Menampilkan <strong id="lblTotalDataTampilRiwayat">0</strong> data dari <strong id="lblTotalDataMasterRiwayat">0</strong> total pasien</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button id="btnPrevRiwayat" onclick="halamanSebelumnyaRiwayat()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">◀ Sebelum</button>
+                    <span id="lblHalamanRiwayat" style="font-weight: bold; font-size: 14px; color: #2c3e50;">Halaman 1 dari 1</span>
+                    <button id="btnNextRiwayat" onclick="halamanBerikutnyaRiwayat()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">Berikut ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="daftarPasien" class="tab-content">
+        <h2>Database Daftar Pasien</h2>
+        <p style="color: #666;">Direktori seluruh pasien Klinik Anvaya.</p>
+        
+        <div class="form-group" style="background: white; padding: 20px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+                <label for="txtCariDaftar" style="font-weight: bold; margin-bottom: 8px; display: block;">Cari Berdasarkan Nama / Nomor RM:</label>
+                <input type="text" id="txtCariDaftar" placeholder="Ketik nama atau No. RM di sini..." onkeypress="if(event.key === 'Enter') cariDaftarPasien()">
+            </div>
+            <button type="button" onclick="cariDaftarPasien()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔍 Cari</button>
+            <button type="button" onclick="resetDaftarPasien()" style="background-color: #95a5a6; color: white; border-radius: 5px;">🔄 Reset</button>
+        </div>
+
+        <div class="table-responsive" style="margin-top: 25px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No. RM</th>
+                        <th>Nama Pasien</th>
+                        <th>Gender</th>
+                        <th>No. WhatsApp</th>
+                        <th>Alamat Lengkap</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelSemuaPasienBody">
+                    <tr><td colspan="6" style="text-align:center;">Memuat data pasien... ⏳</td></tr>
+                </tbody>
+            </table>
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                <div>
+                    <span style="font-size: 14px; color: #555;">Menampilkan <strong id="lblTotalDataTampil">0</strong> data dari <strong id="lblTotalDataMaster">0</strong> total pasien</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button id="btnPrevPasien" onclick="halamanSebelumnyaPasien()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">◀ Sebelum</button>
+                    <span id="lblHalamanPasien" style="font-weight: bold; font-size: 14px; color: #2c3e50;">Halaman 1 dari 1</span>
+                    <button id="btnNextPasien" onclick="halamanBerikutnyaPasien()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">Berikut ▶</button>
+                </div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <!-- Tab Kamus Dikte -->
+    <div id="kamusDikte" class="tab-content" style="display:none;">
+        <h3>Manajemen Kamus Dikte</h3>
+        <div class="form-v">
+            <input type="text" id="inputSalah" placeholder="Kata Salah (e.g. skeling)">
+            <input type="text" id="inputBenar" placeholder="Kata Perbaikan (e.g. scaling)">
+            <button onclick="tambahKamus()">Tambah Data</button>
+        </div>
+        
+        <table id="tabelKamus" border="1" width="100%">
+            <thead>
+                <tr><th>Kata Salah</th><th>Kata Benar</th><th>Aksi</th></tr>
+            </thead>
+            <tbody id="bodyKamus"></tbody>
+        </table>
+    
+        <!-- 🔥 BARU: Kontrol Pagination di bawah tabel -->
+        <div id="paginationControls" style="margin-top: 15px; text-align: center; display: none;">
+            <button id="btnPrev" onclick="ubahHalaman(-1)">⬅️ Sebelumnya</button>
+            <span id="pageInfo" style="margin: 0 15px; font-weight: bold;">Halaman 1 dari 1</span>
+            <button id="btnNext" onclick="ubahHalaman(1)">Selanjutnya ➡️</button>
+        </div>
+    </div>
+
+    <!-- Tab Pengaturan Sistem -->
+    <div id="backend" class="tab-content" style="display:none;">
+        <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px;">Pengaturan Sistem</h2>
+        
+        <!-- Navigasi Sub-Tab -->
+        <div class="nav-tabs" style="margin-bottom: 20px; background-color: #f1f1f1; padding: 10px; border-radius: 5px;">
+            <button id="subTabUserBtn" onclick="bukaSubTab('manajemenUser')" class="tab-link active" style="margin-right: 10px; font-weight: bold;">👥 Manajemen Pengguna</button>
+            <button id="subTabAksesBtn" onclick="bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SUB-TAB 1: MANAJEMEN PENGGUNA              -->
+        <!-- ========================================== -->
+        <div id="manajemenUser" class="sub-tab-content" style="display:block;">
+            <h3>Daftar Pengguna Sistem</h3>
+            
+            <!-- Form Tambah User Baru -->
+            <div class="form-v" style="background-color: #e9f5ff; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <h4>+ Tambah Pengguna Baru</h4>
+                <input type="text" id="inputUsernameBaru" placeholder="Username (misal: dr.andi)" style="margin-right: 10px;">
+                <input type="password" id="inputPasswordBaru" placeholder="Password Default" style="margin-right: 10px;">
+                <select id="inputRoleBaru" style="margin-right: 10px;">
+                    <option value="">-- Pilih Role --</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Dokter">Dokter</option>
+                    <option value="Perawat">Perawat</option>
+                </select>
+                <button onclick="tambahUserBaru()" style="background-color: #28a745; color: white;">Simpan User</button>
+            </div>
+
+            <!-- Form Edit User (Awalnya disembunyikan) -->
+            <div id="formEditUser" class="modal-popup-container">
+                <div class="modal-popup-content">
+                    <h4 style="margin-top: 0; border-bottom: 1px solid #ddc475; padding-bottom: 8px;">
+                        ✏️ Edit Pengguna: <span id="lblEditUsername" style="color:#b38600;"></span>
+                    </h4>
+                    
+                    <input type="hidden" id="editBarisSheet">
+                    
+                    <label style="font-size: 13px; font-weight: bold;">Username:</label>
+                    <input type="text" id="editUsername" placeholder="Username">
+                    
+                    <label style="font-size: 13px; font-weight: bold;">Password Baru (Opsional):</label>
+                    <input type="password" id="editPassword" placeholder="Kosongkan jika tak diubah">
+                    
+                    <label style="font-size: 13px; font-weight: bold;">Role Akses:</label>
+                    <select id="editRole">
+                        <option value="Admin">Admin</option>
+                        <option value="Dokter">Dokter</option>
+                        <option value="Perawat">Perawat</option>
+                    </select>
+                    
+                    <label style="font-size: 13px; font-weight: bold;">Status Akun:</label>
+                    <select id="editStatus">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Nonaktif">Nonaktif (Blokir)</option>
+                    </select>
+                    
+                    <div class="modal-action-buttons">
+                        <button onclick="batalEditUser()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
+                        <button onclick="simpanEditUser()" style="background-color: #ffc107; color: black; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Perubahan</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Daftar User -->
+            <table id="tabelUsers" border="1" width="100%" style="text-align: left; border-collapse: collapse;">
+                <thead style="background-color: #ddd;">
+                    <tr>
+                        <th style="padding: 8px;">Username</th>
+                        <th style="padding: 8px;">Role</th>
+                        <th style="padding: 8px;">Status</th>
+                        <th style="padding: 8px; text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyUsers">
+                    <tr><td colspan="4" style="text-align:center; padding: 15px;">Belum ada data dimuat.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SUB-TAB 2: HAK AKSES ROLE (Segera Datang)  -->
+        <!-- ========================================== -->
+        <div id="manajemenAkses" class="sub-tab-content" style="display:none;">
+            <h3>Pengaturan Hak Akses Role</h3>
+            <p>Fitur untuk mengatur centang akses menu masing-masing role akan dibuat di sini.</p>
+        </div>
+    </div>
+
+    <div id="dokter" class="tab-content">
+        <h2>Beranda Utama Dokter</h2>
+        
+        <div id="cardJadwalDokter" style="display: none; background: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #2c3e50;">📅 Jadwal Praktik Anda</h3>
+            <ul id="listJadwalDokter" style="margin: 0; padding-left: 20px; color: #34495e;">
+                <li>Memuat jadwal praktik...</li>
+            </ul>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card bg-total">
+                <h4>Total Antrean Hari Ini</h4>
+                <p id="statTotal">0</p>
+            </div>
+            <div class="stat-card bg-belum">
+                <h4>Belum Diperiksa</h4>
+                <p id="statBelum">0</p>
+            </div>
+            <div class="stat-card bg-sedang">
+                <h4>Sedang Diperiksa</h4>
+                <p id="statSedang">0</p>
+            </div>
+            <div class="stat-card bg-sudah">
+                <h4>Sudah Diperiksa</h4>
+                <p id="statSudah">0</p>
+            </div>
+        </div>
+
+        <h3>Daftar Antrean Pasien</h3>
+        <!-- 🔥 FITUR BARU: Dropdown Filter Antrean & Tanggal -->
+        <!-- 🔥 PERBAIKAN: Menggunakan kelas pembungkus agar bisa otomatis menyusun ke bawah di HP -->
+        <div class="antrean-filter-wrapper">
+            <div class="filter-group">
+                <label>Pilih Tanggal:</label>
+                <div class="date-range-inputs">
+                    <input type="date" id="filterTanggalMulai" onchange="validasiRentangTanggal()">
+                    <span class="filter-separator">s/d</span>
+                    <input type="date" id="filterTanggalAkhir" onchange="validasiRentangTanggal()">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="filterStatusAntrean">Pilih Status Pasien:</label>
+                <select id="filterStatusAntrean" onchange="terapkanFilterAntrean()">
+                    <option value="Semua">📋 Tampilkan Semua Antrean</option>
+                    <option value="Belum Diperiksa">🟡 Belum Diperiksa</option>
+                    <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
+                    <option value="Sudah Diperiksa">🟢 Sudah Diperiksa</option>
+                    <option value="Perlu Input RME">⚠️ Perlu Input RME (Prioritas)</option>
+                </select>
+            </div>
+
+            <div class="filter-group" style="display: flex; align-items: flex-end;">
+                <button type="button" onclick="unduhLaporanAntrean()" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%;">
+                    📥 Export ke Excel/CSV
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Pasien</th>
+                        <th>Tanggal Daftar</th>
+                        <th>Waktu</th>
+                        <th>Keluhan/Tujuan</th>
+                        <th>Nama Dokter</th>
+                        <th>Status</th>
+                        <th>Aksi Manajemen Antrean</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelAntreanBody">
+                    <tr><td colspan="7" style="text-align:center;">Memuat daftar antrean...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="paginationNav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+            <div id="paginationInfo" style="font-size: 14px; color: #555;">
+                Menampilkan 0 dari 0 antrean
+            </div>
+            <div id="paginationButtons" style="display: flex; gap: 5px;">
+                <!-- Tombol angka halaman akan di-render via JavaScript -->
+            </div>
+        </div>
+
+        <div id="sectionRME">
+            <h2 style="color:#9b59b6; border-bottom: 2px solid #9b59b6; margin-bottom:15px;">Rekam Medis Elektronik (RME)</h2>
+            
+            <div class="nav-tabs" style="margin-bottom: 15px; border-bottom: 2px solid #ddd;">
+                <button id="tabRmeFormBtn" class="tab-link active" onclick="switchTabRME('form')" style="background: #9b59b6; color: white;">📝 Pemeriksaan Hari Ini</button>
+                <button id="tabRmeRiwayatBtn" class="tab-link" onclick="switchTabRME('riwayat')" style="background: #e0e0e0; color: #333;">🕒 Riwayat Medis Pasien</button>
+            </div>
+
+            <div id="tabRmeForm" style="display: block;">
+                <form id="formMedis">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Nama Pasien</label>
+                            <input type="text" id="namaPasien" readonly style="background:#e9ecef; font-weight:bold; color:#d35400;">
+                        </div>
+                        <div id="alertMedisFormRME" class="form-group full-width" style="display: none; background-color: #fff3cd; color: #856404; padding: 12px; border-left: 5px solid #ffc107; margin-bottom: 15px; font-size: 14px; border-radius: 4px;">
+                            <strong>⚠️ PERINGATAN MEDIS PASIEN:</strong>
+                            <ul style="margin: 5px 0 0 20px; padding: 0;">
+                                <li><strong>Alergi:</strong> <span id="alertAlergiFormRME">-</span></li>
+                                <li><strong>Obat Rutin:</strong> <span id="alertObatFormRME">-</span></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Anamnesa (Keluhan Pasien) 🎙️</label>
+                            <textarea id="txtAnamnesa" required></textarea>
+                            <button type="button" class="btn-voice" onclick="toggleVoice('txtAnamnesa', this)">🎙️ Mulai Dikte</button>
+                        </div>
+                        
+                        <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Diagnosa -->
+                        <div class="form-group full-width">
+                            <label>Diagnosa 🎙️</label>
+                            <input type="text" id="txtDiagnosa" required>
+                            <button type="button" class="btn-voice" onclick="toggleVoice('txtDiagnosa', this)">🎙️ Mulai Dikte</button>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Perawatan (Tindakan Hari Ini) 🎙️</label>
+                            <textarea id="txtPerawatan" required></textarea>
+                            <button type="button" class="btn-voice" onclick="toggleVoice('txtPerawatan', this)">🎙️ Mulai Dikte</button>
+                        </div>
+                        
+                        <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Pro Perawatan -->
+                        <div class="form-group full-width">
+                            <label>Pro Perawatan (Rencana Lanjutan) 🎙️</label>
+                            <textarea id="txtProPerawatan"></textarea>
+                            <button type="button" class="btn-voice" onclick="toggleVoice('txtProPerawatan', this)">🎙️ Mulai Dikte</button>
+                        </div>
+                        
+                        <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Pro Kontrol -->
+                        <div class="form-group">
+                            <label>Pro Kontrol 🎙️</label>
+                            <input type="text" id="txtProKontrol">
+                            <button type="button" class="btn-voice" onclick="toggleVoice('txtProKontrol', this)">🎙️ Mulai Dikte</button>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Resep Obat 🎙️</label>
+                            <textarea id="txtResep" placeholder="Tuliskan resep obat di sini..."></textarea>
+                            <button type="button" class="btn-voice" onclick="toggleVoice('txtResep', this)">🎙️ Mulai Dikte</button>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Link Foto Dokumentasi</label>
+                            <input type="text" id="txtLinkFoto">
+                            <input type="file" id="txtFileFoto" accept="image/*" style="font-size: 12px; margin-top: 5px;">
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" id="btnSubmitRME" style="background-color: #9b59b6; color:white;">Simpan Catatan Medis</button>
+                </form>
+            </div>
+
+            <div id="tabRmeRiwayat" style="display: none;">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Anamnesa</th>
+                                <th>Diagnosa</th>
+                                <th>Tindakan / Perawatan</th>
+                                <th>Dokter</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelRiwayatBody">
+                            <tr><td colspan="5" style="text-align:center;">Memuat riwayat...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="modalRME" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; overflow-y:auto;">
+    <div style="background:white; max-width:600px; margin: 30px auto; padding:20px; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <!-- 🔥 Tambahkan ID pada H2 di bawah ini -->
+        <h2 id="judulModalRME" style="color:#3498db; border-bottom: 2px solid #3498db; margin-bottom:15px;">👁️ Lihat / Edit Rekam Medis</h2>
+        
+        <form id="formModalMedis">
+            <input type="hidden" id="modalNoRM">
+            <input type="hidden" id="modalRowUpdate">
+            
+            <div class="form-group">
+                <label>Nama Pasien</label>
+                <input type="text" id="modalNama" readonly style="background:#e9ecef; font-weight:bold; color:#2c3e50;">
+            </div>
+            <div class="form-group">
+                <label>Anamnesa (Keluhan Pasien)</label>
+                <textarea id="modalAnamnesa" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Diagnosa</label>
+                <input type="text" id="modalDiagnosa" required>
+            </div>
+            <div class="form-group">
+                <label>Perawatan (Tindakan Hari Ini)</label>
+                <textarea id="modalPerawatan" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Pro Perawatan (Rencana Lanjutan)</label>
+                <textarea id="modalProPerawatan"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Resep Obat</label>
+                <textarea id="modalResep"></textarea>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Pro Kontrol</label>
+                    <input type="text" id="modalProKontrol">
+                </div>
+                <div class="form-group">
+                    <label>Foto Dokumentasi</label>
+                    <!-- Input teks biarkan tetap ada (set ke readonly) untuk menampung link lama saat edit -->
+                    <input type="text" id="modalLinkFoto" readonly placeholder="Belum ada foto" style="background-color: #f5f5f5; margin-bottom: 5px;">
+                    <!-- 🔥 Tambahkan input file komputer di bawahnya -->
+                    <input type="file" id="modalFileFoto" accept="image/*" style="font-size: 12px;">
+                </div>
+            </div>
+            <br>
+            <div style="display: flex; gap: 10px;">
+                <!-- 🔥 Tambahkan ID pada Button Simpan di bawah ini -->
+                <button type="submit" id="btnSimpanRME" style="background-color: #2ecc71; color:white; width:70%;">Simpan Perubahan</button>
+                <button type="button" onclick="document.getElementById('modalRME').style.display='none'" style="background-color: #e74c3c; color:white; width:30%; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Tutup</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DETAIL REKAM MEDIS FULL -->
+<div id="modalRiwayatFull" class="modal-backdrop" style="display:none;">
+    <div class="modal-content-box">
+        <div class="modal-custom-header">
+            <h2>👁️ Detail RME: <span id="lblModalNamaLengkap"></span> (<span id="lblModalRMFull"></span>)</h2>
+            <button type="button" onclick="document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
+        </div>
+
+        <div id="alertMedisContainer" style="display:none; background-color:#fff3cd; color:#856404; padding:15px; border-left:5px solid #ffc107; margin-bottom:15px; border-radius:4px; font-size:14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div id="textAlergi" style="margin-bottom:5px; font-size: 15px;"></div>
+            <div id="textObatRutin" style="font-size: 15px;"></div>
+        </div>
+        
+        <div class="table-responsive">
+            <table style="width: 100%; min-width: 1000px; font-size: 13px;">
+                <thead>
+                    <tr style="background-color: #f4f7f6;">
+                        <th>Tanggal</th>
+                        <th>Anamnesa</th>
+                        <th>Diagnosa</th>
+                        <th>Tindakan / Perawatan</th>
+                        <th>Resep Obat</th>
+                        <th>Pro Perawatan</th>
+                        <th>Pro Kontrol</th>
+                        <th>Dokter</th>
+                        <th>Foto / Dokumen</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelRiwayatFullBody">
+                    <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DETAIL LENGKAP PASIEN (ALL COLUMNS) -->
+<div id="modalDetailPasien" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 650px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 12px; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #2c3e50;">📋 Detail Lengkap Profil Pasien</h3>
+            <span style="cursor: pointer; font-size: 28px; font-weight: bold; color: #95a5a6;" onclick="window.tutupModalDetailPasien()">&times;</span>
+        </div>
+        
+        <!-- Wadah penampung data dinamis -->
+        <div id="isiDetailPasien" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+            <!-- Data otomatis dibuat di sini oleh JS -->
+        </div>
+        
+        <div style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 12px;">
+            <button onclick="window.tutupModalDetailPasien()" style="padding: 10px 20px; border: none; background-color: #7f8c8d; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtKbuvQhrLcVRaoo33z6MmV6oMRBK_ZGTkPFyNH5xNgAxG1j3H5GJAFuGW9WzzvKhS/exec"; 
+    let currentRole = "";
+    let cachePasienLama = []; 
+    let currentPagePasien = 1;
+    let totalPagesPasien = 1;
+    let currentKeywordPasien = "";
+    let dataAntreanGlobal = [];
+    // 1. Variabel penampung kamus dari Google Sheets
+    let kamusKoreksiDinamis = {};
+    let currentPage = 1;
+    const rowsPerPage = 10; // Jumlah baris yang ingin ditampilkan per halaman
+    let dataKamusArray = []; // Array untuk menyimpan data siap render
+
+    // 2. Fungsi untuk menarik data kamus saat halaman web dibuka
+    function muatKamusDikte() {
+        document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center;">Memuat data kamus...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getKamusDikte" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            // 🔥 BARU: Intip langsung di console apa isi respon dari server
+            //console.log("👉 Respon mentah dari server:", res);
+
+            if (res.result === "success") {
+                
+                // 🔥 BARU: Pengaman jika res.data ternyata kosong/undefined dari server
+                if (!res.data) {
+                    console.error("❌ Error: res.result sukses, tetapi res.data KOSONG atau UNDEFINED!");
+                    document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:orange;">Gagal memuat: Format data server tidak sesuai (res.data kosong).</td></tr>`;
+                    return; // Hentikan proses agar tidak crash ke bawah
+                }
+
+                kamusKoreksiDinamis = res.data;
+                
+                // Ubah object dari backend menjadi array agar mudah di-paginate
+                dataKamusArray = Object.keys(res.data).map((salah, index) => {
+                    return {
+                        salah: salah,
+                        benar: res.data[salah],
+                        barisSheet: index + 2
+                    };
+                });
+                
+                currentPage = 1; // Reset ke halaman 1 setiap load data baru
+                renderKamusTable(); // Gambar tabelnya
+            } else {
+                // Jika res.result bukan success (misal "error")
+                document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Gagal: ${res.message || 'Terjadi kesalahan sistem.'}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.log("Gagal memuat kamus dikte:", err);
+            document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Gagal memuat data.</td></tr>`;
+        });
+    }
+
+    // 2. Update fungsi renderKamusTable
+    function renderKamusTable() {
+        const tbody = document.getElementById('bodyKamus');
+        const paginationDiv = document.getElementById('paginationControls');
+        tbody.innerHTML = ""; 
+        
+        if (dataKamusArray.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Belum ada data kamus.</td></tr>`;
+            paginationDiv.style.display = 'none'; // Sembunyikan pagination jika kosong
+            return;
+        }
+
+        paginationDiv.style.display = 'block'; // Tampilkan pagination
+
+        // 🔥 BARU: Hitung potongan data berdasarkan halaman saat ini
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const paginatedItems = dataKamusArray.slice(startIndex, endIndex);
+        
+        // Loop hanya pada data yang sudah dipotong (maksimal 10)
+        paginatedItems.forEach(item => {
+            let row = `<tr>
+                <td>${item.salah}</td>
+                <td>${item.benar}</td>
+                <td style="text-align:center;">
+                    <button onclick="hapusKamus(${item.barisSheet})" style="color:red; cursor:pointer;">Hapus</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+
+        // 🔥 BARU: Update informasi teks Halaman dan status Tombol
+        const totalPages = Math.ceil(dataKamusArray.length / rowsPerPage);
+        document.getElementById('pageInfo').innerText = `Halaman ${currentPage} dari ${totalPages}`;
+        
+        document.getElementById('btnPrev').disabled = (currentPage === 1);
+        document.getElementById('btnNext').disabled = (currentPage === totalPages);
+    }
+
+    // 3. 🔥 BARU: Fungsi untuk mengontrol tombol Next/Prev
+    function ubahHalaman(direction) {
+        const totalPages = Math.ceil(dataKamusArray.length / rowsPerPage);
+        currentPage += direction;
+        
+        // Validasi pencegahan error (meski tombol sudah di-disable)
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        
+        renderKamusTable(); // Gambar ulang tabel dengan data halaman baru
+    }
+
+// Catatan: Fungsi tambahKamus() dan hapusKamus() Anda tidak perlu diubah, biarkan seperti semula.
+
+    // 3. Otomatis jalankan fungsi saat web selesai dimuat
+    window.addEventListener('load', muatKamusDikte);
+
+    // --- FITUR: FILTER ANTREAN DOKTER ---
+    function terapkanFilterAntrean() {
+        const statusDipilih = document.getElementById("filterStatusAntrean").value;
+        renderTabelAntrean(statusDipilih);
+    }
+
+    function formatTanggalIndo(isoString) {
+    if (!isoString) return "-"; // Jika datanya kosong, tampilkan strip
+    
+        const date = new Date(isoString);
+        
+        // Opsi pengaturan format: "02 Februari 2002"
+        const options = { 
+            day: '2-digit', 
+            month: 'long', 
+            year: 'numeric' 
+        };
+        
+        return date.toLocaleDateString('id-ID', options);
+    }
+
+    function renderTabelAntrean(filterStatus = "Semua") {
+        const tbody = document.getElementById('tabelAntreanBody');
+        tbody.innerHTML = '';
+
+        if (!dataAntreanGlobal || dataAntreanGlobal.length === 0) {
+            // 🔥 PERUBAHAN: colspan menjadi 7
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada antrean pasien untuk rentang tanggal ini.</td></tr>`;
+            return;
+        }
+
+        let dataTerfilter = dataAntreanGlobal;
+
+        if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa") {
+            dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === filterStatus);
+        } else if (filterStatus === "Perlu Input RME") {
+            dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled);
+        }
+
+        if (dataTerfilter.length === 0) {
+            // 🔥 PERUBAHAN: colspan menjadi 7
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding: 20px;">Tidak ada data pasien untuk kategori <b>${filterStatus}</b>.</td></tr>`;
+            return;
+        }
+
+        const h = new Date();
+        const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+
+        dataTerfilter.forEach(pasien => {
+            let badgeClass = "badge-belum";
+            if(pasien.status === "Sedang Diperiksa") badgeClass = "badge-sedang";
+            if(pasien.status === "Sudah Diperiksa") badgeClass = "badge-sudah";
+
+            let rmeStatusIndicator = pasien.isRmeFilled ? 
+                '<br><span style="color: #2ecc71; font-size: 11px;">✔️ RME Tersimpan</span>' : 
+                '<br><span style="color: #e74c3c; font-size: 11px;">❌ RME Kosong</span>';
+
+            let tombolAksi = "";
+            
+            if (pasien.status === "Belum Diperiksa") {
+                tombolAksi = `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">Mulai Periksa</button>`;
+            } else if (pasien.status === "Sedang Diperiksa") {
+                tombolAksi = `<button class="btn-action btn-done" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sudah Diperiksa')">Selesai Periksa</button>`;
+            } else if (pasien.status === "Sudah Diperiksa") {
+                if (!pasien.isRmeFilled) {
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>`;
+                } else {
+                    if (pasien.tanggalDaftar === formatHariIni) {
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat/Edit RME</button>`;
+                    } else {
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
+                    }
+                }
+            }
+
+            // 🔥 PERUBAHAN: Menyisipkan <td>${pasien.namaDokter}</td> di bawah tujuan
+            tbody.innerHTML += `<tr>
+                <td><strong>${pasien.nama}</strong><br><small>RM: ${pasien.noRM}</small></td>
+                <td>${pasien.tanggalDaftar}</td> 
+                <td>${pasien.waktu}</td>
+                <td>${pasien.tujuan}</td>
+                <td style="font-weight:bold; color:#2c3e50;">${pasien.namaDokter || '-'}</td>
+                <td><span class="badge ${badgeClass}">${pasien.status}</span> ${rmeStatusIndicator}</td>
+                <td>${tombolAksi}</td>
+            </tr>`;
+        });
+    }
+
+    // --- FITUR: LIHAT DETAIL PASIEN ---
+    function lihatDetailPasien(noRM) {
+        console.log("Memuat detail untuk No RM:", noRM);
+
+        const modal = document.getElementById('modalDetailPasien');
+        if (!modal) {
+            console.warn("Modal dengan ID 'modalDetailPasien' tidak ditemukan.");
+            return;
+        }
+
+        // Tampilkan modal terlebih dahulu dengan tulisan loading
+        modal.style.display = 'block';
+        
+        // Sembunyikan konten utama modal sebentar untuk loading (opsional jika ada id nya)
+        // atau biarkan sistem melakukan fetch data berikut:
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getDetailPasien", // 🔥 Memanggil aksi di kode.gs
+                noRM: noRM
+            })
+        })
+        .then(response => response.json())
+        .then(res => {
+            if(res.result === 'success' && res.data) {
+                // 🔥 SESUAIKAN ID BERIKUT DENGAN ID YANG ADA DI HTML MODAL ANDA
+                if(document.getElementById('modalNoRM')) document.getElementById('modalNoRM').value = res.data.noRM || "-";
+                if(document.getElementById('modalNama')) document.getElementById('modalNama').value = res.data.nama || "-";
+                if(document.getElementById('modalGender')) document.getElementById('modalGender').value = res.data.gender || "-";
+                if(document.getElementById('modalPhone')) document.getElementById('modalPhone').value = res.data.phone || "-";
+                if(document.getElementById('modalAlamat')) document.getElementById('modalAlamat').value = res.data.alamat || "-";
+                
+                // Jika modal Anda menggunakan teks biasa (bukan input field), ganti .value menjadi .innerText
+            } else {
+                alert("Gagal memuat detail pasien: " + res.message);
+            }
+        })
+        .catch(err => {
+            console.error("Gagal memuat detail:", err);
+            alert("Terjadi gangguan koneksi saat memuat detail pasien.");
+        });
+    }
+
+
+    function changePage(direction) {
+        // 🔥 Ubah agar menggunakan variabel halaman milik cariDaftarPasien
+        let newPage = halamanSekarangPasien + direction;
+        
+        // Melakukan fetch halaman baru jika halaman valid (minimal halaman 1)
+        if (newPage >= 1) { 
+            halamanSekarangPasien = newPage;
+            
+            // 🔥 Belokkan panggilannya ke fungsi cariDaftarPasien
+            // parameter 'false' memastikan kata kunci pencarian di input tidak ter-reset
+            cariDaftarPasien(false); 
+        }
+    }
+
+    function resetDaftarPasien() {
+        document.getElementById("txtCariDaftar").value = "";
+        cariDaftarPasien(true); // 🔥 PERUBAHAN: Ubah muatDaftarPasien(1) menjadi cariDaftarPasien(true)
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", function() {
+        muatPilihanRole();
+        const sessionAktif = localStorage.getItem('anvaya_session');
+        
+        if (sessionAktif) {
+            const dataUser = JSON.parse(sessionAktif);
+            
+            // 1. Jalankan aplikasi utama
+            bukaAplikasi(dataUser.role, dataUser.username);
+            
+            // 2. PERBAIKAN: Jalankan ulang fungsi ini agar menu langsung disembunyikan setelah refresh
+            if (dataUser.permissions) {
+                aplikasikanHakAkses(dataUser.permissions);
+            }
+        }
+
+        function updateDaftarDokter() {
+            const tglInput = document.getElementById('tglKunjungan').value;
+            const slotInput = document.getElementById('waktuKunjungan').value;
+            
+            if (!tglInput) return;
+
+            const bagianTanggal = tglInput.split('-'); 
+            const tanggalPilihan = new Date(bagianTanggal[0], bagianTanggal[1] - 1, bagianTanggal[2]);
+            const daftarHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const namaHari = daftarHari[tanggalPilihan.getDay()];
+            
+            if (namaHari === 'Minggu') {
+                alert('Maaf, Klinik Anvaya tutup pada hari Minggu. Silakan pilih hari praktik lainnya.');
+                document.getElementById('tglKunjungan').value = '';
+                document.getElementById('pilihDokter').innerHTML = '<option value="">-- Pilih Tanggal Kunjungan Terlebih Dahulu --</option>';
+                document.getElementById('pilihDokter').disabled = true;
+                return;
+            }
+            
+            const selectDokter = document.getElementById('pilihDokter');
+            selectDokter.innerHTML = '<option value="">⏳ Memuat dokter yang bertugas...</option>';
+            selectDokter.disabled = true;
+
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ 
+                    action: "getDokterTersedia", 
+                    hari: namaHari,
+                    slot: slotInput 
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.result === "success") {
+                    selectDokter.innerHTML = '<option value="">-- Pilih Dokter Bertugas --</option>';
+                    if (res.data.length > 0) {
+                        res.data.forEach(dok => {
+                            selectDokter.innerHTML += `<option value="${dok.idDokter}">${dok.namaDokter} (${dok.jam})</option>`;
+                        });
+                        selectDokter.disabled = false;
+                    } else {
+                        selectDokter.innerHTML = '<option value="">❌ Tidak ada dokter praktik di slot ini</option>';
+                    }
+                } else {
+                    selectDokter.innerHTML = `<option value="">⚠️ Error System: ${res.message || 'Gagal mengambil data'}</option>`;
+                }
+            })
+            .catch(err => {
+                console.error("Gagal memuat data dokter:", err);
+                selectDokter.innerHTML = '<option value="">⚠️ Gagal memuat jadwal dokter</option>';
+            });
+        }
+
+        document.getElementById('tglKunjungan').addEventListener('change', updateDaftarDokter);
+        document.getElementById('waktuKunjungan').addEventListener('change', updateDaftarDokter);
+    });
+
+    // --- AUTHENTICATION ---
+    document.getElementById('formLogin').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnLogin');
+        btn.disabled = true; btn.innerText = "Memverifikasi...";
+
+        const payload = {
+            action: "login",
+            username: document.getElementById('loginUser').value,
+            password: document.getElementById('loginPass').value
+        };
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false; btn.innerText = "Masuk";
+            if (data.result === "success") {
+                currentRole = data.role;
+                
+                // Simpan role beserta seluruh hak aksesnya ke dalam session
+                const dataSesi = { 
+                    idUser: data.idUser, 
+                    username: data.username, 
+                    role: data.role,
+                    permissions: data.permissions 
+                };
+                localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
+                
+                // Jalankan aplikasi
+                bukaAplikasi(data.role, data.username);
+                
+                // Eksekusi penyembunyian menu secara realtime
+                aplikasikanHakAkses(data.permissions);
+            } else { alert(data.message); }
+        })
+        .catch(err => {
+            btn.disabled = false; btn.innerText = "Masuk";
+            alert("Gagal terhubung ke server.");
+        });
+    });
+
+    // --- REGISTRATION FORM LOGIC ---
+    function aturTipePasien(tipe) {
+        const form = document.getElementById('formPasien');
+        document.getElementById('txtNoRM').readOnly = true; 
+
+        if (tipe === 'lama') {
+            document.getElementById('boxPasienLama').style.display = 'block';
+            form.reset();
+            document.querySelector('input[name="tipePasien"][value="lama"]').checked = true;
+            document.getElementById('txtNoRM').value = ""; 
+        } else {
+            document.getElementById('boxPasienLama').style.display = 'none';
+            form.reset();
+            document.getElementById('txtNoRM').value = "Membuat No. RM...";
+            aturStatusProteksiForm(false);
+            ambilNoRMOtomatis();
+        }
+    }
+
+    function formatTanggalUntukInput(dateVal) {
+        if (!dateVal) return "";
+        let str = String(dateVal).trim();
+        if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(str)) {
+            return str.substring(0, 10).replace(/\//g, '-');
+        }
+        let parts = str.split(/[-/]/);
+        if (parts.length === 3 && parts[2].length === 4) { 
+            let day = parts[0].padStart(2, '0');
+            let month = parts[1].padStart(2, '0');
+            let year = parts[2];
+            return `${year}-${month}-${day}`;
+        }
+        return "";
+    }
+
+    function eksekusiAutoFill(kataKunci) {
+        if (!kataKunci) return;
+        const keywordBersih = kataKunci.trim().toLowerCase();
+        
+        const dataPasien = cachePasienLama.find(row => {
+            const noRM = row[0] ? String(row[0]).toLowerCase() : "";
+            const nama = row[1] ? String(row[1]).toLowerCase() : "";
+            return noRM === keywordBersih || nama === keywordBersih;
+        });
+        
+        if (dataPasien) {
+            document.getElementById('txtNoRM').value = dataPasien[0];    
+            document.getElementById('nama').value = dataPasien[1]; 
+            document.getElementById('tempatLahir').value = dataPasien[2]; 
+            
+            if (dataPasien[3]) {
+                document.getElementById('tanggalLahir').value = formatTanggalUntukInput(dataPasien[3]);
+            }
+            
+            if (dataPasien[4]) {
+                let genderBersih = String(dataPasien[4]).trim().toLowerCase();
+                const semuaRadio = document.querySelectorAll('input[name="gender"]');
+                semuaRadio.forEach(radio => {
+                    let val = radio.value.toLowerCase().trim();
+                    if (val === genderBersih || genderBersih.includes(val) || val.includes(genderBersih)) {
+                        radio.checked = true;
+                    }
+                });
+            }
+            
+            document.getElementById('whatsapp').value = dataPasien[5];
+            document.getElementById('pekerjaan').value = dataPasien[6];
+            document.getElementById('email').value = dataPasien[7];
+            
+            if (dataPasien[8] && document.getElementById('alamat')) {
+                document.getElementById('alamat').value = dataPasien[8];
+            }
+            if (dataPasien[9]) {
+                document.getElementById('txtKTP').value = dataPasien[9];
+            }
+            
+            aturStatusProteksiForm(true); 
+            alert("Data medis pasien '" + dataPasien[1] + "' berhasil dimuat!");
+        }
+    }
+
+    function ambilNoRMOtomatis() {
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getNewRM' })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === 'success') {
+                document.getElementById('txtNoRM').value = res.noRM;
+            }
+        })
+        .catch(err => console.error("Gagal men-generate No. RM:", err));
+    }
+
+    let debounceTimer;
+    function handlePencarianPasien(keyword) {
+        const datalist = document.getElementById('listPasienLama');
+        if (!datalist) return;
+
+        if (!keyword || keyword.trim().length < 3) {
+            datalist.innerHTML = '<option value="Ketik minimal 3 karakter untuk mencari...">';
+            return;
+        }
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            datalist.innerHTML = '<option value="Sedang mencari di database klinik...">';
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'searchPasienLama', keyword: keyword })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.result === 'success') {
+                    cachePasienLama = res.data; 
+                    datalist.innerHTML = '';
+
+                    if (!cachePasienLama || cachePasienLama.length === 0) {
+                        datalist.innerHTML = '<option value="Pasien tidak ditemukan di database">';
+                        return;
+                    }
+
+                    cachePasienLama.forEach(pasien => {
+                        datalist.innerHTML += `<option value="${pasien[1]}">Nomor RM: ${pasien[0]}</option>`;
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                datalist.innerHTML = '<option value="Gagal memuat: Masalah koneksi internet">';
+            });
+        }, 400);
+    }
+
+    function aturStatusProteksiForm(status) {
+        document.getElementById('nama').readOnly = status;
+        document.getElementById('txtKTP').readOnly = status;
+        document.getElementById('tempatLahir').readOnly = status;
+       document.getElementById('tanggalLahir').readOnly = status;
+        document.getElementById('whatsapp').readOnly = status;
+        document.getElementById('pekerjaan').readOnly = status;
+        document.getElementById('email').readOnly = status;
+        
+        const elemenAlamat = document.getElementById('alamat');
+        if (elemenAlamat) { elemenAlamat.readOnly = status; }
+
+        const elemenGender = document.querySelectorAll('input[name="gender"]');
+        elemenGender.forEach(radio => { radio.disabled = status; });
+
+    }
+
+    function muatJadwalDokter(namaDokter) {
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getJadwal', namaDokter: namaDokter })
+        })
+        .then(res => res.json())
+        .then(res => {
+            const list = document.getElementById('listJadwalDokter');
+            list.innerHTML = '';
+            
+            if(res.result === 'success' && res.data.length > 0) {
+                document.getElementById('cardJadwalDokter').style.display = 'block';
+                res.data.forEach(row => {
+                    list.innerHTML += `<li><strong>${row[1]}</strong> : ${row[2]} - ${row[3]} (${row[4]})</li>`;
+                });
+            } else {
+                list.innerHTML = '<li>Anda tidak memiliki jadwal terdaftar minggu ini atau login bukan sebagai Dokter.</li>';
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    function bukaAplikasi(role, username) {
+        document.getElementById('txtUserStatus').innerText = `User: ${username} `;
+        document.getElementById('lblNamaUser').innerText = username;
+        document.getElementById('lblRoleUser').innerText = role;
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'block';
+
+        // 1. Bersihkan / Sembunyikan SEMUA TAB di awal (Termasuk tab baru)
+        document.getElementById('tabBerandaBtn').style.display = 'block';
+        document.getElementById('tabPasienBtn').style.display = 'none';
+        document.getElementById('tabDokterBtn').style.display = 'none';
+        document.getElementById('tabRiwayatMedisBtn').style.display = 'none'; 
+        document.getElementById('tabDaftarPasienBtn').style.display = 'none'; 
+        document.getElementById('tabKamusDikteBtn').style.display = 'none'; // 🔥 BARU: Ikut disembunyikan dulu
+        document.getElementById('tabBackendBtn').style.display = 'none';    // 🔥 BARU: Ikut disembunyikan dulu
+
+        // Bersihkan juga semua kartu menu di beranda utama
+        document.getElementById('menuPendaftaranCard').style.display = 'none';
+        document.getElementById('menuAntreanCard').style.display = 'none';
+        document.getElementById('menuRiwayatCard').style.display = 'none';
+        document.getElementById('menuDaftarPasienCard').style.display = 'none'; 
+
+        // Konversi role ke huruf kecil agar pengecekan lebih aman dan fleksibel
+        const roleCek = role ? role.toString().trim().toLowerCase() : "";
+
+        // 2. Logika Pembukaan Hak Akses yang Baru (Mendukung Teks & ID Role)
+        if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
+            // Tampilkan semua tab untuk Admin
+            document.getElementById('tabPasienBtn').style.display       = 'block';
+            document.getElementById('tabDokterBtn').style.display       = 'block';
+            document.getElementById('tabRiwayatMedisBtn').style.display = 'block'; 
+            document.getElementById('tabDaftarPasienBtn').style.display = 'block'; 
+            document.getElementById('tabKamusDikteBtn').style.display   = 'block'; // 🔥 BARU: Buka akses Kamus
+            document.getElementById('tabBackendBtn').style.display      = 'block'; // 🔥 BARU: Buka akses Pengaturan
+            
+            // Tampilkan semua kartu beranda untuk Admin
+            document.getElementById('menuPendaftaranCard').style.display = 'block';
+            document.getElementById('menuAntreanCard').style.display     = 'block';
+            document.getElementById('menuRiwayatCard').style.display     = 'block'; 
+            document.getElementById('menuDaftarPasienCard').style.display = 'block'; 
+
+        } else if (roleCek === "perawat" || roleCek === "rol-04") {
+            document.getElementById('tabPasienBtn').style.display       = 'block';
+            document.getElementById('tabDaftarPasienBtn').style.display = 'block'; 
+            document.getElementById('menuPendaftaranCard').style.display = 'block';
+            document.getElementById('menuDaftarPasienCard').style.display = 'block'; 
+            if (typeof ambilNoRMOtomatis === "function") { ambilNoRMOtomatis(); }
+
+        } else if (roleCek === "dokter" || roleCek === "rol-03") {
+            if (typeof muatJadwalDokter === "function") { muatJadwalDokter(username); }
+            document.getElementById('tabDokterBtn').style.display       = 'block';
+            document.getElementById('tabRiwayatMedisBtn').style.display = 'block'; 
+            document.getElementById('tabDaftarPasienBtn').style.display = 'block'; 
+            document.getElementById('tabKamusDikteBtn').style.display   = 'block'; // 🔥 BARU: Dokter juga bisa akses Kamus Dikte
+            
+            document.getElementById('menuAntreanCard').style.display     = 'block';
+            document.getElementById('menuRiwayatCard').style.display     = 'block'; 
+            document.getElementById('menuDaftarPasienCard').style.display = 'block'; 
+        }
+
+        // 3. Kembalikan ke tab beranda utama setiap refresh agar rapi
+        switchTab('beranda');
+        muatAntreanHariIni();
+        if (typeof cariDaftarPasien === "function") { cariDaftarPasien(true); } 
+    }
+
+    let currentPageAntrean = 1;
+    const limitDataPerHalaman = 10; // Anda bisa mengubah angka ini (misal: 10, 20, 50)
+
+    // 🔥 Revisi Fungsi Muat Antrean: Memisahkan Logika Tabel vs Export
+    function muatAntreanHariIni(targetPage = 1) {
+        currentPageAntrean = targetPage; 
+        
+        let tglMulai = document.getElementById('filterTanggalMulai').value;
+        let tglAkhir = document.getElementById('filterTanggalAkhir').value;
+
+        const hariIni = new Date();
+        const formatHariIni = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
+        
+        if (!tglMulai) { tglMulai = formatHariIni; document.getElementById('filterTanggalMulai').value = tglMulai; }
+        if (!tglAkhir) { tglAkhir = formatHariIni; document.getElementById('filterTanggalAkhir').value = tglAkhir; }
+
+        // ==========================================
+        // 🔒 LOGIKA PERLINDUNGAN SERVER KHUSUS TABEL
+        // ==========================================
+        let tglAkhirKhususTabel = tglAkhir;
+        const start = new Date(tglMulai);
+        const end = new Date(tglAkhir);
+        const selisihHari = (end.getTime() - start.getTime()) / (1000 * 3600 * 24);
+
+        if (selisihHari > 31) {
+            // Jika user memilih 3 bulan, khusus untuk TABEL kita potong jadi 31 hari dari tanggal mulai
+            const maxEnd = new Date(start);
+            maxEnd.setDate(start.getDate() + 31);
+            tglAkhirKhususTabel = `${maxEnd.getFullYear()}-${String(maxEnd.getMonth() + 1).padStart(2, '0')}-${String(maxEnd.getDate()).padStart(2, '0')}`;
+        }
+        // ==========================================
+
+        const sesiAktif = localStorage.getItem('anvaya_session');
+        let roleUser = "", idUserDokter = "", usernameUser = "";
+        if (sesiAktif) {
+            const dataSesi = JSON.parse(sesiAktif);
+            roleUser = dataSesi.role; idUserDokter = dataSesi.idUser; usernameUser = dataSesi.username;
+        }
+
+        let filterDropdown = document.getElementById("filterStatusAntrean");
+        let statusSaatIni = filterDropdown ? filterDropdown.value : "Semua";
+
+        const payload = {
+            action: "getTodayQueue",
+            startDate: tglMulai, 
+            endDate: tglAkhirKhususTabel, // 👈 Dikirim menggunakan tanggal yang dibatasi
+            realToday: formatHariIni,
+            role: roleUser,
+            idDokter: idUserDokter,
+            username: usernameUser,
+            statusFilter: statusSaatIni, 
+            page: currentPageAntrean,     
+            limit: limitDataPerHalaman    
+        };
+
+        // Modifikasi teks loading agar user tahu datanya dibatasi di layar
+        let teksLoading = tglMulai === tglAkhirKhususTabel ? `tanggal ${tglMulai}` : `periode ${tglMulai} s/d ${tglAkhirKhususTabel}`;
+        if (selisihHari > 31) {
+            teksLoading += ` <i>(Dibatasi 31 hari di layar)</i>`;
+        }
+        
+        document.getElementById('tabelAntreanBody').innerHTML = `<tr><td colspan="7" style="text-align:center;">Memuat data halaman ${currentPageAntrean} untuk ${teksLoading}...</td></tr>`;
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(data => {
+            if (data.result === "success") {
+                document.getElementById('statTotal').innerText = data.stats.total;
+                document.getElementById('statBelum').innerText = data.stats.belum;
+                document.getElementById('statSedang').innerText = data.stats.sedang;
+                document.getElementById('statSudah').innerText = data.stats.sudah;
+
+                if(document.getElementById('homeStatTotal')) document.getElementById('homeStatTotal').innerText = data.stats.total;
+                if(document.getElementById('homeStatSudah')) document.getElementById('homeStatSudah').innerText = data.stats.sudah;
+
+                dataAntreanGlobal = data.queue;
+                renderTabelAntrean(statusSaatIni); 
+                buatKomponenPagination(data.pagination);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('tabelAntreanBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal mengambil data antrean.</td></tr>`;
+        });
+    }
+
+    // 🔥 Fungsi Baru: Validasi Batas Rentang Tanggal (Maksimal 31 Hari)
+    // 🔥 Revisi Opsi 2: Validasi Rentang Tanggal (Hanya Memberi Peringatan, Tidak Memaksa Ubah)
+    function validasiRentangTanggal() {
+        const inputMulai = document.getElementById('filterTanggalMulai');
+        const inputAkhir = document.getElementById('filterTanggalAkhir');
+        
+        const tglMulai = inputMulai.value;
+        const tglAkhir = inputAkhir.value;
+
+        if (tglMulai && tglAkhir) {
+            const start = new Date(tglMulai);
+            const end = new Date(tglAkhir);
+            
+            const selisihWaktu = end.getTime() - start.getTime();
+            const selisihHari = selisihWaktu / (1000 * 3600 * 24);
+
+            if (selisihHari < 0) {
+                alert("⚠️ Tanggal akhir tidak boleh lebih kecil dari tanggal mulai!");
+                inputAkhir.value = tglMulai;
+            } 
+            else if (selisihHari > 31) { 
+                // Sistem HANYA memberi tahu, tapi TIDAK MENGUNCI rentang tanggal.
+                alert("ℹ️ Tampilan tabel di layar akan dibatasi maksimal 31 hari pertama untuk menjaga performa sistem.\n\nNamun, Anda tetap bisa menggunakan tombol '📥 Export ke Excel/CSV' untuk mengunduh seluruh data (misal 3 bulan) sesuai tanggal yang Anda pilih.");
+            }
+        }
+        
+        muatAntreanHariIni(1); 
+    }
+
+    // 🔥 Fungsi Baru: Membuat Tombol Navigasi Angka
+    function buatKomponenPagination(infoPaging) {
+        const infoText = document.getElementById('paginationInfo');
+        const btnContainer = document.getElementById('paginationButtons');
+        
+        if (!infoPaging || infoPaging.totalItems === 0) {
+            infoText.innerText = "Menampilkan 0 antrean";
+            btnContainer.innerHTML = "";
+            return;
+        }
+
+        // Teks info baris yang tampil
+        let hitungAwal = (infoPaging.currentPage - 1) * limitDataPerHalaman + 1;
+        let hitungAkhir = Math.min(infoPaging.currentPage * limitDataPerHalaman, infoPaging.totalItems);
+        infoText.innerText = `Menampilkan ${hitungAwal}-${hitungAkhir} dari ${infoPaging.totalItems} antrean`;
+
+        let htmlTombol = "";
+
+        // Tombol Ke Halaman Sebelumnya (Prev)
+        if (infoPaging.currentPage > 1) {
+            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage - 1})" style="padding: 5px 10px; cursor: pointer;">Sebelumnya</button>`;
+        } else {
+            htmlTombol += `<button disabled style="padding: 5px 10px; color: #ccc;">Sebelumnya</button>`;
+        }
+
+        // Render Angka Halaman
+        for (let hal = 1; hal <= infoPaging.totalPages; hal++) {
+            if (hal === infoPaging.currentPage) {
+                htmlTombol += `<button style="padding: 5px 10px; background: #3498db; color: white; border: none; font-weight: bold;">${hal}</button>`;
+            } else {
+                htmlTombol += `<button onclick="muatAntreanHariIni(${hal})" style="padding: 5px 10px; cursor: pointer;">${hal}</button>`;
+            }
+        }
+
+        // Tombol Ke Halaman Berikutnya (Next)
+        if (infoPaging.currentPage < infoPaging.totalPages) {
+            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage + 1})" style="padding: 5px 10px; cursor: pointer;">Berikutnya</button>`;
+        } else {
+            htmlTombol += `<button disabled style="padding: 5px 10px; color: #ccc;">Berikutnya</button>`;
+        }
+
+        btnContainer.innerHTML = htmlTombol;
+    }
+
+    // 🔥 Sesuaikan Fungsi Filter Dropdown bawaan Anda
+    function terapkanFilterAntrean() {
+        // Jika dropdown status diganti, reset kembali data dari halaman 1
+        muatAntreanHariIni(1); 
+    }
+
+    function gantiStatusPasien(rowNum, statusBaru) {
+        if(!confirm(`Ubah status pasien menjadi "${statusBaru}"?`)) return;
+
+        const payload = { action: "updateStatus", rowNumber: rowNum, status: statusBaru };
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(data => {
+            if (data.result === "success") {
+                muatAntreanHariIni(); 
+                if(statusBaru === "Belum Diperiksa") {
+                    document.getElementById('sectionRME').style.display = 'none';
+                }
+            } else { alert("Gagal memperbarui status."); }
+        });
+    }
+
+    function switchTabRME(tab) {
+        document.getElementById('tabRmeForm').style.display = tab === 'form' ? 'block' : 'none';
+        document.getElementById('tabRmeRiwayat').style.display = tab === 'riwayat' ? 'block' : 'none';
+        
+        document.getElementById('tabRmeFormBtn').style.background = tab === 'form' ? '#9b59b6' : '#e0e0e0';
+        document.getElementById('tabRmeFormBtn').style.color = tab === 'form' ? 'white' : '#333';
+        
+        document.getElementById('tabRmeRiwayatBtn').style.background = tab === 'riwayat' ? '#9b59b6' : '#e0e0e0';
+        document.getElementById('tabRmeRiwayatBtn').style.color = tab === 'riwayat' ? 'white' : '#333';
+    }
+
+    // --- INTEGRASI FORM RME (VERSI 2 TERKONSOLIDASI) ---
+    function bukaInputRME(noRM, namaPasien, tanggalDaftar) { 
+        document.getElementById('formMedis').reset();
+        delete document.getElementById('formMedis').dataset.rowUpdate;
+
+        document.getElementById('sectionRME').style.display = 'block';
+        document.getElementById('namaPasien').value = namaPasien; 
+        document.getElementById('formMedis').dataset.activeNoRM = noRM;
+
+        // 🔥 Reset dan sembunyikan kotak alergi setiap kali form baru dibuka
+        document.getElementById('alertMedisFormRME').style.display = 'none';
+        document.getElementById('alertAlergiFormRME').innerText = '-';
+        document.getElementById('alertObatFormRME').innerText = '-';
+
+        document.getElementById('formMedis').dataset.tanggalDaftar = tanggalDaftar;
+        
+        const btnSubmit = document.getElementById('btnSubmitRME');
+        btnSubmit.innerText = "⏳ Memuat Data...";
+        btnSubmit.disabled = true;
+
+        document.getElementById('tabelRiwayatBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
+        
+        const hariIni = new Date();
+        const formatTanggal = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
+
+        // 🔥 REQUEST 1: Ambil data riwayat sebelumnya (KODE ASLI ANDA)
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getRekamMedisPasien', noRM: noRM, tanggal: tanggalDaftar })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btnSubmit.disabled = false;
+            if (data.result === 'success') {
+                if (data.hariIni) {
+                    document.getElementById('txtAnamnesa').value = data.hariIni.anamnesa || "";
+                    document.getElementById('txtDiagnosa').value = data.hariIni.diagnosa || "";
+                    document.getElementById('txtPerawatan').value = data.hariIni.perawatan || "";
+                    document.getElementById('txtProPerawatan').value = data.hariIni.proPerawatan || "";
+                    document.getElementById('txtProKontrol').value = data.hariIni.proKontrol || "";
+                    document.getElementById('txtResep').value = data.hariIni.resep || "";
+                    document.getElementById('txtLinkFoto').value = data.hariIni.linkFoto || "";
+                    
+                    document.getElementById('formMedis').dataset.rowUpdate = data.rowHariIni;
+                    btnSubmit.innerText = "🔄 Update Catatan Rekam Medis";
+                    btnSubmit.style.background = "#e67e22"; 
+                } else {
+                    btnSubmit.innerText = "💾 Simpan Catatan Medis Baru";
+                    btnSubmit.style.background = "#9b59b6";
+                }
+
+                const tbody = document.getElementById('tabelRiwayatBody');
+                tbody.innerHTML = "";
+                if (data.riwayat.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#7f8c8d;">Belum ada riwayat medis terdahulu.</td></tr>';
+                } else {
+                    data.riwayat.reverse().forEach(r => {
+                        tbody.innerHTML += `<tr>
+                            <td><span class="badge badge-sudah">${r.tanggal}</span></td>
+                            <td>${r.anamnesa}</td>
+                            <td><strong>${r.diagnosa}</strong></td>
+                            <td>${r.perawatan}</td>
+                            <td>${r.idDokter}</td>
+                        </tr>`;
+                    });
+                }
+            }
+        })
+        .catch(err => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = "Gagal memuat data";
+        });
+
+        // 🔥 REQUEST 2: Ambil data Alergi dan Obat Rutin (TAMBAHAN BARU)
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getDetailPasien', noRM: noRM })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                let alergi = res.data.alergi || "-";
+                let obat = res.data.obatRutin || "-";
+                let strAlergi = alergi.toString().trim().toLowerCase();
+                let strObat = obat.toString().trim().toLowerCase();
+
+                // Cek apakah data alergi/obat kosong
+                let isAlergiKosong = (strAlergi === "" || strAlergi === "-" || strAlergi === "tidak ada" || strAlergi === "none");
+                let isObatKosong = (strObat === "" || strObat === "-" || strObat === "tidak ada" || strObat === "none");
+
+                // Munculkan kotak kuning hanya jika ada peringatan
+                if (!isAlergiKosong || !isObatKosong) {
+                    document.getElementById('alertAlergiFormRME').innerText = alergi;
+                    document.getElementById('alertObatFormRME').innerText = obat;
+                    document.getElementById('alertMedisFormRME').style.display = 'block';
+                }
+            }
+        }).catch(err => console.log("Gagal memuat data alergi:", err));
+
+        switchTabRME('form'); 
+        document.getElementById('sectionRME').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- TAB 1: PENCARIAN RIWAYAT MEDIS GLOBAL (PAGINATION UNIK) ---
+    let cacheRiwayatGlobal = [];
+    let currentRiwayatPage = 1;
+    const riwayatPageSize = 5; 
+    let totalRiwayatPages = 1;
+
+    function tampilkanRiwayatGlobal() {
+        const tbody = document.getElementById('tabelDaftarPasienBody');
+        tbody.innerHTML = "";
+        
+        const totalData = cacheRiwayatGlobal.length;
+        // Pastikan variabel riwayatPageSize sudah dideklarasikan di bagian atas script Anda (misal: let riwayatPageSize = 5;)
+        totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
+        
+        if (currentRiwayatPage > totalRiwayatPages) currentRiwayatPage = totalRiwayatPages;
+        if (currentRiwayatPage < 1) currentRiwayatPage = 1;
+        
+        const start = (currentRiwayatPage - 1) * riwayatPageSize;
+        const end = Math.min(start + riwayatPageSize, totalData);
+        const dataHalaman = cacheRiwayatGlobal.slice(start, end);
+        
+        // 🔥 PERBAIKAN: Memanggil ID baru yang spesifik untuk Riwayat Medis
+        document.getElementById('lblTotalDataMasterRiwayat').innerText = totalData;
+        document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
+        document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
+        
+        document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
+        document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
+
+        if (dataHalaman.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">❌ Pasien tidak ditemukan.</td></tr>';
+            return;
+        }
+
+        dataHalaman.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold;">${p[0]}</td>
+                <td>${p[1]}</td>
+                <td>${p[4] || '-'}</td> 
+                <td>${p[5] || '-'}</td> 
+                <td>${p[8] || '-'}</td> 
+                <td>
+                    <button class="btn-action btn-rme" onclick="bukaModalRiwayatFull('${p[0]}', '${p[1].replace(/'/g, "\\'")}')">👁️ Lihat RME</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Ganti nama fungsi trigger tombol di HTML Anda menjadi nama baru ini:
+    function halamanSebelumnyaRiwayat() {
+        if (currentRiwayatPage > 1) {
+            currentRiwayatPage--; // Kurangi angka halaman
+            tampilkanRiwayatGlobal(); // Muat ulang tabel dengan data baru
+        }
+    }
+
+    function halamanBerikutnyaRiwayat() {
+        if (currentRiwayatPage < totalRiwayatPages) {
+            currentRiwayatPage++; // Tambah angka halaman
+            tampilkanRiwayatGlobal(); // Muat ulang tabel dengan data baru
+        }
+    }
+
+    function cariPasienGlobal() {
+        const keyword = document.getElementById('txtCariRiwayatGlobal').value.trim();
+        if (!keyword || keyword.length < 2) {
+            alert("Silakan ketik minimal 2 huruf nama atau No RM pasien yang ingin dicari.");
+            return;
+        }
+
+        document.getElementById('boxDaftarPasienGlobal').style.display = 'block';
+        const tbody = document.getElementById('tabelDaftarPasienBody');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Mencari pasien... ⏳</td></tr>';
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "searchPasienLama", keyword: keyword })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success" && res.data.length > 0) {
+                cacheRiwayatGlobal = res.data; 
+                currentRiwayatPage = 1;        
+                tampilkanRiwayatGlobal();     
+            } else {
+                cacheRiwayatGlobal = [];
+                tampilkanRiwayatGlobal();
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">❌ Pasien tidak ditemukan.</td></tr>';
+            }
+        })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">Gagal memuat data. Periksa koneksi internet.</td></tr>';
+            console.error(err);
+        });
+    }
+
+    function bukaModalRiwayatFull(noRM, namaPasien) {
+        document.getElementById('modalRiwayatFull').style.display = 'block';
+        document.getElementById('lblModalNamaLengkap').innerText = namaPasien;
+        document.getElementById('lblModalRMFull').innerText = noRM;
+        
+        const tbody = document.getElementById('tabelRiwayatFullBody');
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Mengambil detail rekam medis... ⏳</td></tr>';
+
+        // 🔥 Reset dan sembunyikan peringatan setiap kali modal baru dibuka
+        const alertBox = document.getElementById('alertMedisContainer');
+        alertBox.style.display = 'none';
+        document.getElementById('textAlergi').innerHTML = '';
+        document.getElementById('textObatRutin').innerHTML = '';
+
+        // 🔥 FETCH 1: Mengambil Data Peringatan Medis (Alergi & Obat)
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success" && res.data) {
+                let adaPeringatan = false;
+                let alergi = res.data.alergi ? res.data.alergi.trim() : "-";
+                let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
+
+                // Cek jika alergi ada (bukan -, kosong, atau "tidak ada")
+                if(alergi !== "" && alergi !== "-" && alergi.toLowerCase() !== "tidak ada") {
+                    document.getElementById('textAlergi').innerHTML = `⚠️ <strong>PERHATIAN - ALERGI:</strong> <span style="color:#d32f2f; font-weight:bold; background-color:white; padding:2px 5px; border-radius:3px;">${alergi}</span>`;
+                    adaPeringatan = true;
+                }
+                
+                // Cek jika obat rutin ada
+                if(obatRutin !== "" && obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada") {
+                    document.getElementById('textObatRutin').innerHTML = `💊 <strong>OBAT RUTIN:</strong> <span>${obatRutin}</span>`;
+                    adaPeringatan = true;
+                }
+
+                // Munculkan kotak kuning jika salah satu dari mereka ada isinya
+                if(adaPeringatan) {
+                    alertBox.style.display = 'block';
+                }
+            }
+        })
+        .catch(err => console.error("Gagal memuat data alergi pasien: ", err));
+
+        // FETCH 2: Mengambil Tabel Riwayat Rekam Medis (Kode Asli Anda)
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: noRM })
+        })
+        .then(res => res.json())
+        .then(res => {
+            tbody.innerHTML = "";
+            if (res.result === "success" && res.data.length > 0) {
+                const dataRiwayat = res.data.reverse();
+                dataRiwayat.forEach(r => {
+                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="color:#3498db; text-decoration:none;">🔗 Lihat Foto</a>` : '-';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="white-space:nowrap; font-weight:bold;">${r.tanggal}</td>
+                        <td>${r.anamnesa}</td>
+                        <td>${r.diagnosa}</td>
+                        <td>${r.perawatan}</td>
+                        <td style="white-space:pre-wrap;">${r.resep || '-'}</td>
+                        <td>${r.proPerawatan || '-'}</td>
+                        <td>${r.proKontrol || '-'}</td>
+                        <td style="font-weight:bold; color:#2c3e50;">${r.namaDokter}</td>
+                        <td style="text-align:center;">${linkFotoHtml}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Tidak ada riwayat rekam medis untuk pasien ini.</td></tr>';
+            }
+        })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#e74c3c;">Terjadi kesalahan saat memuat data riwayat.</td></tr>';
+            console.error(err);
+        });
+    }
+
+    document.getElementById('txtCariRiwayatGlobal').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { cariPasienGlobal(); }
+    });
+
+
+    // --- TAB 2: DATABASE PASIEN UTAMA (PAGINATION UNIK) ---
+    let halamanSekarangPasien = 1;
+    const ukuranHalamanPasien = 50; 
+    let kataKunciPasien = "";
+
+    function cariDaftarPasien(resetHalaman = true) {
+        if (resetHalaman) { halamanSekarangPasien = 1; }
+        
+        kataKunciPasien = document.getElementById('txtCariDaftar').value.trim();
+        const tbody = document.getElementById('tabelSemuaPasienBody');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat database dari server... ⏳</td></tr>';
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ 
+                action: "getPasienPaginated", 
+                keyword: kataKunciPasien,
+                page: halamanSekarangPasien,
+                pageSize: ukuranHalamanPasien
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            tbody.innerHTML = "";
+            if (res.result === "success" && res.data.length > 0) {
+                window.dataPasienHalamanIni = res.data;
+                window.headersPasien = res.headers;
+
+                const headersMuda = res.headers.map(h => h.toLowerCase().trim());
+                const idxRM = headersMuda.indexOf("no rm") !== -1 ? headersMuda.indexOf("no rm") : 0;
+                const idxNama = headersMuda.indexOf("nama pasien") !== -1 ? headersMuda.indexOf("nama pasien") : 1;
+                const idxGender = headersMuda.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
+                const idxWA = headersMuda.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp") || h.includes("telepon"));
+                const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
+
+                res.data.forEach((p, index) => {
+                    tbody.innerHTML += `<tr>
+                        <td style="font-weight:bold; color:#2c3e50;">${p[idxRM] || "-"}</td>
+                        <td>${p[idxNama] || "-"}</td>
+                        <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
+                        <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
+                        <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
+                        <td>
+                            <button type="button" class="btn-action" onclick="window.bukaModalDetailPasien(${index})" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;">🔍 Lihat Detail</button>
+                        </td>
+                    </tr>`;
+                });
+
+                document.getElementById('lblHalamanPasien').innerText = `Halaman ${res.currentPage} dari ${res.totalPages}`;
+                document.getElementById('lblTotalDataTampil').innerText = res.data.length;
+                document.getElementById('lblTotalDataMaster').innerText = res.totalRecords;
+
+                document.getElementById('btnPrevPasien').disabled = (res.currentPage <= 1);
+                document.getElementById('btnNextPasien').disabled = (res.currentPage >= res.totalPages);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c;">❌ Data tidak ditemukan dalam database.</td></tr>';
+                document.getElementById('lblHalamanPasien').innerText = "Halaman 1 dari 1";
+                document.getElementById('lblTotalDataTampil').innerText = "0";
+                document.getElementById('lblTotalDataMaster').innerText = "0";
+                document.getElementById('btnPrevPasien').disabled = true;
+                document.getElementById('btnNextPasien').disabled = true;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">⚠️ Gagal terhubung dengan server database.</td></tr>';
+        });
+    }
+
+    // Ganti nama fungsi trigger tombol di HTML Anda menjadi nama baru ini:
+    function halamanSebelumnyaPasien() {
+        if (halamanSekarangPasien > 1) {
+            halamanSekarangPasien--;
+            cariDaftarPasien(false); // false artinya tidak mereset halaman ke 1 saat pindah page
+        }
+    }   
+
+    function halamanBerikutnyaPasien() {
+        // totalPagesPasien didapat dari res.totalPages di fungsi cariDaftarPasien
+        halamanSekarangPasien++;
+        cariDaftarPasien(false); 
+    }
+
+
+    // --- MODAL POP-UP DETAIL PROFIL PASIEN (VERSI TERAKHIR & TERKONSOLIDASI) ---
+    window.bukaModalDetailPasien = function(index) {
+        const pasien = window.dataPasienHalamanIni ? window.dataPasienHalamanIni[index] : null;
+        const headers = window.headersPasien || [];
+        const container = document.getElementById('isiDetailPasien');
+        const modal = document.getElementById('modalDetailPasien');
+
+        if (!pasien || !container || !modal) {
+            alert("Gagal memuat detail: Data halaman belum siap atau elemen modal hilang.");
+            return;
+        }
+
+        container.innerHTML = ""; 
+
+        headers.forEach((header, idx) => {
+            let nilai = pasien[idx] !== undefined && pasien[idx] !== null && String(pasien[idx]).trim() !== "" ? pasien[idx] : "-";
+            
+            // --- INI ADALAH BAGIAN YANG DIPERBAIKI ---
+            // Kita cek apakah kolom saat ini berhubungan dengan tanggal lahir
+            const namaHeaderKecil = header.toLowerCase();
+            if (namaHeaderKecil.includes('tanggal lahir') || namaHeaderKecil.includes('tgl lahir')) {
+                // Jika ya, kita panggil fungsi formatTanggalIndo yang sudah Anda buat
+                if (nilai !== "-") {
+                   nilai = formatTanggalIndo(nilai);
+                }
+            } else if (typeof nilai === "string" && nilai.includes("T00:00:00")) {
+                // Ini untuk jaga-jaga kalau ada kolom tanggal lain (selain tanggal lahir)
+                nilai = nilai.split("T")[0]; 
+            }
+            // -----------------------------------------
+
+            container.innerHTML += `
+                <div style="margin-bottom: 14px; border-bottom: 1px solid #f1f2f6; padding-bottom: 8px;">
+                    <label style="font-weight: bold; color: #7f8c8d; display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${header}</label>
+                    <div style="font-size: 15px; color: #2c3e50; font-weight: 500; margin-top: 4px; word-break: break-word;">${nilai}</div>
+                </div>
+            `;
+        });
+
+        modal.style.display = 'block';
+    };
+
+    window.tutupModalDetailPasien = function() {
+        const modal = document.getElementById('modalDetailPasien');
+        if (modal) { modal.style.display = 'none'; }
+    };
+
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('modalDetailPasien');
+        if (event.target === modal) { modal.style.display = 'none'; }
+    });
+
+
+    // --- POP-UP MODAL EDIT RME UTK DOKTER ---
+    function bukaModalRME(noRM, namaPasien, tanggalDaftar) {
+        document.getElementById('formModalMedis').reset();
+        document.getElementById('modalRME').style.display = 'block';
+        document.getElementById('modalNama').value = namaPasien;
+        document.getElementById('modalNoRM').value = noRM;
+
+        // Dapatkan tanggal pakem hari ini
+        const h = new Date();
+        const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+        
+        // Cek apakah tanggal daftar adalah masa lalu
+        const isMasaLalu = (tanggalDaftar !== formatHariIni);
+
+        // 🔥 LOGIKA KUNCI FORM (READ-ONLY)
+        document.getElementById('judulModalRME').innerText = isMasaLalu ? "👁️ Rincian Rekam Medis (Read-Only)" : "👁️ Lihat / Edit Rekam Medis";
+        document.getElementById('btnSimpanRME').style.display = isMasaLalu ? "none" : "block"; // Sembunyikan tombol simpan jika masa lalu
+
+        const aturField = (readonly) => {
+            const listId = ['modalAnamnesa', 'modalDiagnosa', 'modalPerawatan', 'modalProPerawatan', 'modalProKontrol', 'modalResep', 'modalLinkFoto'];
+            const warnaBg = readonly ? "#e9ecef" : "#ffffff";
+            
+            listId.forEach(id => {
+                document.getElementById(id).readOnly = readonly;
+                document.getElementById(id).style.background = warnaBg;
+            });
+        };
+        aturField(isMasaLalu); // Kunci jika masa lalu, buka jika hari ini
+
+        // Fetch data ke server berdasarkan TANGGAL DAFTAR (Bukan selalu hari ini)
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getRekamMedisPasien', noRM: noRM, tanggal: tanggalDaftar })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.result === 'success' && data.hariIni) {
+                document.getElementById('modalAnamnesa').value = data.hariIni.anamnesa || "";
+                document.getElementById('modalDiagnosa').value = data.hariIni.diagnosa || "";
+                document.getElementById('modalPerawatan').value = data.hariIni.perawatan || "";
+                document.getElementById('modalProPerawatan').value = data.hariIni.proPerawatan || "";
+                document.getElementById('modalProKontrol').value = data.hariIni.proKontrol || "";
+                document.getElementById('modalResep').value = data.hariIni.resep || "";
+                document.getElementById('modalLinkFoto').value = data.hariIni.linkFoto || "";
+                document.getElementById('modalRowUpdate').value = data.rowHariIni; 
+            } else {
+                alert(`Gagal memuat rincian rekam medis pasien untuk tanggal ${tanggalDaftar}.`);
+                document.getElementById('modalRME').style.display = 'none';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Terjadi kendala jaringan saat mengambil data RME.");
+        });
+    }
+
+    document.getElementById('formModalMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; submitBtn.innerText = "Menyimpan Perubahan...";
+
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const idDokterAktif = sessionData ? sessionData.idUser : "USR-000"; 
+
+        // 🔥 Ambil data file komputer dari modal jika ada perubahan foto
+        const dataFileModal = await bacaFileKeBase64('modalFileFoto');
+
+        const data = {
+            action: "submitRekamMedis",
+            targetSheet: "RekamMedis",
+            noRM: document.getElementById('modalNoRM').value,
+            rowUpdate: document.getElementById('modalRowUpdate').value, 
+            namaPasien: document.getElementById('modalNama').value,
+            anamnesa: document.getElementById('modalAnamnesa').value,
+            diagnosa: document.getElementById('modalDiagnosa').value,
+            perawatan: document.getElementById('modalPerawatan').value,
+            proPerawatan: document.getElementById('modalProPerawatan').value,
+            proKontrol: document.getElementById('modalProKontrol').value,
+            resep: document.getElementById('modalResep').value,
+            idDokter: idDokterAktif,
+            linkFoto: document.getElementById('modalLinkFoto').value || "-",
+            fileBaru: dataFileModal // 🔥 Kirim data file modal ke Google Script
+        };
+
+        // ... sisa kode fetch ke bawahnya TETAP SAMA seperti milik Anda ...
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+        .then(response => response.json())
+        .then(res => {
+            submitBtn.disabled = false; submitBtn.innerText = "Simpan Perubahan";
+            if(res.result === "success") {
+                alert("Perubahan berkas Rekam Medis sukses disimpan!");
+                document.getElementById('modalRME').style.display = 'none'; 
+                muatAntreanHariIni(); 
+            } else { 
+                alert("Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
+            }
+        }).catch(err => {
+            submitBtn.disabled = false; submitBtn.innerText = "Simpan Perubahan";
+            alert("Terjadi gangguan koneksi jaringan.");
+        });
+    });
+
+    // --- FORM PENDAFTARAN PASIEN SUBMIT ---
+    document.getElementById('formPasien').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; submitBtn.innerText = "Mengirim...";
+
+        const tipePasienAktif = document.querySelector('input[name="tipePasien"]:checked').value;
+
+        const data = {
+            action: "submit", 
+            targetSheet: "Pendaftaran",
+            tipePasien: tipePasienAktif,
+            noRM: tipePasienAktif === "baru" ? "" : document.getElementById('txtNoRM').value,
+            nama: document.getElementById('nama').value,
+            ktp: document.getElementById('txtKTP').value, 
+            tempatLahir: document.getElementById('tempatLahir').value,
+            tanggalLahir: document.getElementById('tanggalLahir').value, 
+            gender: document.querySelector('input[name="gender"]:checked').value, 
+            whatsapp: document.getElementById('whatsapp').value, 
+            pekerjaan: document.getElementById('pekerjaan').value,
+            email: document.getElementById('email').value,
+            alamat: document.getElementById('alamat').value, 
+            tglKunjungan: document.getElementById('tglKunjungan').value,
+            waktuKunjungan: document.getElementById('waktuKunjungan').value,
+            tujuan: document.getElementById('tujuan').value, 
+            riwayatAlergi: document.getElementById('riwayatAlergi').value,
+            riwayatObat: document.getElementById('riwayatObat').value,
+            idDokter: document.getElementById('pilihDokter').value
+        };
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+        .then(response => response.json())
+        .then(res => {
+            submitBtn.disabled = false; submitBtn.innerText = "Kirim & Simpan Pendaftaran";
+            if(res.result === "success") {
+                alert("Pendaftaran berhasil disimpan ke data master klinik!");
+                document.getElementById('formPasien').reset();
+                aturStatusProteksiForm(false); 
+                muatAntreanHariIni();
+            } else { 
+                alert("Gagal menyimpan ke Sheets: " + (res.message || "Error tidak diketahui")); 
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false; submitBtn.innerText = "Kirim & Simpan Pendaftaran";
+            alert("Terjadi gangguan koneksi internet.");
+        });
+    });
+
+    // --- SIMPAN REKAM MEDIS DARI SECTION RME UTAMA DOKTER ---
+    document.getElementById('formMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; submitBtn.innerText = "Menyimpan RME...";
+
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const idDokterAktif = sessionData ? sessionData.idUser : "USR-000"; 
+
+        // 🔥 Ambil data file komputer jika dokter memilih file
+        const dataFile = await bacaFileKeBase64('txtFileFoto');
+
+        const data = {
+            action: "submitRekamMedis", 
+            targetSheet: "RekamMedis",
+            noRM: document.getElementById('formMedis').dataset.activeNoRM,
+            rowUpdate: document.getElementById('formMedis').dataset.rowUpdate, 
+            namaPasien: document.getElementById('namaPasien').value,
+            tanggalDaftar: document.getElementById('formMedis').dataset.tanggalDaftar,
+            anamnesa: document.getElementById('txtAnamnesa').value,      
+            diagnosa: document.getElementById('txtDiagnosa').value,      
+            perawatan: document.getElementById('txtPerawatan').value,    
+            proPerawatan: document.getElementById('txtProPerawatan').value, 
+            proKontrol: document.getElementById('txtProKontrol').value, 
+            resep: document.getElementById('txtResep').value, 
+            idDokter: idDokterAktif,                                     
+            linkFoto: document.getElementById('txtLinkFoto').value || "-",
+            fileBaru: dataFile // 🔥 Kirim data file ke Google Script
+        };
+
+        // ... sisa kode fetch ke bawahnya TETAP SAMA seperti milik Anda ...
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+        .then(response => response.json())
+        .then(res => {
+            submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
+            if(res.result === "success") {
+                alert("Data Rekam Medis berhasil disimpan!");
+                document.getElementById('formMedis').reset();
+                document.getElementById('sectionRME').style.display = 'none';
+                muatAntreanHariIni(); 
+            } else { 
+                alert("Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
+            }
+        }).catch(err => {
+            submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
+            alert("Terjadi gangguan koneksi jaringan.");
+        });
+    });
+
+    // --- VOICE RECOGNITION (VOICE TO TEXT) ---
+    let recognition; let isRecording = false; let activeFieldId = ""; let activeBtnElement = null;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition(); 
+        recognition.lang = 'id-ID'; 
+        recognition.continuous = true; 
+        recognition.interimResults = false;
+
+        recognition.onresult = function(event) {
+        let textResult = event.results[event.resultIndex][0].transcript;
+        
+        // 🔥 PENYARINGAN TEKS MENGGUNAKAN KAMUS GOOGLE SHEETS 🔥
+        // Proses akan membaca satu per satu kata dari kamusKoreksiDinamis
+        for (const [kataSalah, kataBenar] of Object.entries(kamusKoreksiDinamis)) {
+            const regex = new RegExp(kataSalah, "gi");
+            textResult = textResult.replace(regex, kataBenar);
+        }
+
+        // Merapikan spasi sebelum tanda baca (koma dan titik)
+        textResult = textResult.replace(/\s+,/g, ",");
+        textResult = textResult.replace(/\s+\./g, ".");
+
+        if (activeFieldId) {
+            const targetField = document.getElementById(activeFieldId);
+            
+            // 🔥 PERBAIKAN SPASI JEDA 🔥
+            
+            // 1. Bersihkan "spasi siluman" bawaan Google di awal dan akhir teks baru
+            textResult = textResult.trim();
+            
+            // 2. Tentukan apakah kita benar-benar butuh menambahkan spasi.
+            // (Hanya tambahkan spasi JIKA kotak tidak kosong DAN teks sebelumnya belum diakhiri spasi)
+            let spasiPemisah = "";
+            if (targetField.value !== "" && !targetField.value.endsWith(" ")) {
+                spasiPemisah = " ";
+            }
+            
+            // 3. Gabungkan teks ke dalam kotak input
+            targetField.value += spasiPemisah + textResult;
+            
+            // 4. (Pembersihan Ekstra) Ubah semua spasi ganda yang terlanjur masuk menjadi spasi tunggal
+            targetField.value = targetField.value.replace(/\s{2,}/g, " ");
+        }
+    };
+        
+        recognition.onend = function() { resetVoiceState(); };
+    } else {
+        document.querySelectorAll('.btn-voice').forEach(b => b.disabled = true);
+    }
+
+    function toggleVoice(fieldId, btnElement) {
+        if (!isRecording) {
+            activeFieldId = fieldId; activeBtnElement = btnElement;
+            recognition.start(); isRecording = true;
+            btnElement.innerText = "🛑 Mendengarkan... (Klik untuk Berhenti)";
+            btnElement.classList.add('recording');
+        } else { recognition.stop(); resetVoiceState(); }
+    }
+
+    function resetVoiceState() {
+        isRecording = false;
+        if (activeBtnElement) {
+            activeBtnElement.innerText = "🎙️ Mulai Dikte Suara";
+            activeBtnElement.classList.remove('recording');
+        }
+        activeFieldId = ""; activeBtnElement = null;
+    }
+
+    // --- LOGOUT & TAB SWITCHING ---
+    function logout() {
+        currentRole = ""; localStorage.removeItem('anvaya_session');
+        document.getElementById('formLogin').reset();
+        document.getElementById('sectionRME').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'block';
+    }
+
+    function switchTab(tabId) {
+    // 1. Sembunyikan semua konten tab & bersihkan class active
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none'; // Menimpa inline style display:none agar aman
+    });
+    document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+    
+    // 2. Tampilkan konten tab yang dituju
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.classList.add('active');
+        targetTab.style.display = 'block'; // Paksa tampil menjadi block
+    }
+    
+    // 3. Logika pewarnaan tombol aktif (Termasuk Kamus & Pengaturan)
+    if(tabId === 'beranda') document.getElementById('tabBerandaBtn').classList.add('active');
+    if(tabId === 'pasien') document.getElementById('tabPasienBtn').classList.add('active');
+    if(tabId === 'dokter') document.getElementById('tabDokterBtn').classList.add('active');
+    if(tabId === 'riwayatMedis') document.getElementById('tabRiwayatMedisBtn').classList.add('active');
+    if(tabId === 'daftarPasien') document.getElementById('tabDaftarPasienBtn').classList.add('active');
+    
+    // Tambahan untuk Tab Kamus Dikte
+    if(tabId === 'kamusDikte') {
+        document.getElementById('tabKamusDikteBtn').classList.add('active');
+        muatKamusDikte(); // 🔥 Otomatis ambil & gambar data saat tab dibuka
+    }
+    // Tambahan untuk Tab Pengaturan Sistem
+    if(tabId === 'backend') {
+        document.getElementById('tabBackendBtn').classList.add('active');
+        muatDataUser(); // 🔥 BARU: Otomatis memuat data tabel user secara realtime saat tab diakses!
+    }
+}
+
+    // Fungsi pembantu untuk membaca file komputer dan mengubahnya ke teks Base64
+        function bacaFileKeBase64(idElemenFile) {
+            return new Promise((resolve) => {
+                const fileInput = document.getElementById(idElemenFile);
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    resolve(null); // Jika tidak ada file yang dipilih
+                    return;
+                }
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    resolve({
+                        base64: e.target.result.split(',')[1],
+                        mimeType: file.type,
+                        namaFile: file.name
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+    // 🔥 Fungsi Baru: Mengunduh Data Antrean Menjadi File CSV (Bisa dibuka di Excel)
+    function unduhLaporanAntrean() {
+        const tglMulai = document.getElementById('filterTanggalMulai').value;
+        const tglAkhir = document.getElementById('filterTanggalAkhir').value;
+
+        if (!tglMulai || !tglAkhir) {
+            alert("⚠️ Silakan tentukan rentang tanggal terlebih dahulu!");
+            return;
+        }
+
+        const sesiAktif = localStorage.getItem('anvaya_session');
+        let roleUser = "", idUserDokter = "", usernameUser = "";
+        if (sesiAktif) {
+            const dataSesi = JSON.parse(sesiAktif);
+            roleUser = dataSesi.role; idUserDokter = dataSesi.idUser; usernameUser = dataSesi.username;
+        }
+
+        if(!confirm(`Apakah Anda ingin mengunduh semua data antrean periode ${tglMulai} s/d ${tglAkhir}?`)) return;
+
+        // Tampilkan pesan proses ringan
+        const tombolExport = event.target;
+        const teksAsli = tombolExport.innerText;
+        tombolExport.innerText = "⏳ Memproses Ekspor...";
+        tombolExport.disabled = true;
+
+        const payload = {
+            action: "exportQueueData",
+            startDate: tglMulai,
+            endDate: tglAkhir,
+            role: roleUser,
+            idDokter: idUserDokter,
+            username: usernameUser
+        };
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(res => {
+            tombolExport.innerText = teksAsli;
+            tombolExport.disabled = false;
+
+            if (res.result === "success" && res.data.length > 0) {
+                // Proses pembuatan dokumen CSV
+                const dataArray = res.data;
+                const headers = Object.keys(dataArray[0]);
+                
+                // Gabungkan header dan baris data dengan pemisah koma atau titik koma
+                let csvContent = "\uFEFF"; // BOM untuk memastikan Excel membaca simbol UTF-8/Karakter khusus dengan benar
+                csvContent += headers.join(",") + "\n";
+                
+                dataArray.forEach(row => {
+                    let baris = headers.map(header => {
+                        // Bersihkan teks dari tanda kutip atau koma dalam kalimat agar tidak merusak format Excel
+                        let isiKolom = row[header] ? row[header].toString().replace(/"/g, '""') : "";
+                        if (isiKolom.includes(",") || isiKolom.includes("\n")) {
+                            isiKolom = `"${isiKolom}"`;
+                        }
+                        return isiKolom;
+                    });
+                    csvContent += baris.join(",") + "\n";
+                });
+
+                // Trigger pengunduhan otomatis di browser
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Laporan_Antrean_Klinik_Anvaya_${tglMulai}_to_${tglAkhir}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("📭 Tidak ditemukan data antrean pada rentang tanggal tersebut.");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            tombolExport.innerText = teksAsli;
+            tombolExport.disabled = false;
+            alert("❌ Gagal mengekspor data. Terjadi kesalahan pada server.");
+        });
+    }
+
+    // Tambahan: Pastikan fungsi ini juga dipanggil di dalam fungsi load session 
+    // ketika user melakukan refresh halaman (misal pada fungsi checkSession atau init aplikasi)
+    function aplikasikanHakAkses(perms) {
+        if (!perms) return;
+        
+        // Jika perms bernilai 1 tampilkan menu (inline-block), jika 0 sembunyikan (none)
+        document.getElementById('tabPasienBtn').style.display       = perms.pendaftaran === 1 ? 'inline-block' : 'none';
+        document.getElementById('tabRiwayatMedisBtn').style.display = perms.rekamMedis === 1 ? 'inline-block' : 'none';
+        document.getElementById('tabDaftarPasienBtn').style.display = perms.databasePasien === 1 ? 'inline-block' : 'none';
+        document.getElementById('tabDokterBtn').style.display       = perms.antrian === 1 ? 'inline-block' : 'none';
+        document.getElementById('tabKamusDikteBtn').style.display   = perms.kamusDikte === 1 ? 'inline-block' : 'none';
+        document.getElementById('tabBackendBtn').style.display      = perms.pengaturan === 1 ? 'inline-block' : 'none';
+    }
+
+
+    // Fungsi untuk menggambar objek data kamus ke dalam baris tabel HTML
+// function renderKamusTable(dataObj) {
+//     const tbody = document.getElementById('bodyKamus');
+//     tbody.innerHTML = ""; 
+    
+//     const keys = Object.keys(dataObj);
+//     if (keys.length === 0) {
+//         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Belum ada data kamus.</td></tr>`;
+//         return;
+//     }
+    
+//     // Loop isi data kamus (key = kata salah, value = kata benar)
+//     keys.forEach((salah, index) => {
+//         let nomorBarisDiSheet = index + 2; // +2 karena baris 1 di Google Sheets adalah Header
+//         let row = `<tr>
+//             <td>${salah}</td>
+//             <td>${dataObj[salah]}</td>
+//             <td style="text-align:center;">
+//                 <button onclick="hapusKamus(${nomorBarisDiSheet})" style="color:red; cursor:pointer;">Hapus</button>
+//             </td>
+//         </tr>`;
+//         tbody.innerHTML += row;
+//     });
+// }
+
+// Fungsi aksi tombol "Tambah Data" ke Google Sheets via Fetch
+function tambahKamus() {
+    const salah = document.getElementById('inputSalah').value.trim();
+    const benar = document.getElementById('inputBenar').value.trim();
+    
+    if (!salah || !benar) {
+        alert("Kolom kata salah dan kata perbaikan tidak boleh kosong!");
+        return;
+    }
+    
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "simpanKamus", salah: salah, benar: benar })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            alert("Kata berhasil ditambahkan ke kamus!");
+            document.getElementById('inputSalah').value = "";
+            document.getElementById('inputBenar').value = "";
+            muatKamusDikte(); // Muat ulang agar data ter-update
+        }
+    })
+    .catch(err => console.error("Gagal menambah data:", err));
+}
+
+// Fungsi aksi tombol "Hapus" dari Google Sheets via Fetch
+function hapusKamus(rowIndex) {
+    if (!confirm("Apakah Anda yakin ingin menghapus baris kata ini?")) return;
+    
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "hapusKamus", rowIndex: rowIndex })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            alert("Kata berhasil dihapus!");
+            muatKamusDikte(); // Muat ulang tabel
+        }
+    })
+    .catch(err => console.error("Gagal menghapus data:", err));
+}
+
+// Fungsi untuk memindahkan tampilan antar Sub-Tab di Pengaturan Sistem
+function bukaSubTab(subTabId) {
+    // 1. Sembunyikan semua konten sub-tab
+    document.querySelectorAll('.sub-tab-content').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // 2. Tampilkan sub-tab yang dipilih
+    const target = document.getElementById(subTabId);
+    if (target) {
+        target.style.display = 'block';
+    }
+    
+    // 3. Atur gaya tombol (opsional, menyesuaikan CSS Anda)
+    document.getElementById('subTabUserBtn').style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
+    document.getElementById('subTabAksesBtn').style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
+
+    // 4. Panggil data dari database saat tabnya dibuka
+    if (subTabId === 'manajemenUser') {
+        muatDataUser(); // (Fungsi ini akan kita buat setelah Anda menjawab pertanyaan di bawah)
+    }
+}
+
+// Memuat data dari sheet Users ke tabel HTML
+function muatDataUser() {
+    const tbody = document.getElementById('bodyUsers');
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat data pengguna...</td></tr>`;
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "getUsers" })
+    })
+    .then(res => {
+        // Validasi awal apakah respon server beralih ke HTML/Eror internal
+        if (!res.ok) throw new Error("Respon server bermasalah (Status: " + res.status + ")");
+        return res.json();
+    })
+    .then(res => {
+        if (res.result === "success") {
+            tbody.innerHTML = "";
+            if (!res.data || res.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada pengguna.</td></tr>`;
+                return;
+            }
+
+            const rolesMap = res.rolesMap || {};
+
+            res.data.forEach(user => {
+                // Keamanan Berlapis: Antisipasi jika idRole kosong atau tidak terbaca sebagai string
+                let idRoleRaw = user.idRole ? user.idRole.toString().trim() : "";
+                let idRoleLower = idRoleRaw.toLowerCase();
+                let namaRole = rolesMap[idRoleLower] || idRoleRaw || "Tanpa Role";
+                
+                // Antisipasi status kosong
+                let statusUser = user.status || "Aktif";
+                let warnaStatus = statusUser === "Aktif" ? "green" : "red";
+
+                let row = `<tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px;">${user.username || '-' } <br><small style="color:gray;">${user.idUser || '-'}</small></td>
+                    <td style="padding: 8px;"><strong>${namaRole}</strong></td>
+                    <td style="padding: 8px;"><span style="color: ${warnaStatus}; font-weight: bold;">${statusUser}</span></td>
+                    <td style="padding: 8px; text-align: center;">
+                        <button onclick="bukaFormEdit('${user.username || ''}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}')" style="background:#ffc107; color:black; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; margin-right:5px;">Edit</button>
+                        <button onclick="hapusUser('${user.username || ''}', ${user.barisSheet})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Hapus</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        } else {
+            // Menampilkan pesan jika backend Apps Script mengirim status error
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Gagal dari Server: ${res.message || 'Terjadi kesalahan sistem'}</td></tr>`;
+        }
+    })
+    .catch(err => {
+        console.error("Gagal memuat pengguna:", err);
+        // Menampilkan detail pesan error di bawah tabel agar mudah dilacak
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Gagal memuat data.<br><small style="color:gray;">Detail: ${err.message}</small></td></tr>`;
+    });
+}
+
+// Fungsi untuk menyimpan User Baru
+function tambahUserBaru() {
+    const username = document.getElementById('inputUsernameBaru').value.trim();
+    const password = document.getElementById('inputPasswordBaru').value.trim();
+    const role = document.getElementById('inputRoleBaru').value;
+
+    if (!username || !password || !role) {
+        alert("Kolom Username, Password, dan Role wajib diisi semua!");
+        return;
+    }
+
+    // Ubah teks tombol jadi loading
+    const btn = event.target;
+    const teksAsli = btn.innerText;
+    btn.innerText = "Menyimpan...";
+    btn.disabled = true;
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ 
+            action: "simpanUser", 
+            username: username, 
+            password: password, 
+            role: role 
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            alert("Pengguna baru berhasil ditambahkan!");
+            // Bersihkan form
+            document.getElementById('inputUsernameBaru').value = "";
+            document.getElementById('inputPasswordBaru').value = "";
+            document.getElementById('inputRoleBaru').value = "";
+            muatDataUser(); // Muat ulang tabel
+        } else {
+            alert("Gagal menyimpan: " + res.message);
+        }
+    })
+    .catch(err => alert("Terjadi kesalahan jaringan."))
+    .finally(() => {
+        // Kembalikan kondisi tombol
+        btn.innerText = teksAsli;
+        btn.disabled = false;
+    });
+}
+
+// 1. Membuka form edit dan mengisi datanya otomatis
+function bukaFormEdit(username, idRole, barisSheet, status) {
+    // Ubah menjadi 'flex' agar modal otomatis berada tepat di tengah layar
+    document.getElementById('formEditUser').style.display = 'flex'; 
+    
+    document.getElementById('lblEditUsername').innerText = username;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editRole').value = idRole;
+    document.getElementById('editBarisSheet').value = barisSheet;
+    document.getElementById('editPassword').value = ""; 
+    document.getElementById('editStatus').value = status || "Aktif"; 
+}
+
+// 2. Menutup form edit
+function batalEditUser() {
+    document.getElementById('formEditUser').style.display = 'none';
+}
+
+// 3. Mengirim data perubahan ke server
+function simpanEditUser() {
+    const payload = {
+        action: "updateUser",
+        barisSheet: document.getElementById('editBarisSheet').value,
+        newUsername: document.getElementById('editUsername').value,
+        newRole: document.getElementById('editRole').value,
+        newStatus: document.getElementById('editStatus').value, // 🔥 Ikut kirim status baru
+        newPassword: document.getElementById('editPassword').value
+    };
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if(res.result === "success") {
+            alert("Data pengguna berhasil diperbarui!");
+            document.getElementById('formEditUser').style.display = 'none';
+            muatDataUser(); // Refresh isi tabel
+        } else {
+            alert("Gagal: " + res.message);
+        }
+    });
+}
+
+// 4. Menghapus akun pengguna dari database
+function hapusUser(username, barisSheet) {
+    if (!confirm(`Peringatan: Apakah Anda yakin ingin MENGHAPUS akun [ ${username} ] secara permanen?`)) {
+        return;
+    }
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "hapusUser", barisSheet: barisSheet })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            alert(`Akun ${username} berhasil dihapus.`);
+            muatDataUser(); // Refresh tabel otomatis
+        } else {
+            alert("Gagal menghapus: " + res.message);
+        }
+    })
+    .catch(err => alert("Terjadi kesalahan sistem."));
+}
+
+function muatPilihanRole() {
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "getRoles" })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            const selectTambah = document.getElementById('inputRoleBaru');
+            const selectEdit = document.getElementById('editRole');
+            
+            // Bersihkan pilihan lama
+            selectTambah.innerHTML = '<option value="">-- Pilih Role --</option>';
+            selectEdit.innerHTML = '';
+            
+            res.data.forEach(role => {
+                // selectTambah.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                // selectEdit.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                selectTambah.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                selectEdit.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+            });
+        }
+    });
+}
+
+// Panggil fungsi ini saat halaman pertama kali dibuka
+// document.addEventListener("DOMContentLoaded", () => {
+//     muatPilihanRole();
+// });
+
+    
+
+</script>
+</body>
+</html>
