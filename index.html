@@ -619,11 +619,36 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- SUB-TAB 2: HAK AKSES ROLE (Segera Datang)  -->
+        <!-- SUB-TAB 2: HAK AKSES ROLE   -->
         <!-- ========================================== -->
         <div id="manajemenAkses" class="sub-tab-content" style="display:none;">
-            <h3>Pengaturan Hak Akses Role</h3>
-            <p>Fitur untuk mengatur centang akses menu masing-masing role akan dibuat di sini.</p>
+            <h3>Pengaturan Hak Akses Menu Role</h3>
+            <p style="color: gray; font-size: 14px; margin-bottom: 15px;">
+                💡 Silakan centang kotak di bawah ini untuk mengatur menu apa saja yang boleh diakses oleh masing-masing fungsi staff klinis secara langsung.
+            </p>
+            
+            <table border="1" width="100%" style="text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+                <thead style="background-color: #ddd;">
+                    <tr>
+                        <th style="padding: 10px;">Nama Role</th>
+                        <th style="padding: 10px; text-align: center;">Pendaftaran</th>
+                        <th style="padding: 10px; text-align: center;">Rekam Medis</th>
+                        <th style="padding: 10px; text-align: center;">Database Pasien</th>
+                        <th style="padding: 10px; text-align: center;">Antrean</th>
+                        <th style="padding: 10px; text-align: center;">Kamus Dikte</th>
+                        <th style="padding: 10px; text-align: center;">Pengaturan</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyMatriksAkses">
+                    <tr><td colspan="7" style="text-align:center; padding: 15px;">Memuat matriks hak akses...</td></tr>
+                </tbody>
+            </table>
+            
+            <div style="text-align: right;">
+                <button id="btnSimpanAkses" onclick="simpanMatriksAkses()" style="background-color: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;">
+                    💾 Simpan Perubahan Hak Akses
+                </button>
+            </div>
         </div>
     </div>
 
@@ -2683,7 +2708,9 @@ function bukaSubTab(subTabId) {
 
     // 4. Panggil data dari database saat tabnya dibuka
     if (subTabId === 'manajemenUser') {
-        muatDataUser(); // (Fungsi ini akan kita buat setelah Anda menjawab pertanyaan di bawah)
+        muatDataUser(); 
+    } else if (subTabId === 'manajemenAkses') {
+        muatMatriksAkses(); // 🔥 BARU: Otomatis memuat matriks hak akses saat sub-tab diklik!
     }
 }
 
@@ -2883,10 +2910,101 @@ function muatPilihanRole() {
     });
 }
 
-// Panggil fungsi ini saat halaman pertama kali dibuka
-// document.addEventListener("DOMContentLoaded", () => {
-//     muatPilihanRole();
-// });
+function muatMatriksAkses() {
+    const tbody = document.getElementById('bodyMatriksAkses');
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "getMatrixRole" })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            tbody.innerHTML = "";
+            
+            res.data.forEach(role => {
+                // Keamanan Sistem: Kunci role Super Admin (ROL-01) agar selalu tercentang penuh demi menghindari terkunci massal
+                const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01';
+                const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
+
+                // Periksa status data dari database (jika bernilai 1 atau true, beri status tercentang)
+                const chkPendaftaran = (role.pendaftaran == 1 || role.pendaftaran === true) ? 'checked' : '';
+                const chkRekamMedis  = (role.rekamMedis == 1 || role.rekamMedis === true) ? 'checked' : '';
+                const chkDatabase    = (role.databasePasien == 1 || role.databasePasien === true) ? 'checked' : '';
+                const chkAntrian     = (role.antrian == 1 || role.antrian === true) ? 'checked' : '';
+                const chkKamus       = (role.kamusDikte == 1 || role.kamusDikte === true) ? 'checked' : '';
+                const chkPengaturan  = (role.pengaturan == 1 || role.pengaturan === true) ? 'checked' : '';
+
+                let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
+                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-daftar" ${chkPendaftaran} ${disabledAttr}></td>
+                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-rm" ${chkRekamMedis} ${disabledAttr}></td>
+                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-db" ${chkDatabase} ${disabledAttr}></td>
+                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-antrian" ${chkAntrian} ${disabledAttr}></td>
+                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kamus" ${chkKamus} ${disabledAttr}></td>
+                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-pengaturan" ${chkPengaturan} ${disabledAttr}></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
+        }
+    })
+    .catch(err => {
+        console.error("Error matriks:", err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
+    });
+}
+
+function simpanMatriksAkses() {
+    const btn = document.getElementById('btnSimpanAkses');
+    btn.disabled = true;
+    btn.innerText = "⏳ Menyimpan Perubahan...";
+
+    const matrixPayload = [];
+    const rows = document.querySelectorAll('.baris-akses-role');
+
+    rows.forEach(row => {
+        const barisNum = row.getAttribute('data-baris');
+        
+        matrixPayload.push({
+            barisSheet: parseInt(barisNum),
+            pendaftaran: row.querySelector('.chk-daftar').checked,
+            rekamMedis: row.querySelector('.chk-rm').checked,
+            databasePasien: row.querySelector('.chk-db').checked,
+            antrian: row.querySelector('.chk-antrian').checked,
+            kamusDikte: row.querySelector('.chk-kamus').checked,
+            pengaturan: row.querySelector('.chk-pengaturan').checked
+        });
+    });
+
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({
+            action: "simpanMatrixRole",
+            matrix: matrixPayload
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        btn.disabled = false;
+        btn.innerText = "💾 Simpan Perubahan Hak Akses";
+        if (res.result === "success") {
+            alert("🎉 Hak akses role berhasil diperbarui! Seluruh staf yang login dengan role terkait akan langsung terdampak perubahan menu ini secara realtime.");
+            muatMatriksAkses(); // Refresh agar data tetap sinkron
+        } else {
+            alert("❌ Gagal menyimpan perubahan: " + res.message);
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerText = "💾 Simpan Perubahan Hak Akses";
+        console.error("Gagal mengirim data matrix:", err);
+        alert("⚠️ Terjadi gangguan koneksi sistem saat menyimpan data.");
+    });
+}
+
 
     
 
