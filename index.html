@@ -560,9 +560,6 @@
                 <input type="password" id="inputPasswordBaru" placeholder="Password Default" style="margin-right: 10px;">
                 <select id="inputRoleBaru" style="margin-right: 10px;">
                     <option value="">-- Pilih Role --</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Dokter">Dokter</option>
-                    <option value="Perawat">Perawat</option>
                 </select>
                 <button onclick="tambahUserBaru()" style="background-color: #28a745; color: white;">Simpan User</button>
             </div>
@@ -583,11 +580,7 @@
                     <input type="password" id="editPassword" placeholder="Kosongkan jika tak diubah">
                     
                     <label style="font-size: 13px; font-weight: bold;">Role Akses:</label>
-                    <select id="editRole">
-                        <option value="Admin">Admin</option>
-                        <option value="Dokter">Dokter</option>
-                        <option value="Perawat">Perawat</option>
-                    </select>
+                    <select id="editRole"></select>
                     
                     <label style="font-size: 13px; font-weight: bold;">Status Akun:</label>
                     <select id="editStatus">
@@ -623,6 +616,15 @@
         <!-- ========================================== -->
         <div id="manajemenAkses" class="sub-tab-content" style="display:none;">
             <h3>Pengaturan Hak Akses Menu Role</h3>
+            <div style="background-color: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">➕ Buat Jabatan / Role Baru</h4>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="inputNamaRoleBaru" placeholder="Masukkan nama role (cth: Digital Marketing, Manager)" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <button onclick="prosesTambahRoleBaru()" style="background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                        Tambah Role
+                    </button>
+                </div>
+            </div>
             <p style="color: gray; font-size: 14px; margin-bottom: 15px;">
                 💡 Silakan centang kotak di bawah ini untuk mengatur menu apa saja yang boleh diakses oleh masing-masing fungsi staff klinis secara langsung.
             </p>
@@ -3002,6 +3004,42 @@ function simpanMatriksAkses() {
         btn.innerText = "💾 Simpan Perubahan Hak Akses";
         console.error("Gagal mengirim data matrix:", err);
         alert("⚠️ Terjadi gangguan koneksi sistem saat menyimpan data.");
+    });
+}
+
+function prosesTambahRoleBaru() {
+    const inputRole = document.getElementById('inputNamaRoleBaru');
+    const namaRoleValue = inputRole.value.trim();
+
+    if (!namaRoleValue) {
+        alert("Silakan ketik nama role terlebih dahulu!");
+        return;
+    }
+
+    // Kirim request ke backend
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({
+            action: "tambahRole",
+            namaRole: namaRoleValue
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.result === "success") {
+            alert(`🎉 Role "${namaRoleValue}" berhasil didaftarkan ke sistem Klinik Anvaya!`);
+            inputRole.value = ""; // Bersihkan kolom ketik
+            
+            // SANGAT PENTING: Refresh semua komponen agar data baru langsung sinkron seketika
+            muatMatriksAkses(); // Menggambar ulang baris baru di tabel Hak Akses
+            muatPilihanRole();  // Memperbarui dropdown di form Tambah/Edit Pengguna secara realtime
+        } else {
+            alert("Gagal menambahkan role: " + res.message);
+        }
+    })
+    .catch(err => {
+        console.error("Error tambah role:", err);
+        alert("Terjadi masalah koneksi saat mencoba menambahkan role.");
     });
 }
 
