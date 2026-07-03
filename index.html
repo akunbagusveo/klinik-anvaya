@@ -2823,6 +2823,7 @@
         } else if (subTabId === 'manajemenAkses') {
             muatMatriksAkses();
         } else if (subTabId === 'manajemenJadwal') {
+            muatDropdownDokterJadwal(); // Otomatis isi list filter dokter
             muatJadwalMaster(); // 🔥 BARU: Ambil jadwal dari server saat sub-tab dibuka!
         }
     }
@@ -3316,8 +3317,11 @@
     // Fungsi otomatis mengisi pilihan dropdown nama dokter langsung dari database tabel Users
     function muatDropdownDokterJadwal() {
         const selectDokterModal = document.getElementById('jadwalNamaDokter');
-        const selectDokterFilter = document.getElementById('filterJadwalDokter'); // <-- Ambil element filter baru
+        const selectDokterFilter = document.getElementById('filterJadwalDokter');
         
+        // BENTENG PENGAMAN: Jika dropdown filter belum ada di layar, hentikan proses agar tidak crash
+        if (!selectDokterFilter) return; 
+
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getUsers" })
@@ -3325,8 +3329,9 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
-                selectDokterModal.innerHTML = '<option value="">-- Pilih Dokter --</option>';
-                selectDokterFilter.innerHTML = '<option value="">Semua Dokter</option>'; // <-- Opsi default all data
+                // Isi pilihan default dengan aman
+                if (selectDokterModal) selectDokterModal.innerHTML = '<option value="">-- Pilih Dokter --</option>';
+                selectDokterFilter.innerHTML = '<option value="">Semua Dokter</option>';
                 
                 const rolesMap = res.rolesMap || {};
                 
@@ -3336,22 +3341,23 @@
                         const namaRole = rolesMap[roleKey] || "";
                         
                         if (namaRole.toLowerCase().includes("dokter")) {
-                            // Isi untuk input pilihan di dalam Modal
-                            selectDokterModal.innerHTML += `<option value="${user.username}">${user.username} (${user.idUser})</option>`;
-                            
-                            // Isi untuk input filter pencarian di atas tabel
+                            // Masukkan ke dropdown modal (jika elemen modal sedang aktif/eksis)
+                            if (selectDokterModal) {
+                                selectDokterModal.innerHTML += `<option value="${user.username}">${user.username} (${user.idUser})</option>`;
+                            }
+                            // Masukkan ke dropdown filter pencarian di atas tabel
                             selectDokterFilter.innerHTML += `<option value="${user.username}">${user.username}</option>`;
                         }
                     }
                 });
             } else {
-                selectDokterModal.innerHTML = '<option value="">❌ Gagal memuat</option>';
+                if (selectDokterModal) selectDokterModal.innerHTML = '<option value="">❌ Gagal memuat</option>';
                 selectDokterFilter.innerHTML = '<option value="">❌ Gagal memuat</option>';
             }
         })
         .catch(err => {
             console.error(err);
-            selectDokterModal.innerHTML = '<option value="">⚠️ Gangguan koneksi</option>';
+            if (selectDokterModal) selectDokterModal.innerHTML = '<option value="">⚠️ Gangguan koneksi</option>';
             selectDokterFilter.innerHTML = '<option value="">⚠️ Gangguan koneksi</option>';
         });
     }
