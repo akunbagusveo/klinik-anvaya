@@ -661,11 +661,11 @@
         <!-- ========================================== -->
         <div id="manajemenJadwal" class="sub-tab-content" style="display:none;">
             <h3>Manajemen Jadwal Praktik Dokter</h3>
-    
+        
             <button onclick="bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
                 ➕ Tambah Jadwal Praktik Baru
             </button>
-
+        
             <div id="modalTambahJadwal" class="modal-popup-container">
                 <div class="modal-popup-content" style="background-color: #f4fdf7; border: 1px solid #c3e6cb;">
                     <h4 style="margin-top: 0; color: #155724; border-bottom: 1px solid #c3e6cb; padding-bottom: 8px;">
@@ -716,22 +716,20 @@
                         <button onclick="simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Jadwal</button>
                     </div>
                 </div>
-        
-                <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
-                    <thead style="background-color: #ddd;">
-                        <tr>
-                            <th style="padding: 8px;">Dokter</th>
-                            <th style="padding: 8px;">Hari Praktik</th>
-                            <th style="padding: 8px;">Jam Kerja</th>
-                            <th style="padding: 8px;">Slot</th>
-                            <th style="padding: 8px; text-align: center;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyJadwalMaster">
-                        <tr><td colspan="5" style="text-align:center; padding: 15px;">Memuat data jadwal...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            </div> <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
+                <thead style="background-color: #ddd;">
+                    <tr>
+                        <th style="padding: 8px;">Dokter</th>
+                        <th style="padding: 8px;">Hari Praktik</th>
+                        <th style="padding: 8px;">Jam Kerja</th>
+                        <th style="padding: 8px;">Slot</th>
+                        <th style="padding: 8px; text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyJadwalMaster">
+                    <tr><td colspan="5" style="text-align:center; padding: 15px;">Memuat data jadwal...</td></tr>
+                </tbody>
+            </table>
         </div>
 
     <div id="dokter" class="tab-content">
@@ -3218,11 +3216,20 @@
             if (res.result === "success") {
                 selectDokter.innerHTML = '<option value="">-- Pilih Dokter --</option>';
                 
-                // Lakukan filter jika Anda ingin memunculkan user yang rolenya dokter saja, 
-                // Namun agar aman kita tampilkan semua user aktif untuk dipilih sebagai identifier jadwal.
+                // Ambil kamus role dari backend
+                const rolesMap = res.rolesMap || {};
+                
                 res.data.forEach(user => {
-                    if(user.status === "Aktif") {
-                        selectDokter.innerHTML += `<option value="${user.username}">${user.username} (${user.idUser})</option>`;
+                    // Pastikan user berstatus Aktif
+                    if (user.status === "Aktif") {
+                        // Cek nama role berdasarkan idRole (ubah ke huruf kecil untuk pencocokan)
+                        const roleKey = user.idRole ? user.idRole.toLowerCase() : "";
+                        const namaRole = rolesMap[roleKey] || "";
+                        
+                        // Filter: Hanya tampilkan jika nama role mengandung kata "dokter"
+                        if (namaRole.toLowerCase().includes("dokter")) {
+                            selectDokter.innerHTML += `<option value="${user.username}">${user.username} (${user.idUser})</option>`;
+                        }
                     }
                 });
             } else {
