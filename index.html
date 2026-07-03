@@ -2805,9 +2805,36 @@
     // Tambahan: Pastikan fungsi ini juga dipanggil di dalam fungsi load session 
     // ketika user melakukan refresh halaman (misal pada fungsi checkSession atau init aplikasi)
     function aplikasikanHakAkses(perms) {
+        // === 1. FITUR PROTEKSI UTAMA: BYPASS OVERRIDE UNTUK SUPER ADMIN & ADMIN ===
+        const sessionAktif = localStorage.getItem('anvaya_session');
+        if (sessionAktif) {
+            const dataUser = JSON.parse(sessionAktif);
+            const roleCek = dataUser.role ? dataUser.role.toString().trim().toLowerCase() : "";
+            
+            // Jika user adalah Admin atau Super Admin (ROL-01 / ROL-02), paksa tampilkan SEMUA menu mutlak
+            if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
+                document.getElementById('tabPasienBtn').style.display       = 'inline-block';
+                document.getElementById('tabRiwayatMedisBtn').style.display = 'inline-block';
+                document.getElementById('tabDaftarPasienBtn').style.display = 'inline-block';
+                document.getElementById('tabDokterBtn').style.display       = 'inline-block';
+                document.getElementById('tabKamusDikteBtn').style.display   = 'inline-block';
+                document.getElementById('tabBackendBtn').style.display      = 'inline-block';
+
+                // Buka akses ke seluruh elemen sub-tab di dalam menu pengaturan
+                if (document.getElementById('subTabUserBtn')) document.getElementById('subTabUserBtn').style.display = 'inline-block';
+                if (document.getElementById('subTabAksesBtn')) document.getElementById('subTabAksesBtn').style.display = 'inline-block';
+                if (document.getElementById('subTabJadwalBtn')) document.getElementById('subTabJadwalBtn').style.display = 'inline-block';
+                
+                // Arahkan default halaman utama pengaturan ke manajemen user
+                if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
+                
+                return; // 🌟 KELUAR DARI FUNGSI: Jangan teruskan eksekusi ke filter pembatasan di bawah
+            }
+        }
+
         if (!perms) return;
         
-        // 1. Kontrol Akses Pintu Menu Utama
+        // === 2. KONTROL AKSES MENU UTAMA UNTUK STAFF BIASA (DOKTER, PERAWAT, HR) ===
         document.getElementById('tabPasienBtn').style.display       = perms.pendaftaran === 1 ? 'inline-block' : 'none';
         document.getElementById('tabRiwayatMedisBtn').style.display = perms.rekamMedis === 1 ? 'inline-block' : 'none';
         document.getElementById('tabDaftarPasienBtn').style.display = perms.databasePasien === 1 ? 'inline-block' : 'none';
@@ -2815,21 +2842,19 @@
         document.getElementById('tabKamusDikteBtn').style.display   = perms.kamusDikte === 1 ? 'inline-block' : 'none';
         document.getElementById('tabBackendBtn').style.display      = perms.pengaturan === 1 ? 'inline-block' : 'none';
 
-        // 2. 🔥 SISTEM KEAMANAN GRANULAR SUB-TAB (Proteksi Data Akun dari HR)
-        // Sembunyikan tombol manajemen user & hak akses jika user tidak memiliki izin manajemenUser
+        // === 3. KONTROL AKSES GRANULAR SUB-TAB DENGAN PROTEKSI NULL-SAFETY ===
         const punyaAksesUser = perms.manajemenUser === 1;
-        document.getElementById('subTabUserBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
-        document.getElementById('subTabAksesBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
+        if (document.getElementById('subTabUserBtn')) document.getElementById('subTabUserBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
+        if (document.getElementById('subTabAksesBtn')) document.getElementById('subTabAksesBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
 
-        // Sembunyikan/tampilkan tombol kelola jadwal berdasarkan izin kelolaJadwal
         const punyaAksesJadwal = perms.kelolaJadwal === 1;
-        document.getElementById('subTabJadwalBtn').style.display = punyaAksesJadwal ? 'inline-block' : 'none';
+        if (document.getElementById('subTabJadwalBtn')) document.getElementById('subTabJadwalBtn').style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
-        // 3. Auto-Routing Cerdas: Jika staff HR masuk, arahkan default langsung ke sub-tab jadwal mereka
+        // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
         if (perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
-            bukaSubTab('manajemenJadwal');
+            if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
         } else {
-            bukaSubTab('manajemenUser');
+            if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
         }
     }
 
