@@ -254,7 +254,8 @@
         <div class="nav-tabs">
             <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">Beranda Utama</button>
             <button id="tabPasienBtn" class="tab-link" onclick="switchTab('pasien')">Form Pendaftaran</button>
-            <button id="tabDokterBtn" class="tab-link" onclick="switchTab('dokter')">Antrian Pasien</button>
+            <!-- <button id="tabDokterBtn" class="tab-link" onclick="switchTab('dokter')">Antrian Pasien</button> -->
+            <button id="tabPasienBtn" class="tab-link" onclick="switchTab('antrean')">Antrian Pasien</button>
             <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">Riwayat Medis Pasien</button>
             <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">Database Pasien</button>
             <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">Kamus Dikte</button>
@@ -420,6 +421,73 @@
             <br>
             <button type="submit">Kirim & Simpan Pendaftaran</button>
         </form>
+    </div>
+
+    <div id="antrean" class="tab-content">
+        <h2>Antrian Pasien Klinik Anvaya</h2>
+    
+        <div class="stats-grid">
+            <div class="stat-card bg-total">
+                <h4>Total Antrean</h4>
+                <p id="statTotal">0</p>
+            </div>
+            <div class="stat-card bg-belum">
+                <h4>Belum Diperiksa</h4>
+                <p id="statBelum">0</p>
+            </div>
+            <div class="stat-card bg-sedang">
+                <h4>Sedang Diperiksa</h4>
+                <p id="statSedang">0</p>
+            </div>
+            <div class="stat-card bg-sudah">
+                <h4>Selesai</h4>
+                <p id="statSudah">0</p>
+            </div>
+        </div>
+    
+        <div class="antrean-filter-wrapper">
+            <div class="filter-group">
+                <label style="font-size: 13px; font-weight: bold;">Periode Tanggal:</label>
+                <div class="date-range-inputs">
+                    <input type="date" id="filterTanggalMulai" onchange="muatAntreanHariIni(1)">
+                    <span>s/d</span>
+                    <input type="date" id="filterTanggalAkhir" onchange="muatAntreanHariIni(1)">
+                </div>
+            </div>
+    
+            <div class="filter-group">
+                <label style="font-size: 13px; font-weight: bold;">Filter Status:</label>
+                <select id="filterStatusAntrean" onchange="muatAntreanHariIni(1)">
+                    <option value="Semua">Semua Status</option>
+                    <option value="Belum Diperiksa">Belum Diperiksa</option>
+                    <option value="Sedang Diperiksa">Sedang Diperiksa</option>
+                    <option value="Selesai">Selesai</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="table-responsive">
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>No. Antrean</th>
+                        <th>No. RM</th>
+                        <th>Nama Pasien</th>
+                        <th>Dokter Spesialis</th>
+                        <th>Jam Daftar</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelAntreanBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding: 15px;">Memuat data antrean...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    
+        <div id="komponenPagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px;"></div>
     </div>
 
     <div id="riwayatMedis" class="tab-content">
@@ -2591,38 +2659,43 @@
     }
 
     function switchTab(tabId) {
-    // 1. Sembunyikan semua konten tab & bersihkan class active
-    document.querySelectorAll('.tab-content').forEach(el => {
-        el.classList.remove('active');
-        el.style.display = 'none'; // Menimpa inline style display:none agar aman
-    });
-    document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
-    
-    // 2. Tampilkan konten tab yang dituju
-    const targetTab = document.getElementById(tabId);
-    if (targetTab) {
-        targetTab.classList.add('active');
-        targetTab.style.display = 'block'; // Paksa tampil menjadi block
+        // 1. Sembunyikan semua konten tab & bersihkan class active
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.classList.remove('active');
+            el.style.display = 'none';
+        });
+        document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+        
+        // 2. Tampilkan konten tab yang dituju
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) {
+            targetTab.classList.add('active');
+            targetTab.style.display = 'block';
+        }
+        
+        // 3. Logika pewarnaan tombol aktif 
+        if(tabId === 'beranda') document.getElementById('tabBerandaBtn').classList.add('active');
+        
+        // 🔥 PERBAIKAN SINKRONISASI: Menghubungkan ID tombol 'tabPasienBtn' dengan ID tab 'antrean'
+        if(tabId === 'antrean' || tabId === 'pasien') {
+            const btnPasien = document.getElementById('tabPasienBtn');
+            if (btnPasien) btnPasien.classList.add('active');
+            muatAntreanHariIni(1); // Otomatis segarkan data antrean terbaru saat tab dibuka
+        }
+        
+        if(tabId === 'dokter') document.getElementById('tabDokterBtn').classList.add('active');
+        if(tabId === 'riwayatMedis') document.getElementById('tabRiwayatMedisBtn').classList.add('active');
+        if(tabId === 'daftarPasien') document.getElementById('tabDaftarPasienBtn').classList.add('active');
+        
+        if(tabId === 'kamusDikte') {
+            document.getElementById('tabKamusDikteBtn').classList.add('active');
+            muatKamusDikte(); 
+        }
+        if(tabId === 'backend') {
+            document.getElementById('tabBackendBtn').classList.add('active');
+            muatDataUser(); 
+        }
     }
-    
-    // 3. Logika pewarnaan tombol aktif (Termasuk Kamus & Pengaturan)
-    if(tabId === 'beranda') document.getElementById('tabBerandaBtn').classList.add('active');
-    if(tabId === 'pasien') document.getElementById('tabPasienBtn').classList.add('active');
-    if(tabId === 'dokter') document.getElementById('tabDokterBtn').classList.add('active');
-    if(tabId === 'riwayatMedis') document.getElementById('tabRiwayatMedisBtn').classList.add('active');
-    if(tabId === 'daftarPasien') document.getElementById('tabDaftarPasienBtn').classList.add('active');
-    
-    // Tambahan untuk Tab Kamus Dikte
-    if(tabId === 'kamusDikte') {
-        document.getElementById('tabKamusDikteBtn').classList.add('active');
-        muatKamusDikte(); // 🔥 Otomatis ambil & gambar data saat tab dibuka
-    }
-    // Tambahan untuk Tab Pengaturan Sistem
-    if(tabId === 'backend') {
-        document.getElementById('tabBackendBtn').classList.add('active');
-        muatDataUser(); // 🔥 BARU: Otomatis memuat data tabel user secara realtime saat tab diakses!
-    }
-}
 
     // Fungsi pembantu untuk membaca file komputer dan mengubahnya ke teks Base64
         function bacaFileKeBase64(idElemenFile) {
