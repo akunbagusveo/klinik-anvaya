@@ -668,8 +668,10 @@
 
             <div class="antrean-filter-wrapper" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                 <div style="flex: 1; min-width: 200px;">
-                    <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Cari Nama Dokter:</label>
-                    <input type="text" id="cariJadwalDokter" oninput="aplikasikanFilterDanSortJadwal()" placeholder="Ketik nama dokter...">
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Dokter:</label>
+                    <select id="filterJadwalDokter" onchange="aplikasikanFilterDanSortJadwal()">
+                        <option value="">⏳ Memuat daftar dokter...</option>
+                    </select>
                 </div>
                 
                 <div style="width: 130px;">
@@ -3128,21 +3130,25 @@
     // 4. Fungsi Utama untuk memproses Filter dan Sort secara Real-time di Frontend
     function aplikasikanFilterDanSortJadwal() {
         const tbody = document.getElementById('bodyJadwalMaster');
+        if (!tbody) return;
         
         // Ambil nilai filter & sort dari element HTML
-        const kataKunciNama = document.getElementById('cariJadwalDokter').value.toLowerCase().trim();
+        const filterDokter = document.getElementById('filterJadwalDokter').value; // <-- Membaca nilai dropdown dokter
         const filterHari = document.getElementById('filterJadwalHari').value;
         const filterSlot = document.getElementById('filterJadwalSlot').value;
         const opsiUrutan = document.getElementById('urutJadwalMaster').value;
 
-        // --- PROSES 1: PROSES PENYARINGAN (FILTER) ---
+        // --- PROSES 1: PROSES PENYARINGAN (FILTER) DENGAN PROTEKSI DATA ---
         let dataHasilFilter = dataJadwalGlobal.filter(jdw => {
-            // Cek filter nama dokter
-            const cocokNama = jdw.dokter ? jdw.dokter.toLowerCase().includes(kataKunciNama) : false;
-            // Cek filter hari
-            const cocokHari = filterHari === "" || jdw.hari === filterHari;
-            // Cek filter slot
-            const cocokSlot = filterSlot === "" || jdw.slot === filterSlot;
+            // Ambil data dengan aman (jika undefined/null akan diubah jadi string kosong "")
+            const namaDokterJadwal = jdw.dokter || "";
+            const hariJadwal = jdw.hari || "";
+            const slotJadwal = jdw.slot || "";
+
+            // Pengecekan Filter (Exact Match)
+            const cocokNama = filterDokter === "" || namaDokterJadwal === filterDokter;
+            const cocokHari = filterHari === "" || hariJadwal === filterHari;
+            const cocokSlot = filterSlot === "" || slotJadwal === filterSlot;
 
             return cocokNama && cocokHari && cocokSlot;
         });
@@ -3153,11 +3159,10 @@
         } else if (opsiUrutan === "namaZA") {
             dataHasilFilter.sort((a, b) => (b.dokter || "").localeCompare(a.dokter || ""));
         } else if (opsiUrutan === "hariUrut") {
-            dataHasilFilter.sort((a, b) => konversiHariKeAngka(a.hari) - konversiHariKeAngka(b.hari));
+            dataHasilFilter.sort((a, b) => konversiHariKeAngka(a.hari || "") - konversiHariKeAngka(b.hari || ""));
         } else if (opsiUrutan === "jamKerja") {
             dataHasilFilter.sort((a, b) => (a.jamMulai || "").localeCompare(b.jamMulai || ""));
         }
-        // Jika opsiUrutan "default", urutan akan mengacu pada urutan asli baris Google Sheets
 
         // --- PROSES 3: RENDERING DATA KE TABEL ---
         tbody.innerHTML = "";
@@ -3168,10 +3173,10 @@
 
         dataHasilFilter.forEach(jdw => {
             let row = `<tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 8px;"><strong>${jdw.dokter}</strong></td>
-                <td style="padding: 8px;">${jdw.hari}</td>
-                <td style="padding: 8px;">${jdw.jamMulai} - ${jdw.jamSelesai}</td>
-                <td style="padding: 8px;"><span style="background:#e2e3e5; padding:3px 8px; border-radius:10px; font-size:12px;">${jdw.slot}</span></td>
+                <td style="padding: 8px;"><strong>${jdw.dokter || "-"}</strong></td>
+                <td style="padding: 8px;">${jdw.hari || "-"}</td>
+                <td style="padding: 8px;">${jdw.jamMulai || ""} - ${jdw.jamSelesai || ""}</td>
+                <td style="padding: 8px;"><span style="background:#e2e3e5; padding:3px 8px; border-radius:10px; font-size:12px;">${jdw.slot || "-"}</span></td>
                 <td style="padding: 8px; text-align: center;">
                     <button onclick="hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Hapus</button>
                 </td>
@@ -3243,7 +3248,8 @@
 
     // Fungsi otomatis mengisi pilihan dropdown nama dokter langsung dari database tabel Users
     function muatDropdownDokterJadwal() {
-        const selectDokter = document.getElementById('jadwalNamaDokter');
+        const selectDokterModal = document.getElementById('jadwalNamaDokter');
+        const selectDokterFilter = document.getElementById('filterJadwalDokter'); // <-- Ambil element filter baru
         
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -3252,31 +3258,34 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
-                selectDokter.innerHTML = '<option value="">-- Pilih Dokter --</option>';
+                selectDokterModal.innerHTML = '<option value="">-- Pilih Dokter --</option>';
+                selectDokterFilter.innerHTML = '<option value="">Semua Dokter</option>'; // <-- Opsi default all data
                 
-                // Ambil kamus role dari backend
                 const rolesMap = res.rolesMap || {};
                 
                 res.data.forEach(user => {
-                    // Pastikan user berstatus Aktif
                     if (user.status === "Aktif") {
-                        // Cek nama role berdasarkan idRole (ubah ke huruf kecil untuk pencocokan)
                         const roleKey = user.idRole ? user.idRole.toLowerCase() : "";
                         const namaRole = rolesMap[roleKey] || "";
                         
-                        // Filter: Hanya tampilkan jika nama role mengandung kata "dokter"
                         if (namaRole.toLowerCase().includes("dokter")) {
-                            selectDokter.innerHTML += `<option value="${user.username}">${user.username}</option>`;
+                            // Isi untuk input pilihan di dalam Modal
+                            selectDokterModal.innerHTML += `<option value="${user.username}">${user.username} (${user.idUser})</option>`;
+                            
+                            // Isi untuk input filter pencarian di atas tabel
+                            selectDokterFilter.innerHTML += `<option value="${user.username}">${user.username}</option>`;
                         }
                     }
                 });
             } else {
-                selectDokter.innerHTML = '<option value="">❌ Gagal memuat data user</option>';
+                selectDokterModal.innerHTML = '<option value="">❌ Gagal memuat</option>';
+                selectDokterFilter.innerHTML = '<option value="">❌ Gagal memuat</option>';
             }
         })
         .catch(err => {
             console.error(err);
-            selectDokter.innerHTML = '<option value="">⚠️ Gangguan koneksi sistem</option>';
+            selectDokterModal.innerHTML = '<option value="">⚠️ Gangguan koneksi</option>';
+            selectDokterFilter.innerHTML = '<option value="">⚠️ Gangguan koneksi</option>';
         });
     }
 
