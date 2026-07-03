@@ -1497,7 +1497,6 @@
             if (data.result === "success") {
                 currentRole = data.role;
                 
-                // Simpan role beserta seluruh hak aksesnya ke dalam session
                 const dataSesi = { 
                     idUser: data.idUser, 
                     username: data.username, 
@@ -1506,16 +1505,28 @@
                 };
                 localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
                 
-                // Jalankan aplikasi
-                bukaAplikasi(data.role, data.username);
+                // 🔥 ISOLASI 1: Amankan UI Utama agar jika tabel internal error, login tidak ikut gagal
+                try {
+                    bukaAplikasi(data.role, data.username);
+                } catch (errUI) {
+                    console.error("Terjadi masalah visual pada dashboard:", errUI);
+                }
                 
-                // Eksekusi penyembunyian menu secara realtime
-                aplikasikanHakAkses(data.permissions);
-            } else { alert(data.message); }
+                // 🔥 ISOLASI 2: Amankan Hak Akses Menu Utama
+                try {
+                    aplikasikanHakAkses(data.permissions);
+                } catch (errAkses) {
+                    console.error("Gagal mengaplikasikan hak akses menu:", errAkses);
+                }
+
+            } else { 
+                alert(data.message); 
+            }
         })
         .catch(err => {
             btn.disabled = false; btn.innerText = "Masuk";
-            alert("Gagal terhubung ke server.");
+            console.error("Koneksi gagal atau terjadi bug sistem:", err);
+            alert("Gagal terhubung ke server atau terjadi kesalahan sistem internal.");
         });
     });
 
@@ -1695,69 +1706,84 @@
     }
 
     function bukaAplikasi(role, username) {
-        document.getElementById('txtUserStatus').innerText = `User: ${username} `;
-        document.getElementById('lblNamaUser').innerText = username;
-        document.getElementById('lblRoleUser').innerText = role;
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainPage').style.display = 'block';
+        // Fungsi pembantu internal untuk mengubah display secara aman (Anti-Crash jika ID tidak ada)
+        const setDisplayAman = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = value;
+        };
 
-        // 1. Bersihkan / Sembunyikan SEMUA TAB di awal (Termasuk tab baru)
-        document.getElementById('tabBerandaBtn').style.display = 'block';
-        document.getElementById('tabPasienBtn').style.display = 'none';
-        document.getElementById('tabDokterBtn').style.display = 'none';
-        document.getElementById('tabRiwayatMedisBtn').style.display = 'none'; 
-        document.getElementById('tabDaftarPasienBtn').style.display = 'none'; 
-        document.getElementById('tabKamusDikteBtn').style.display = 'none'; // 🔥 BARU: Ikut disembunyikan dulu
-        document.getElementById('tabBackendBtn').style.display = 'none';    // 🔥 BARU: Ikut disembunyikan dulu
+        const setTextAman = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        };
 
-        // Bersihkan juga semua kartu menu di beranda utama
-        document.getElementById('menuPendaftaranCard').style.display = 'none';
-        document.getElementById('menuAntreanCard').style.display = 'none';
-        document.getElementById('menuRiwayatCard').style.display = 'none';
-        document.getElementById('menuDaftarPasienCard').style.display = 'none'; 
+        setTextAman('txtUserStatus', `User: ${username} `);
+        setTextAman('lblNamaUser', username);
+        setTextAman('lblRoleUser', role);
+        
+        setDisplayAman('loginPage', 'none');
+        setDisplayAman('mainPage', 'block');
 
-        // Konversi role ke huruf kecil agar pengecekan lebih aman dan fleksibel
+        // 1. Bersihkan / Sembunyikan SEMUA TAB di awal secara aman
+        setDisplayAman('tabBerandaBtn', 'block');
+        setDisplayAman('tabPasienBtn', 'none');
+        setDisplayAman('tabDokterBtn', 'none');
+        setDisplayAman('tabRiwayatMedisBtn', 'none'); 
+        setDisplayAman('tabDaftarPasienBtn', 'none'); 
+        setDisplayAman('tabKamusDikteBtn', 'none'); 
+        setDisplayAman('tabBackendBtn', 'none');    
+
+        // Bersihkan semua kartu menu di beranda utama secara aman
+        setDisplayAman('menuPendaftaranCard', 'none');
+        setDisplayAman('menuAntreanCard', 'none');
+        setDisplayAman('menuRiwayatCard', 'none');
+        setDisplayAman('menuDaftarPasienCard', 'none'); 
+
         const roleCek = role ? role.toString().trim().toLowerCase() : "";
 
-        // 2. Logika Pembukaan Hak Akses yang Baru (Mendukung Teks & ID Role)
+        // 2. Logika Pembukaan Hak Akses Berdasarkan Role Dasar
         if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
-            // Tampilkan semua tab untuk Admin
-            document.getElementById('tabPasienBtn').style.display       = 'block';
-            document.getElementById('tabDokterBtn').style.display       = 'block';
-            document.getElementById('tabRiwayatMedisBtn').style.display = 'block'; 
-            document.getElementById('tabDaftarPasienBtn').style.display = 'block'; 
-            document.getElementById('tabKamusDikteBtn').style.display   = 'block'; // 🔥 BARU: Buka akses Kamus
-            document.getElementById('tabBackendBtn').style.display      = 'block'; // 🔥 BARU: Buka akses Pengaturan
+            setDisplayAman('tabPasienBtn', 'block');
+            setDisplayAman('tabDokterBtn', 'block');
+            setDisplayAman('tabRiwayatMedisBtn', 'block'); 
+            setDisplayAman('tabDaftarPasienBtn', 'block'); 
+            setDisplayAman('tabKamusDikteBtn', 'block'); 
+            setDisplayAman('tabBackendBtn', 'block');      
             
-            // Tampilkan semua kartu beranda untuk Admin
-            document.getElementById('menuPendaftaranCard').style.display = 'block';
-            document.getElementById('menuAntreanCard').style.display     = 'block';
-            document.getElementById('menuRiwayatCard').style.display     = 'block'; 
-            document.getElementById('menuDaftarPasienCard').style.display = 'block'; 
+            setDisplayAman('menuPendaftaranCard', 'block');
+            setDisplayAman('menuAntreanCard', 'block');
+            setDisplayAman('menuRiwayatCard', 'block'); 
+            setDisplayAman('menuDaftarPasienCard', 'block'); 
 
         } else if (roleCek === "perawat" || roleCek === "rol-04") {
-            document.getElementById('tabPasienBtn').style.display       = 'block';
-            document.getElementById('tabDaftarPasienBtn').style.display = 'block'; 
-            document.getElementById('menuPendaftaranCard').style.display = 'block';
-            document.getElementById('menuDaftarPasienCard').style.display = 'block'; 
+            setDisplayAman('tabPasienBtn', 'block');
+            setDisplayAman('tabDaftarPasienBtn', 'block'); 
+            setDisplayAman('menuPendaftaranCard', 'block');
+            setDisplayAman('menuDaftarPasienCard', 'block'); 
             if (typeof ambilNoRMOtomatis === "function") { ambilNoRMOtomatis(); }
 
         } else if (roleCek === "dokter" || roleCek === "rol-03") {
             if (typeof muatJadwalDokter === "function") { muatJadwalDokter(username); }
-            document.getElementById('tabDokterBtn').style.display       = 'block';
-            document.getElementById('tabRiwayatMedisBtn').style.display = 'block'; 
-            document.getElementById('tabDaftarPasienBtn').style.display = 'block'; 
-            document.getElementById('tabKamusDikteBtn').style.display   = 'block'; // 🔥 BARU: Dokter juga bisa akses Kamus Dikte
+            setDisplayAman('tabDokterBtn', 'block');
+            setDisplayAman('tabRiwayatMedisBtn', 'block'); 
+            setDisplayAman('tabDaftarPasienBtn', 'block'); 
+            setDisplayAman('tabKamusDikteBtn', 'block'); 
             
-            document.getElementById('menuAntreanCard').style.display     = 'block';
-            document.getElementById('menuRiwayatCard').style.display     = 'block'; 
-            document.getElementById('menuDaftarPasienCard').style.display = 'block'; 
+            setDisplayAman('menuAntreanCard', 'block');
+            setDisplayAman('menuRiwayatCard', 'block'); 
+            setDisplayAman('menuDaftarPasienCard', 'block'); 
         }
 
-        // 3. Kembalikan ke tab beranda utama setiap refresh agar rapi
-        switchTab('beranda');
-        muatAntreanHariIni();
-        if (typeof cariDaftarPasien === "function") { cariDaftarPasien(true); } 
+        // 3. Kembalikan ke tab beranda utama & load data dengan isolasi error penuh
+        if (typeof switchTab === "function") { switchTab('beranda'); }
+        
+        try {
+            if (typeof muatAntreanHariIni === "function") { muatAntreanHariIni(); }
+        } catch(e) { console.warn("Pemuatan antrean ditunda karena elemen HTML belum siap:", e); }
+        
+        try {
+            if (typeof cariDaftarPasien === "function") { cariDaftarPasien(true); } 
+        } catch(e) { console.warn("Pemuatan daftar pasien ditunda:", e); }
     }
 
     let currentPageAntrean = 1;
@@ -2805,52 +2831,57 @@
     // Tambahan: Pastikan fungsi ini juga dipanggil di dalam fungsi load session 
     // ketika user melakukan refresh halaman (misal pada fungsi checkSession atau init aplikasi)
     function aplikasikanHakAkses(perms) {
-        // === 1. FITUR PROTEKSI UTAMA: BYPASS OVERRIDE UNTUK SUPER ADMIN & ADMIN ===
+        // === 1. BYPASS MUTLAK UNTUK SUPER ADMIN & ADMIN ===
         const sessionAktif = localStorage.getItem('anvaya_session');
         if (sessionAktif) {
             const dataUser = JSON.parse(sessionAktif);
             const roleCek = dataUser.role ? dataUser.role.toString().trim().toLowerCase() : "";
             
-            // Jika user adalah Admin atau Super Admin (ROL-01 / ROL-02), paksa tampilkan SEMUA menu mutlak
             if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
-                document.getElementById('tabPasienBtn').style.display       = 'inline-block';
-                document.getElementById('tabRiwayatMedisBtn').style.display = 'inline-block';
-                document.getElementById('tabDaftarPasienBtn').style.display = 'inline-block';
-                document.getElementById('tabDokterBtn').style.display       = 'inline-block';
-                document.getElementById('tabKamusDikteBtn').style.display   = 'inline-block';
-                document.getElementById('tabBackendBtn').style.display      = 'inline-block';
+                const listMenuUtama = ['tabPasienBtn', 'tabRiwayatMedisBtn', 'tabDaftarPasienBtn', 'tabDokterBtn', 'tabKamusDikteBtn', 'tabBackendBtn'];
+                listMenuUtama.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'inline-block';
+                });
 
-                // Buka akses ke seluruh elemen sub-tab di dalam menu pengaturan
-                if (document.getElementById('subTabUserBtn')) document.getElementById('subTabUserBtn').style.display = 'inline-block';
-                if (document.getElementById('subTabAksesBtn')) document.getElementById('subTabAksesBtn').style.display = 'inline-block';
-                if (document.getElementById('subTabJadwalBtn')) document.getElementById('subTabJadwalBtn').style.display = 'inline-block';
+                const listSubTab = ['subTabUserBtn', 'subTabAksesBtn', 'subTabJadwalBtn'];
+                listSubTab.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'inline-block';
+                });
                 
-                // Arahkan default halaman utama pengaturan ke manajemen user
                 if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
-                
-                return; // 🌟 KELUAR DARI FUNGSI: Jangan teruskan eksekusi ke filter pembatasan di bawah
+                return; 
             }
         }
 
         if (!perms) return;
         
-        // === 2. KONTROL AKSES MENU UTAMA UNTUK STAFF BIASA (DOKTER, PERAWAT, HR) ===
-        document.getElementById('tabPasienBtn').style.display       = perms.pendaftaran === 1 ? 'inline-block' : 'none';
-        document.getElementById('tabRiwayatMedisBtn').style.display = perms.rekamMedis === 1 ? 'inline-block' : 'none';
-        document.getElementById('tabDaftarPasienBtn').style.display = perms.databasePasien === 1 ? 'inline-block' : 'none';
-        document.getElementById('tabDokterBtn').style.display       = perms.antrian === 1 ? 'inline-block' : 'none';
-        document.getElementById('tabKamusDikteBtn').style.display   = perms.kamusDikte === 1 ? 'inline-block' : 'none';
-        document.getElementById('tabBackendBtn').style.display      = perms.pengaturan === 1 ? 'inline-block' : 'none';
+        // === 2. KONTROL AKSES MENU UTAMA UNTUK STAFF BIASA ===
+        const setMenuDisplay = (id, permissionValue) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = permissionValue === 1 ? 'inline-block' : 'none';
+        };
 
-        // === 3. KONTROL AKSES GRANULAR SUB-TAB DENGAN PROTEKSI NULL-SAFETY ===
+        setMenuDisplay('tabPasienBtn', perms.pendaftaran);
+        setMenuDisplay('tabRiwayatMedisBtn', perms.rekamMedis);
+        setMenuDisplay('tabDaftarPasienBtn', perms.databasePasien);
+        setMenuDisplay('tabDokterBtn', perms.antrian);
+        setMenuDisplay('tabKamusDikteBtn', perms.kamusDikte);
+        setMenuDisplay('tabBackendBtn', perms.pengaturan);
+
+        // === 3. KONTROL AKSES GRANULAR SUB-TAB STAFF BIASA ===
         const punyaAksesUser = perms.manajemenUser === 1;
-        if (document.getElementById('subTabUserBtn')) document.getElementById('subTabUserBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
-        if (document.getElementById('subTabAksesBtn')) document.getElementById('subTabAksesBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
+        const elUserBtn = document.getElementById('subTabUserBtn');
+        const elAksesBtn = document.getElementById('subTabAksesBtn');
+        if (elUserBtn) elUserBtn.style.display = punyaAksesUser ? 'inline-block' : 'none';
+        if (elAksesBtn) elAksesBtn.style.display = punyaAksesUser ? 'inline-block' : 'none';
 
         const punyaAksesJadwal = perms.kelolaJadwal === 1;
-        if (document.getElementById('subTabJadwalBtn')) document.getElementById('subTabJadwalBtn').style.display = punyaAksesJadwal ? 'inline-block' : 'none';
+        const elJadwalBtn = document.getElementById('subTabJadwalBtn');
+        if (elJadwalBtn) elJadwalBtn.style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
-        // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
+        // === 4. AUTO-ROUTING CERDAS SUB-TAB STAFF BIASA ===
         if (perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
             if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
         } else {
