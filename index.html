@@ -1705,7 +1705,7 @@
         .catch(err => console.error(err));
     }
 
-    function bukaAplikasi(role, username) {
+    async function bukaAplikasi(role, username) {
         // Fungsi pembantu internal untuk mengubah display secara aman (Anti-Crash jika ID tidak ada)
         const setDisplayAman = (id, value) => {
             const el = document.getElementById(id);
@@ -1780,6 +1780,8 @@
         try {
             if (typeof muatAntreanHariIni === "function") { muatAntreanHariIni(); }
         } catch(e) { console.warn("Pemuatan antrean ditunda karena elemen HTML belum siap:", e); }
+
+        await new Promise(resolve => setTimeout(resolve, 600));
         
         try {
             if (typeof cariDaftarPasien === "function") { cariDaftarPasien(true); } 
@@ -2882,11 +2884,18 @@
         if (elJadwalBtn) elJadwalBtn.style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
         // === 4. AUTO-ROUTING CERDAS SUB-TAB STAFF BIASA ===
-        if (perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
-            if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
-        } else {
-            if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
-        }
+        // if (perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
+        //     if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
+        // } else {
+        //     if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
+        // }
+        setTimeout(() => {
+            if (perms && perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
+                if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
+            } else {
+                if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
+            }
+        }, 1200); // Memberikan waktu 1.2 detik agar antrean selesai dimuat terlebih dahulu
     }
 
 
