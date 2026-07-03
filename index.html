@@ -661,24 +661,21 @@
         <!-- ========================================== -->
         <div id="manajemenJadwal" class="sub-tab-content" style="display:none;">
             <h3>Manajemen Jadwal Praktik Dokter</h3>
-        
+
             <button onclick="bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
                 ➕ Tambah Jadwal Praktik Baru
             </button>
-        
-            <div id="modalTambahJadwal" class="modal-popup-container">
-                <div class="modal-popup-content" style="background-color: #f4fdf7; border: 1px solid #c3e6cb;">
-                    <h4 style="margin-top: 0; color: #155724; border-bottom: 1px solid #c3e6cb; padding-bottom: 8px;">
-                        ➕ Tambah Jadwal Praktik Baru
-                    </h4>
-                    
-                    <label style="font-size: 13px; font-weight: bold; display:block; margin-top:10px;">Pilih Dokter:</label>
-                    <select id="jadwalNamaDokter">
-                        <option value="">⏳ Memuat daftar dokter...</option>
-                    </select>
-                    
-                    <label style="font-size: 13px; font-weight: bold; display:block;">Hari Praktik:</label>
-                    <select id="jadwalHari">
+
+            <div class="antrean-filter-wrapper" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Cari Nama Dokter:</label>
+                    <input type="text" id="cariJadwalDokter" oninput="aplikasikanFilterDanSortJadwal()" placeholder="Ketik nama dokter...">
+                </div>
+                
+                <div style="width: 130px;">
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Hari:</label>
+                    <select id="filterJadwalHari" onchange="aplikasikanFilterDanSortJadwal()">
+                        <option value="">Semua Hari</option>
                         <option value="Senin">Senin</option>
                         <option value="Selasa">Selasa</option>
                         <option value="Rabu">Rabu</option>
@@ -686,50 +683,33 @@
                         <option value="Jumat">Jumat</option>
                         <option value="Sabtu">Sabtu</option>
                     </select>
-                    
-                    <label style="font-size: 13px; font-weight: bold; display:block;">Jam Mulai:</label>
-                    <select id="jadwalJamMulai">
-                        <option value="11:00">11:00</option>
-                        <option value="12:00">12:00</option>
-                        <option value="13:00">13:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                    </select>
-                    
-                    <label style="font-size: 13px; font-weight: bold; display:block;">Jam Selesai:</label>
-                    <select id="jadwalJamSelesai">
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
-                        <option value="17:00">17:00</option>
-                        <option value="18:00">18:00</option>
-                        <option value="19:00">19:00</option>
-                    </select>
-                    
-                    <label style="font-size: 13px; font-weight: bold; display:block;">Slot Waktu:</label>
-                    <select id="jadwalSlot">
+                </div>
+
+                <div style="width: 140px;">
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Slot:</label>
+                    <select id="filterJadwalSlot" onchange="aplikasikanFilterDanSortJadwal()">
+                        <option value="">Semua Slot</option>
                         <option value="Siang">Siang</option>
                         <option value="Sore/Malam">Sore/Malam</option>
                     </select>
-                    
-                    <div class="modal-action-buttons" style="text-align: right; margin-top: 15px;">
-                        <button onclick="tutupModalJadwal()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
-                        <button onclick="simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Jadwal</button>
-                    </div>
                 </div>
-            </div> <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
-                <thead style="background-color: #ddd;">
-                    <tr>
-                        <th style="padding: 8px;">Dokter</th>
-                        <th style="padding: 8px;">Hari Praktik</th>
-                        <th style="padding: 8px;">Jam Kerja</th>
-                        <th style="padding: 8px;">Slot</th>
-                        <th style="padding: 8px; text-align: center;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="bodyJadwalMaster">
-                    <tr><td colspan="5" style="text-align:center; padding: 15px;">Memuat data jadwal...</td></tr>
-                </tbody>
-            </table>
+
+                <div style="width: 180px;">
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Urutkan Berdasarkan:</label>
+                    <select id="urutJadwalMaster" onchange="aplikasikanFilterDanSortJadwal()">
+                        <option value="default">Default (Baris Sheet)</option>
+                        <option value="namaAZ">Nama Dokter (A - Z)</option>
+                        <option value="namaZA">Nama Dokter (Z - A)</option>
+                        <option value="hariUrut">Urutan Hari (Senin - Sabtu)</option>
+                        <option value="jamKerja">Jam Mulai Terawal</option>
+                    </select>
+                </div>
+            </div>
+            <div id="modalTambahJadwal" class="modal-popup-container">
+                </div>
+
+            <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
+                </table>
         </div>
 
     <div id="dokter" class="tab-content">
@@ -3116,6 +3096,9 @@
         });
     }
 
+    // 1. Variabel Global untuk menampung data jadwal mentah dari server
+    let dataJadwalGlobal = [];
+
     function muatJadwalMaster() {
         const tbody = document.getElementById('bodyJadwalMaster');
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Memuat seluruh jadwal dokter...</td></tr>`;
@@ -3127,25 +3110,80 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
-                tbody.innerHTML = "";
-                if (res.data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada jadwal terdaftar.</td></tr>`;
-                    return;
-                }
-                res.data.forEach(jdw => {
-                    let row = `<tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 8px;"><strong>${jdw.dokter}</strong></td>
-                        <td style="padding: 8px;">${jdw.hari}</td>
-                        <td style="padding: 8px;">${jdw.jamMulai} - ${jdw.jamSelesai}</td>
-                        <td style="padding: 8px;"><span style="background:#e2e3e5; padding:3px 8px; border-radius:10px; font-size:12px;">${jdw.slot}</span></td>
-                        <td style="padding: 8px; text-align: center;">
-                            <button onclick="hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Hapus</button>
-                        </td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
+                // 2. Simpan data asli dari server ke variabel global
+                dataJadwalGlobal = res.data || [];
+                
+                // 3. Jalankan fungsi filter dan pengurutan untuk merender data pertama kali
+                aplikasikanFilterDanSortJadwal();
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">❌ Gagal memuat data jadwal.</td></tr>`;
             }
+        })
+        .catch(err => {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">⚠️ Gangguan koneksi sistem.</td></tr>`;
         });
+    }
+
+    // 4. Fungsi Utama untuk memproses Filter dan Sort secara Real-time di Frontend
+    function aplikasikanFilterDanSortJadwal() {
+        const tbody = document.getElementById('bodyJadwalMaster');
+        
+        // Ambil nilai filter & sort dari element HTML
+        const kataKunciNama = document.getElementById('cariJadwalDokter').value.toLowerCase().trim();
+        const filterHari = document.getElementById('filterJadwalHari').value;
+        const filterSlot = document.getElementById('filterJadwalSlot').value;
+        const opsiUrutan = document.getElementById('urutJadwalMaster').value;
+
+        // --- PROSES 1: PROSES PENYARINGAN (FILTER) ---
+        let dataHasilFilter = dataJadwalGlobal.filter(jdw => {
+            // Cek filter nama dokter
+            const cocokNama = jdw.dokter ? jdw.dokter.toLowerCase().includes(kataKunciNama) : false;
+            // Cek filter hari
+            const cocokHari = filterHari === "" || jdw.hari === filterHari;
+            // Cek filter slot
+            const cocokSlot = filterSlot === "" || jdw.slot === filterSlot;
+
+            return cocokNama && cocokHari && cocokSlot;
+        });
+
+        // --- PROSES 2: PROSES PENGURUTAN (SORTING) ---
+        if (opsiUrutan === "namaAZ") {
+            dataHasilFilter.sort((a, b) => (a.dokter || "").localeCompare(b.dokter || ""));
+        } else if (opsiUrutan === "namaZA") {
+            dataHasilFilter.sort((a, b) => (b.dokter || "").localeCompare(a.dokter || ""));
+        } else if (opsiUrutan === "hariUrut") {
+            dataHasilFilter.sort((a, b) => konversiHariKeAngka(a.hari) - konversiHariKeAngka(b.hari));
+        } else if (opsiUrutan === "jamKerja") {
+            dataHasilFilter.sort((a, b) => (a.jamMulai || "").localeCompare(b.jamMulai || ""));
+        }
+        // Jika opsiUrutan "default", urutan akan mengacu pada urutan asli baris Google Sheets
+
+        // --- PROSES 3: RENDERING DATA KE TABEL ---
+        tbody.innerHTML = "";
+        if (dataHasilFilter.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 15px;">Data jadwal tidak ditemukan.</td></tr>`;
+            return;
+        }
+
+        dataHasilFilter.forEach(jdw => {
+            let row = `<tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px;"><strong>${jdw.dokter}</strong></td>
+                <td style="padding: 8px;">${jdw.hari}</td>
+                <td style="padding: 8px;">${jdw.jamMulai} - ${jdw.jamSelesai}</td>
+                <td style="padding: 8px;"><span style="background:#e2e3e5; padding:3px 8px; border-radius:10px; font-size:12px;">${jdw.slot}</span></td>
+                <td style="padding: 8px; text-align: center;">
+                    <button onclick="hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Hapus</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // 5. Fungsi Bantu untuk merubah teks hari menjadi bobot angka agar bisa diurutkan dari Senin s.d Sabtu
+    function konversiHariKeAngka(hari) {
+        const daftarHari = { "Senin": 1, "Selasa": 2, "Rabu": 3, "Kamis": 4, "Jumat": 5, "Sabtu": 6, "Minggu": 7 };
+        return daftarHari[hari] || 99; // Jika hari tidak terdefinisi ditaruh di paling bawah
     }
 
     function simpanJadwalBaru() {
@@ -3228,7 +3266,7 @@
                         
                         // Filter: Hanya tampilkan jika nama role mengandung kata "dokter"
                         if (namaRole.toLowerCase().includes("dokter")) {
-                            selectDokter.innerHTML += `<option value="${user.username}">${user.username} (${user.idUser})</option>`;
+                            selectDokter.innerHTML += `<option value="${user.username}">${user.username}</option>`;
                         }
                     }
                 });
