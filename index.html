@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Klinik Anvaya v1.3 - Dashboard Dokter</title>
+    <title>Sistem Klinik Anvaya Beta Version - Dashboard Dokter</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 900px; background: white; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -545,6 +545,7 @@
         <div class="nav-tabs" style="margin-bottom: 20px; background-color: #f1f1f1; padding: 10px; border-radius: 5px;">
             <button id="subTabUserBtn" onclick="bukaSubTab('manajemenUser')" class="tab-link active" style="margin-right: 10px; font-weight: bold;">👥 Manajemen Pengguna</button>
             <button id="subTabAksesBtn" onclick="bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
+            <button id="subTabJadwalBtn" onclick="bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
         </div>
 
         <!-- ========================================== -->
@@ -651,6 +652,52 @@
                     💾 Simpan Perubahan Hak Akses
                 </button>
             </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SUB-TAB 3: ATUR JADWAL DOKTER   -->
+        <!-- ========================================== -->
+        <div id="manajemenJadwal" class="sub-tab-content" style="display:none;">
+            <h3>Manajemen Jadwal Praktik Dokter</h3>
+            
+            <div style="background-color: #f4fdf7; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #155724;">➕ Tambah Jadwal Praktik Baru</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" id="jadwalNamaDokter" placeholder="Nama Dokter (cth: dr. Andi)">
+                    <select id="jadwalHari">
+                        <option value="Senin">Senin</option>
+                        <option value="Selasa">Selasa</option>
+                        <option value="Rabu">Rabu</option>
+                        <option value="Kamis">Kamis</option>
+                        <option value="Jumat">Jumat</option>
+                        <option value="Sabtu">Sabtu</option>
+                    </select>
+                    <input type="text" id="jadwalJamMulai" placeholder="Jam Mulai (cth: 08:00)">
+                    <input type="text" id="jadwalJamSelesai" placeholder="Jam Selesai (cth: 12:00)">
+                    <select id="jadwalSlot">
+                        <option value="Pagi">Pagi</option>
+                        <option value="Siang">Siang</option>
+                        <option value="Sore">Sore</option>
+                        <option value="Malam">Malam</option>
+                    </select>
+                    <button onclick="simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">Simpan Jadwal</button>
+                </div>
+            </div>
+        
+            <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
+                <thead style="background-color: #ddd;">
+                    <tr>
+                        <th style="padding: 8px;">Dokter</th>
+                        <th style="padding: 8px;">Hari Praktik</th>
+                        <th style="padding: 8px;">Jam Kerja</th>
+                        <th style="padding: 8px;">Slot</th>
+                        <th style="padding: 8px; text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyJadwalMaster">
+                    <tr><td colspan="5" style="text-align:center; padding: 15px;">Memuat data jadwal...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -2612,439 +2659,507 @@
     function aplikasikanHakAkses(perms) {
         if (!perms) return;
         
-        // Jika perms bernilai 1 tampilkan menu (inline-block), jika 0 sembunyikan (none)
+        // 1. Kontrol Akses Pintu Menu Utama
         document.getElementById('tabPasienBtn').style.display       = perms.pendaftaran === 1 ? 'inline-block' : 'none';
         document.getElementById('tabRiwayatMedisBtn').style.display = perms.rekamMedis === 1 ? 'inline-block' : 'none';
         document.getElementById('tabDaftarPasienBtn').style.display = perms.databasePasien === 1 ? 'inline-block' : 'none';
         document.getElementById('tabDokterBtn').style.display       = perms.antrian === 1 ? 'inline-block' : 'none';
         document.getElementById('tabKamusDikteBtn').style.display   = perms.kamusDikte === 1 ? 'inline-block' : 'none';
         document.getElementById('tabBackendBtn').style.display      = perms.pengaturan === 1 ? 'inline-block' : 'none';
-    }
 
+        // 2. 🔥 SISTEM KEAMANAN GRANULAR SUB-TAB (Proteksi Data Akun dari HR)
+        // Sembunyikan tombol manajemen user & hak akses jika user tidak memiliki izin manajemenUser
+        const punyaAksesUser = perms.manajemenUser === 1;
+        document.getElementById('subTabUserBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
+        document.getElementById('subTabAksesBtn').style.display = punyaAksesUser ? 'inline-block' : 'none';
 
-    // Fungsi untuk menggambar objek data kamus ke dalam baris tabel HTML
-// function renderKamusTable(dataObj) {
-//     const tbody = document.getElementById('bodyKamus');
-//     tbody.innerHTML = ""; 
-    
-//     const keys = Object.keys(dataObj);
-//     if (keys.length === 0) {
-//         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Belum ada data kamus.</td></tr>`;
-//         return;
-//     }
-    
-//     // Loop isi data kamus (key = kata salah, value = kata benar)
-//     keys.forEach((salah, index) => {
-//         let nomorBarisDiSheet = index + 2; // +2 karena baris 1 di Google Sheets adalah Header
-//         let row = `<tr>
-//             <td>${salah}</td>
-//             <td>${dataObj[salah]}</td>
-//             <td style="text-align:center;">
-//                 <button onclick="hapusKamus(${nomorBarisDiSheet})" style="color:red; cursor:pointer;">Hapus</button>
-//             </td>
-//         </tr>`;
-//         tbody.innerHTML += row;
-//     });
-// }
+        // Sembunyikan/tampilkan tombol kelola jadwal berdasarkan izin kelolaJadwal
+        const punyaAksesJadwal = perms.kelolaJadwal === 1;
+        document.getElementById('subTabJadwalBtn').style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
-// Fungsi aksi tombol "Tambah Data" ke Google Sheets via Fetch
-function tambahKamus() {
-    const salah = document.getElementById('inputSalah').value.trim();
-    const benar = document.getElementById('inputBenar').value.trim();
-    
-    if (!salah || !benar) {
-        alert("Kolom kata salah dan kata perbaikan tidak boleh kosong!");
-        return;
-    }
-    
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "simpanKamus", salah: salah, benar: benar })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            alert("Kata berhasil ditambahkan ke kamus!");
-            document.getElementById('inputSalah').value = "";
-            document.getElementById('inputBenar').value = "";
-            muatKamusDikte(); // Muat ulang agar data ter-update
-        }
-    })
-    .catch(err => console.error("Gagal menambah data:", err));
-}
-
-// Fungsi aksi tombol "Hapus" dari Google Sheets via Fetch
-function hapusKamus(rowIndex) {
-    if (!confirm("Apakah Anda yakin ingin menghapus baris kata ini?")) return;
-    
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "hapusKamus", rowIndex: rowIndex })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            alert("Kata berhasil dihapus!");
-            muatKamusDikte(); // Muat ulang tabel
-        }
-    })
-    .catch(err => console.error("Gagal menghapus data:", err));
-}
-
-// Fungsi untuk memindahkan tampilan antar Sub-Tab di Pengaturan Sistem
-function bukaSubTab(subTabId) {
-    // 1. Sembunyikan semua konten sub-tab
-    document.querySelectorAll('.sub-tab-content').forEach(el => {
-        el.style.display = 'none';
-    });
-    
-    // 2. Tampilkan sub-tab yang dipilih
-    const target = document.getElementById(subTabId);
-    if (target) {
-        target.style.display = 'block';
-    }
-    
-    // 3. Atur gaya tombol (opsional, menyesuaikan CSS Anda)
-    document.getElementById('subTabUserBtn').style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
-    document.getElementById('subTabAksesBtn').style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
-
-    // 4. Panggil data dari database saat tabnya dibuka
-    if (subTabId === 'manajemenUser') {
-        muatDataUser(); 
-    } else if (subTabId === 'manajemenAkses') {
-        muatMatriksAkses(); // 🔥 BARU: Otomatis memuat matriks hak akses saat sub-tab diklik!
-    }
-}
-
-// Memuat data dari sheet Users ke tabel HTML
-function muatDataUser() {
-    const tbody = document.getElementById('bodyUsers');
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat data pengguna...</td></tr>`;
-
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "getUsers" })
-    })
-    .then(res => {
-        // Validasi awal apakah respon server beralih ke HTML/Eror internal
-        if (!res.ok) throw new Error("Respon server bermasalah (Status: " + res.status + ")");
-        return res.json();
-    })
-    .then(res => {
-        if (res.result === "success") {
-            tbody.innerHTML = "";
-            if (!res.data || res.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada pengguna.</td></tr>`;
-                return;
-            }
-
-            const rolesMap = res.rolesMap || {};
-
-            res.data.forEach(user => {
-                // Keamanan Berlapis: Antisipasi jika idRole kosong atau tidak terbaca sebagai string
-                let idRoleRaw = user.idRole ? user.idRole.toString().trim() : "";
-                let idRoleLower = idRoleRaw.toLowerCase();
-                let namaRole = rolesMap[idRoleLower] || idRoleRaw || "Tanpa Role";
-                
-                // Antisipasi status kosong
-                let statusUser = user.status || "Aktif";
-                let warnaStatus = statusUser === "Aktif" ? "green" : "red";
-
-                let row = `<tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px;">${user.username || '-' } <br><small style="color:gray;">${user.idUser || '-'}</small></td>
-                    <td style="padding: 8px;"><strong>${namaRole}</strong></td>
-                    <td style="padding: 8px;"><span style="color: ${warnaStatus}; font-weight: bold;">${statusUser}</span></td>
-                    <td style="padding: 8px; text-align: center;">
-                        <button onclick="bukaFormEdit('${user.username || ''}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}')" style="background:#ffc107; color:black; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; margin-right:5px;">Edit</button>
-                        <button onclick="hapusUser('${user.username || ''}', ${user.barisSheet})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Hapus</button>
-                    </td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
+        // 3. Auto-Routing Cerdas: Jika staff HR masuk, arahkan default langsung ke sub-tab jadwal mereka
+        if (perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
+            bukaSubTab('manajemenJadwal');
         } else {
-            // Menampilkan pesan jika backend Apps Script mengirim status error
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Gagal dari Server: ${res.message || 'Terjadi kesalahan sistem'}</td></tr>`;
+            bukaSubTab('manajemenUser');
         }
-    })
-    .catch(err => {
-        console.error("Gagal memuat pengguna:", err);
-        // Menampilkan detail pesan error di bawah tabel agar mudah dilacak
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Gagal memuat data.<br><small style="color:gray;">Detail: ${err.message}</small></td></tr>`;
-    });
-}
-
-// Fungsi untuk menyimpan User Baru
-function tambahUserBaru() {
-    const username = document.getElementById('inputUsernameBaru').value.trim();
-    const password = document.getElementById('inputPasswordBaru').value.trim();
-    const role = document.getElementById('inputRoleBaru').value;
-
-    if (!username || !password || !role) {
-        alert("Kolom Username, Password, dan Role wajib diisi semua!");
-        return;
     }
 
-    // Ubah teks tombol jadi loading
-    const btn = event.target;
-    const teksAsli = btn.innerText;
-    btn.innerText = "Menyimpan...";
-    btn.disabled = true;
 
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ 
-            action: "simpanUser", 
-            username: username, 
-            password: password, 
-            role: role 
-        })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            alert("Pengguna baru berhasil ditambahkan!");
-            // Bersihkan form
-            document.getElementById('inputUsernameBaru').value = "";
-            document.getElementById('inputPasswordBaru').value = "";
-            document.getElementById('inputRoleBaru').value = "";
-            muatDataUser(); // Muat ulang tabel
-        } else {
-            alert("Gagal menyimpan: " + res.message);
-        }
-    })
-    .catch(err => alert("Terjadi kesalahan jaringan."))
-    .finally(() => {
-        // Kembalikan kondisi tombol
-        btn.innerText = teksAsli;
-        btn.disabled = false;
-    });
-}
-
-// 1. Membuka form edit dan mengisi datanya otomatis
-function bukaFormEdit(username, idRole, barisSheet, status) {
-    // Ubah menjadi 'flex' agar modal otomatis berada tepat di tengah layar
-    document.getElementById('formEditUser').style.display = 'flex'; 
-    
-    document.getElementById('lblEditUsername').innerText = username;
-    document.getElementById('editUsername').value = username;
-    document.getElementById('editRole').value = idRole;
-    document.getElementById('editBarisSheet').value = barisSheet;
-    document.getElementById('editPassword').value = ""; 
-    document.getElementById('editStatus').value = status || "Aktif"; 
-}
-
-// 2. Menutup form edit
-function batalEditUser() {
-    document.getElementById('formEditUser').style.display = 'none';
-}
-
-// 3. Mengirim data perubahan ke server
-function simpanEditUser() {
-    const payload = {
-        action: "updateUser",
-        barisSheet: document.getElementById('editBarisSheet').value,
-        newUsername: document.getElementById('editUsername').value,
-        newRole: document.getElementById('editRole').value,
-        newStatus: document.getElementById('editStatus').value, // 🔥 Ikut kirim status baru
-        newPassword: document.getElementById('editPassword').value
-    };
-
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-        if(res.result === "success") {
-            alert("Data pengguna berhasil diperbarui!");
-            document.getElementById('formEditUser').style.display = 'none';
-            muatDataUser(); // Refresh isi tabel
-        } else {
-            alert("Gagal: " + res.message);
-        }
-    });
-}
-
-// 4. Menghapus akun pengguna dari database
-function hapusUser(username, barisSheet) {
-    if (!confirm(`Peringatan: Apakah Anda yakin ingin MENGHAPUS akun [ ${username} ] secara permanen?`)) {
-        return;
-    }
-
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "hapusUser", barisSheet: barisSheet })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            alert(`Akun ${username} berhasil dihapus.`);
-            muatDataUser(); // Refresh tabel otomatis
-        } else {
-            alert("Gagal menghapus: " + res.message);
-        }
-    })
-    .catch(err => alert("Terjadi kesalahan sistem."));
-}
-
-function muatPilihanRole() {
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "getRoles" })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            const selectTambah = document.getElementById('inputRoleBaru');
-            const selectEdit = document.getElementById('editRole');
-            
-            // Bersihkan pilihan lama
-            selectTambah.innerHTML = '<option value="">-- Pilih Role --</option>';
-            selectEdit.innerHTML = '';
-            
-            res.data.forEach(role => {
-                // selectTambah.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
-                // selectEdit.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
-                selectTambah.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
-                selectEdit.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
-            });
-        }
-    });
-}
-
-function muatMatriksAkses() {
-    const tbody = document.getElementById('bodyMatriksAkses');
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
-
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "getMatrixRole" })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            tbody.innerHTML = "";
-            
-            res.data.forEach(role => {
-                // Keamanan Sistem: Kunci role Super Admin (ROL-01) agar selalu tercentang penuh demi menghindari terkunci massal
-                const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01';
-                const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
-
-                // Periksa status data dari database (jika bernilai 1 atau true, beri status tercentang)
-                const chkPendaftaran = (role.pendaftaran == 1 || role.pendaftaran === true) ? 'checked' : '';
-                const chkRekamMedis  = (role.rekamMedis == 1 || role.rekamMedis === true) ? 'checked' : '';
-                const chkDatabase    = (role.databasePasien == 1 || role.databasePasien === true) ? 'checked' : '';
-                const chkAntrian     = (role.antrian == 1 || role.antrian === true) ? 'checked' : '';
-                const chkKamus       = (role.kamusDikte == 1 || role.kamusDikte === true) ? 'checked' : '';
-                const chkPengaturan  = (role.pengaturan == 1 || role.pengaturan === true) ? 'checked' : '';
-
-                let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
-                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-daftar" ${chkPendaftaran} ${disabledAttr}></td>
-                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-rm" ${chkRekamMedis} ${disabledAttr}></td>
-                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-db" ${chkDatabase} ${disabledAttr}></td>
-                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-antrian" ${chkAntrian} ${disabledAttr}></td>
-                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kamus" ${chkKamus} ${disabledAttr}></td>
-                    <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-pengaturan" ${chkPengaturan} ${disabledAttr}></td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
-        } else {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
-        }
-    })
-    .catch(err => {
-        console.error("Error matriks:", err);
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
-    });
-}
-
-function simpanMatriksAkses() {
-    const btn = document.getElementById('btnSimpanAkses');
-    btn.disabled = true;
-    btn.innerText = "⏳ Menyimpan Perubahan...";
-
-    const matrixPayload = [];
-    const rows = document.querySelectorAll('.baris-akses-role');
-
-    rows.forEach(row => {
-        const barisNum = row.getAttribute('data-baris');
+    // Fungsi aksi tombol "Tambah Data" ke Google Sheets via Fetch
+    function tambahKamus() {
+        const salah = document.getElementById('inputSalah').value.trim();
+        const benar = document.getElementById('inputBenar').value.trim();
         
-        matrixPayload.push({
-            barisSheet: parseInt(barisNum),
-            pendaftaran: row.querySelector('.chk-daftar').checked,
-            rekamMedis: row.querySelector('.chk-rm').checked,
-            databasePasien: row.querySelector('.chk-db').checked,
-            antrian: row.querySelector('.chk-antrian').checked,
-            kamusDikte: row.querySelector('.chk-kamus').checked,
-            pengaturan: row.querySelector('.chk-pengaturan').checked
-        });
-    });
-
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({
-            action: "simpanMatrixRole",
-            matrix: matrixPayload
-        })
-    })
-    .then(res => res.json())
-    .then(res => {
-        btn.disabled = false;
-        btn.innerText = "💾 Simpan Perubahan Hak Akses";
-        if (res.result === "success") {
-            alert("🎉 Hak akses role berhasil diperbarui! Seluruh staf yang login dengan role terkait akan langsung terdampak perubahan menu ini secara realtime.");
-            muatMatriksAkses(); // Refresh agar data tetap sinkron
-        } else {
-            alert("❌ Gagal menyimpan perubahan: " + res.message);
+        if (!salah || !benar) {
+            alert("Kolom kata salah dan kata perbaikan tidak boleh kosong!");
+            return;
         }
-    })
-    .catch(err => {
-        btn.disabled = false;
-        btn.innerText = "💾 Simpan Perubahan Hak Akses";
-        console.error("Gagal mengirim data matrix:", err);
-        alert("⚠️ Terjadi gangguan koneksi sistem saat menyimpan data.");
-    });
-}
-
-function prosesTambahRoleBaru() {
-    const inputRole = document.getElementById('inputNamaRoleBaru');
-    const namaRoleValue = inputRole.value.trim();
-
-    if (!namaRoleValue) {
-        alert("Silakan ketik nama role terlebih dahulu!");
-        return;
+        
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "simpanKamus", salah: salah, benar: benar })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                alert("Kata berhasil ditambahkan ke kamus!");
+                document.getElementById('inputSalah').value = "";
+                document.getElementById('inputBenar').value = "";
+                muatKamusDikte(); // Muat ulang agar data ter-update
+            }
+        })
+        .catch(err => console.error("Gagal menambah data:", err));
     }
 
-    // Kirim request ke backend
-    fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({
-            action: "tambahRole",
-            namaRole: namaRoleValue
+    // Fungsi aksi tombol "Hapus" dari Google Sheets via Fetch
+    function hapusKamus(rowIndex) {
+        if (!confirm("Apakah Anda yakin ingin menghapus baris kata ini?")) return;
+        
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "hapusKamus", rowIndex: rowIndex })
         })
-    })
-    .then(res => res.json())
-    .then(res => {
-        if (res.result === "success") {
-            alert(`🎉 Role "${namaRoleValue}" berhasil didaftarkan ke sistem Klinik Anvaya!`);
-            inputRole.value = ""; // Bersihkan kolom ketik
-            
-            // SANGAT PENTING: Refresh semua komponen agar data baru langsung sinkron seketika
-            muatMatriksAkses(); // Menggambar ulang baris baru di tabel Hak Akses
-            muatPilihanRole();  // Memperbarui dropdown di form Tambah/Edit Pengguna secara realtime
-        } else {
-            alert("Gagal menambahkan role: " + res.message);
-        }
-    })
-    .catch(err => {
-        console.error("Error tambah role:", err);
-        alert("Terjadi masalah koneksi saat mencoba menambahkan role.");
-    });
-}
-
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                alert("Kata berhasil dihapus!");
+                muatKamusDikte(); // Muat ulang tabel
+            }
+        })
+        .catch(err => console.error("Gagal menghapus data:", err));
+    }
 
     
+    function bukaSubTab(subTabId) {
+        document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
+        
+        const target = document.getElementById(subTabId);
+        if (target) target.style.display = 'block';
+        
+        // Sinkronisasi warna tombol aktif
+        document.getElementById('subTabUserBtn').style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
+        document.getElementById('subTabAksesBtn').style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
+        document.getElementById('subTabJadwalBtn').style.backgroundColor = (subTabId === 'manajemenJadwal') ? '#ddd' : ''; // 🔥 BARU
+
+        // Pemanggilan data otomatis
+        if (subTabId === 'manajemenUser') {
+            muatDataUser();
+        } else if (subTabId === 'manajemenAkses') {
+            muatMatriksAkses();
+        } else if (subTabId === 'manajemenJadwal') {
+            muatJadwalMaster(); // 🔥 BARU: Ambil jadwal dari server saat sub-tab dibuka!
+        }
+    }
+
+    // Memuat data dari sheet Users ke tabel HTML
+    function muatDataUser() {
+        const tbody = document.getElementById('bodyUsers');
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat data pengguna...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getUsers" })
+        })
+        .then(res => {
+            // Validasi awal apakah respon server beralih ke HTML/Eror internal
+            if (!res.ok) throw new Error("Respon server bermasalah (Status: " + res.status + ")");
+            return res.json();
+        })
+        .then(res => {
+            if (res.result === "success") {
+                tbody.innerHTML = "";
+                if (!res.data || res.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada pengguna.</td></tr>`;
+                    return;
+                }
+
+                const rolesMap = res.rolesMap || {};
+
+                res.data.forEach(user => {
+                    // Keamanan Berlapis: Antisipasi jika idRole kosong atau tidak terbaca sebagai string
+                    let idRoleRaw = user.idRole ? user.idRole.toString().trim() : "";
+                    let idRoleLower = idRoleRaw.toLowerCase();
+                    let namaRole = rolesMap[idRoleLower] || idRoleRaw || "Tanpa Role";
+                    
+                    // Antisipasi status kosong
+                    let statusUser = user.status || "Aktif";
+                    let warnaStatus = statusUser === "Aktif" ? "green" : "red";
+
+                    let row = `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px;">${user.username || '-' } <br><small style="color:gray;">${user.idUser || '-'}</small></td>
+                        <td style="padding: 8px;"><strong>${namaRole}</strong></td>
+                        <td style="padding: 8px;"><span style="color: ${warnaStatus}; font-weight: bold;">${statusUser}</span></td>
+                        <td style="padding: 8px; text-align: center;">
+                            <button onclick="bukaFormEdit('${user.username || ''}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}')" style="background:#ffc107; color:black; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; margin-right:5px;">Edit</button>
+                            <button onclick="hapusUser('${user.username || ''}', ${user.barisSheet})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Hapus</button>
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                // Menampilkan pesan jika backend Apps Script mengirim status error
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Gagal dari Server: ${res.message || 'Terjadi kesalahan sistem'}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.error("Gagal memuat pengguna:", err);
+            // Menampilkan detail pesan error di bawah tabel agar mudah dilacak
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Gagal memuat data.<br><small style="color:gray;">Detail: ${err.message}</small></td></tr>`;
+        });
+    }
+
+    // Fungsi untuk menyimpan User Baru
+    function tambahUserBaru() {
+        const username = document.getElementById('inputUsernameBaru').value.trim();
+        const password = document.getElementById('inputPasswordBaru').value.trim();
+        const role = document.getElementById('inputRoleBaru').value;
+
+        if (!username || !password || !role) {
+            alert("Kolom Username, Password, dan Role wajib diisi semua!");
+            return;
+        }
+
+        // Ubah teks tombol jadi loading
+        const btn = event.target;
+        const teksAsli = btn.innerText;
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ 
+                action: "simpanUser", 
+                username: username, 
+                password: password, 
+                role: role 
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                alert("Pengguna baru berhasil ditambahkan!");
+                // Bersihkan form
+                document.getElementById('inputUsernameBaru').value = "";
+                document.getElementById('inputPasswordBaru').value = "";
+                document.getElementById('inputRoleBaru').value = "";
+                muatDataUser(); // Muat ulang tabel
+            } else {
+                alert("Gagal menyimpan: " + res.message);
+            }
+        })
+        .catch(err => alert("Terjadi kesalahan jaringan."))
+        .finally(() => {
+            // Kembalikan kondisi tombol
+            btn.innerText = teksAsli;
+            btn.disabled = false;
+        });
+    }
+
+    // 1. Membuka form edit dan mengisi datanya otomatis
+    function bukaFormEdit(username, idRole, barisSheet, status) {
+        // Ubah menjadi 'flex' agar modal otomatis berada tepat di tengah layar
+        document.getElementById('formEditUser').style.display = 'flex'; 
+        
+        document.getElementById('lblEditUsername').innerText = username;
+        document.getElementById('editUsername').value = username;
+        document.getElementById('editRole').value = idRole;
+        document.getElementById('editBarisSheet').value = barisSheet;
+        document.getElementById('editPassword').value = ""; 
+        document.getElementById('editStatus').value = status || "Aktif"; 
+    }
+
+    // 2. Menutup form edit
+    function batalEditUser() {
+        document.getElementById('formEditUser').style.display = 'none';
+    }
+
+    // 3. Mengirim data perubahan ke server
+    function simpanEditUser() {
+        const payload = {
+            action: "updateUser",
+            barisSheet: document.getElementById('editBarisSheet').value,
+            newUsername: document.getElementById('editUsername').value,
+            newRole: document.getElementById('editRole').value,
+            newStatus: document.getElementById('editStatus').value, // 🔥 Ikut kirim status baru
+            newPassword: document.getElementById('editPassword').value
+        };
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                alert("Data pengguna berhasil diperbarui!");
+                document.getElementById('formEditUser').style.display = 'none';
+                muatDataUser(); // Refresh isi tabel
+            } else {
+                alert("Gagal: " + res.message);
+            }
+        });
+    }
+
+    // 4. Menghapus akun pengguna dari database
+    function hapusUser(username, barisSheet) {
+        if (!confirm(`Peringatan: Apakah Anda yakin ingin MENGHAPUS akun [ ${username} ] secara permanen?`)) {
+            return;
+        }
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "hapusUser", barisSheet: barisSheet })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                alert(`Akun ${username} berhasil dihapus.`);
+                muatDataUser(); // Refresh tabel otomatis
+            } else {
+                alert("Gagal menghapus: " + res.message);
+            }
+        })
+        .catch(err => alert("Terjadi kesalahan sistem."));
+    }
+
+    function muatPilihanRole() {
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getRoles" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                const selectTambah = document.getElementById('inputRoleBaru');
+                const selectEdit = document.getElementById('editRole');
+                
+                // Bersihkan pilihan lama
+                selectTambah.innerHTML = '<option value="">-- Pilih Role --</option>';
+                selectEdit.innerHTML = '';
+                
+                res.data.forEach(role => {
+                    // selectTambah.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                    // selectEdit.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                    selectTambah.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                    selectEdit.innerHTML += `<option value="${role.id}">${role.nama}</option>`;
+                });
+            }
+        });
+    }
+
+    function muatMatriksAkses() {
+        const tbody = document.getElementById('bodyMatriksAkses');
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getMatrixRole" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                tbody.innerHTML = "";
+                
+                res.data.forEach(role => {
+                    // Keamanan Sistem: Kunci role Super Admin (ROL-01) agar selalu tercentang penuh demi menghindari terkunci massal
+                    const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01';
+                    const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
+
+                    // Periksa status data dari database (jika bernilai 1 atau true, beri status tercentang)
+                    const chkPendaftaran = (role.pendaftaran == 1 || role.pendaftaran === true) ? 'checked' : '';
+                    const chkRekamMedis  = (role.rekamMedis == 1 || role.rekamMedis === true) ? 'checked' : '';
+                    const chkDatabase    = (role.databasePasien == 1 || role.databasePasien === true) ? 'checked' : '';
+                    const chkAntrian     = (role.antrian == 1 || role.antrian === true) ? 'checked' : '';
+                    const chkKamus       = (role.kamusDikte == 1 || role.kamusDikte === true) ? 'checked' : '';
+                    const chkPengaturan  = (role.pengaturan == 1 || role.pengaturan === true) ? 'checked' : '';
+                    const chkMngUser = (role.manajemenUser == 1 || role.manajemenUser === true) ? 'checked' : '';
+                    const chkJadwal  = (role.kelolaJadwal == 1 || role.kelolaJadwal === true) ? 'checked' : '';
+
+                    let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-daftar" ${chkPendaftaran} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-rm" ${chkRekamMedis} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-db" ${chkDatabase} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-antrian" ${chkAntrian} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kamus" ${chkKamus} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-pengaturan" ${chkPengaturan} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-mnguser" ${chkMngUser} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-jadwal" ${chkJadwal} ${disabledAttr}></td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.error("Error matriks:", err);
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
+        });
+    }
+
+    function simpanMatriksAkses() {
+        const btn = document.getElementById('btnSimpanAkses');
+        btn.disabled = true;
+        btn.innerText = "⏳ Menyimpan Perubahan...";
+
+        const matrixPayload = [];
+        const rows = document.querySelectorAll('.baris-akses-role');
+
+        rows.forEach(row => {
+            const barisNum = row.getAttribute('data-baris');
+            
+            matrixPayload.push({
+                barisSheet: parseInt(barisNum),
+                pendaftaran: row.querySelector('.chk-daftar').checked,
+                rekamMedis: row.querySelector('.chk-rm').checked,
+                databasePasien: row.querySelector('.chk-db').checked,
+                antrian: row.querySelector('.chk-antrian').checked,
+                kamusDikte: row.querySelector('.chk-kamus').checked,
+                pengaturan: row.querySelector('.chk-pengaturan').checked,
+                manajemenUser: row.querySelector('.chk-mnguser').checked,
+                kelolaJadwal: row.querySelector('.chk-jadwal').checked
+            });
+        });
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "simpanMatrixRole",
+                matrix: matrixPayload
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerText = "💾 Simpan Perubahan Hak Akses";
+            if (res.result === "success") {
+                alert("🎉 Hak akses role berhasil diperbarui! Seluruh staf yang login dengan role terkait akan langsung terdampak perubahan menu ini secara realtime.");
+                muatMatriksAkses(); // Refresh agar data tetap sinkron
+            } else {
+                alert("❌ Gagal menyimpan perubahan: " + res.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerText = "💾 Simpan Perubahan Hak Akses";
+            console.error("Gagal mengirim data matrix:", err);
+            alert("⚠️ Terjadi gangguan koneksi sistem saat menyimpan data.");
+        });
+    }
+
+    function prosesTambahRoleBaru() {
+        const inputRole = document.getElementById('inputNamaRoleBaru');
+        const namaRoleValue = inputRole.value.trim();
+
+        if (!namaRoleValue) {
+            alert("Silakan ketik nama role terlebih dahulu!");
+            return;
+        }
+
+        // Kirim request ke backend
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "tambahRole",
+                namaRole: namaRoleValue
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                alert(`🎉 Role "${namaRoleValue}" berhasil didaftarkan ke sistem Klinik Anvaya!`);
+                inputRole.value = ""; // Bersihkan kolom ketik
+                
+                // SANGAT PENTING: Refresh semua komponen agar data baru langsung sinkron seketika
+                muatMatriksAkses(); // Menggambar ulang baris baru di tabel Hak Akses
+                muatPilihanRole();  // Memperbarui dropdown di form Tambah/Edit Pengguna secara realtime
+            } else {
+                alert("Gagal menambahkan role: " + res.message);
+            }
+        })
+        .catch(err => {
+            console.error("Error tambah role:", err);
+            alert("Terjadi masalah koneksi saat mencoba menambahkan role.");
+        });
+    }
+
+    function muatJadwalMaster() {
+        const tbody = document.getElementById('bodyJadwalMaster');
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Memuat seluruh jadwal dokter...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getJadwalMaster" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                tbody.innerHTML = "";
+                if (res.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada jadwal terdaftar.</td></tr>`;
+                    return;
+                }
+                res.data.forEach(jdw => {
+                    let row = `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px;"><strong>${jdw.dokter}</strong></td>
+                        <td style="padding: 8px;">${jdw.hari}</td>
+                        <td style="padding: 8px;">${jdw.jamMulai} - ${jdw.jamSelesai}</td>
+                        <td style="padding: 8px;"><span style="background:#e2e3e5; padding:3px 8px; border-radius:10px; font-size:12px;">${jdw.slot}</span></td>
+                        <td style="padding: 8px; text-align: center;">
+                            <button onclick="hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Hapus</button>
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        });
+    }
+
+    function simpanJadwalBaru() {
+        const payload = {
+            action: "tambahJadwalDokter",
+            dokter: document.getElementById('jadwalNamaDokter').value.trim(),
+            hari: document.getElementById('jadwalHari').value,
+            jamMulai: document.getElementById('jadwalJamMulai').value.trim(),
+            jamSelesai: document.getElementById('jadwalJamSelesai').value.trim(),
+            slot: document.getElementById('jadwalSlot').value
+        };
+
+        if(!payload.dokter || !payload.jamMulai || !payload.jamSelesai) {
+            alert("Semua data jadwal wajib diisi lengkap!");
+            return;
+        }
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                alert("Jadwal praktik dokter berhasil ditambahkan!");
+                document.getElementById('jadwalNamaDokter').value = "";
+                document.getElementById('jadwalJamMulai').value = "";
+                document.getElementById('jadwalJamSelesai').value = "";
+                muatJadwalMaster();
+            }
+        });
+    }
+
+    function hapusJadwal(idJdw, baris) {
+        if(confirm(`Apakah Anda yakin ingin menghapus kode jadwal ${idJdw}?`)) {
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "hapusJadwalDokter", barisSheet: baris })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.result === "success") {
+                    alert("Jadwal telah berhasil dihapus dari sistem!");
+                    muatJadwalMaster();
+                }
+            });
+        }
+    }
 
 </script>
 </body>
