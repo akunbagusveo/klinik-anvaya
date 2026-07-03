@@ -661,11 +661,11 @@
         <!-- ========================================== -->
         <div id="manajemenJadwal" class="sub-tab-content" style="display:none;">
             <h3>Manajemen Jadwal Praktik Dokter</h3>
-
+        
             <button onclick="bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
                 ➕ Tambah Jadwal Praktik Baru
             </button>
-
+        
             <div class="antrean-filter-wrapper" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                 <div style="flex: 1; min-width: 200px;">
                     <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Dokter:</label>
@@ -686,7 +686,7 @@
                         <option value="Sabtu">Sabtu</option>
                     </select>
                 </div>
-
+        
                 <div style="width: 140px;">
                     <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Slot:</label>
                     <select id="filterJadwalSlot" onchange="aplikasikanFilterDanSortJadwal()">
@@ -695,7 +695,7 @@
                         <option value="Sore/Malam">Sore/Malam</option>
                     </select>
                 </div>
-
+        
                 <div style="width: 180px;">
                     <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Urutkan Berdasarkan:</label>
                     <select id="urutJadwalMaster" onchange="aplikasikanFilterDanSortJadwal()">
@@ -707,11 +707,73 @@
                     </select>
                 </div>
             </div>
+        
             <div id="modalTambahJadwal" class="modal-popup-container">
+                <div class="modal-popup-content" style="background-color: #f4fdf7; border: 1px solid #c3e6cb;">
+                    <h4 style="margin-top: 0; color: #155724; border-bottom: 1px solid #c3e6cb; padding-bottom: 8px;">
+                        ➕ Tambah Jadwal Praktik Baru
+                    </h4>
+                    
+                    <label style="font-size: 13px; font-weight: bold; display:block; margin-top:10px;">Pilih Dokter:</label>
+                    <select id="jadwalNamaDokter">
+                        <option value="">⏳ Memuat daftar dokter...</option>
+                    </select>
+                    
+                    <label style="font-size: 13px; font-weight: bold; display:block;">Hari Praktik:</label>
+                    <select id="jadwalHari">
+                        <option value="Senin">Senin</option>
+                        <option value="Selasa">Selasa</option>
+                        <option value="Rabu">Rabu</option>
+                        <option value="Kamis">Kamis</option>
+                        <option value="Jumat">Jumat</option>
+                        <option value="Sabtu">Sabtu</option>
+                    </select>
+                    
+                    <label style="font-size: 13px; font-weight: bold; display:block;">Jam Mulai:</label>
+                    <select id="jadwalJamMulai">
+                        <option value="11:00">11:00</option>
+                        <option value="12:00">12:00</option>
+                        <option value="13:00">13:00</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                    </select>
+                    
+                    <label style="font-size: 13px; font-weight: bold; display:block;">Jam Selesai:</label>
+                    <select id="jadwalJamSelesai">
+                        <option value="15:00">15:00</option>
+                        <option value="16:00">16:00</option>
+                        <option value="17:00">17:00</option>
+                        <option value="18:00">18:00</option>
+                        <option value="19:00">19:00</option>
+                    </select>
+                    
+                    <label style="font-size: 13px; font-weight: bold; display:block;">Slot Waktu:</label>
+                    <select id="jadwalSlot">
+                        <option value="Siang">Siang</option>
+                        <option value="Sore/Malam">Sore/Malam</option>
+                    </select>
+                    
+                    <div class="modal-action-buttons" style="text-align: right; margin-top: 15px;">
+                        <button onclick="tutupModalJadwal()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
+                        <button onclick="simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Jadwal</button>
+                    </div>
                 </div>
-
+            </div> 
+        
             <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
-                </table>
+                <thead style="background-color: #ddd;">
+                    <tr>
+                        <th style="padding: 8px;">Dokter</th>
+                        <th style="padding: 8px;">Hari Praktik</th>
+                        <th style="padding: 8px;">Jam Kerja</th>
+                        <th style="padding: 8px;">Slot</th>
+                        <th style="padding: 8px; text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyJadwalMaster">
+                    <tr><td colspan="5" style="text-align:center; padding: 15px;">Memuat data jadwal...</td></tr>
+                </tbody>
+            </table>
         </div>
 
     <div id="dokter" class="tab-content">
@@ -3103,6 +3165,14 @@
 
     function muatJadwalMaster() {
         const tbody = document.getElementById('bodyJadwalMaster');
+        
+        // 🔥 BENTENG PENGAMAN: Jika tabel tidak ditemukan di halaman aktif, 
+        // langsung hentikan fungsi agar tidak membuat crash script lainnya.
+        if (!tbody) {
+            console.warn("Elemen #bodyJadwalMaster belum dimuat atau tidak ditemukan di tab ini.");
+            return; 
+        }
+
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Memuat seluruh jadwal dokter...</td></tr>`;
 
         fetch(WEB_APP_URL, {
@@ -3112,10 +3182,7 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
-                // 2. Simpan data asli dari server ke variabel global
                 dataJadwalGlobal = res.data || [];
-                
-                // 3. Jalankan fungsi filter dan pengurutan untuk merender data pertama kali
                 aplikasikanFilterDanSortJadwal();
             } else {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">❌ Gagal memuat data jadwal.</td></tr>`;
