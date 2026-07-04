@@ -2301,6 +2301,7 @@
         kataKunciPasien = document.getElementById('txtCariDaftar').value.trim();
         const tbody = document.getElementById('tabelSemuaPasienBody');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat database dari server... ⏳</td></tr>';
+        
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -2326,6 +2327,16 @@
                 const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
 
                 res.data.forEach((p, index) => {
+                    let tombolAksi = `<button class="btn-action btn-detail" onclick="bukaAksiPasien('${pasien.noRM}', 'detail')">🔍 Lihat Detail</button>`;
+
+                    // Proteksi tampilan tombol berdasarkan role aktif
+                    if (currentRole === "admin" || currentRole === "super admin" || currentRole === "rol-01" || currentRole === "rol-02") {
+                        tombolAksi += `
+                            <button class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px;" onclick="bukaAksiPasien('${pasien.noRM}', 'edit')">📝 Edit</button>
+                            <button class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px;" onclick="pemicuHapusPasien('${pasien.noRM}', '${pasien.nama}')">🗑️ Hapus</button>
+                        `;
+                    }
+                    
                     tbody.innerHTML += `<tr>
                         <td style="font-weight:bold; color:#2c3e50;">${p[idxRM] || "-"}</td>
                         <td>${p[idxNama] || "-"}</td>
@@ -2335,6 +2346,7 @@
                         <td>
                             <button type="button" class="btn-action" onclick="window.bukaModalDetailPasien(${index})" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;">🔍 Lihat Detail</button>
                         </td>
+                        <td>${tombolAksi}</td>
                     </tr>`;
                 });
 
@@ -3538,6 +3550,142 @@
             selectDokterFilter.innerHTML = '<option value="">⚠️ Gangguan koneksi</option>';
         });
     }
+
+    // Global function untuk mengontrol pembukaan modal detail & edit pasien
+    function bukaAksiPasien(noRM, mode) {
+        const wadahModal = document.getElementById('modalDetailPasien');
+        const containerIsi = document.getElementById('isiDetailPasien');
+        
+        wadahModal.style.display = 'flex';
+        containerIsi.innerHTML = '<p style="text-align:center; padding:20px;">Menghubungkan ke server... ⏳</p>';
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                const p = res.data;
+                
+                if (mode === 'detail') {
+                    // 1. TAMPILKAN MODE BACA DETAIL LENGKAP
+                    containerIsi.innerHTML = `
+                        <table class="table-detail-view" style="width:100%; border-collapse:collapse;">
+                            <tr><td style="padding:8px; font-weight:bold; width:30%;">Nomor RM</td><td>: ${p.noRM}</td></tr>
+                            <tr><td style="padding:8px; font-weight:bold;">Nama Lengkap</td><td>: ${p.nama}</td></tr>
+                            <tr><td style="padding:8px; font-weight:bold;">Jenis Kelamin</td><td>: ${p.gender}</td></tr>
+                            <tr><td style="padding:8px; font-weight:bold;">No. WhatsApp</td><td>: ${p.phone}</td></tr>
+                            <tr><td style="padding:8px; font-weight:bold;">Alamat</td><td>: ${p.alamat}</td></tr>
+                            <tr><td style="padding:8px; font-weight:bold; color:#d32f2f;">Riwayat Alergi</td><td style="color:#d32f2f;">: ${p.alergi}</td></tr>
+                            <tr><td style="padding:8px; font-weight:bold; color:#2980b9;">Obat Rutin</td><td style="color:#2980b9;">: ${p.obatRutin}</td></tr>
+                        </table>
+                    `;
+                } else if (mode === 'edit') {
+                    // 2. TAMPILKAN MODE FORM EDIT INPUT (NO RM DIKUNCI MATI / READONLY)
+                    containerIsi.innerHTML = `
+                        <form id="formKoreksiPasien" onsubmit="simpanKoreksiPasien(event)">
+                            <div style="margin-bottom:12px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Nomor RM (Kunci Sistem)</label>
+                                <input type="text" id="editNoRM" value="${p.noRM}" readonly style="width:100%; padding:8px; background:#e9ecef; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Nama Lengkap Pasien</label>
+                                <input type="text" id="editNama" value="${p.nama}" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Jenis Kelamin</label>
+                                <select id="editGender" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                    <option value="Laki-laki" ${p.gender === 'Laki-laki' ? 'selected' : ''}>Laki-laki</option>
+                                    <option value="Perempuan" ${p.gender === 'Perempuan' ? 'selected' : ''}>Perempuan</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px;">No. WhatsApp</label>
+                                <input type="text" id="editPhone" value="${p.phone}" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Alamat Lengkap</label>
+                                <textarea id="editAlamat" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; height:70px;">${p.alamat}</textarea>
+                            </div>
+                            <div style="text-align:right; margin-top:15px;">
+                                <button type="submit" id="btnSimpanEditPasien" style="padding:10px 20px; border:none; background-color:#e67e22; color:white; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Perubahan</button>
+                            </div>
+                        </form>
+                    `;
+                }
+            } else {
+                containerIsi.innerHTML = `<p style="text-align:center; color:red; padding:20px;">Error: ${res.message}</p>`;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            containerIsi.innerHTML = '<p style="text-align:center; color:red; padding:20px;">Gangguan koneksi server.</p>';
+        });
+    }
+
+    // Fungsi eksekusi kirim data hasil koreksi/edit ke Google Sheets
+    function simpanKoreksiPasien(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSimpanEditPasien');
+        btn.disabled = true; btn.innerText = "Menyimpan... ⏳";
+        
+        const payload = {
+            action: "updatePasien",
+            noRM: document.getElementById('editNoRM').value,
+            nama: document.getElementById('editNama').value,
+            gender: document.getElementById('editGender').value,
+            phone: document.getElementById('editPhone').value,
+            alamat: document.getElementById('editAlamat').value
+        };
+        
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                alert("Data profil pasien sukses diperbarui!");
+                tutupModalDetailPasien();
+                if(typeof cariDaftarPasien === "function") cariDaftarPasien(); // Refresh tabel data pasien otomatis
+            } else {
+                alert("Gagal update data: " + res.message);
+                btn.disabled = false; btn.innerText = "💾 Simpan Perubahan";
+            }
+        })
+        .catch(err => {
+            alert("Gangguan jaringan terdeteksi.");
+            btn.disabled = false; btn.innerText = "💾 Simpan Perubahan";
+        });
+    }
+
+    // Fungsi eksekusi pemicu hapus data dengan proteksi metadata
+    function pemicuHapusPasien(noRM, namaPasien) {
+        const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data pasien bernama "${namaPasien}" (${noRM})?\n\nSistem akan mendeteksi riwayat transaksi medis sebelum mengeksekusi.`);
+        if(!konfirmasi) return;
+        
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "deletePasien", noRM: noRM })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                alert(res.message); // Memunculkan notifikasi apakah ter-soft delete atau ter-hard delete
+                if(typeof cariDaftarPasien === "function") cariDaftarPasien(); // Refresh data tabel realtime
+            } else {
+                alert("Gagal memproses hapus data: " + res.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Gagal terhubung ke database untuk memproses penghapusan.");
+        });
+    }
+
+    // Fungsi penutup jendela modal pembungkus luar
+    function tutupModalDetailPasien() {
+        document.getElementById('modalDetailPasien').style.display = 'none';
+    }
+    window.tutupModalDetailPasien = tutupModalDetailPasien;
 
 </script>
 </body>
