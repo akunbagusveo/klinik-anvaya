@@ -2327,17 +2327,16 @@
                 const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
 
                 res.data.forEach((p, index) => {
-                    // 1. Ambil data No RM dan Nama secara dinamis dari baris array 'p'
                     const noRMPasien = p[idxRM] || "-";
                     const namaPasien = p[idxNama] || "-";
 
-                    // 2. Normalisasi pengecekan Role agar toleran terhadap huruf besar/kecil (Owner / owner)
-                    const roleCek = typeof currentRole !== "undefined" && currentRole ? currentRole.toString().trim().toLowerCase() : "";
+                    // 🔥 PERBAIKAN UTAMA: Ambil data role langsung dari session localStorage di sini agar pasti terbaca
+                    const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+                    const roleCek = sessionData && sessionData.role ? sessionData.role.toString().trim().toLowerCase() : "";
 
-                    // 3. Susun tombol aksi ke dalam SATU wadah variabel tunggal
                     let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Lihat Detail</button>`;
 
-                    // Berikan akses tombol Edit & Hapus jika role sesuai (termasuk owner)
+                    // Pengecekan hak akses yang aman untuk rumpun Admin dan Owner
                     if (roleCek === "admin" || roleCek === "super admin" || roleCek === "owner" || roleCek === "rol-01" || roleCek === "rol-02") {
                         tombolAksi += `
                             <button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>
@@ -2345,7 +2344,6 @@
                         `;
                     }
                     
-                    // 4. Gambar baris tabel (Pas 6 kolom, seluruh tombol masuk ke dalam kolom ke-6)
                     tbody.innerHTML += `<tr>
                         <td style="font-weight:bold; color:#2c3e50;">${noRMPasien}</td>
                         <td><strong>${namaPasien}</strong></td>
