@@ -3590,33 +3590,74 @@
                         </table>
                     `;
                 } else if (mode === 'edit') {
-                    // 2. TAMPILKAN FORM EDIT UNTUK 11 DATA (NO RM TETAP KUNCI MATI / READONLY)
+                    // 2. TAMPILKAN FORM EDIT UNTUK SELURUH 11 DATA PASIEN
                     containerIsi.innerHTML = `
                         <form id="formKoreksiPasien" onsubmit="simpanKoreksiPasien(event)">
-                            <div style="margin-bottom:12px;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Nomor RM (Kunci Sistem)</label>
-                                <input type="text" id="editNoRM" value="${p.noRM}" readonly style="width:100%; padding:8px; background:#e9ecef; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+                                
+                                <div style="grid-column: span 2;">
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Nomor RM (Kunci Sistem)</label>
+                                    <input type="text" id="editNoRM" value="${p.noRM}" readonly style="width:100%; padding:8px; background:#e9ecef; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
+                                </div>
+                                
+                                <div style="grid-column: span 2;">
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Nama Lengkap Pasien</label>
+                                    <input type="text" id="editNama" value="${p.nama}" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Tempat Lahir</label>
+                                    <input type="text" id="editTempatLahir" value="${p.tempatLahir || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Tanggal Lahir</label>
+                                    <input type="text" id="editTanggalLahir" value="${p.tanggalLahir || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Jenis Kelamin</label>
+                                    <select id="editGender" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                        <option value="Laki-laki" ${p.gender === 'Laki-laki' ? 'selected' : ''}>Laki-laki</option>
+                                        <option value="Perempuan" ${p.gender === 'Perempuan' ? 'selected' : ''}>Perempuan</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">No. WhatsApp</label>
+                                    <input type="text" id="editPhone" value="${p.phone}" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Pekerjaan</label>
+                                    <input type="text" id="editPekerjaan" value="${p.pekerjaan || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Email Pasien</label>
+                                    <input type="email" id="editEmail" value="${p.email || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">No. KTP / NIK</label>
+                                    <input type="text" id="editNoKTP" value="${p.noKTP || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                </div>
+                                
+                                <div>
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Status Akun Pasien</label>
+                                    <select id="editStatus" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
+                                        <option value="Aktif" ${p.status === 'Aktif' ? 'selected' : ''}>Aktif</option>
+                                        <option value="Nonaktif" ${p.status === 'Nonaktif' ? 'selected' : ''}>Nonaktif</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="grid-column: span 2;">
+                                    <label style="font-weight:bold; display:block; margin-bottom:4px;">Alamat Lengkap</label>
+                                    <textarea id="editAlamat" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; height:60px;">${p.alamat}</textarea>
+                                </div>
+                                
                             </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Nama Lengkap Pasien</label>
-                                <input type="text" id="editNama" value="${p.nama}" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                            </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Jenis Kelamin</label>
-                                <select id="editGender" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                                    <option value="Laki-laki" ${p.gender === 'Laki-laki' ? 'selected' : ''}>Laki-laki</option>
-                                    <option value="Perempuan" ${p.gender === 'Perempuan' ? 'selected' : ''}>Perempuan</option>
-                                </select>
-                            </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px;">No. WhatsApp</label>
-                                <input type="text" id="editPhone" value="${p.phone}" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                            </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px;">Alamat Lengkap</label>
-                                <textarea id="editAlamat" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; height:70px;">${p.alamat}</textarea>
-                            </div>
-                            <div style="text-align:right; margin-top:15px;">
+                            <div style="text-align:right; margin-top:20px; border-top:1px solid #eee; padding-top:12px;">
                                 <button type="submit" id="btnSimpanEditPasien" style="padding:10px 20px; border:none; background-color:#e67e22; color:white; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Perubahan</button>
                             </div>
                         </form>
@@ -3638,12 +3679,19 @@
         const btn = document.getElementById('btnSimpanEditPasien');
         btn.disabled = true; btn.innerText = "Menyimpan... ⏳";
         
+        // 🔥 PERBAIKAN: Lengkapi seluruh parameter tangkapan data sesuai form 11 kolom
         const payload = {
             action: "updatePasien",
             noRM: document.getElementById('editNoRM').value,
             nama: document.getElementById('editNama').value,
+            tempatLahir: document.getElementById('editTempatLahir').value,
+            tanggalLahir: document.getElementById('editTanggalLahir').value,
             gender: document.getElementById('editGender').value,
             phone: document.getElementById('editPhone').value,
+            pekerjaan: document.getElementById('editPekerjaan').value,
+            email: document.getElementById('editEmail').value,
+            noKTP: document.getElementById('editNoKTP').value,
+            status: document.getElementById('editStatus').value,
             alamat: document.getElementById('editAlamat').value
         };
         
@@ -3653,7 +3701,7 @@
             if(res.result === "success") {
                 alert("Data profil pasien sukses diperbarui!");
                 tutupModalDetailPasien();
-                if(typeof cariDaftarPasien === "function") cariDaftarPasien(); // Refresh tabel data pasien otomatis
+                if(typeof cariDaftarPasien === "function") cariDaftarPasien(); 
             } else {
                 alert("Gagal update data: " + res.message);
                 btn.disabled = false; btn.innerText = "💾 Simpan Perubahan";
