@@ -2341,18 +2341,18 @@
                         `;
                     }
                     tbody.innerHTML += `<tr>
-                        <td style="font-weight:bold; color:#2c3e50;">${noRMPasien}</td>
-                        <td><strong>${namaPasien}</strong></td>
-                        <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
-                        <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
-                        <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
-                        
-                        <td>
-                            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; white-space: nowrap;">
-                                ${tombolAksi}
-                            </div>
-                        </td>
-                    </tr>`;  
+                            <td style="font-weight:bold; color:#2c3e50;">${noRMPasien}</td>
+                            <td><strong>${namaPasien}</strong></td>
+                            <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
+                            <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
+                            <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
+                            
+                            <td style="white-space: nowrap !important; width: 1%; vertical-align: middle;">
+                                <div style="display: inline-flex !important; gap: 6px; align-items: center; flex-wrap: nowrap !important;">
+                                    ${tombolAksi}
+                                </div>
+                            </td>
+                        </tr>`;  
                 });
 
                 document.getElementById('lblHalamanPasien').innerText = `Halaman ${res.currentPage} dari ${res.totalPages}`;
