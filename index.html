@@ -1118,6 +1118,7 @@
                     <tr style="background-color: #f4f7f6;">
                         <th>Tanggal</th>
                         <th>Anamnesa</th>
+                        <th>Pemeriksaan Fisik & Objektif (O)</th>
                         <th>Diagnosa</th>
                         <th>Tindakan / Perawatan</th>
                         <th>Resep Obat</th>
@@ -2213,15 +2214,14 @@
         document.getElementById('lblModalRMFull').innerText = noRM;
         
         const tbody = document.getElementById('tabelRiwayatFullBody');
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Mengambil detail rekam medis... ⏳</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Mengambil detail rekam medis... ⏳</td></tr>'; // 🔄 UBAH: colspan jadi 10
 
-        // 🔥 Reset dan sembunyikan peringatan setiap kali modal baru dibuka
         const alertBox = document.getElementById('alertMedisContainer');
         alertBox.style.display = 'none';
         document.getElementById('textAlergi').innerHTML = '';
         document.getElementById('textObatRutin').innerHTML = '';
 
-        // 🔥 FETCH 1: Mengambil Data Peringatan Medis (Alergi & Obat)
+        // FETCH 1: Mengambil Data Peringatan Medis
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
@@ -2233,27 +2233,20 @@
                 let alergi = res.data.alergi ? res.data.alergi.trim() : "-";
                 let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
 
-                // Cek jika alergi ada (bukan -, kosong, atau "tidak ada")
                 if(alergi !== "" && alergi !== "-" && alergi.toLowerCase() !== "tidak ada") {
                     document.getElementById('textAlergi').innerHTML = `⚠️ <strong>PERHATIAN - ALERGI:</strong> <span style="color:#d32f2f; font-weight:bold; background-color:white; padding:2px 5px; border-radius:3px;">${alergi}</span>`;
                     adaPeringatan = true;
                 }
-                
-                // Cek jika obat rutin ada
                 if(obatRutin !== "" && obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada") {
                     document.getElementById('textObatRutin').innerHTML = `💊 <strong>OBAT RUTIN:</strong> <span>${obatRutin}</span>`;
                     adaPeringatan = true;
                 }
-
-                // Munculkan kotak kuning jika salah satu dari mereka ada isinya
-                if(adaPeringatan) {
-                    alertBox.style.display = 'block';
-                }
+                if(adaPeringatan) { alertBox.style.display = 'block'; }
             }
         })
         .catch(err => console.error("Gagal memuat data alergi pasien: ", err));
 
-        // FETCH 2: Mengambil Tabel Riwayat Rekam Medis (Kode Asli Anda)
+        // FETCH 2: Mengambil Tabel Riwayat Rekam Medis
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: noRM })
@@ -2267,10 +2260,11 @@
                     let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="color:#3498db; text-decoration:none;">🔗 Lihat Foto</a>` : '-';
                     
                     const tr = document.createElement('tr');
+                    // 💡 INFO: Pemetaan 10 variabel <td> di bawah ini sekarang sudah pas berpasangan dengan 10 judul <th> di atas!
                     tr.innerHTML = `
                         <td style="white-space:nowrap; font-weight:bold;">${r.tanggal}</td>
                         <td>${r.anamnesa}</td>
-                        <td>${r.objektif}</td>
+                        <td>${r.objektif || '-'}</td>
                         <td>${r.diagnosa}</td>
                         <td>${r.perawatan}</td>
                         <td style="white-space:pre-wrap;">${r.resep || '-'}</td>
@@ -2282,11 +2276,11 @@
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Tidak ada riwayat rekam medis untuk pasien ini.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Tidak ada riwayat rekam medis untuk pasien ini.</td></tr>'; // 🔄 UBAH: colspan jadi 10
             }
         })
         .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#e74c3c;">Terjadi kesalahan saat memuat data riwayat.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#e74c3c;">Terjadi kesalahan saat memuat data riwayat.</td></tr>'; // 🔄 UBAH: colspan jadi 10
             console.error(err);
         });
     }
