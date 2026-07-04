@@ -521,6 +521,12 @@
                                 <textarea id="txtAnamnesa" required></textarea>
                                 <button type="button" class="btn-voice" onclick="toggleVoice('txtAnamnesa', this)">🎙️ Mulai Dikte</button>
                             </div>
+
+                            <div class="form-group full-width">
+                                <label>Pemeriksaan Fisik & Objektif (O) 🎙️</label>
+                                <textarea id="txtObjektif" required placeholder="Tuliskan hasil pemeriksaan fisik, tensi, nadi, dll..."></textarea>
+                                <button type="button" class="btn-voice" onclick="toggleVoice('txtObjektif', this)">🎙️ Mulai Dikte</button>
+                            </div>
                             
                             <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Diagnosa -->
                             <div class="form-group full-width">
@@ -2024,6 +2030,7 @@
             if (data.result === 'success') {
                 if (data.hariIni) {
                     document.getElementById('txtAnamnesa').value = data.hariIni.anamnesa || "";
+                    document.getElementById('txtObjektif').value = data.hariIni.objektif || "";
                     document.getElementById('txtDiagnosa').value = data.hariIni.diagnosa || "";
                     document.getElementById('txtPerawatan').value = data.hariIni.perawatan || "";
                     document.getElementById('txtProPerawatan').value = data.hariIni.proPerawatan || "";
@@ -2589,7 +2596,8 @@
             rowUpdate: document.getElementById('formMedis').dataset.rowUpdate, 
             namaPasien: document.getElementById('namaPasien').value,
             tanggalDaftar: document.getElementById('formMedis').dataset.tanggalDaftar,
-            anamnesa: document.getElementById('txtAnamnesa').value,      
+            anamnesa: document.getElementById('txtAnamnesa').value, 
+            objektif: document.getElementById('txtObjektif').value,     
             diagnosa: document.getElementById('txtDiagnosa').value,      
             perawatan: document.getElementById('txtPerawatan').value,    
             proPerawatan: document.getElementById('txtProPerawatan').value, 
