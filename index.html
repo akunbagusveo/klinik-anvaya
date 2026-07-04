@@ -2609,6 +2609,7 @@
                 alert("Data Rekam Medis berhasil disimpan!");
                 document.getElementById('formMedis').reset();
                 document.getElementById('sectionRME').style.display = 'none';
+                tutupInputRME();
                 muatAntreanHariIni(); 
             } else { 
                 alert("Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
