@@ -2327,25 +2327,28 @@
                 const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
 
                 res.data.forEach((p, index) => {
-                    let tombolAksi = `<button class="btn-action btn-detail" onclick="bukaAksiPasien('${pasien.noRM}', 'detail')">🔍 Lihat Detail</button>`;
+                    // 🔥 SINKRONISASI 1: Ambil data No RM dan Nama secara dinamis dari baris array 'p'
+                    const noRMPasien = p[idxRM] || "-";
+                    const namaPasien = p[idxNama] || "-";
 
-                    // Proteksi tampilan tombol berdasarkan role aktif
+                    // 🔥 SINKRONISASI 2: Hubungkan dengan fungsi 'bukaAksiPasien' mode 'detail' yang baru
+                    let tombolAksi = `<button class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Lihat Detail</button>`;
+
+                    // Proteksi tampilan tombol berdasarkan role aktif (Edit & Hapus menggunakan data dinamis)
                     if (currentRole === "admin" || currentRole === "super admin" || currentRole === "rol-01" || currentRole === "rol-02") {
                         tombolAksi += `
-                            <button class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px;" onclick="bukaAksiPasien('${pasien.noRM}', 'edit')">📝 Edit</button>
-                            <button class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px;" onclick="pemicuHapusPasien('${pasien.noRM}', '${pasien.nama}')">🗑️ Hapus</button>
+                            <button class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>
+                            <button class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien}')">🗑️ Hapus</button>
                         `;
                     }
                     
+                    // 🔥 SINKRONISASI 3: Bersihkan kolom ganda. Sekarang pas menjadi 6 kolom sesuai <th> HTML
                     tbody.innerHTML += `<tr>
-                        <td style="font-weight:bold; color:#2c3e50;">${p[idxRM] || "-"}</td>
-                        <td>${p[idxNama] || "-"}</td>
+                        <td style="font-weight:bold; color:#2c3e50;">${noRMPasien}</td>
+                        <td><strong>${namaPasien}</strong></td>
                         <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
                         <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
                         <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
-                        <td>
-                            <button type="button" class="btn-action" onclick="window.bukaModalDetailPasien(${index})" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;">🔍 Lihat Detail</button>
-                        </td>
                         <td>${tombolAksi}</td>
                     </tr>`;
                 });
