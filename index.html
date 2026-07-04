@@ -579,6 +579,7 @@
                                 <tr>
                                     <th>Tanggal</th>
                                     <th>Anamnesa</th>
+                                    <th>Objektif (O)</th>
                                     <th>Diagnosa</th>
                                     <th>Tindakan / Perawatan</th>
                                     <th>Dokter</th>
@@ -2018,7 +2019,7 @@
         btnSubmit.innerText = "⏳ Memuat Data...";
         btnSubmit.disabled = true;
 
-        document.getElementById('tabelRiwayatBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
+        document.getElementById('tabelRiwayatBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
         
         const hariIni = new Date();
         const formatTanggal = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
@@ -2053,12 +2054,13 @@
                 const tbody = document.getElementById('tabelRiwayatBody');
                 tbody.innerHTML = "";
                 if (data.riwayat.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#7f8c8d;">Belum ada riwayat medis terdahulu.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#7f8c8d;">Belum ada riwayat medis terdahulu.</td></tr>';
                 } else {
                     data.riwayat.reverse().forEach(r => {
                         tbody.innerHTML += `<tr>
                             <td><span class="badge badge-sudah">${r.tanggal}</span></td>
                             <td>${r.anamnesa}</td>
+                            <td>${r.objektif || '-'}</td>
                             <td><strong>${r.diagnosa}</strong></td>
                             <td>${r.perawatan}</td>
                             <td>${r.idDokter}</td>
@@ -2268,6 +2270,7 @@
                     tr.innerHTML = `
                         <td style="white-space:nowrap; font-weight:bold;">${r.tanggal}</td>
                         <td>${r.anamnesa}</td>
+                        <td>${r.objektif}</td>
                         <td>${r.diagnosa}</td>
                         <td>${r.perawatan}</td>
                         <td style="white-space:pre-wrap;">${r.resep || '-'}</td>
