@@ -1727,7 +1727,7 @@
 
         // 1. Bersihkan / Sembunyikan SEMUA TAB di awal secara aman
         setDisplayAman('tabBerandaBtn', 'block');
-        setDisplayAman('tabPasienBtn', 'none');
+        setDisplayAman('tabPendaftaranBtn', 'none');
         setDisplayAman('tabDokterBtn', 'none');
         setDisplayAman('tabRiwayatMedisBtn', 'none'); 
         setDisplayAman('tabDaftarPasienBtn', 'none'); 
@@ -1744,7 +1744,7 @@
 
         // 2. Logika Pembukaan Hak Akses Berdasarkan Role Dasar
         if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
-            setDisplayAman('tabPasienBtn', 'block');
+            setDisplayAman('tabPendaftaranBtn', 'block');
             setDisplayAman('tabDokterBtn', 'block');
             setDisplayAman('tabRiwayatMedisBtn', 'block'); 
             setDisplayAman('tabDaftarPasienBtn', 'block'); 
@@ -1757,7 +1757,7 @@
             setDisplayAman('menuDaftarPasienCard', 'block'); 
 
         } else if (roleCek === "perawat" || roleCek === "rol-04") {
-            setDisplayAman('tabPasienBtn', 'block');
+            setDisplayAman('tabPendaftaranBtn', 'block');
             setDisplayAman('tabDaftarPasienBtn', 'block'); 
             setDisplayAman('menuPendaftaranCard', 'block');
             setDisplayAman('menuDaftarPasienCard', 'block'); 
@@ -2856,7 +2856,7 @@
             const roleCek = dataUser.role ? dataUser.role.toString().trim().toLowerCase() : "";
             
             if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
-                const listMenuUtama = ['tabPasienBtn', 'tabRiwayatMedisBtn', 'tabDaftarPasienBtn', 'tabDokterBtn', 'tabKamusDikteBtn', 'tabBackendBtn'];
+                const listMenuUtama = ['tabPendaftaranBtn', 'tabRiwayatMedisBtn', 'tabDaftarPasienBtn', 'tabDokterBtn', 'tabKamusDikteBtn', 'tabBackendBtn'];
                 listMenuUtama.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.style.display = 'inline-block';
@@ -2881,7 +2881,7 @@
             if (el) el.style.display = permissionValue === 1 ? 'inline-block' : 'none';
         };
 
-        setMenuDisplay('tabPasienBtn', perms.pendaftaran);
+        setMenuDisplay('tabPendaftaranBtn', perms.pendaftaran);
         setMenuDisplay('tabRiwayatMedisBtn', perms.rekamMedis);
         setMenuDisplay('tabDaftarPasienBtn', perms.databasePasien);
         setMenuDisplay('tabDokterBtn', perms.antrian);
