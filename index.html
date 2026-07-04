@@ -517,7 +517,7 @@
                             </div>
                             
                             <div class="form-group full-width">
-                                <label>Anamnesa (Keluhan Pasien) 🎙️</label>
+                                <label>Anamnesa (Keluhan Pasien/Subyektif) 🎙️</label>
                                 <textarea id="txtAnamnesa" required></textarea>
                                 <button type="button" class="btn-voice" onclick="toggleVoice('txtAnamnesa', this)">🎙️ Mulai Dikte</button>
                             </div>
@@ -530,7 +530,7 @@
                             
                             <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Diagnosa -->
                             <div class="form-group full-width">
-                                <label>Diagnosa 🎙️</label>
+                                <label>Diagnosa (Assessment) 🎙️</label>
                                 <input type="text" id="txtDiagnosa" required>
                                 <button type="button" class="btn-voice" onclick="toggleVoice('txtDiagnosa', this)">🎙️ Mulai Dikte</button>
                             </div>
@@ -1054,6 +1054,10 @@
             <div class="form-group">
                 <label>Anamnesa (Keluhan Pasien)</label>
                 <textarea id="modalAnamnesa" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Objektif</label>
+                <textarea id="modalObjektif" required></textarea>
             </div>
             <div class="form-group">
                 <label>Diagnosa</label>
@@ -2445,7 +2449,7 @@
         document.getElementById('btnSimpanRME').style.display = isMasaLalu ? "none" : "block"; // Sembunyikan tombol simpan jika masa lalu
 
         const aturField = (readonly) => {
-            const listId = ['modalAnamnesa', 'modalDiagnosa', 'modalPerawatan', 'modalProPerawatan', 'modalProKontrol', 'modalResep', 'modalLinkFoto'];
+            const listId = ['modalAnamnesa','modalObjektif' ,'modalDiagnosa', 'modalPerawatan', 'modalProPerawatan', 'modalProKontrol', 'modalResep', 'modalLinkFoto'];
             const warnaBg = readonly ? "#e9ecef" : "#ffffff";
             
             listId.forEach(id => {
@@ -2464,6 +2468,7 @@
         .then(data => {
             if (data.result === 'success' && data.hariIni) {
                 document.getElementById('modalAnamnesa').value = data.hariIni.anamnesa || "";
+                document.getElementById('modalObjektif').value = data.hariIni.objektif || "";
                 document.getElementById('modalDiagnosa').value = data.hariIni.diagnosa || "";
                 document.getElementById('modalPerawatan').value = data.hariIni.perawatan || "";
                 document.getElementById('modalProPerawatan').value = data.hariIni.proPerawatan || "";
@@ -2500,6 +2505,7 @@
             rowUpdate: document.getElementById('modalRowUpdate').value, 
             namaPasien: document.getElementById('modalNama').value,
             anamnesa: document.getElementById('modalAnamnesa').value,
+            objektif: document.getElementById('modalObjektif').value,
             diagnosa: document.getElementById('modalDiagnosa').value,
             perawatan: document.getElementById('modalPerawatan').value,
             proPerawatan: document.getElementById('modalProPerawatan').value,
