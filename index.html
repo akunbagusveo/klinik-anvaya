@@ -815,6 +815,8 @@
                         <th style="padding: 10px; text-align: center;">Pengaturan</th>
                         <th style="padding: 10px; text-align: center;">Manajemen User</th>
                         <th style="padding: 10px; text-align: center;">Kelola Jadwal</th>
+                        <th style="padding: 10px; text-align: center;">Edit Pasien</th>
+                        <th style="padding: 10px; text-align: center;">Hapus Pasien</th>
                     </tr>
                 </thead>
                 <tbody id="bodyMatriksAkses">
@@ -2306,11 +2308,12 @@
                     let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Lihat Detail</button>`;
 
                     // Pengecekan hak akses yang aman untuk rumpun Admin dan Owner
-                    if (roleCek === "admin" || roleCek === "super admin" || roleCek === "owner" || roleCek === "rol-01" || roleCek === "rol-02") {
-                        tombolAksi += `
-                            <button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>
-                            <button type="button" class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien}')">🗑️ Hapus</button>
-                        `;
+                    if (perms.editPasien === 1) {
+                        tombolAksi += `<button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>`;
+                    }
+
+                    if (perms.hapusPasien === 1) {
+                        tombolAksi += `<button type="button" class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien}')">🗑️ Hapus</button>`;
                     }
                     tbody.innerHTML += `<tr>
                             <td style="font-weight:bold; color:#2c3e50;">${noRMPasien}</td>
@@ -2714,15 +2717,6 @@
             targetTab.style.display = 'block';
         }
         
-        // 3. Logika pewarnaan tombol aktif 
-        // if(tabId === 'beranda') document.getElementById('tabBerandaBtn').classList.add('active');
-        
-        // // 🔥 PERBAIKAN SINKRONISASI: Menghubungkan ID tombol 'tabPasienBtn' dengan ID tab 'antrean'
-        // if(tabId === 'antrean' || tabId === 'pasien') {
-        //     const btnPasien = document.getElementById('tabPasienBtn');
-        //     if (btnPasien) btnPasien.classList.add('active');
-        //     muatAntreanHariIni(1); // Otomatis segarkan data antrean terbaru saat tab dibuka
-        // }
         if(tabId === 'beranda') document.getElementById('tabBerandaBtn').classList.add('active');
     
         // Arahkan ke tombol Pendaftaran jika tab Pendaftaran dibuka
@@ -3205,6 +3199,8 @@
                     const chkPengaturan  = (role.pengaturan == 1 || role.pengaturan === true) ? 'checked' : '';
                     const chkMngUser = (role.manajemenUser == 1 || role.manajemenUser === true) ? 'checked' : '';
                     const chkJadwal  = (role.kelolaJadwal == 1 || role.kelolaJadwal === true) ? 'checked' : '';
+                    const chkEditPasien  = (role.editPasien == 1 || role.editPasien === true) ? 'checked' : '';
+                    const chkHapusPasien = (role.hapusPasien == 1 || role.hapusPasien === true) ? 'checked' : '';
 
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
@@ -3216,6 +3212,8 @@
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-pengaturan" ${chkPengaturan} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-mnguser" ${chkMngUser} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-jadwal" ${chkJadwal} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-pasien" ${chkEditPasien} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-hapus-pasien" ${chkHapusPasien} ${disabledAttr}></td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -3249,7 +3247,10 @@
                 kamusDikte: row.querySelector('.chk-kamus').checked,
                 pengaturan: row.querySelector('.chk-pengaturan').checked,
                 manajemenUser: row.querySelector('.chk-mnguser').checked,
-                kelolaJadwal: row.querySelector('.chk-jadwal').checked
+                kelolaJadwal: row.querySelector('.chk-jadwal').checked,
+                // Tambahkan 2 baris ini ke dalam matrixPayload.push:
+                editPasien: row.querySelector('.chk-edit-pasien').checked,
+                hapusPasien: row.querySelector('.chk-hapus-pasien').checked
             });
         });
 
