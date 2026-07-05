@@ -2297,24 +2297,25 @@
                 const idxWA = headersMuda.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp") || h.includes("telepon"));
                 const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
 
+                // 🛠️ PERBAIKAN: Ambil data permissions dari session localStorage tepat di sini
+                const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+                const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
+
                 res.data.forEach((p, index) => {
                     const noRMPasien = p[idxRM] || "-";
                     const namaPasien = p[idxNama] || "-";
 
-                    // 🔥 PERBAIKAN UTAMA: Ambil data role langsung dari session localStorage di sini agar pasti terbaca
-                    const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-                    const roleCek = sessionData && sessionData.role ? sessionData.role.toString().trim().toLowerCase() : "";
-
                     let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Lihat Detail</button>`;
 
-                    // Pengecekan hak akses yang aman untuk rumpun Admin dan Owner
+                    // 🔥 HAK AKSES SEKARANG 100% DINAMIS DARI DATABASE
                     if (perms.editPasien === 1) {
                         tombolAksi += `<button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>`;
                     }
-
+                    
                     if (perms.hapusPasien === 1) {
                         tombolAksi += `<button type="button" class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien}')">🗑️ Hapus</button>`;
                     }
+
                     tbody.innerHTML += `<tr>
                             <td style="font-weight:bold; color:#2c3e50;">${noRMPasien}</td>
                             <td><strong>${namaPasien}</strong></td>
