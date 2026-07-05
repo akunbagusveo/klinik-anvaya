@@ -2780,7 +2780,9 @@
         submitBtn.disabled = true; submitBtn.innerText = "Menyimpan RME...";
 
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const idDokterAktif = sessionData ? sessionData.idUser : "USR-000"; 
+        const idDokterAktif = sessionData ? sessionData.idUser : "USR-000";
+        const usernameAktif = sessionData ? sessionData.username : "Anonymous";
+        const roleAktif     = sessionData ? sessionData.role : "Staff"; 
 
         // 🔥 Ambil data file komputer jika dokter memilih file
         const dataFile = await bacaFileKeBase64('txtFileFoto');
@@ -2799,9 +2801,14 @@
             proPerawatan: document.getElementById('txtProPerawatan').value, 
             proKontrol: document.getElementById('txtProKontrol').value, 
             resep: document.getElementById('txtResep').value, 
-            idDokter: idDokterAktif,                                     
+            idDokter: idDokterAktif,
+            
+            // 🔥 BARU: Kirim info Operator Sistem untuk kebutuhan validasi Audit Log & Addendum
+            operatorUsername: usernameAktif,
+            operatorRole: roleAktif,
+
             linkFoto: document.getElementById('txtLinkFoto').value || "-",
-            fileBaru: dataFile // 🔥 Kirim data file ke Google Script
+            fileBaru: dataFile
         };
 
         // ... sisa kode fetch ke bawahnya TETAP SAMA seperti milik Anda ...
