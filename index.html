@@ -3938,6 +3938,17 @@
     function pemicuHapusPasien(noRM, namaPasien) {
         const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data pasien bernama "${namaPasien}" (${noRM})?\n\nSistem akan mendeteksi riwayat transaksi medis sebelum mengeksekusi.`);
         if(!konfirmasi) return;
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const usernameAktif = sessionData ? sessionData.username : "Anonymous";
+        const roleAktif     = sessionData ? sessionData.role : "Staff";
+
+        // 🔥 2. TAMBAHAN BARU: Sisipkan operatorUsername dan operatorRole ke data pengiriman
+        const payloadData = { 
+            action: "deletePasien", 
+            noRM: noRM,
+            operatorUsername: usernameAktif,
+            operatorRole: roleAktif
+        };
         
         fetch(WEB_APP_URL, {
             method: "POST",
