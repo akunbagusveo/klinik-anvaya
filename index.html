@@ -2317,13 +2317,14 @@
     }
 
     function bukaModalRiwayatFull(noRM, namaPasien) {
+        // 🔥 PERBAIKAN UTAMA: Ambil data permissions dari session localStorage di awal fungsi
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
+
         document.getElementById('modalRiwayatFull').style.display = 'flex'; 
         document.getElementById('lblModalNamaLengkap').innerText = namaPasien;
         document.getElementById('lblModalRMFull').innerText = noRM;
         
-        // 🔥 PERBAIKAN UTAMA: Ambil data permissions dari session localStorage di awal fungsi
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
         
         // Target pembungkus DIV Timeline
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
