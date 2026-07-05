@@ -2317,11 +2317,15 @@
     }
 
     function bukaModalRiwayatFull(noRM, namaPasien) {
-        document.getElementById('modalRiwayatFull').style.display = 'flex'; // Gunakan flex agar modal ke tengah layar
+        document.getElementById('modalRiwayatFull').style.display = 'flex'; 
         document.getElementById('lblModalNamaLengkap').innerText = namaPasien;
         document.getElementById('lblModalRMFull').innerText = noRM;
         
-        // Target pembungkus baru kita yang berbentuk DIV Timeline
+        // 🔥 PERBAIKAN UTAMA: Ambil data permissions dari session localStorage di awal fungsi
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
+        
+        // Target pembungkus DIV Timeline
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
         timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil detail rekam medis... ⏳</p>';
 
@@ -2330,19 +2334,17 @@
         document.getElementById('textAlergi').innerHTML = '';
         document.getElementById('textObatRutin').innerHTML = '';
 
-        // FETCH 1: Mengambil Data Peringatan Medis (Versi Terintegrasi ke Detail RME)
+        // FETCH 1: Mengambil Data Peringatan Medis
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
         })
         .then(res => res.json())
         .then(res => {
-            // Ambil elemen kontainer utama banner
             const bannerMedis = document.getElementById('bannerPeringatanMedis');
             const boxAlergi = document.getElementById('boxAlergiRME');
             const boxObat = document.getElementById('boxObatRME');
             
-            // Reset tampilan awal menjadi tersembunyi
             bannerMedis.style.display = 'none';
             boxAlergi.style.display = 'none';
             boxObat.style.display = 'none';
@@ -2352,21 +2354,18 @@
                 let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
                 let tampilkanBanner = false;
 
-                // Validasi dan isi data Alergi jika ada
                 if(alergi !== "" && alergi !== "-" && alergi.toLowerCase() !== "tidak ada" && alergi.toLowerCase() !== "none") {
                     document.getElementById('kontenAlergiRME').innerText = alergi;
                     boxAlergi.style.display = 'block';
                     tampilkanBanner = true;
                 }
                 
-                // Validasi dan isi data Obat Rutin jika ada
                 if(obatRutin !== "" && obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada" && obatRutin.toLowerCase() !== "none") {
                     document.getElementById('kontenObatRME').innerText = obatRutin;
                     boxObat.style.display = 'block';
                     tampilkanBanner = true;
                 }
 
-                // Jika salah satu atau keduanya ada data, munculkan banner utama dengan layout flex
                 if(tampilkanBanner) {
                     bannerMedis.style.display = 'flex';
                 }
@@ -2384,14 +2383,14 @@
             timelineContainer.innerHTML = "";
             
             if (res.result === "success" && res.data.length > 0) {
-                const dataRiwayat = res.data.reverse(); // Membaca dari kunjungan terbaru
+                const dataRiwayat = res.data.reverse(); 
                 
                 dataRiwayat.forEach(r => {
                     let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Lihat Foto / Dokumen</a>` : '<span style="color:#aaa; font-size:12px;">Tidak ada dokumen foto</span>';
                     
-                    tombolEditRMEHtml = '';
+                    // Deteksi hak akses edit RME secara aman dari variabel perms yang sudah dideklarasikan di atas
+                    let tombolEditRMEHtml = '';
                     if (perms.editRME === 1) {
-                        // Menyiapkan payload data medis lama agar bisa ditransfer ke Form Input saat diklik
                         const escapedAnamnesa = (r.anamnesa || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         const escapedObjektif = (r.objektif || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         const escapedDiagnosa = (r.diagnosa || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
@@ -2406,11 +2405,9 @@
                         `;
                     }
 
-                    // Membuat elemen kartu baru
                     const card = document.createElement('div');
                     card.className = 'rme-card';
                     
-                    // Menyusun layout informasi di dalam kartu
                     card.innerHTML = `
                         <div class="rme-card-header">
                             <div>
@@ -3934,7 +3931,7 @@
         document.getElementById('modalDetailPasien').style.display = 'none';
     }
         window.tutupModalDetailPasien = tutupModalDetailPasien;
-        
+
 
     function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
         // 1. Tutup modal riwayat full agar layar bersih
