@@ -942,6 +942,7 @@
                         <th style="padding: 10px; text-align: center;">Kelola Jadwal</th>
                         <th style="padding: 10px; text-align: center;">Edit Pasien</th>
                         <th style="padding: 10px; text-align: center;">Hapus Pasien</th>
+                        <th style="padding: 10px; text-align: center;">Edit RME</th>
                     </tr>
                 </thead>
                 <tbody id="bodyMatriksAkses">
@@ -2388,6 +2389,23 @@
                 dataRiwayat.forEach(r => {
                     let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Lihat Foto / Dokumen</a>` : '<span style="color:#aaa; font-size:12px;">Tidak ada dokumen foto</span>';
                     
+                    tombolEditRMEHtml = '';
+                    if (perms.editRME === 1) {
+                        // Menyiapkan payload data medis lama agar bisa ditransfer ke Form Input saat diklik
+                        const escapedAnamnesa = (r.anamnesa || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+                        const escapedObjektif = (r.objektif || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+                        const escapedDiagnosa = (r.diagnosa || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+                        const escapedPerawatan = (r.perawatan || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+                        const escapedResep = (r.resep || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+
+                        tombolEditRMEHtml = `
+                            <button onclick="pemicuKoreksiRMEDariTimeline('${r.noRM}', '${namaPasien}', '${r.tanggal}', '${r.barisSheet || ''}', '${escapedAnamnesa}', '${escapedObjektif}', '${escapedDiagnosa}', '${escapedPerawatan}', '${escapedResep}')" 
+                                    style="background-color: #e67e22; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 8px;">
+                                📝 Edit Catatan
+                            </button>
+                        `;
+                    }
+
                     // Membuat elemen kartu baru
                     const card = document.createElement('div');
                     card.className = 'rme-card';
@@ -2439,8 +2457,9 @@
                                 <div class="rme-section-content">${r.proKontrol || '-'}</div>
                             </div>
 
-                            <div class="grid-span-full" style="text-align: right; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
-                                ${linkFotoHtml}
+                            <div class="grid-span-full" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                                <div>${tombolEditRMEHtml}</div>
+                                <div>${linkFotoHtml}</div>
                             </div>
                         </div>
                     `;
@@ -3409,6 +3428,7 @@
                     const chkJadwal  = (role.kelolaJadwal == 1 || role.kelolaJadwal === true) ? 'checked' : '';
                     const chkEditPasien  = (role.editPasien == 1 || role.editPasien === true) ? 'checked' : '';
                     const chkHapusPasien = (role.hapusPasien == 1 || role.hapusPasien === true) ? 'checked' : '';
+                    const chkEditRME = (role.editRME == 1 || role.editRME === true) ? 'checked' : '';
 
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
@@ -3422,6 +3442,7 @@
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-jadwal" ${chkJadwal} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-pasien" ${chkEditPasien} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-hapus-pasien" ${chkHapusPasien} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-rme" ${chkEditRME} ${disabledAttr}></td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -3458,7 +3479,8 @@
                 kelolaJadwal: row.querySelector('.chk-jadwal').checked,
                 // Tambahkan 2 baris ini ke dalam matrixPayload.push:
                 editPasien: row.querySelector('.chk-edit-pasien').checked,
-                hapusPasien: row.querySelector('.chk-hapus-pasien').checked
+                hapusPasien: row.querySelector('.chk-hapus-pasien').checked,
+                editRME: row.querySelector('.chk-edit-rme').checked,
             });
         });
 
@@ -3911,7 +3933,38 @@
     function tutupModalDetailPasien() {
         document.getElementById('modalDetailPasien').style.display = 'none';
     }
-    window.tutupModalDetailPasien = tutupModalDetailPasien;
+        window.tutupModalDetailPasien = tutupModalDetailPasien;
+        
+
+    function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
+        // 1. Tutup modal riwayat full agar layar bersih
+        document.getElementById('modalRiwayatFull').style.display = 'none';
+        
+        // 2. Buka form input medis dan pasang jangkar baris sheet-nya
+        document.getElementById('sectionRME').style.display = 'flex';
+        document.getElementById('namaPasien').value = namaPasien; 
+        document.getElementById('formMedis').dataset.activeNoRM = noRM;
+        document.getElementById('formMedis').dataset.tanggalDaftar = tanggalDaftar;
+        
+        // Pasang nomor baris database agar server tahu baris mana yang mau diubah
+        document.getElementById('formMedis').dataset.rowUpdate = barisSheet;
+
+        // 3. Suntikkan data lama ke dalam kolom-kolom form input
+        document.getElementById('txtAnamnesa').value = anamnesa === "-" ? "" : anamnesa;
+        document.getElementById('txtObjektif').value = objektif === "-" ? "" : objektif;
+        document.getElementById('txtDiagnosa').value = diagnosa === "-" ? "" : diagnosa;
+        document.getElementById('txtPerawatan').value = perawatan === "-" ? "" : perawatan;
+        document.getElementById('txtResep').value = resep === "-" ? "" : resep;
+
+        // 4. Ubah mode teks tombol submit menjadi mode update/addendum
+        const btnSubmit = document.getElementById('btnSubmitRME');
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis (Ditinjau System Log)";
+        btnSubmit.style.background = "#e67e22";
+
+        // 5. Arahkan layar otomatis fokus ke form input
+        switchTabRME('form');
+    }
 
 </script>
 </body>
