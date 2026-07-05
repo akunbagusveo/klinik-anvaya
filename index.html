@@ -2231,25 +2231,34 @@
         muatDokterTersedia(tgl, jam, "");
     }
 
-    // 3. Fungsi inti mengambil data dokter berdasarkan Hari Roster & Jam ke Backend
+    
+    // 3. Fungsi Mengambil Daftar Dokter dari Roster via FETCH (Ganti fungsi yang lama)
     function muatDokterTersedia(tanggal, jam, namaDokterAktif) {
         const selectElement = document.getElementById('editDokterSelect');
         selectElement.innerHTML = '<option value="">-- Memuat Dokter... --</option>';
 
-        google.script.run.withSuccessHandler(function(response) {
-            let res = JSON.parse(response);
+        // Buat payload dinamis menggunakan pola standard Anda
+        const payload = { 
+            action: "getAvailableDokter", 
+            tanggal: tanggal, 
+            jam: jam 
+        };
+
+        // Gunakan Fetch API ke WEB_APP_URL agar kompatibel dengan GitHub Pages
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(res => {
             if (res.result === "success" && res.data.length > 0) {
-                // 🔥 PERUBAHAN: Menjadikan nama dokter (doc.nama) sebagai value dropdown utama Anda
                 selectElement.innerHTML = res.data.map(doc => 
                     `<option value="${doc.nama}" ${doc.nama === namaDokterAktif ? 'selected' : ''}>${doc.nama}</option>`
                 ).join('');
             } else {
                 selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas</option>';
             }
-        }).eksekusiKeBackend({ 
-            action: "getAvailableDokter", 
-            tanggal: tanggal, 
-            jam: jam 
+        })
+        .catch(err => {
+            console.error("Error:", err);
+            selectElement.innerHTML = '<option value="">❌ Gagal memuat data dokter</option>';
         });
     }
 
@@ -2259,27 +2268,36 @@
         let tanggalBaru = document.getElementById('editTanggalInput').value;
         let jamBaru = document.getElementById('editJamSelect').value;
         let tujuanBaru = document.getElementById('editTujuanInput').value;
-        let idDokterBaru = document.getElementById('editDokterSelect').value;
+        let namaDokterBaru = document.getElementById('editDokterSelect').value;
 
-        if (!idDokterBaru) {
-            alert("Pilih dokter terlebih dahulu!");
+        if (!namaDokterBaru || namaDokterBaru.includes("Tidak ada dokter") || namaDokterBaru.includes("Memuat")) {
+            alert("Silakan pilih dokter yang valid terlebih dahulu!");
             return;
         }
 
-        google.script.run.withSuccessHandler(function(response) {
-            let res = JSON.parse(response);
-            if(res.result === "success") {
-                alert("Data antrean berhasil diperbarui!");
-                tutupModalEdit();
-                if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); // refresh tabel
-            }
-        }).eksekusiKeBackend({
+        const payload = {
             action: "editAntreanFull",
             rowNumber: rowNumber,
             tanggal: tanggalBaru,
             jam: jamBaru,
             tujuan: tujuanBaru,
-            idDokter: namaDokterBaru
+            idDokter: namaDokterBaru // Mengirim string Nama Dokter sesuai kebutuhan dropdown Anda
+        };
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(res => {
+            if(res.result === "success") {
+                alert("Data antrean berhasil diperbarui!");
+                tutupModalEdit();
+                muatAntreanHariIni(); // Memanggil fungsi penyegar tabel bawaan Anda
+            } else {
+                alert("Gagal memperbarui antrean.");
+            }
+        })
+        .catch(err => {
+            console.error("Error saat menyimpan:", err);
+            alert("Terjadi kesalahan koneksi server.");
         });
     }
 
