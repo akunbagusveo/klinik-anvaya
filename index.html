@@ -1722,7 +1722,6 @@
     }
 
     async function bukaAplikasi(role, username) {
-        // Fungsi pembantu internal untuk mengubah display secara aman (Anti-Crash jika ID tidak ada)
         const setDisplayAman = (id, value) => {
             const el = document.getElementById(id);
             if (el) el.style.display = value;
@@ -1740,7 +1739,8 @@
         setDisplayAman('loginPage', 'none');
         setDisplayAman('mainPage', 'block');
 
-        // 1. Bersihkan / Sembunyikan SEMUA TAB di awal secara aman
+        // 1. SEMBUNYIKAN SEMUA TAB & KARTU DI AWAL
+        // Biarkan fungsi aplikasikanHakAkses yang nanti membukanya sesuai database
         setDisplayAman('tabBerandaBtn', 'block');
         setDisplayAman('tabPendaftaranBtn', 'none');
         setDisplayAman('tabDokterBtn', 'none');
@@ -1749,53 +1749,25 @@
         setDisplayAman('tabKamusDikteBtn', 'none'); 
         setDisplayAman('tabBackendBtn', 'none');    
 
-        // Bersihkan semua kartu menu di beranda utama secara aman
         setDisplayAman('menuPendaftaranCard', 'none');
         setDisplayAman('menuAntreanCard', 'none');
         setDisplayAman('menuRiwayatCard', 'none');
         setDisplayAman('menuDaftarPasienCard', 'none'); 
 
+        // 2. JALANKAN FUNGSI SPESIFIK ROLE (Tanpa mengatur tombol display)
         const roleCek = role ? role.toString().trim().toLowerCase() : "";
-
-        // 2. Logika Pembukaan Hak Akses Berdasarkan Role Dasar
-        if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
-            setDisplayAman('tabPendaftaranBtn', 'block');
-            setDisplayAman('tabDokterBtn', 'block');
-            setDisplayAman('tabRiwayatMedisBtn', 'block'); 
-            setDisplayAman('tabDaftarPasienBtn', 'block'); 
-            setDisplayAman('tabKamusDikteBtn', 'block'); 
-            setDisplayAman('tabBackendBtn', 'block');      
-            
-            setDisplayAman('menuPendaftaranCard', 'block');
-            setDisplayAman('menuAntreanCard', 'block');
-            setDisplayAman('menuRiwayatCard', 'block'); 
-            setDisplayAman('menuDaftarPasienCard', 'block'); 
-
-        } else if (roleCek === "perawat" || roleCek === "rol-04") {
-            setDisplayAman('tabPendaftaranBtn', 'block');
-            setDisplayAman('tabDaftarPasienBtn', 'block'); 
-            setDisplayAman('menuPendaftaranCard', 'block');
-            setDisplayAman('menuDaftarPasienCard', 'block'); 
+        if (roleCek === "perawat" || roleCek === "rol-04") {
             if (typeof ambilNoRMOtomatis === "function") { ambilNoRMOtomatis(); }
-
         } else if (roleCek === "dokter" || roleCek === "rol-03") {
             if (typeof muatJadwalDokter === "function") { muatJadwalDokter(username); }
-            setDisplayAman('tabDokterBtn', 'block');
-            setDisplayAman('tabRiwayatMedisBtn', 'block'); 
-            setDisplayAman('tabDaftarPasienBtn', 'block'); 
-            setDisplayAman('tabKamusDikteBtn', 'block'); 
-            
-            setDisplayAman('menuAntreanCard', 'block');
-            setDisplayAman('menuRiwayatCard', 'block'); 
-            setDisplayAman('menuDaftarPasienCard', 'block'); 
         }
 
-        // 3. Kembalikan ke tab beranda utama & load data dengan isolasi error penuh
+        // 3. KEMBALIKAN KE BERANDA & MUAT DATA UTAMA
         if (typeof switchTab === "function") { switchTab('beranda'); }
         
         try {
             if (typeof muatAntreanHariIni === "function") { muatAntreanHariIni(); }
-        } catch(e) { console.warn("Pemuatan antrean ditunda karena elemen HTML belum siap:", e); }
+        } catch(e) { console.warn("Pemuatan antrean ditunda:", e); }
 
         await new Promise(resolve => setTimeout(resolve, 600));
         
@@ -2889,38 +2861,21 @@
     // Tambahan: Pastikan fungsi ini juga dipanggil di dalam fungsi load session 
     // ketika user melakukan refresh halaman (misal pada fungsi checkSession atau init aplikasi)
     function aplikasikanHakAkses(perms) {
-        // === 1. BYPASS MUTLAK UNTUK SUPER ADMIN & ADMIN ===
-        const sessionAktif = localStorage.getItem('anvaya_session');
-        if (sessionAktif) {
-            const dataUser = JSON.parse(sessionAktif);
-            const roleCek = dataUser.role ? dataUser.role.toString().trim().toLowerCase() : "";
-            
-            if (roleCek === "admin" || roleCek === "rol-02" || roleCek === "super admin" || roleCek === "rol-01") {
-                const listMenuUtama = ['tabPendaftaranBtn', 'tabRiwayatMedisBtn', 'tabDaftarPasienBtn', 'tabDokterBtn', 'tabKamusDikteBtn', 'tabBackendBtn'];
-                listMenuUtama.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'inline-block';
-                });
-
-                const listSubTab = ['subTabUserBtn', 'subTabAksesBtn', 'subTabJadwalBtn'];
-                listSubTab.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'inline-block';
-                });
-                
-                if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
-                return; 
-            }
-        }
-
         if (!perms) return;
         
-        // === 2. KONTROL AKSES MENU UTAMA UNTUK STAFF BIASA ===
+        // Fungsi pembantu untuk tombol navigasi atas
         const setMenuDisplay = (id, permissionValue) => {
             const el = document.getElementById(id);
             if (el) el.style.display = permissionValue === 1 ? 'inline-block' : 'none';
         };
+        
+        // Fungsi pembantu untuk kotak kartu di halaman Beranda Utama
+        const setCardDisplay = (id, permissionValue) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = permissionValue === 1 ? 'block' : 'none';
+        };
 
+        // === 1. KONTROL AKSES TAB MENU UTAMA (100% Dinamis dari DB) ===
         setMenuDisplay('tabPendaftaranBtn', perms.pendaftaran);
         setMenuDisplay('tabRiwayatMedisBtn', perms.rekamMedis);
         setMenuDisplay('tabDaftarPasienBtn', perms.databasePasien);
@@ -2928,7 +2883,13 @@
         setMenuDisplay('tabKamusDikteBtn', perms.kamusDikte);
         setMenuDisplay('tabBackendBtn', perms.pengaturan);
 
-        // === 3. KONTROL AKSES GRANULAR SUB-TAB STAFF BIASA ===
+        // === 2. KONTROL AKSES KARTU BERANDA (Sinkron dengan Menu Utama) ===
+        setCardDisplay('menuPendaftaranCard', perms.pendaftaran);
+        setCardDisplay('menuAntreanCard', perms.antrian);
+        setCardDisplay('menuRiwayatCard', perms.rekamMedis);
+        setCardDisplay('menuDaftarPasienCard', perms.databasePasien);
+
+        // === 3. KONTROL AKSES GRANULAR SUB-TAB (Pengaturan Sistem) ===
         const punyaAksesUser = perms.manajemenUser === 1;
         const elUserBtn = document.getElementById('subTabUserBtn');
         const elAksesBtn = document.getElementById('subTabAksesBtn');
@@ -2939,19 +2900,18 @@
         const elJadwalBtn = document.getElementById('subTabJadwalBtn');
         if (elJadwalBtn) elJadwalBtn.style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
-        // === 4. AUTO-ROUTING CERDAS SUB-TAB STAFF BIASA ===
-        // if (perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
-        //     if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
-        // } else {
-        //     if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
-        // }
+        // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
         setTimeout(() => {
-            if (perms && perms.pengaturan === 1 && !punyaAksesUser && punyaAksesJadwal) {
-                if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
-            } else {
-                if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
+            // Jika user punya akses tab Pengaturan Sistem
+            if (perms.pengaturan === 1) {
+                // Prioritaskan buka tab User jika punya akses, kalau tidak, buka tab Jadwal
+                if (punyaAksesUser) {
+                    if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
+                } else if (punyaAksesJadwal) {
+                    if (typeof bukaSubTab === "function") bukaSubTab('manajemenJadwal');
+                }
             }
-        }, 1200); // Memberikan waktu 1.2 detik agar antrean selesai dimuat terlebih dahulu
+        }, 1200); 
     }
 
 
