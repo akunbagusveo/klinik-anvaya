@@ -205,6 +205,10 @@
             max-width: 450px; /* Batas lebar kotak pop-up */
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             animation: popMasuk 0.3s ease; /* Efek animasi muncul */
+            max-height: 90vh;       /* Membatasi modal agar tidak melebihi tinggi layar browser */
+            overflow: hidden;       /* Mencegah elemen di dalam modal keluar dari garis pembatas */
+            display: flex;
+            flex-direction: column;
         }
 
         /* Animasi Smooth Pop-up */
@@ -326,7 +330,7 @@
 
         /* Mengunci Tinggi Area Timeline RME & Mengaktifkan Internal Scrollbar */
         #wrapperRiwayatFull {
-            max-height: 65vh;       /* Membatasi tinggi area kartu sebesar 65% dari tinggi layar browser */
+            max-height: 52vh;       /* Membatasi tinggi area kartu sebesar 65% dari tinggi layar browser */
             overflow-y: auto;       /* Otomatis memunculkan scrollbar vertikal jika konten melebihi batas */
             padding-right: 15px;    /* Memberikan ruang di sisi kanan agar scrollbar tidak menempel rapat ke kartu */
             margin-right: -5px;
