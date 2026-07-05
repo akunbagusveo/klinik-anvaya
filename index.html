@@ -183,52 +183,146 @@
         }
 
         /* Style untuk Latar Belakang Pop-up (Overlay) */
-.modal-popup-container {
-    display: none; /* Tersembunyi secara default */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Efek gelap transparan */
-    z-index: 9999; /* Memastikan pop-up berada di paling depan */
-    justify-content: center;
-    align-items: center;
-}
+        .modal-popup-container {
+            display: none; /* Tersembunyi secara default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Efek gelap transparan */
+            z-index: 9999; /* Memastikan pop-up berada di paling depan */
+            justify-content: center;
+            align-items: center;
+        }
 
-/* Style untuk Kotak Form di Dalam Pop-up */
-.modal-popup-content {
-    background-color: #fff3cd; /* Mempertahankan warna kuning khas form edit Anda */
-    padding: 25px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 450px; /* Batas lebar kotak pop-up */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    animation: popMasuk 0.3s ease; /* Efek animasi muncul */
-}
+        /* Style untuk Kotak Form di Dalam Pop-up */
+        .modal-popup-content {
+            background-color: #fff3cd; /* Mempertahankan warna kuning khas form edit Anda */
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 450px; /* Batas lebar kotak pop-up */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: popMasuk 0.3s ease; /* Efek animasi muncul */
+        }
 
-/* Animasi Smooth Pop-up */
-@keyframes popMasuk {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
+        /* Animasi Smooth Pop-up */
+        @keyframes popMasuk {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
 
-/* Merapikan susunan input di dalam pop-up agar vertikal ke bawah */
-.modal-popup-content input, 
-.modal-popup-content select {
-    display: block;
-    width: 100%;
-    margin-bottom: 12px;
-    padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
+        /* Merapikan susunan input di dalam pop-up agar vertikal ke bawah */
+        .modal-popup-content input, 
+        .modal-popup-content select {
+            display: block;
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
 
-.modal-action-buttons {
-    text-align: right;
-    margin-top: 15px;
-}
+        .modal-action-buttons {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        /* Container Utama untuk Jalur Garis Waktu */
+        .rme-timeline-container {
+            position: relative;
+            padding: 10px 0 20px 20px;
+            margin-top: 15px;
+        }
+
+        /* Garis Vertikal Timeline */
+        .rme-timeline-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 8px;
+            width: 3px;
+            height: 100%;
+            background-color: #34495e; /* Warna garis maskulin */
+            border-radius: 2px;
+        }
+
+        /* Kotak Kartu Rekam Medis */
+        .rme-card {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Titik Indikator pada Garis Waktu */
+        .rme-card::before {
+            content: '';
+            position: absolute;
+            top: 22px;
+            left: -17px;
+            width: 11px;
+            height: 11px;
+            background-color: #e67e22; /* Warna orange estetik */
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            z-index: 1;
+            box-shadow: 0 0 0 2px #34495e;
+        }
+
+        /* Header Kartu: Tanggal dan Dokter */
+        .rme-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* Grid Konten Medis Berpasangan */
+        .rme-card-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        /* Pengaturan Responsif Lebar Layar PC */
+        @media (min-width: 768px) {
+            .rme-card-grid {
+                grid-template-columns: 1fr 1fr; /* Membagi dua kolom kanan-kiri agar hemat ruang vertikal */
+            }
+            .grid-span-full {
+                grid-column: span 2; /* Kolom yang memakan baris penuh */
+            }
+        }
+
+        /* Blok Area Isian Medis */
+        .rme-section-box {
+            background-color: #f8fafc;
+            border-left: 4px solid #cbd5e1;
+            padding: 10px 12px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .rme-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .rme-section-content {
+            font-size: 14px;
+            color: #1e293b;
+            line-height: 1.5;
+        }
 </style>
 </head>
 <body>
@@ -1115,7 +1209,7 @@
         </div>
         
         <div class="table-responsive">
-            <table style="width: 100%; min-width: 1000px; font-size: 13px;">
+            <div id="wrapperRiwayatFull" class="rme-timeline-container">
                 <thead>
                     <tr style="background-color: #f4f7f6;">
                         <th>Tanggal</th>
@@ -1133,7 +1227,7 @@
                 <tbody id="tabelRiwayatFullBody">
                     <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
                 </tbody>
-            </table>
+            </div>
         </div>
     </div>
 </div>
@@ -2180,19 +2274,20 @@
     }
 
     function bukaModalRiwayatFull(noRM, namaPasien) {
-        document.getElementById('modalRiwayatFull').style.display = 'block';
+        document.getElementById('modalRiwayatFull').style.display = 'flex'; // Gunakan flex agar modal ke tengah layar
         document.getElementById('lblModalNamaLengkap').innerText = namaPasien;
         document.getElementById('lblModalRMFull').innerText = noRM;
         
-        const tbody = document.getElementById('tabelRiwayatFullBody');
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Mengambil detail rekam medis... ⏳</td></tr>'; // 🔄 UBAH: colspan jadi 10
+        // Target pembungkus baru kita yang berbentuk DIV Timeline
+        const timelineContainer = document.getElementById('wrapperRiwayatFull');
+        timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil detail rekam medis... ⏳</p>';
 
         const alertBox = document.getElementById('alertMedisContainer');
         alertBox.style.display = 'none';
         document.getElementById('textAlergi').innerHTML = '';
         document.getElementById('textObatRutin').innerHTML = '';
 
-        // FETCH 1: Mengambil Data Peringatan Medis
+        // FETCH 1: Mengambil Data Peringatan Medis (Tetap Menggunakan Kode Aman Anda)
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
@@ -2217,41 +2312,85 @@
         })
         .catch(err => console.error("Gagal memuat data alergi pasien: ", err));
 
-        // FETCH 2: Mengambil Tabel Riwayat Rekam Medis
+        // FETCH 2: Mengambil Data Rekam Medis & Ditransformasikan ke Bentuk Card Timeline
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: noRM })
         })
         .then(res => res.json())
         .then(res => {
-            tbody.innerHTML = "";
+            timelineContainer.innerHTML = "";
+            
             if (res.result === "success" && res.data.length > 0) {
-                const dataRiwayat = res.data.reverse();
+                const dataRiwayat = res.data.reverse(); // Membaca dari kunjungan terbaru
+                
                 dataRiwayat.forEach(r => {
-                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="color:#3498db; text-decoration:none;">🔗 Lihat Foto</a>` : '-';
+                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Lihat Foto / Dokumen</a>` : '<span style="color:#aaa; font-size:12px;">Tidak ada dokumen foto</span>';
                     
-                    const tr = document.createElement('tr');
-                    // 💡 INFO: Pemetaan 10 variabel <td> di bawah ini sekarang sudah pas berpasangan dengan 10 judul <th> di atas!
-                    tr.innerHTML = `
-                        <td style="white-space:nowrap; font-weight:bold;">${r.tanggal}</td>
-                        <td>${r.anamnesa}</td>
-                        <td>${r.objektif || '-'}</td>
-                        <td>${r.diagnosa}</td>
-                        <td>${r.perawatan}</td>
-                        <td style="white-space:pre-wrap;">${r.resep || '-'}</td>
-                        <td>${r.proPerawatan || '-'}</td>
-                        <td>${r.proKontrol || '-'}</td>
-                        <td style="font-weight:bold; color:#2c3e50;">${r.namaDokter}</td>
-                        <td style="text-align:center;">${linkFotoHtml}</td>
+                    // Membuat elemen kartu baru
+                    const card = document.createElement('div');
+                    card.className = 'rme-card';
+                    
+                    // Menyusun layout informasi di dalam kartu
+                    card.innerHTML = `
+                        <div class="rme-card-header">
+                            <div>
+                                <span style="background-color: #34495e; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 14px;">📅 Kunjungan: ${r.tanggal}</span>
+                            </div>
+                            <div style="font-size: 14px; color: #2c3e50;">
+                                🩺 Pemeriksa: <strong>${r.namaDokter || r.idDokter}</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="rme-card-grid">
+                            <div class="rme-section-box grid-span-full" style="border-left-color: #e67e22;">
+                                <div class="rme-section-title">💬 Anamnesa / Keluhan Pasien</div>
+                                <div class="rme-section-content">${r.anamnesa || '-'}</div>
+                            </div>
+                            
+                            <div class="rme-section-box grid-span-full" style="border-left-color: #2980b9;">
+                                <div class="rme-section-title">🔍 Pemeriksaan Fisik & Objektif (O)</div>
+                                <div class="rme-section-content" style="white-space: pre-wrap;">${r.objektif || '-'}</div>
+                            </div>
+                            
+                            <div class="rme-section-box" style="border-left-color: #e74c3c;">
+                                <div class="rme-section-title">📌 Diagnosa / Penyakit</div>
+                                <div class="rme-section-content" style="font-weight: bold; color:#c0392b;">${r.diagnosa || '-'}</div>
+                            </div>
+                            
+                            <div class="rme-section-box" style="border-left-color: #27ae60;">
+                                <div class="rme-section-title">🛠️ Tindakan / Perawatan</div>
+                                <div class="rme-section-content">${r.perawatan || '-'}</div>
+                            </div>
+                            
+                            <div class="rme-section-box grid-span-full" style="border-left-color: #9b59b6; background-color: #fdf2f9;">
+                                <div class="rme-section-title">💊 Resep Obat</div>
+                                <div class="rme-section-content" style="white-space: pre-wrap; font-family: monospace; font-weight: bold;">${r.resep || '-'}</div>
+                            </div>
+                            
+                            <div class="rme-section-box">
+                                <div class="rme-section-title">📋 Pro Perawatan</div>
+                                <div class="rme-section-content">${r.proPerawatan || '-'}</div>
+                            </div>
+                            
+                            <div class="rme-section-box">
+                                <div class="rme-section-title">🔁 Pro Kontrol Kembali</div>
+                                <div class="rme-section-content">${r.proKontrol || '-'}</div>
+                            </div>
+
+                            <div class="grid-span-full" style="text-align: right; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                                ${linkFotoHtml}
+                            </div>
+                        </div>
                     `;
-                    tbody.appendChild(tr);
+                    timelineContainer.appendChild(card);
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Tidak ada riwayat rekam medis untuk pasien ini.</td></tr>'; // 🔄 UBAH: colspan jadi 10
+                timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#7f8c8d;">Tidak ada riwayat rekam medis untuk pasien ini.</p>';
             }
         })
         .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#e74c3c;">Terjadi kesalahan saat memuat data riwayat.</td></tr>'; // 🔄 UBAH: colspan jadi 10
+            timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#e74c3c; font-weight:bold;">⚠️ Terjadi kesalahan saat memuat data riwayat.</p>';
             console.error(err);
         });
     }
