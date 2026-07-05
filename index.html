@@ -1236,6 +1236,17 @@
         </div>
         
         <div class="table-responsive">
+            <div id="bannerPeringatanMedis" style="display: none; gap: 12px; margin-bottom: 20px; font-size: 14px;">
+                <div id="boxAlergiRME" style="display: none; flex: 1; background-color: #fde8e8; border-left: 5px solid #e74c3c; padding: 12px; border-radius: 4px; color: #9b1c1c;">
+                    <strong style="display: block; margin-bottom: 3px;">⚠️ RIWAYAT ALERGI:</strong>
+                    <span id="kontenAlergiRME">-</span>
+                </div>
+                
+                <div id="boxObatRME" style="display: none; flex: 1; background-color: #edf2f7; border-left: 5px solid #4a5568; padding: 12px; border-radius: 4px; color: #2d3748;">
+                    <strong style="display: block; margin-bottom: 3px;">💊 OBAT RUTIN KONSUMSI:</strong>
+                    <span id="kontenObatRME">-</span>
+                </div>
+            </div>
             <div id="wrapperRiwayatFull" class="rme-timeline-container">
                 <thead>
                     <tr style="background-color: #f4f7f6;">
@@ -2314,30 +2325,49 @@
         document.getElementById('textAlergi').innerHTML = '';
         document.getElementById('textObatRutin').innerHTML = '';
 
-        // FETCH 1: Mengambil Data Peringatan Medis (Tetap Menggunakan Kode Aman Anda)
+        // FETCH 1: Mengambil Data Peringatan Medis (Versi Terintegrasi ke Detail RME)
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
         })
         .then(res => res.json())
         .then(res => {
+            // Ambil elemen kontainer utama banner
+            const bannerMedis = document.getElementById('bannerPeringatanMedis');
+            const boxAlergi = document.getElementById('boxAlergiRME');
+            const boxObat = document.getElementById('boxObatRME');
+            
+            // Reset tampilan awal menjadi tersembunyi
+            bannerMedis.style.display = 'none';
+            boxAlergi.style.display = 'none';
+            boxObat.style.display = 'none';
+
             if(res.result === "success" && res.data) {
-                let adaPeringatan = false;
                 let alergi = res.data.alergi ? res.data.alergi.trim() : "-";
                 let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
+                let tampilkanBanner = false;
 
-                if(alergi !== "" && alergi !== "-" && alergi.toLowerCase() !== "tidak ada") {
-                    document.getElementById('textAlergi').innerHTML = `⚠️ <strong>PERHATIAN - ALERGI:</strong> <span style="color:#d32f2f; font-weight:bold; background-color:white; padding:2px 5px; border-radius:3px;">${alergi}</span>`;
-                    adaPeringatan = true;
+                // Validasi dan isi data Alergi jika ada
+                if(alergi !== "" && alergi !== "-" && alergi.toLowerCase() !== "tidak ada" && alergi.toLowerCase() !== "none") {
+                    document.getElementById('kontenAlergiRME').innerText = alergi;
+                    boxAlergi.style.display = 'block';
+                    tampilkanBanner = true;
                 }
-                if(obatRutin !== "" && obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada") {
-                    document.getElementById('textObatRutin').innerHTML = `💊 <strong>OBAT RUTIN:</strong> <span>${obatRutin}</span>`;
-                    adaPeringatan = true;
+                
+                // Validasi dan isi data Obat Rutin jika ada
+                if(obatRutin !== "" && obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada" && obatRutin.toLowerCase() !== "none") {
+                    document.getElementById('kontenObatRME').innerText = obatRutin;
+                    boxObat.style.display = 'block';
+                    tampilkanBanner = true;
                 }
-                if(adaPeringatan) { alertBox.style.display = 'block'; }
+
+                // Jika salah satu atau keduanya ada data, munculkan banner utama dengan layout flex
+                if(tampilkanBanner) {
+                    bannerMedis.style.display = 'flex';
+                }
             }
         })
-        .catch(err => console.error("Gagal memuat data alergi pasien: ", err));
+        .catch(err => console.error("Gagal memuat data info medis sekunder: ", err));
 
         // FETCH 2: Mengambil Data Rekam Medis & Ditransformasikan ke Bentuk Card Timeline
         fetch(WEB_APP_URL, {
