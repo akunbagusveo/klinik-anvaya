@@ -1539,7 +1539,7 @@
                 tombolAksi = `
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                         <button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">▶️ Mulai</button>
-                        <button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.idDokter || ''}')">📝 Edit</button>
+                        <button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>
                         <button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>
                         <button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>
                     </div>
@@ -2210,15 +2210,15 @@
     // muatDaftarDokter();
 
 
-    // 2. FUNGSI BUKA MODAL: Dipicu saat tombol "📝 Edit" di tabel antrean diklik
-    function bukaModalEditAntrean(rowNumber, tanggalSekarang, jamSekarang, tujuanSekarang, idDokterSekarang) {
+    // 1. Fungsi saat tombol "Edit" di tabel diklik (Pastikan parameter terakhir mengirim NAMA dokter saat ini)
+    function bukaModalEditAntrean(rowNumber, tanggalSekarang, jamSekarang, tujuanSekarang, namaDokterSekarang) {
         document.getElementById('editRowNumber').value = rowNumber;
         document.getElementById('editTanggalInput').value = tanggalSekarang;
         document.getElementById('editJamSelect').value = jamSekarang;
         document.getElementById('editTujuanInput').value = tujuanSekarang;
         
-        // Ambil daftar dokter berdasarkan tanggal dan jam pasien saat ini
-        muatDokterTersedia(tanggalSekarang, jamSekarang, idDokterSekarang);
+        // Ambil daftar dokter berdasarkan parameter saat ini
+        muatDokterTersedia(tanggalSekarang, jamSekarang, namaDokterSekarang);
         
         document.getElementById('modalEditAntrean').style.display = 'flex';
     }
@@ -2232,15 +2232,16 @@
     }
 
     // 3. Fungsi inti mengambil data dokter berdasarkan Hari Roster & Jam ke Backend
-    function muatDokterTersedia(tanggal, jam, idDokterAktif) {
+    function muatDokterTersedia(tanggal, jam, namaDokterAktif) {
         const selectElement = document.getElementById('editDokterSelect');
         selectElement.innerHTML = '<option value="">-- Memuat Dokter... --</option>';
 
         google.script.run.withSuccessHandler(function(response) {
             let res = JSON.parse(response);
             if (res.result === "success" && res.data.length > 0) {
+                // 🔥 PERUBAHAN: Menjadikan nama dokter (doc.nama) sebagai value dropdown utama Anda
                 selectElement.innerHTML = res.data.map(doc => 
-                    `<option value="${doc.id}" ${doc.id === idDokterAktif ? 'selected' : ''}>${doc.nama}</option>`
+                    `<option value="${doc.nama}" ${doc.nama === namaDokterAktif ? 'selected' : ''}>${doc.nama}</option>`
                 ).join('');
             } else {
                 selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas</option>';
@@ -2278,7 +2279,7 @@
             tanggal: tanggalBaru,
             jam: jamBaru,
             tujuan: tujuanBaru,
-            idDokter: idDokterBaru
+            idDokter: namaDokterBaru
         });
     }
 
