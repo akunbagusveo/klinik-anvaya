@@ -3892,6 +3892,9 @@
     // Fungsi eksekusi kirim data hasil koreksi/edit ke Google Sheets
     function simpanKoreksiPasien(e) {
         e.preventDefault();
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const usernameAktif = sessionData ? sessionData.username : "Anonymous";
+        const roleAktif     = sessionData ? sessionData.role : "Staff";
         const btn = document.getElementById('btnSimpanEditPasien');
         btn.disabled = true; btn.innerText = "Menyimpan... ⏳";
         
@@ -3908,7 +3911,9 @@
             email: document.getElementById('editEmail').value,
             noKTP: document.getElementById('editNoKTP').value,
             status: document.getElementById('editStatus').value,
-            alamat: document.getElementById('editAlamat').value
+            alamat: document.getElementById('editAlamat').value,
+            operatorUsername: usernameAktif,
+            operatorRole: roleAktif
         };
         
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
