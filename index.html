@@ -621,8 +621,8 @@
                 <thead>
                     <tr>
                         <th>No. Antrean</th>
-                        <th>No. RM</th>
-                        <th>Nama Pasien</th>
+                        <th>Tanggal Daftar</th>
+                        <th>Jam</th>
                         <th>Tujuan Perawatan</th>
                         <th>Dokter</th>
                         <th>Status</th>
@@ -1317,6 +1317,30 @@
     </div>
 </div>
 
+<div id="modalEditAntrean" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:320px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
+        <h3 style="margin-top:0; color:#2c3e50;">📝 Edit Antrean Pasien</h3>
+        
+        <input type="hidden" id="editRowNumber">
+        
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:bold; font-size:13px; color:#34495e;">Tujuan / Poli:</label>
+            <input type="text" id="editTujuanInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <label style="font-weight:bold; font-size:13px; color:#34495e;">Pilih Dokter:</label>
+            <select id="editDokterSelect" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                </select>
+        </div>
+        
+        <div style="display:flex; justify-content:end; gap:8px;">
+            <button onclick="tutupModalEdit()" style="padding:8px 14px; background:#7f8c8d; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batal</button>
+            <button onclick="simpanEditAntrean()" style="padding:8px 14px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Simpan</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtKbuvQhrLcVRaoo33z6MmV6oMRBK_ZGTkPFyNH5xNgAxG1j3H5GJAFuGW9WzzvKhS/exec"; 
     let currentRole = "";
@@ -1459,21 +1483,22 @@
         tbody.innerHTML = '';
 
         if (!dataAntreanGlobal || dataAntreanGlobal.length === 0) {
-            // 🔥 PERUBAHAN: colspan menjadi 7
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada antrean pasien untuk rentang tanggal ini.</td></tr>`;
             return;
         }
 
         let dataTerfilter = dataAntreanGlobal;
 
-        if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa") {
+        // 🔥 PERUBAHAN: Jika filter "Semua", sembunyikan pasien yang Dibatalkan atau Tidak Datang
+        if (filterStatus === "Semua") {
+            dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status !== "Dibatalkan" && pasien.status !== "Tidak Datang");
+        } else if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === filterStatus);
         } else if (filterStatus === "Perlu Input RME") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled);
         }
 
         if (dataTerfilter.length === 0) {
-            // 🔥 PERUBAHAN: colspan menjadi 7
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding: 20px;">Tidak ada data pasien untuk kategori <b>${filterStatus}</b>.</td></tr>`;
             return;
         }
@@ -1485,6 +1510,9 @@
             let badgeClass = "badge-belum";
             if(pasien.status === "Sedang Diperiksa") badgeClass = "badge-sedang";
             if(pasien.status === "Sudah Diperiksa") badgeClass = "badge-sudah";
+            // Tambahan style badge baru untuk estetika jika sewaktu-waktu muncul
+            if(pasien.status === "Dibatalkan") badgeClass = "badge-batal"; 
+            if(pasien.status === "Tidak Datang") badgeClass = "badge-tidak-datang";
 
             let rmeStatusIndicator = pasien.isRmeFilled ? 
                 '<br><span style="color: #2ecc71; font-size: 11px;">✔️ RME Tersimpan</span>' : 
@@ -1492,23 +1520,30 @@
 
             let tombolAksi = "";
             
+            // 🔥 PERUBAHAN: Menambahkan tombol aksi baru (Batal, Tidak Datang, Edit) pada status Belum Diperiksa
             if (pasien.status === "Belum Diperiksa") {
-                tombolAksi = `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">Mulai Periksa</button>`;
+                tombolAksi = `
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">▶️ Mulai</button>
+                        <button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>
+                        <button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>
+                        <button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>
+                    </div>
+                `;
             } else if (pasien.status === "Sedang Diperiksa") {
                 tombolAksi = `<button class="btn-action btn-done" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sudah Diperiksa')">Selesai Periksa</button>`;
             } else if (pasien.status === "Sudah Diperiksa") {
                 if (!pasien.isRmeFilled) {
-                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>`;
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>`;
                 } else {
                     if (pasien.tanggalDaftar === formatHariIni) {
                         tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat/Edit RME</button>`;
                     } else {
-                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
+                        buttonAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
                     }
                 }
             }
 
-            // 🔥 PERUBAHAN: Menyisipkan <td>${pasien.namaDokter}</td> di bawah tujuan
             tbody.innerHTML += `<tr>
                 <td><strong>${pasien.nama}</strong><br><small>RM: ${pasien.noRM}</small></td>
                 <td>${pasien.tanggalDaftar}</td> 
@@ -1588,6 +1623,7 @@
     // --- INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", function() {
         muatPilihanRole();
+        muatDaftarDokter();
         const sessionAktif = localStorage.getItem('anvaya_session');
         
         if (sessionAktif) {
@@ -1600,6 +1636,18 @@
             if (dataUser.permissions) {
                 aplikasikanHakAkses(dataUser.permissions);
             }
+        }
+
+        const inputTgl = document.getElementById('tglKunjungan');
+        if (inputTgl) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            
+            // Format standar HTML date input adalah YYYY-MM-DD
+            const tanggalHariIni = `${yyyy}-${mm}-${dd}`;
+            inputTgl.min = tanggalHariIni; 
         }
 
         function updateDaftarDokter() {
@@ -2120,6 +2168,91 @@
                     document.getElementById('sectionRME').style.display = 'none';
                 }
             } else { alert("Gagal memperbarui status."); }
+        });
+    }
+
+    // function bukaModalEditAntrean(rowNumber, tujuanSekarang, dokterSekarang) {
+    //     // Anda bisa mengganti prompt ini dengan Modal UI yang sesungguhnya nanti
+    //     let tujuanBaru = prompt("Masukkan Tujuan/Poli Baru:", tujuanSekarang);
+    //     if (tujuanBaru === null) return; // Batal pencet
+
+    //     // 🔥 Di masa depan, bagian prompt ini sebaiknya diganti dengan Dropdown Modal 
+    //     // agar Admin tinggal memilih nama dokter, tetapi sistem mengambil ID-nya.
+    //     let idDokterBaru = prompt("Masukkan ID Dokter Baru (Contoh: USR-001):", idDokterSekarang);
+    //     if (idDokterBaru === null) return;
+
+    //     // Panggil fungsi Apps Script untuk simpan perubahan ke Google Sheets
+    //     google.script.run.withSuccessHandler(function(response) {
+    //         let res = JSON.parse(response);
+    //         if(res.result === "success") {
+    //             alert("Data antrean berhasil diperbarui!");
+    //             // Panggil fungsi refresh data antrean Anda di sini (misal: muatAntreanHariIni())
+    //         }
+    //     }).eksekusiKeBackend({
+    //         action: "editAntrean",
+    //         rowNumber: rowNumber,
+    //         tujuan: tujuanBaru,
+    //         namaDokter: dokterBaru
+    //     });
+    // }
+
+    // Variabel global untuk menampung data dokter dari server
+    let listDokterGlobal = [];
+
+    // 1. FUNGSI MUAT DOKTER: Jalankan fungsi ini saat halaman web pertama kali dimuat (onload)
+    function muatDaftarDokter() {
+        google.script.run.withSuccessHandler(function(response) {
+            let res = JSON.parse(response);
+            if (res.result === "success") {
+                listDokterGlobal = res.data;
+                
+                // Masukkan data dokter ke dalam Dropdown Select di dalam Modal
+                const selectElement = document.getElementById('editDokterSelect');
+                selectElement.innerHTML = listDokterGlobal.map(doc => 
+                    `<option value="${doc.id}">${doc.nama}</option>`
+                ).join('');
+            }
+        }).eksekusiKeBackend({ action: "getDokterList" });
+    }
+
+    // Panggil fungsi di atas secara otomatis saat aplikasi siap
+    // Anda bisa menaruh baris ini di dalam fungsi init() atau window.onload Anda
+    // muatDaftarDokter();
+
+
+    // 2. FUNGSI BUKA MODAL: Dipicu saat tombol "📝 Edit" di tabel antrean diklik
+    function bukaModalEditAntrean(rowNumber, tujuanSekarang, idDokterSekarang) {
+        document.getElementById('editRowNumber').value = rowNumber;
+        document.getElementById('editTujuanInput').value = tujuanSekarang;
+        document.getElementById('editDokterSelect').value = idDokterSekarang; // Otomatis memilih dokter aktif saat ini
+        
+        // Tampilkan modal di layar
+        document.getElementById('modalEditAntrean').style.display = 'flex';
+    }
+
+    // 3. FUNGSI TUTUP MODAL
+    function tutupModalEdit() {
+        document.getElementById('modalEditAntrean').style.display = 'none';
+    }
+
+    // 4. FUNGSI SIMPAN DATA: Mengirimkan data terbaru (Termasuk ID Dokter dari dropdown) ke backend
+    function simpanEditAntrean() {
+        let rowNumber = document.getElementById('editRowNumber').value;
+        let tujuanBaru = document.getElementById('editTujuanInput').value;
+        let idDokterBaru = document.getElementById('editDokterSelect').value; // Mengambil value berupa ID User
+
+        google.script.run.withSuccessHandler(function(response) {
+            let res = JSON.parse(response);
+            if(res.result === "success") {
+                alert("Data antrean berhasil diperbarui!");
+                tutupModalEdit();
+                // Panggil fungsi penyegar data antrean Anda di sini (misal: muatAntreanHariIni())
+            }
+        }).eksekusiKeBackend({
+            action: "editAntrean",
+            rowNumber: rowNumber,
+            tujuan: tujuanBaru,
+            idDokter: idDokterBaru
         });
     }
 
