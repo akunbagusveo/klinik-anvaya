@@ -323,6 +323,33 @@
             color: #1e293b;
             line-height: 1.5;
         }
+
+        /* Mengunci Tinggi Area Timeline RME & Mengaktifkan Internal Scrollbar */
+        #wrapperRiwayatFull {
+            max-height: 65vh;       /* Membatasi tinggi area kartu sebesar 65% dari tinggi layar browser */
+            overflow-y: auto;       /* Otomatis memunculkan scrollbar vertikal jika konten melebihi batas */
+            padding-right: 15px;    /* Memberikan ruang di sisi kanan agar scrollbar tidak menempel rapat ke kartu */
+            margin-right: -5px;
+        }
+
+        /* Merapikan Tampilan Scrollbar Khusus untuk Browser Chrome/Edge agar Terlihat Lebih Minimalis (Opsional) */
+        #wrapperRiwayatFull::-webkit-scrollbar {
+            width: 6px;             /* Membuat ukuran scrollbar menjadi tipis dan elegan */
+        }
+
+        #wrapperRiwayatFull::-webkit-scrollbar-track {
+            background: #f1f1f1;    /* Warna latar jalur scrollbar */
+            border-radius: 4px;
+        }
+
+        #wrapperRiwayatFull::-webkit-scrollbar-thumb {
+            background: #cbd5e1;    /* Warna gagang scrollbar */
+            border-radius: 4px;
+        }
+
+        #wrapperRiwayatFull::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;    /* Warna gagang saat pointer mouse melintas */
+        }
 </style>
 </head>
 <body>
