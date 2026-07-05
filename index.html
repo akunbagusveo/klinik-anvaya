@@ -3935,33 +3935,49 @@
 
 
     function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
-        // 1. Tutup modal riwayat full agar layar bersih
+        // 1. Tutup modal riwayat full agar tidak menumpuk di layar
         document.getElementById('modalRiwayatFull').style.display = 'none';
         
-        // 2. Buka form input medis dan pasang jangkar baris sheet-nya
-        document.getElementById('sectionRME').style.display = 'flex';
-        document.getElementById('namaPasien').value = namaPasien; 
-        document.getElementById('formMedis').dataset.activeNoRM = noRM;
-        document.getElementById('formMedis').dataset.tanggalDaftar = tanggalDaftar;
+        // 2. 🔥 KUNCI UTAMA: Paksa sistem pindah ke Tab Antrean/Dokter terlebih dahulu
+        // Ini agar kontainer induk menjadi 'display: block' dan membebaskan visibilitas pop-up RME
+        if (typeof switchTab === "function") {
+            switchTab('antrean'); // Atau ganti 'dokter' jika sectionRME Anda berada di dalam tab dokter
+        }
         
-        // Pasang nomor baris database agar server tahu baris mana yang mau diubah
-        document.getElementById('formMedis').dataset.rowUpdate = barisSheet;
+        // 3. Buka jendela pop-up RME sekarang (Sudah pasti terlihat karena induknya sudah aktif)
+        const wadahRME = document.getElementById('sectionRME');
+        if (wadahRME) {
+            wadahRME.style.display = 'flex';
+        }
+        
+        // 4. Pasang jangkar identitas pasien ke form
+        document.getElementById('namaPasien').value = namaPasien; 
+        const formMedis = document.getElementById('formMedis');
+        if (formMedis) {
+            formMedis.dataset.activeNoRM = noRM;
+            formMedis.dataset.tanggalDaftar = tanggalDaftar;
+            formMedis.dataset.rowUpdate = barisSheet; // Nomor baris database untuk target overwrite/addendum
+        }
 
-        // 3. Suntikkan data lama ke dalam kolom-kolom form input
+        // 5. Suntikkan data lama ke dalam kolom-kolom input teks untuk siap diedit
         document.getElementById('txtAnamnesa').value = anamnesa === "-" ? "" : anamnesa;
         document.getElementById('txtObjektif').value = objektif === "-" ? "" : objektif;
         document.getElementById('txtDiagnosa').value = diagnosa === "-" ? "" : diagnosa;
         document.getElementById('txtPerawatan').value = perawatan === "-" ? "" : perawatan;
         document.getElementById('txtResep').value = resep === "-" ? "" : resep;
 
-        // 4. Ubah mode teks tombol submit menjadi mode update/addendum
+        // 6. Ubah teks tombol submit agar informatif bagi dokter/admin
         const btnSubmit = document.getElementById('btnSubmitRME');
-        btnSubmit.disabled = false;
-        btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis (Ditinjau System Log)";
-        btnSubmit.style.background = "#e67e22";
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis (Ditinjau System Log)";
+            btnSubmit.style.background = "#e67e22";
+        }
 
-        // 5. Arahkan layar otomatis fokus ke form input
-        switchTabRME('form');
+        // 7. Pastikan sub-tab internal RME langsung membuka bagian 'form' input, bukan history mini
+        if (typeof switchTabRME === "function") {
+            switchTabRME('form');
+        }
     }
 
 </script>
