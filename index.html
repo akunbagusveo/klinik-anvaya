@@ -1318,20 +1318,34 @@
 </div>
 
 <div id="modalEditAntrean" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:white; padding:20px; border-radius:8px; width:320px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
+    <div style="background:white; padding:20px; border-radius:8px; width:340px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
         <h3 style="margin-top:0; color:#2c3e50;">📝 Edit Antrean Pasien</h3>
         
         <input type="hidden" id="editRowNumber">
         
         <div style="margin-bottom:12px;">
-            <label style="font-weight:bold; font-size:13px; color:#34495e;">Tujuan / Poli:</label>
+            <label style="font-weight:bold; font-size:13px; color:#34495e;">Tanggal Daftar:</label>
+            <input type="date" id="editTanggalInput" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:bold; font-size:13px; color:#34495e;">Waktu Kunjungan:</label>
+            <select id="editJamSelect" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                <option value="Siang (11.00 - 15.00)">Siang (11.00 - 15.00)</option>
+                <option value="Sore/Malam (15.00 - Selesai)">Sore/Malam (15.00 - Selesai)</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:bold; font-size:13px; color:#34495e;">Tujuan Perawatan:</label>
             <input type="text" id="editTujuanInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
         </div>
         
         <div style="margin-bottom:20px;">
-            <label style="font-weight:bold; font-size:13px; color:#34495e;">Pilih Dokter:</label>
+            <label style="font-weight:bold; font-size:13px; color:#34495e;">Pilih Dokter yang Tersedia:</label>
             <select id="editDokterSelect" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
-                </select>
+                <option value="">-- Memuat Dokter... --</option>
+            </select>
         </div>
         
         <div style="display:flex; justify-content:end; gap:8px;">
@@ -1525,7 +1539,7 @@
                 tombolAksi = `
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                         <button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">▶️ Mulai</button>
-                        <button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>
+                        <button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.idDokter || ''}')">📝 Edit</button>
                         <button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>
                         <button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>
                     </div>
@@ -2171,30 +2185,6 @@
         });
     }
 
-    // function bukaModalEditAntrean(rowNumber, tujuanSekarang, dokterSekarang) {
-    //     // Anda bisa mengganti prompt ini dengan Modal UI yang sesungguhnya nanti
-    //     let tujuanBaru = prompt("Masukkan Tujuan/Poli Baru:", tujuanSekarang);
-    //     if (tujuanBaru === null) return; // Batal pencet
-
-    //     // 🔥 Di masa depan, bagian prompt ini sebaiknya diganti dengan Dropdown Modal 
-    //     // agar Admin tinggal memilih nama dokter, tetapi sistem mengambil ID-nya.
-    //     let idDokterBaru = prompt("Masukkan ID Dokter Baru (Contoh: USR-001):", idDokterSekarang);
-    //     if (idDokterBaru === null) return;
-
-    //     // Panggil fungsi Apps Script untuk simpan perubahan ke Google Sheets
-    //     google.script.run.withSuccessHandler(function(response) {
-    //         let res = JSON.parse(response);
-    //         if(res.result === "success") {
-    //             alert("Data antrean berhasil diperbarui!");
-    //             // Panggil fungsi refresh data antrean Anda di sini (misal: muatAntreanHariIni())
-    //         }
-    //     }).eksekusiKeBackend({
-    //         action: "editAntrean",
-    //         rowNumber: rowNumber,
-    //         tujuan: tujuanBaru,
-    //         namaDokter: dokterBaru
-    //     });
-    // }
 
     // Variabel global untuk menampung data dokter dari server
     let listDokterGlobal = [];
@@ -2221,13 +2211,75 @@
 
 
     // 2. FUNGSI BUKA MODAL: Dipicu saat tombol "📝 Edit" di tabel antrean diklik
-    function bukaModalEditAntrean(rowNumber, tujuanSekarang, idDokterSekarang) {
+    function bukaModalEditAntrean(rowNumber, tanggalSekarang, jamSekarang, tujuanSekarang, idDokterSekarang) {
         document.getElementById('editRowNumber').value = rowNumber;
+        document.getElementById('editTanggalInput').value = tanggalSekarang;
+        document.getElementById('editJamSelect').value = jamSekarang;
         document.getElementById('editTujuanInput').value = tujuanSekarang;
-        document.getElementById('editDokterSelect').value = idDokterSekarang; // Otomatis memilih dokter aktif saat ini
         
-        // Tampilkan modal di layar
+        // Ambil daftar dokter berdasarkan tanggal dan jam pasien saat ini
+        muatDokterTersedia(tanggalSekarang, jamSekarang, idDokterSekarang);
+        
         document.getElementById('modalEditAntrean').style.display = 'flex';
+    }
+
+    // 2. Fungsi pembantu saat staf mengubah input tanggal atau jam secara manual di modal
+    function triggerMuatDokterTersedia() {
+        let tgl = document.getElementById('editTanggalInput').value;
+        let jam = document.getElementById('editJamSelect').value;
+        // Panggil muatDokter tanpa mengunci ID Dokter lama (karena waktu/hari sudah berubah)
+        muatDokterTersedia(tgl, jam, "");
+    }
+
+    // 3. Fungsi inti mengambil data dokter berdasarkan Hari Roster & Jam ke Backend
+    function muatDokterTersedia(tanggal, jam, idDokterAktif) {
+        const selectElement = document.getElementById('editDokterSelect');
+        selectElement.innerHTML = '<option value="">-- Memuat Dokter... --</option>';
+
+        google.script.run.withSuccessHandler(function(response) {
+            let res = JSON.parse(response);
+            if (res.result === "success" && res.data.length > 0) {
+                selectElement.innerHTML = res.data.map(doc => 
+                    `<option value="${doc.id}" ${doc.id === idDokterAktif ? 'selected' : ''}>${doc.nama}</option>`
+                ).join('');
+            } else {
+                selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas</option>';
+            }
+        }).eksekusiKeBackend({ 
+            action: "getAvailableDokter", 
+            tanggal: tanggal, 
+            jam: jam 
+        });
+    }
+
+    // 4. Fungsi kirim hasil final update ke Google Sheet
+    function simpanEditAntrean() {
+        let rowNumber = document.getElementById('editRowNumber').value;
+        let tanggalBaru = document.getElementById('editTanggalInput').value;
+        let jamBaru = document.getElementById('editJamSelect').value;
+        let tujuanBaru = document.getElementById('editTujuanInput').value;
+        let idDokterBaru = document.getElementById('editDokterSelect').value;
+
+        if (!idDokterBaru) {
+            alert("Pilih dokter terlebih dahulu!");
+            return;
+        }
+
+        google.script.run.withSuccessHandler(function(response) {
+            let res = JSON.parse(response);
+            if(res.result === "success") {
+                alert("Data antrean berhasil diperbarui!");
+                tutupModalEdit();
+                if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); // refresh tabel
+            }
+        }).eksekusiKeBackend({
+            action: "editAntreanFull",
+            rowNumber: rowNumber,
+            tanggal: tanggalBaru,
+            jam: jamBaru,
+            tujuan: tujuanBaru,
+            idDokter: idDokterBaru
+        });
     }
 
     // 3. FUNGSI TUTUP MODAL
@@ -2235,26 +2287,6 @@
         document.getElementById('modalEditAntrean').style.display = 'none';
     }
 
-    // 4. FUNGSI SIMPAN DATA: Mengirimkan data terbaru (Termasuk ID Dokter dari dropdown) ke backend
-    function simpanEditAntrean() {
-        let rowNumber = document.getElementById('editRowNumber').value;
-        let tujuanBaru = document.getElementById('editTujuanInput').value;
-        let idDokterBaru = document.getElementById('editDokterSelect').value; // Mengambil value berupa ID User
-
-        google.script.run.withSuccessHandler(function(response) {
-            let res = JSON.parse(response);
-            if(res.result === "success") {
-                alert("Data antrean berhasil diperbarui!");
-                tutupModalEdit();
-                // Panggil fungsi penyegar data antrean Anda di sini (misal: muatAntreanHariIni())
-            }
-        }).eksekusiKeBackend({
-            action: "editAntrean",
-            rowNumber: rowNumber,
-            tujuan: tujuanBaru,
-            idDokter: idDokterBaru
-        });
-    }
 
     function switchTabRME(tab) {
         document.getElementById('tabRmeForm').style.display = tab === 'form' ? 'block' : 'none';
