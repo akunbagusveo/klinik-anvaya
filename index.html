@@ -354,6 +354,30 @@
         #wrapperRiwayatFull::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;    /* Warna gagang saat pointer mouse melintas */
         }
+
+        /* 🔥 MEMBUAT KOLOM NAMA ROLE FIXED (STICKY) SAAT DI-SCROLL HORIZONTAL */
+
+        /* 1. Kunci posisi kolom pertama pada baris biasa (td) dan baris judul (th) */
+        .table-matrix-wrapper table th:first-child,
+        .table-matrix-wrapper table td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;              /* Mencegah kolom lain menimpa kolom ini saat digeser */
+            background-color: #ffffff; /* Warna putih padat agar teks di belakangnya tidak menembus transparan */
+            box-shadow: 3px 0 6px -3px rgba(0, 0, 0, 0.2); /* Efek bayangan vertikal halus sebagai garis pembatas geser */
+            font-weight: bold;
+        }
+
+        /* 2. Khusus untuk Kepala Tabel (Header th) Kolom Pertama */
+        .table-matrix-wrapper table th:first-child {
+            z-index: 3;              /* Lapisan lebih tinggi agar tidak tertimpa oleh scroll vertikal/horizontal body */
+            background-color: #f8fafc; /* Warna abu-abu sangat muda/sesuaikan dengan warna header asli Anda */
+        }
+
+        /* 3. Menjaga estetika baris striping (jika tabel Anda menggunakan warna selang-seling) */
+        .table-matrix-wrapper table tr:nth-child(even) td:first-child {
+            background-color: #f8fafc; /* Menyelaraskan warna background sticky td pada baris genap */
+        }
 </style>
 </head>
 <body>
