@@ -2255,7 +2255,6 @@
         tbody.innerHTML = "";
         
         const totalData = cacheRiwayatGlobal.length;
-        // Pastikan variabel riwayatPageSize sudah dideklarasikan di bagian atas script Anda (misal: let riwayatPageSize = 5;)
         totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
         
         if (currentRiwayatPage > totalRiwayatPages) currentRiwayatPage = totalRiwayatPages;
@@ -2265,7 +2264,6 @@
         const end = Math.min(start + riwayatPageSize, totalData);
         const dataHalaman = cacheRiwayatGlobal.slice(start, end);
         
-        // 🔥 PERBAIKAN: Memanggil ID baru yang spesifik untuk Riwayat Medis
         document.getElementById('lblTotalDataMasterRiwayat').innerText = totalData;
         document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
         document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
@@ -2273,21 +2271,34 @@
         document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
         document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
 
+        // 🔥 KOREKSI: Sesuaikan colspan menjadi 6 agar simetris dengan jumlah kolom
         if (dataHalaman.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">❌ Pasien tidak ditemukan.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
             return;
         }
 
         dataHalaman.forEach(p => {
+            const noRM = p[0] || "-";
+            const namaPasien = p[1] || "-";
+            
+            // 🔥 BARU: Deteksi status akun pasien pada indeks ke-10 (Kolom K di MasterPasien)
+            const statusAkun = p[10] ? p[10].toString().trim().toLowerCase() : "aktif";
+            
+            // Atur tampilan nama secara kondisional berdasarkan statusnya
+            let namaTampil = `<strong>${namaPasien}</strong>`;
+            if (statusAkun === "nonaktif") {
+                namaTampil += ` <span style="background:#e74c3c; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:6px; display:inline-block; vertical-align:middle;">Akun Nonaktif / Terarsip</span>`;
+            }
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-weight:bold;">${p[0]}</td>
-                <td>${p[1]}</td>
-                <td>${p[4] || '-'}</td> 
+                <td style="font-weight:bold; color:#2c3e50;">${noRM}</td>
+                <td>${namaTampil}</td>
+                <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p[4] || '-'}</span></td> 
                 <td>${p[5] || '-'}</td> 
                 <td>${p[8] || '-'}</td> 
                 <td>
-                    <button class="btn-action btn-rme" onclick="bukaModalRiwayatFull('${p[0]}', '${p[1].replace(/'/g, "\\'")}')">👁️ Lihat RME</button>
+                    <button class="btn-action btn-rme" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaModalRiwayatFull('${noRM}', '${namaPasien.replace(/'/g, "\\'")}')">👁️ Lihat RME</button>
                 </td>
             `;
             tbody.appendChild(tr);
