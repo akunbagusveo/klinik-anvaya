@@ -928,27 +928,29 @@
                 💡 Silakan centang kotak di bawah ini untuk mengatur menu apa saja yang boleh diakses oleh masing-masing fungsi staff klinis secara langsung.
             </p>
             
-            <table border="1" width="100%" style="text-align: left; border-collapse: collapse; margin-bottom: 20px;">
-                <thead style="background-color: #ddd;">
-                    <tr>
-                        <th style="padding: 10px;">Nama Role</th>
-                        <th style="padding: 10px; text-align: center;">Pendaftaran</th>
-                        <th style="padding: 10px; text-align: center;">Rekam Medis</th>
-                        <th style="padding: 10px; text-align: center;">Database Pasien</th>
-                        <th style="padding: 10px; text-align: center;">Antrean</th>
-                        <th style="padding: 10px; text-align: center;">Kamus Dikte</th>
-                        <th style="padding: 10px; text-align: center;">Pengaturan</th>
-                        <th style="padding: 10px; text-align: center;">Manajemen User</th>
-                        <th style="padding: 10px; text-align: center;">Kelola Jadwal</th>
-                        <th style="padding: 10px; text-align: center;">Edit Pasien</th>
-                        <th style="padding: 10px; text-align: center;">Hapus Pasien</th>
-                        <th style="padding: 10px; text-align: center;">Edit RME</th>
-                    </tr>
-                </thead>
-                <tbody id="bodyMatriksAkses">
-                    <tr><td colspan="7" style="text-align:center; padding: 15px;">Memuat matriks hak akses...</td></tr>
-                </tbody>
-            </table>
+            <div class="table-matrix-wrapper" style="overflow-x: auto; max-width: 100%; border: 1px solid #dee2e6; border-radius: 6px; margin-top: 15px; background: #ffffff;">
+                <table border="1" width="100%" style="text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead style="background-color: #ddd;">
+                        <tr>
+                            <th style="padding: 10px;">Nama Role</th>
+                            <th style="padding: 10px; text-align: center;">Pendaftaran</th>
+                            <th style="padding: 10px; text-align: center;">Rekam Medis</th>
+                            <th style="padding: 10px; text-align: center;">Database Pasien</th>
+                            <th style="padding: 10px; text-align: center;">Antrean</th>
+                            <th style="padding: 10px; text-align: center;">Kamus Dikte</th>
+                            <th style="padding: 10px; text-align: center;">Pengaturan</th>
+                            <th style="padding: 10px; text-align: center;">Manajemen User</th>
+                            <th style="padding: 10px; text-align: center;">Kelola Jadwal</th>
+                            <th style="padding: 10px; text-align: center;">Edit Pasien</th>
+                            <th style="padding: 10px; text-align: center;">Hapus Pasien</th>
+                            <th style="padding: 10px; text-align: center;">Edit RME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyMatriksAkses">
+                        <tr><td colspan="7" style="text-align:center; padding: 15px;">Memuat matriks hak akses...</td></tr>
+                    </tbody>
+                </table>
+            </div>
             
             <div style="text-align: right;">
                 <button id="btnSimpanAkses" onclick="simpanMatriksAkses()" style="background-color: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;">
