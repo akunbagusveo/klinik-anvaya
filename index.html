@@ -1634,31 +1634,36 @@
 
     // --- INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", function() {
-        muatPilihanRole();
-        muatDaftarDokter();
+        // 🔥 1. CEK SESI DI MILIDETIK PERTAMA
         const sessionAktif = localStorage.getItem('anvaya_session');
         
         if (sessionAktif) {
-            const dataUser = JSON.parse(sessionAktif);
-        
-            // 🔥 PERUBAHAN TAMPILAN VISUAL: Buka halaman utama & sembunyikan layar login
-            // ⚠️ Sesuaikan ID elemen di bawah ini dengan nama ID kontainer halaman Anda (misal: 'loginSection', 'mainDashboard', dll.)
-            if (document.getElementById('loginPage')) document.getElementById('loginPage').style.display = 'none';
-            if (document.getElementById('mainPage')) document.getElementById('mainPage').style.display = 'block';
-            
-            // 1. Jalankan aplikasi utama
-            bukaAplikasi(dataUser.role, dataUser.username);
-            
-            // 2. PERBAIKAN: Jalankan ulang fungsi ini agar menu langsung disembunyikan setelah refresh
-            if (dataUser.permissions) {
-                aplikasikanHakAkses(dataUser.permissions);
+            try {
+                const dataUser = JSON.parse(sessionAktif);
+                
+                // 🔥 2. PAKSA UBAH VISUAL SEBELUM JALANKAN LOGIKA LAINNYA
+                // ⚠️ PENTING: Ganti 'loginPage' dan 'mainPage' sesuai dengan ID elemen pembungkus halaman Anda!
+                if (document.getElementById('loginPage')) document.getElementById('loginPage').style.display = 'none';
+                if (document.getElementById('mainPage')) document.getElementById('mainPage').style.display = 'block';
+                
+                // 3. Jalankan aplikasi utama
+                bukaAplikasi(dataUser.role, dataUser.username);
+                
+                // 4. Aplikasikan Hak Akses Menu
+                if (dataUser.permissions) {
+                    aplikasikanHakAkses(dataUser.permissions);
+                }
+            } catch (error) {
+                console.error("Sesi rusak, membersihkan storage...", error);
+                localStorage.removeItem('anvaya_session');
             }
-        } else {
-            // 🔥 Jika tidak ada sesi, pastikan layar login yang tampil dan halaman utama sembunyi
-            if (document.getElementById('loginPage')) document.getElementById('loginPage').style.display = 'block';
-            if (document.getElementById('mainPage')) document.getElementById('mainPage').style.display = 'none';
         }
 
+        // 🔥 5. JALANKAN FUNGSI ASYNC DI BAWAH AGAR TIDAK MENGGANGGU PROSES LOGIN INITIALIZATION
+        muatPilihanRole();
+        muatDaftarDokter();
+
+        // --- Sisa kode untuk inputTgl dan updateDaftarDokter ke bawah (Biarkan Tetap Sama) ---
         const inputTgl = document.getElementById('tglKunjungan');
         if (inputTgl) {
             const today = new Date();
@@ -1666,7 +1671,6 @@
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             
-            // Format standar HTML date input adalah YYYY-MM-DD
             const tanggalHariIni = `${yyyy}-${mm}-${dd}`;
             inputTgl.min = tanggalHariIni; 
         }
@@ -1724,8 +1728,8 @@
             });
         }
 
-        document.getElementById('tglKunjungan').addEventListener('change', updateDaftarDokter);
-        document.getElementById('waktuKunjungan').addEventListener('change', updateDaftarDokter);
+        if (document.getElementById('tglKunjungan')) document.getElementById('tglKunjungan').addEventListener('change', updateDaftarDokter);
+        if (document.getElementById('waktuKunjungan')) document.getElementById('waktuKunjungan').addEventListener('change', updateDaftarDokter);
     });
 
     // --- AUTHENTICATION ---
