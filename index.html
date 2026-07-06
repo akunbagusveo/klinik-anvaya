@@ -3748,10 +3748,13 @@
                 pengaturan: row.querySelector('.chk-pengaturan').checked,
                 manajemenUser: row.querySelector('.chk-mnguser').checked,
                 kelolaJadwal: row.querySelector('.chk-jadwal').checked,
-                // Tambahkan 2 baris ini ke dalam matrixPayload.push:
                 editPasien: row.querySelector('.chk-edit-pasien').checked,
                 hapusPasien: row.querySelector('.chk-hapus-pasien').checked,
                 editRME: row.querySelector('.chk-edit-rme').checked,
+                
+                // 🔥 TAMBAHAN BARU: Ambil status checklist dari tabel UI untuk dikirim ke server
+                aksesInputRME: row.querySelector('.chk-input-rme').checked,
+                aksesEditAntrean: row.querySelector('.chk-edit-antrean').checked
             });
         });
 
@@ -3768,7 +3771,7 @@
             btn.innerText = "💾 Simpan Perubahan Hak Akses";
             if (res.result === "success") {
                 alert("🎉 Hak akses role berhasil diperbarui! Seluruh staf yang login dengan role terkait akan langsung terdampak perubahan menu ini secara realtime.");
-                muatMatriksAkses(); // Refresh agar data tetap sinkron
+                muatMatriksAkses(); 
             } else {
                 alert("❌ Gagal menyimpan perubahan: " + res.message);
             }
