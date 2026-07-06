@@ -403,8 +403,6 @@
         <div class="nav-tabs">
             <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">Beranda Utama</button>
             <button id="tabPendaftaranBtn" class="tab-link" onclick="switchTab('pendaftaran')">Form Pendaftaran</button>
-            <!-- <button id="tabPasienBtn" class="tab-link" onclick="switchTab('pasien')">Form Pendaftaran</button> -->
-            <!-- <button id="tabDokterBtn" class="tab-link" onclick="switchTab('dokter')">Antrian Pasien</button> -->
             <button id="tabAntreanBtn" class="tab-link" onclick="switchTab('antrean')">Antrian Pasien</button>
             <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">Riwayat Medis Pasien</button>
             <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">Database Pasien</button>
@@ -1642,6 +1640,11 @@
         
         if (sessionAktif) {
             const dataUser = JSON.parse(sessionAktif);
+        
+            // 🔥 PERUBAHAN TAMPILAN VISUAL: Buka halaman utama & sembunyikan layar login
+            // ⚠️ Sesuaikan ID elemen di bawah ini dengan nama ID kontainer halaman Anda (misal: 'loginSection', 'mainDashboard', dll.)
+            if (document.getElementById('loginPage')) document.getElementById('loginPage').style.display = 'none';
+            if (document.getElementById('mainPage')) document.getElementById('mainPage').style.display = 'block';
             
             // 1. Jalankan aplikasi utama
             bukaAplikasi(dataUser.role, dataUser.username);
@@ -1650,6 +1653,10 @@
             if (dataUser.permissions) {
                 aplikasikanHakAkses(dataUser.permissions);
             }
+        } else {
+            // 🔥 Jika tidak ada sesi, pastikan layar login yang tampil dan halaman utama sembunyi
+            if (document.getElementById('loginPage')) document.getElementById('loginPage').style.display = 'block';
+            if (document.getElementById('mainPage')) document.getElementById('mainPage').style.display = 'none';
         }
 
         const inputTgl = document.getElementById('tglKunjungan');
