@@ -966,6 +966,8 @@
                             <th style="padding: 10px; text-align: center;">Edit Pasien</th>
                             <th style="padding: 10px; text-align: center;">Hapus Pasien</th>
                             <th style="padding: 10px; text-align: center;">Edit RME</th>
+                            <th style="padding: 10px; text-align: center;">Input RME</th>
+                            <th style="padding: 10px; text-align: center;">Edit Antrean</th>
                         </tr>
                     </thead>
                     <tbody id="bodyMatriksAkses">
@@ -3666,7 +3668,7 @@
 
     function muatMatriksAkses() {
         const tbody = document.getElementById('bodyMatriksAkses');
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -3694,6 +3696,8 @@
                     const chkEditPasien  = (role.editPasien == 1 || role.editPasien === true) ? 'checked' : '';
                     const chkHapusPasien = (role.hapusPasien == 1 || role.hapusPasien === true) ? 'checked' : '';
                     const chkEditRME = (role.editRME == 1 || role.editRME === true) ? 'checked' : '';
+                    const chkInputRME    = (role.aksesInputRME == 1 || role.aksesInputRME === true) ? 'checked' : '';
+                    const chkEditAntrean = (role.aksesEditAntrean == 1 || role.aksesEditAntrean === true) ? 'checked' : '';
 
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
@@ -3708,16 +3712,18 @@
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-pasien" ${chkEditPasien} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-hapus-pasien" ${chkHapusPasien} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-rme" ${chkEditRME} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-input-rme" ${chkInputRME} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-antrean" ${chkEditAntrean} ${disabledAttr}></td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
             }
         })
         .catch(err => {
             console.error("Error matriks:", err);
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
         });
     }
 
