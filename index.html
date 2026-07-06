@@ -551,11 +551,11 @@
                 </div>
                 <div class="form-group">
                     <label>Rencana Tanggal Kunjungan</label>
-                    <input type="date" id="tglKunjungan" required>
+                    <input type="date" id="tglKunjungan" onchange="muatDokterPendaftaran()" required>
                 </div>
                 <div class="form-group">
                     <label>Pilihan Waktu</label>
-                    <select id="waktuKunjungan">
+                    <select id="waktuKunjungan" onchange="muatDokterPendaftaran()">
                         <option value="Siang (11.00 - 15.00)">Siang (11.00 - 15.00)</option>
                         <option value="Sore/Malam (15.00 - Selesai)">Sore/Malam (15.00 - Selesai)</option>
                     </select>
@@ -4215,6 +4215,50 @@
         if (typeof switchTabRME === "function") {
             switchTabRME('form');
         }
+    }
+
+    // 🔥 FUNGSI BARU: Khusus untuk memuat dokter di Form Pendaftaran Pasien Baru
+    function muatDokterPendaftaran() {
+        const tanggal = document.getElementById('tglKunjungan').value;
+        const jam = document.getElementById('waktuKunjungan').value;
+        const selectDokter = document.getElementById('pilihDokter');
+
+        // Jika tanggal belum diisi, biarkan dropdown dokter terkunci
+        if (!tanggal) {
+            selectDokter.innerHTML = '<option value="">-- Pilih Tanggal Kunjungan Terlebih Dahulu --</option>';
+            selectDokter.disabled = true;
+            return;
+        }
+
+        selectDokter.innerHTML = '<option value="">-- Memuat Dokter... --</option>';
+        selectDokter.disabled = true;
+
+        const payload = { 
+            action: "getAvailableDokter", 
+            tanggal: tanggal, 
+            jam: jam 
+        };
+
+        // Tembak data ke backend Apps Script via Fetch API
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(res => {
+            if (res.result === "success" && res.data.length > 0) {
+                // Buka kunci dropdown
+                selectDokter.disabled = false;
+                // Isi dropdown dengan NAMA dokter sebagai value (sesuai database Anda)
+                selectDokter.innerHTML = '<option value="">-- Pilih Dokter --</option>' + 
+                    res.data.map(doc => `<option value="${doc.nama}">${doc.nama}</option>`).join('');
+            } else {
+                selectDokter.innerHTML = '<option value="">❌ Tidak ada dokter bertugas</option>';
+                selectDokter.disabled = true;
+            }
+        })
+        .catch(err => {
+            console.error("Error pendaftaran baru:", err);
+            selectDokter.innerHTML = '<option value="">❌ Gagal memuat data dokter</option>';
+            selectDokter.disabled = true;
+        });
     }
 
 </script>
