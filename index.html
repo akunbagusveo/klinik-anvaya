@@ -2964,17 +2964,21 @@
         }
     }
 
-    document.getElementById('formModalMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
+    document.getElementById('formModalMedis').addEventListener('submit', async function(e) { 
         e.preventDefault();
         const submitBtn = e.target.querySelector('button[type="submit"]');
         submitBtn.disabled = true; submitBtn.innerText = "Menyimpan Perubahan...";
 
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const idDokterAktif = sessionData ? sessionData.idUser : "USR-000"; 
+        // 🔥 1. AMBIL DATA SESI SECARA LENGKAP & DINAMIS
+        const sessionData    = JSON.parse(localStorage.getItem('anvaya_session'));
+        const idDokterAktif  = sessionData ? sessionData.idUser : "USR-000"; 
+        const usernameAktif  = sessionData ? sessionData.username : "Anonymous"; // Tambahan baru
+        const roleAktif      = sessionData ? sessionData.role : "Staff";        // Tambahan baru
 
-        // 🔥 Ambil data file komputer dari modal jika ada perubahan foto
+        // Ambil data file komputer dari modal jika ada perubahan foto
         const dataFileModal = await bacaFileKeBase64('modalFileFoto');
 
+        // 🔥 2. SISIPIKAN operatorUsername DAN operatorRole KE PAYLOAD
         const data = {
             action: "submitRekamMedis",
             targetSheet: "RekamMedis",
@@ -2989,11 +2993,12 @@
             proKontrol: document.getElementById('modalProKontrol').value,
             resep: document.getElementById('modalResep').value,
             idDokter: idDokterAktif,
+            operatorUsername: usernameAktif, // 🔥 Dikirim agar Log tidak Unknown
+            operatorRole: roleAktif,         // 🔥 Dikirim agar Log tidak Unknown
             linkFoto: document.getElementById('modalLinkFoto').value || "-",
-            fileBaru: dataFileModal // 🔥 Kirim data file modal ke Google Script
+            fileBaru: dataFileModal 
         };
 
-        // ... sisa kode fetch ke bawahnya TETAP SAMA seperti milik Anda ...
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
         .then(response => response.json())
         .then(res => {
