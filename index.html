@@ -1560,10 +1560,12 @@
                 if (!pasien.isRmeFilled) {
                     tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>` : '-';
                 } else {
-                    if (pasien.tanggalDaftar === formatHariIni) {
-                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat/Edit RME</button>`;
+                    if (pasien.tanggalDaftar === formatHariIni && perms.editRME === 1) {
+                        // Jika Dokter / Owner -> Mode Edit Aktif (Kirim parameter true)
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}', true)">👁️ Lihat/Edit RME</button>`;
                     } else {
-                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
+                        // Jika Perawat / Staf Non-Dokter / Dokter di hari lain -> Mode Read-Only (Kirim parameter false)
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}', false)">👁️ Lihat RME</button>`;
                     }
                 }
             }
@@ -2900,7 +2902,7 @@
 
 
     // --- POP-UP MODAL EDIT RME UTK DOKTER ---
-    function bukaModalRME(noRM, namaPasien, tanggalDaftar) {
+    function bukaModalRME(noRM, namaPasien, tanggalDaftar, isEditable) {
         document.getElementById('formModalMedis').reset();
         document.getElementById('modalRME').style.display = 'block';
         document.getElementById('modalNama').value = namaPasien;
@@ -2954,6 +2956,12 @@
             console.error(err);
             alert("Terjadi kendala jaringan saat mengambil data RME.");
         });
+
+        const btnSimpan = document.getElementById('btnSimpanRME');
+        if (btnSimpan) {
+            // Jika isEditable bernilai true -> tampilkan tombol, jika false -> sembunyikan sepenuhnya!
+            btnSimpan.style.display = isEditable ? 'block' : 'none';
+        }
     }
 
     document.getElementById('formModalMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
