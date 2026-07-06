@@ -4144,11 +4144,12 @@
     function pemicuHapusPasien(noRM, namaPasien) {
         const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data pasien bernama "${namaPasien}" (${noRM})?\n\nSistem akan mendeteksi riwayat transaksi medis sebelum mengeksekusi.`);
         if(!konfirmasi) return;
+        
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Anonymous";
         const roleAktif     = sessionData ? sessionData.role : "Staff";
 
-        // 🔥 2. TAMBAHAN BARU: Sisipkan operatorUsername dan operatorRole ke data pengiriman
+        // Data dikemas secara lengkap dan dinamis
         const payloadData = { 
             action: "deletePasien", 
             noRM: noRM,
@@ -4158,13 +4159,13 @@
         
         fetch(WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "deletePasien", noRM: noRM })
+            body: JSON.stringify(payloadData) // 🔥 PERUBAHAN: Panggil payloadData yang sudah lengkap!
         })
         .then(res => res.json())
         .then(res => {
             if(res.result === "success") {
-                alert(res.message); // Memunculkan notifikasi apakah ter-soft delete atau ter-hard delete
-                if(typeof cariDaftarPasien === "function") cariDaftarPasien(); // Refresh data tabel realtime
+                alert(res.message); 
+                if(typeof cariDaftarPasien === "function") cariDaftarPasien(); 
             } else {
                 alert("Gagal memproses hapus data: " + res.message);
             }
