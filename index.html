@@ -1494,14 +1494,20 @@
         const tbody = document.getElementById('tabelAntreanBody');
         tbody.innerHTML = '';
 
+        // 🔥 A. AMBIL DATA HAK AKSES OPERATOR DARI STORAGE
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const perms = sessionData ? sessionData.permissions : {};
+        
+        // Default fallback: Jika perms belum terdefinisi di DB, set ke 0 (tidak punya akses)
+        const bolehInputRME   = perms.aksesInputRME === 1;
+        const bolehEditAntrean = perms.aksesEditAntrean === 1;
+
         if (!dataAntreanGlobal || dataAntreanGlobal.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada antrean pasien untuk rentang tanggal ini.</td></tr>`;
             return;
         }
 
         let dataTerfilter = dataAntreanGlobal;
-
-        // 🔥 PERUBAHAN: Jika filter "Semua", sembunyikan pasien yang Dibatalkan atau Tidak Datang
         if (filterStatus === "Semua") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status !== "Dibatalkan" && pasien.status !== "Tidak Datang");
         } else if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa") {
@@ -1522,9 +1528,6 @@
             let badgeClass = "badge-belum";
             if(pasien.status === "Sedang Diperiksa") badgeClass = "badge-sedang";
             if(pasien.status === "Sudah Diperiksa") badgeClass = "badge-sudah";
-            // Tambahan style badge baru untuk estetika jika sewaktu-waktu muncul
-            if(pasien.status === "Dibatalkan") badgeClass = "badge-batal"; 
-            if(pasien.status === "Tidak Datang") badgeClass = "badge-tidak-datang";
 
             let rmeStatusIndicator = pasien.isRmeFilled ? 
                 '<br><span style="color: #2ecc71; font-size: 11px;">✔️ RME Tersimpan</span>' : 
@@ -1532,26 +1535,33 @@
 
             let tombolAksi = "";
             
-            // 🔥 PERUBAHAN: Menambahkan tombol aksi baru (Batal, Tidak Datang, Edit) pada status Belum Diperiksa
             if (pasien.status === "Belum Diperiksa") {
+                // 🔥 B. KONTROL VALIDASI GRANULAR TOMBOL AKSI
+                let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">▶️ Mulai</button>` : '';
+                let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
+                let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
+                let btnAbsen = bolehEditAntrean ? `<button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>` : '';
+
                 tombolAksi = `
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">▶️ Mulai</button>
-                        <button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>
-                        <button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>
-                        <button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>
+                        ${btnMulai} ${btnEdit} ${btnBatal} ${btnAbsen}
                     </div>
                 `;
+                
+                // Jika role tersebut sama sekali tidak punya akses keduanya, tampilkan teks strip
+                if (!tombolAksi.trim()) tombolAksi = '<span style="color:#7f8c8d; font-size:12px;">Tidak ada akses</span>';
+
             } else if (pasien.status === "Sedang Diperiksa") {
-                tombolAksi = `<button class="btn-action btn-done" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sudah Diperiksa')">Selesai Periksa</button>`;
+                // Aksi Selesai Periksa biasanya melekat pada hak akses RME
+                tombolAksi = bolehInputRME ? `<button class="btn-action btn-done" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sudah Diperiksa')">Selesai Periksa</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
             } else if (pasien.status === "Sudah Diperiksa") {
                 if (!pasien.isRmeFilled) {
-                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>`;
+                    tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>` : '-';
                 } else {
                     if (pasien.tanggalDaftar === formatHariIni) {
                         tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat/Edit RME</button>`;
                     } else {
-                        buttonAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
                     }
                 }
             }
