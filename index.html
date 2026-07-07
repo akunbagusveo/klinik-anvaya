@@ -2800,15 +2800,19 @@
         if (resetHalaman) { halamanSekarangPasien = 1; }
         
         kataKunciPasien = document.getElementById('txtCariDaftar').value.trim();
+        
+        // 🔥 1. AMBIL NILAI VALUE DARI DROPDOWN FILTER STATUS PASIEN
+        const statusFilterVal = document.getElementById('filterStatusPasien').value;
+
         const tbody = document.getElementById('tabelSemuaPasienBody');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat database dari server... ⏳</td></tr>';
-        
 
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ 
                 action: "getPasienPaginated", 
                 keyword: kataKunciPasien,
+                statusFilter: statusFilterVal, // 🔥 2. SISIPIKAN PARAMETER INI KE PAYLOAD FETCH (Jangan sampai tertinggal)
                 page: halamanSekarangPasien,
                 pageSize: ukuranHalamanPasien
             })
@@ -2828,22 +2832,16 @@
                 const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
                 const idxStatus = headersMuda.indexOf("status") !== -1 ? headersMuda.indexOf("status") : 10;
 
-                // 🛠️ PERBAIKAN: Ambil data permissions dari session localStorage tepat di sini
                 const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
                 const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
-                    res.data.forEach((p, index) => {
-                    // 1. Ambil indeks dasar data pasien
+                res.data.forEach((p, index) => {
                     const noRMPasien = p[idxRM] || "-";
                     const namaPasien = p[idxNama] || "-";
-                    
-                    // 🔥 DEKLARASI KUNCI UTAMA (Wajib diletakkan di atas sebelum variabel ini dipanggil di bawahnya)
                     const statusPasienAktif = p[idxStatus] ? p[idxStatus].toString().trim().toLowerCase() : "aktif";
 
-                    // 2. Rancang Tombol Aksi Detail bawaan
                     let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Detail</button>`;
 
-                    // 3. Logika Penentuan Tombol berdasarkan Status Aktif/Nonaktif
                     if (statusPasienAktif === "nonaktif") {
                         if (perms.editPasien === 1) {
                             tombolAksi += `<button type="button" class="btn-action btn-restore" style="background-color: #2ecc71; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="aktifkanPasien('${noRMPasien}', '${namaPasien}')">🔄 Aktifkan</button>`;
@@ -2857,10 +2855,8 @@
                         }
                     }
 
-                    // 4. Atur gaya teks baris jika pasien nonaktif
                     let styleStatusRM = (statusPasienAktif === "nonaktif") ? 'style="font-weight:bold; color:#7f8c8d; text-decoration: line-through;"' : 'style="font-weight:bold; color:#2c3e50;"';
 
-                    // 5. Render baris data ke tabel UI
                     tbody.innerHTML += `<tr>
                             <td ${styleStatusRM}>${noRMPasien}</td>
                             <td><strong>${namaPasien}</strong> ${(statusPasienAktif === 'nonaktif' ? '<span style="color:red; font-size:11px;">(Nonaktif)</span>' : '')}</td>
