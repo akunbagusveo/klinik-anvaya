@@ -2832,18 +2832,23 @@
                 const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
                 const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
-                res.data.forEach((p, index) => {
+                    res.data.forEach((p, index) => {
+                    // 1. Ambil indeks dasar data pasien
                     const noRMPasien = p[idxRM] || "-";
                     const namaPasien = p[idxNama] || "-";
+                    
+                    // 🔥 DEKLARASI KUNCI UTAMA (Wajib diletakkan di atas sebelum variabel ini dipanggil di bawahnya)
+                    const statusPasienAktif = p[idxStatus] ? p[idxStatus].toString().trim().toLowerCase() : "aktif";
 
-                    let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Lihat Detail</button>`;
+                    // 2. Rancang Tombol Aksi Detail bawaan
+                    let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Detail</button>`;
 
+                    // 3. Logika Penentuan Tombol berdasarkan Status Aktif/Nonaktif
                     if (statusPasienAktif === "nonaktif") {
                         if (perms.editPasien === 1) {
                             tombolAksi += `<button type="button" class="btn-action btn-restore" style="background-color: #2ecc71; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="aktifkanPasien('${noRMPasien}', '${namaPasien}')">🔄 Aktifkan</button>`;
                         }
                     } else {
-                        // KONDISI NORMAL JIKA PASIEN AKTIF
                         if (perms.editPasien === 1) {
                             tombolAksi += `<button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>`;
                         }
@@ -2852,30 +2857,22 @@
                         }
                     }
 
-                    // Ganti warna indikator gender sesuai status keaktifan sebagai penanda visual ekstra
+                    // 4. Atur gaya teks baris jika pasien nonaktif
                     let styleStatusRM = (statusPasienAktif === "nonaktif") ? 'style="font-weight:bold; color:#7f8c8d; text-decoration: line-through;"' : 'style="font-weight:bold; color:#2c3e50;"';
 
-                    // 🔥 HAK AKSES SEKARANG 100% DINAMIS DARI DATABASE
-                    // if (perms.editPasien === 1) {
-                    //     tombolAksi += `<button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>`;
-                    // }
-                    
-                    // if (perms.hapusPasien === 1) {
-                    //     tombolAksi += `<button type="button" class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien}')">🗑️ Hapus</button>`;
-                    // }
-
+                    // 5. Render baris data ke tabel UI
                     tbody.innerHTML += `<tr>
-                        <td ${styleStatusRM}>${noRMPasien}</td>
-                        <td><strong>${namaPasien}</strong> ${(statusPasienAktif === 'nonaktif' ? '<span style="color:red; font-size:11px;">(Nonaktif)</span>' : '')}</td>
-                        <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
-                        <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
-                        <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
-                        <td style="white-space: nowrap !important; width: 1%; vertical-align: middle;">
-                            <div style="display: inline-flex !important; gap: 6px; align-items: center; flex-wrap: nowrap !important;">
-                                ${tombolAksi}
-                            </div>
-                        </td>
-                    </tr>`;  
+                            <td ${styleStatusRM}>${noRMPasien}</td>
+                            <td><strong>${namaPasien}</strong> ${(statusPasienAktif === 'nonaktif' ? '<span style="color:red; font-size:11px;">(Nonaktif)</span>' : '')}</td>
+                            <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
+                            <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
+                            <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
+                            <td style="white-space: nowrap !important; width: 1%; vertical-align: middle;">
+                                <div style="display: inline-flex !important; gap: 6px; align-items: center; flex-wrap: nowrap !important;">
+                                    ${tombolAksi}
+                                </div>
+                            </td>
+                        </tr>`;  
                 });
 
                 document.getElementById('lblHalamanPasien').innerText = `Halaman ${res.currentPage} dari ${res.totalPages}`;
