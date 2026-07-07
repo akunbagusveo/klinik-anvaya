@@ -866,6 +866,7 @@
             <button id="subTabUserBtn" onclick="bukaSubTab('manajemenUser')" class="tab-link active" style="margin-right: 10px; font-weight: bold;">👥 Manajemen Pengguna</button>
             <button id="subTabAksesBtn" onclick="bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
             <button id="subTabJadwalBtn" onclick="bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
+            <button id="subTabLogBtn" onclick="bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
         </div>
 
         <!-- ========================================== -->
@@ -1103,96 +1104,127 @@
             </table>
         </div>
 
-    <div id="dokter" class="tab-content">
-        <h2>Beranda Utama Dokter</h2>
-        
-        <div id="cardJadwalDokter" style="display: none; background: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3 style="margin-top: 0; color: #2c3e50;">📅 Jadwal Praktik Anda</h3>
-            <ul id="listJadwalDokter" style="margin: 0; padding-left: 20px; color: #34495e;">
-                <li>Memuat jadwal praktik...</li>
-            </ul>
-        </div>
-        
-        <div class="stats-grid">
-            <div class="stat-card bg-total">
-                <h4>Total Antrean Hari Ini</h4>
-                <p id="statTotal">0</p>
-            </div>
-            <div class="stat-card bg-belum">
-                <h4>Belum Diperiksa</h4>
-                <p id="statBelum">0</p>
-            </div>
-            <div class="stat-card bg-sedang">
-                <h4>Sedang Diperiksa</h4>
-                <p id="statSedang">0</p>
-            </div>
-            <div class="stat-card bg-sudah">
-                <h4>Sudah Diperiksa</h4>
-                <p id="statSudah">0</p>
+        <!-- ========================================== -->
+        <!-- SUB-TAB 4: LIHAT LOG AKTIFITAS   -->
+        <!-- ========================================== -->
+
+        <div id="manajemenLog" class="sub-tab-content" style="display:none;">
+            <h3>Audit Log Aktivitas Sistem</h3>
+            <p style="color: gray; font-size: 14px; margin-bottom: 15px;">
+                Menampilkan 200 riwayat aktivitas terbaru dari seluruh pengguna.
+            </p>
+            
+            <div style="background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; overflow-x: auto;">
+                <button onclick="muatDataLog()" style="margin-bottom: 15px; background-color: #17a2b8; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    🔄 Refresh Log Terbaru
+                </button>
+                
+                <table border="1" width="100%" style="text-align: left; border-collapse: collapse; font-size: 13px;">
+                    <thead style="background-color: #f4f4f4;">
+                        <tr>
+                            <th style="padding: 10px;">Waktu</th>
+                            <th style="padding: 10px;">Username</th>
+                            <th style="padding: 10px;">Role</th>
+                            <th style="padding: 10px;">Modul</th>
+                            <th style="padding: 10px;">Aksi</th>
+                            <th style="padding: 10px;">Detail Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyLogAktivitas">
+                        <tr><td colspan="6" style="text-align:center; padding: 15px;">⏳ Mengambil data log dari server...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <h3>Daftar Antrean Pasien</h3>
-        <!-- 🔥 FITUR BARU: Dropdown Filter Antrean & Tanggal -->
-        <!-- 🔥 PERBAIKAN: Menggunakan kelas pembungkus agar bisa otomatis menyusun ke bawah di HP -->
-        <div class="antrean-filter-wrapper">
-            <div class="filter-group">
-                <label>Pilih Tanggal:</label>
-                <div class="date-range-inputs">
-                    <input type="date" id="filterTanggalMulai" onchange="validasiRentangTanggal()">
-                    <span class="filter-separator">s/d</span>
-                    <input type="date" id="filterTanggalAkhir" onchange="validasiRentangTanggal()">
+        <div id="dokter" class="tab-content">
+            <h2>Beranda Utama Dokter</h2>
+            
+            <div id="cardJadwalDokter" style="display: none; background: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; color: #2c3e50;">📅 Jadwal Praktik Anda</h3>
+                <ul id="listJadwalDokter" style="margin: 0; padding-left: 20px; color: #34495e;">
+                    <li>Memuat jadwal praktik...</li>
+                </ul>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card bg-total">
+                    <h4>Total Antrean Hari Ini</h4>
+                    <p id="statTotal">0</p>
+                </div>
+                <div class="stat-card bg-belum">
+                    <h4>Belum Diperiksa</h4>
+                    <p id="statBelum">0</p>
+                </div>
+                <div class="stat-card bg-sedang">
+                    <h4>Sedang Diperiksa</h4>
+                    <p id="statSedang">0</p>
+                </div>
+                <div class="stat-card bg-sudah">
+                    <h4>Sudah Diperiksa</h4>
+                    <p id="statSudah">0</p>
                 </div>
             </div>
 
-            <div class="filter-group">
-                <label for="filterStatusAntrean">Pilih Status Pasien:</label>
-                <select id="filterStatusAntrean" onchange="terapkanFilterAntrean()">
-                    <option value="Semua">📋 Tampilkan Semua Antrean</option>
-                    <option value="Belum Diperiksa">🟡 Belum Diperiksa</option>
-                    <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
-                    <option value="Sudah Diperiksa">🟢 Sudah Diperiksa</option>
-                    <option value="Perlu Input RME">⚠️ Perlu Input RME (Prioritas)</option>
-                </select>
-            </div>
+            <h3>Daftar Antrean Pasien</h3>
+            <!-- 🔥 FITUR BARU: Dropdown Filter Antrean & Tanggal -->
+            <!-- 🔥 PERBAIKAN: Menggunakan kelas pembungkus agar bisa otomatis menyusun ke bawah di HP -->
+            <div class="antrean-filter-wrapper">
+                <div class="filter-group">
+                    <label>Pilih Tanggal:</label>
+                    <div class="date-range-inputs">
+                        <input type="date" id="filterTanggalMulai" onchange="validasiRentangTanggal()">
+                        <span class="filter-separator">s/d</span>
+                        <input type="date" id="filterTanggalAkhir" onchange="validasiRentangTanggal()">
+                    </div>
+                </div>
 
-            <div class="filter-group" style="display: flex; align-items: flex-end;">
-                <button type="button" onclick="unduhLaporanAntrean()" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%;">
-                    📥 Export ke Excel/CSV
-                </button>
-            </div>
-        </div>
-        
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nama Pasien</th>
-                        <th>Tanggal Daftar</th>
-                        <th>Waktu</th>
-                        <th>Keluhan/Tujuan</th>
-                        <th>Nama Dokter</th>
-                        <th>Status</th>
-                        <th>Aksi Manajemen Antrean</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelAntreanBody">
-                    <tr><td colspan="7" style="text-align:center;">Memuat daftar antrean...</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div id="paginationNav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-            <div id="paginationInfo" style="font-size: 14px; color: #555;">
-                Menampilkan 0 dari 0 antrean
-            </div>
-            <div id="paginationButtons" style="display: flex; gap: 5px;">
-                <!-- Tombol angka halaman akan di-render via JavaScript -->
-            </div>
-        </div>
+                <div class="filter-group">
+                    <label for="filterStatusAntrean">Pilih Status Pasien:</label>
+                    <select id="filterStatusAntrean" onchange="terapkanFilterAntrean()">
+                        <option value="Semua">📋 Tampilkan Semua Antrean</option>
+                        <option value="Belum Diperiksa">🟡 Belum Diperiksa</option>
+                        <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
+                        <option value="Sudah Diperiksa">🟢 Sudah Diperiksa</option>
+                        <option value="Perlu Input RME">⚠️ Perlu Input RME (Prioritas)</option>
+                    </select>
+                </div>
 
-        
+                <div class="filter-group" style="display: flex; align-items: flex-end;">
+                    <button type="button" onclick="unduhLaporanAntrean()" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%;">
+                        📥 Export ke Excel/CSV
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Pasien</th>
+                            <th>Tanggal Daftar</th>
+                            <th>Waktu</th>
+                            <th>Keluhan/Tujuan</th>
+                            <th>Nama Dokter</th>
+                            <th>Status</th>
+                            <th>Aksi Manajemen Antrean</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelAntreanBody">
+                        <tr><td colspan="7" style="text-align:center;">Memuat daftar antrean...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationNav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                <div id="paginationInfo" style="font-size: 14px; color: #555;">
+                    Menampilkan 0 dari 0 antrean
+                </div>
+                <div id="paginationButtons" style="display: flex; gap: 5px;">
+                    <!-- Tombol angka halaman akan di-render via JavaScript -->
+                </div>
+            </div>            
+        </div>
     </div>
-</div>
 <div id="modalRME" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; overflow-y:auto;">
     <div style="background:white; max-width:600px; margin: 30px auto; padding:20px; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
         <!-- 🔥 Tambahkan ID pada H2 di bawah ini -->
@@ -3470,7 +3502,11 @@
         // Sinkronisasi warna tombol aktif
         document.getElementById('subTabUserBtn').style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
         document.getElementById('subTabAksesBtn').style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
-        document.getElementById('subTabJadwalBtn').style.backgroundColor = (subTabId === 'manajemenJadwal') ? '#ddd' : ''; // 🔥 BARU
+        document.getElementById('subTabJadwalBtn').style.backgroundColor = (subTabId === 'manajemenJadwal') ? '#ddd' : '';
+        
+        // 🔥 TAMBAHAN BARU: Warna Tombol Log
+        const btnLog = document.getElementById('subTabLogBtn');
+        if (btnLog) btnLog.style.backgroundColor = (subTabId === 'manajemenLog') ? '#ddd' : '';
 
         // Pemanggilan data otomatis
         if (subTabId === 'manajemenUser') {
@@ -3478,8 +3514,12 @@
         } else if (subTabId === 'manajemenAkses') {
             muatMatriksAkses();
         } else if (subTabId === 'manajemenJadwal') {
-            muatDropdownDokterJadwal(); // Otomatis isi list filter dokter
-            muatJadwalMaster(); // 🔥 BARU: Ambil jadwal dari server saat sub-tab dibuka!
+            if(typeof muatDropdownDokterJadwal === "function") muatDropdownDokterJadwal(); 
+            if(typeof muatJadwalMaster === "function") muatJadwalMaster(); 
+        } 
+        // 🔥 TAMBAHAN BARU: Tarik data log saat sub-tab log dibuka
+        else if (subTabId === 'manajemenLog') {
+            muatDataLog();
         }
     }
 
@@ -4327,6 +4367,48 @@
             console.error("Error pendaftaran baru:", err);
             selectDokter.innerHTML = '<option value="">❌ Gagal memuat data dokter</option>';
             selectDokter.disabled = true;
+        });
+    }
+
+    function muatDataLog() {
+        const tbody = document.getElementById('bodyLogAktivitas');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 15px;">⏳ Membaca log aktivitas dari database...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getLogAktivitas" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                tbody.innerHTML = "";
+                if (res.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 15px;">Belum ada log aktivitas yang tercatat.</td></tr>`;
+                    return;
+                }
+                // Susun baris tabel
+                res.data.forEach(log => {
+                    let badgeColor = "#e9ecef";
+                    if (log.aksi.includes("CREATE") || log.aksi.includes("TAMBAH")) badgeColor = "#d4edda";
+                    if (log.aksi.includes("UPDATE") || log.aksi.includes("EDIT")) badgeColor = "#fff3cd";
+                    if (log.aksi.includes("DELETE") || log.aksi.includes("HAPUS")) badgeColor = "#f8d7da";
+
+                    tbody.innerHTML += `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px; white-space: nowrap; color: #555;">${log.waktu}</td>
+                        <td style="padding: 8px; font-weight: bold; color: #2c3e50;">${log.username}</td>
+                        <td style="padding: 8px;">${log.role}</td>
+                        <td style="padding: 8px;">${log.modul}</td>
+                        <td style="padding: 8px;"><span style="background:${badgeColor}; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">${log.aksi}</span></td>
+                        <td style="padding: 8px; line-height: 1.4;">${log.detail}</td>
+                    </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat log: ${res.message}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.error("Error muat log:", err);
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Terjadi gangguan koneksi internet.</td></tr>`;
         });
     }
 
