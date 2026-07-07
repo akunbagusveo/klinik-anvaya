@@ -1134,6 +1134,13 @@
                         <tr><td colspan="6" style="text-align:center; padding: 15px;">⏳ Mengambil data log dari server...</td></tr>
                     </tbody>
                 </table>
+                <div id="logPaginationNav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd;">
+                    <div id="logPaginationInfo" style="font-size: 14px; color: #555; font-weight: bold;">
+                        Menampilkan halaman 0 dari 0
+                    </div>
+                    <div id="logPaginationButtons" style="display: flex; gap: 5px;">
+                        </div>
+                </div>
             </div>
         </div>
 
@@ -4370,13 +4377,22 @@
         });
     }
 
-    function muatDataLog() {
+    // 🔥 1. DAFTARKAN VARIABEL HALAMAN DI AREA GLOBAL SCRIPT (Paling Atas)
+    let currentLogPage = 1;
+    const logLimit = 50; // Menampilkan 50 baris per halaman demi kenyamanan scrolling
+
+    function muatDataLog(page = 1) {
+        currentLogPage = page;
         const tbody = document.getElementById('bodyLogAktivitas');
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 15px;">⏳ Membaca log aktivitas dari database...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 15px;">⏳ Membaca log aktivitas halaman ${page}...</td></tr>`;
 
         fetch(WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "getLogAktivitas" })
+            body: JSON.stringify({ 
+                action: "getLogAktivitas",
+                page: currentLogPage,
+                limit: logLimit
+            })
         })
         .then(res => res.json())
         .then(res => {
@@ -4384,9 +4400,12 @@
                 tbody.innerHTML = "";
                 if (res.data.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 15px;">Belum ada log aktivitas yang tercatat.</td></tr>`;
+                    document.getElementById('logPaginationInfo').innerText = "Menampilkan halaman 0 dari 0";
+                    document.getElementById('logPaginationButtons').innerHTML = "";
                     return;
                 }
-                // Susun baris tabel
+
+                // Render isi baris log ke tabel
                 res.data.forEach(log => {
                     let badgeColor = "#e9ecef";
                     if (log.aksi.includes("CREATE") || log.aksi.includes("TAMBAH")) badgeColor = "#d4edda";
@@ -4402,6 +4421,11 @@
                         <td style="padding: 8px; line-height: 1.4;">${log.detail}</td>
                     </tr>`;
                 });
+
+                // Sinkronisasi status info halaman dan rendering tombol navigasi
+                document.getElementById('logPaginationInfo').innerText = `Menampilkan halaman ${res.currentPage} dari ${res.totalPages}`;
+                renderLogPagination(res.totalPages, res.currentPage);
+
             } else {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat log: ${res.message}</td></tr>`;
             }
@@ -4410,6 +4434,53 @@
             console.error("Error muat log:", err);
             tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Terjadi gangguan koneksi internet.</td></tr>`;
         });
+    }
+
+    // 🔥 3. RAKIT FUNGSI BARU UNTUK MERENDER TOMBOL PAGINATION SECARA DINAMIS
+    function renderLogPagination(totalPages, currentPage) {
+        const container = document.getElementById('logPaginationButtons');
+        container.innerHTML = "";
+
+        // Tombol Previous (Mundur 1 Halaman)
+        const btnPrev = document.createElement('button');
+        btnPrev.innerText = "◀ Prev";
+        btnPrev.disabled = currentPage === 1;
+        btnPrev.style.padding = "5px 10px";
+        btnPrev.style.cursor = "pointer";
+        btnPrev.onclick = () => muatDataLog(currentPage - 1);
+        container.appendChild(btnPrev);
+
+        // Hitung jendela rentang nomor halaman yang tampil (Maksimal 5 tombol nomor)
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const btnPage = document.createElement('button');
+            btnPage.innerText = i;
+            btnPage.disabled = (i === currentPage);
+            btnPage.style.padding = "5px 12px";
+            btnPage.style.cursor = "pointer";
+            if (i === currentPage) {
+                btnPage.style.backgroundColor = "#007bff";
+                btnPage.style.color = "white";
+                btnPage.style.fontWeight = "bold";
+                btnPage.style.border = "1px solid #007bff";
+            }
+            btnPage.onclick = () => muatDataLog(i);
+            container.appendChild(btnPage);
+        }
+
+        // Tombol Next (Maju 1 Halaman)
+        const btnNext = document.createElement('button');
+        btnNext.innerText = "Next ▶";
+        btnNext.disabled = currentPage === totalPages;
+        btnNext.style.padding = "5px 10px";
+        btnNext.style.cursor = "pointer";
+        btnNext.onclick = () => muatDataLog(currentPage + 1);
+        container.appendChild(btnNext);
     }
 
 </script>
