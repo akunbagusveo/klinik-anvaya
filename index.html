@@ -378,6 +378,11 @@
         .table-matrix-wrapper table tr:nth-child(even) td:first-child {
             background-color: #f8fafc; /* Menyelaraskan warna background sticky td pada baris genap */
         }
+
+        .badge-absen {
+            background-color: #7f8c8d !important;
+            color: white !important;
+        }
 </style>
 </head>
 <body>
@@ -1204,6 +1209,7 @@
                         <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
                         <option value="Sudah Diperiksa">🟢 Sudah Diperiksa</option>
                         <option value="Perlu Input RME">⚠️ Perlu Input RME (Prioritas)</option>
+                        <option value="Tidak Datang">🕒 Pasien Tidak Datang (Absen)</option>
                     </select>
                 </div>
 
@@ -1561,7 +1567,8 @@
         let dataTerfilter = dataAntreanGlobal;
         if (filterStatus === "Semua") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status !== "Dibatalkan" && pasien.status !== "Tidak Datang");
-        } else if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa") {
+        } else if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa" || filterStatus === "Tidak Datang") {
+            // 🔥 Tambahkan kondisi || filterStatus === "Tidak Datang" di atas agar server bisa menyaring status ini
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === filterStatus);
         } else if (filterStatus === "Perlu Input RME") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled);
@@ -1617,6 +1624,10 @@
                         tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}', false)">👁️ Lihat RME</button>`;
                     }
                 }
+            }
+
+            else if (pasien.status === "Tidak Datang") {
+                tombolAksi = bolehEditAntrean ? `<button class="btn-action" style="background-color: #2ecc71; color: white; font-weight: bold;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Belum Diperiksa')">🔄 Kembalikan ke Antrean</button>` : '-';
             }
 
             tbody.innerHTML += `<tr>
