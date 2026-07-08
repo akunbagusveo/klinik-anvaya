@@ -412,7 +412,8 @@
             <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">Riwayat Medis Pasien</button>
             <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">Database Pasien</button>
             <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">Kamus Dikte</button>
-            <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">Pengaturan Sistem</button>
+            <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold;">📈 Analisis Bisnis</button>
+            <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
         </div>
         <div>
             <span id="txtUserStatus" class="user-info"></span>
@@ -421,47 +422,78 @@
     </div>
 
     <div id="beranda" class="tab-content">
-        <h2>Dashboard Klinik Anvaya</h2>
+        <h2>Dashboard Eksekutif Klinik Anvaya</h2>
         <p style="font-size: 16px; color: #555; margin-bottom: 25px;">
-            Selamat datang, <strong id="lblNamaUser">-</strong>! Anda masuk sebagai <span id="lblRoleUser" style="color:#3498db; font-weight:bold;">-</span>.
+            Selamat datang kembali, <strong id="lblNamaUser">-</strong>! Anda masuk sebagai <span id="lblRoleUser" style="color:#3498db; font-weight:bold;">-</span>.
         </p>
         
-        <h3>Menu Pintasan Fitur</h3>
-        <div class="menu-grid">
-            <div id="menuPendaftaranCard" class="menu-card" onclick="switchTab('pendaftaran')">
-                <div style="font-size: 40px;">📝</div>
-                <h4>Form Pendaftaran Pasien</h4>
-                <p>Registrasi identitas, riwayat medis, dan keluhan pasien baru.</p>
-            </div>
-            <div id="menuAntreanCard" class="menu-card" onclick="switchTab('antrean')">
-                <div style="font-size: 40px;">🏥</div>
-                <h4>Antrean & Rekam Medis</h4>
-                <p>Manajemen antrean periksa hari ini serta pengisian form RME.</p>
-            </div>
-            <div id="menuRiwayatCard" class="menu-card" onclick="switchTab('riwayatMedis')">
-                <div style="font-size: 40px;">🕒</div>
-                <h4>Riwayat Medis Pasien</h4>
-                <p>Pencarian data rekam medis dan histori perawatan seluruh pasien.</p>
-            </div>
-            <div id="menuDaftarPasienCard" class="menu-card" onclick="switchTab('daftarPasien')">
-                <div style="font-size: 40px;">📇</div>
-                <h4>Database Pasien</h4>
-                <p>Lihat daftar nama pasien yang terdaftar untuk mencari riwayat medis.</p>
-            </div>
+        <h4 style="margin-bottom: 12px; color: #7f8c8d;">⚡ Akses Cepat Menu:</h4>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;">
+            <button onclick="switchTab('pendaftaran')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">📝</span> Form Pendaftaran</button>
+            <button onclick="switchTab('antrean')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">🏥</span> Antrean Hari Ini</button>
+            <button onclick="switchTab('riwayatMedis')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">🕒</span> Riwayat Medis</button>
+            <button onclick="switchTab('daftarPasien')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">📇</span> Database Pasien</button>
+            <button onclick="switchTab('analisisBisnis')" style="font-weight: bold;">📈 Analisis Bisnis</button>
         </div>
-
-        <h3>Ringkasan Operasional Hari Ini</h3>
-        <div class="stats-grid">
-            <div class="stat-card bg-total">
-                <h4>Total Antrean Hari Ini</h4>
-                <p id="homeStatTotal">0</p>
+    
+        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px;">📊 Ikhtisar Kinerja Bulan Ini</h3>
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px;">
+            
+            <div class="stat-card" style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); border-left: 5px solid #00bcd4; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0; color: #006064; font-size: 14px;">Total Kunjungan (Bulan Ini)</h4>
+                <p id="dashTotalKunjungan" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color: #006064;">0</p>
             </div>
-            <div class="stat-card bg-sudah">
-                <h4>Pasien Selesai Diperiksa</h4>
-                <p id="homeStatSudah">0</p>
+    
+            <div class="stat-card" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 5px solid #4caf50; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0; color: #1b5e20; font-size: 14px;">Pasien Baru Terdaftar</h4>
+                <p id="dashPasienBaru" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color: #1b5e20;">0</p>
             </div>
+    
+            <div class="stat-card" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left: 5px solid #ff9800; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0; color: #e65100; font-size: 14px;">RME Terisi Tepat Waktu</h4>
+                <p id="dashRmePersen" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color: #e65100;">0%</p>
+            </div>
+    
+            <div class="stat-card" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-left: 5px solid #9c27b0; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0; color: #4a148c; font-size: 14px;">Rasio Gender (L / P)</h4>
+                <p id="dashRasioGender" style="font-size: 20px; font-weight: bold; margin: 17px 0 0 0; color: #4a148c;">0 / 0</p>
+            </div>
+    
         </div>
-
+    
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-top: 20px;">
+            
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h4 style="margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">🦷 3 Tindakan / Keluhan Terbanyak</h4>
+                <table width="100%" style="border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #dee2e6; text-align: left; background: #f8f9fa;">
+                            <th style="padding: 8px;">Nama Kasus / Tindakan</th>
+                            <th style="padding: 8px; text-align: center; width: 80px;">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashBodyTopKasus">
+                        <tr><td colspan="2" style="text-align: center; padding: 15px; color: #95a5a6;">⏳ Memuat data analitik medis...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+    
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h4 style="margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">⏰ Distribusi Jam Kunjungan Terpadat</h4>
+                <table width="100%" style="border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #dee2e6; text-align: left; background: #f8f9fa;">
+                            <th style="padding: 8px;">Rentang Waktu</th>
+                            <th style="padding: 8px; text-align: center; width: 80px;">Pasien</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashBodyJamSibuk">
+                        <tr><td colspan="2" style="text-align: center; padding: 15px; color: #95a5a6;">⏳ Memuat analitik jam kunjungan...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+    
+        </div>
     </div>
 
     <div id="pendaftaran" class="tab-content">
@@ -1249,168 +1281,239 @@
             </div>            
         </div>
     </div>
-<div id="modalRME" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; overflow-y:auto;">
-    <div style="background:white; max-width:600px; margin: 30px auto; padding:20px; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-        <!-- 🔥 Tambahkan ID pada H2 di bawah ini -->
-        <h2 id="judulModalRME" style="color:#3498db; border-bottom: 2px solid #3498db; margin-bottom:15px;">👁️ Lihat / Edit Rekam Medis</h2>
-        
-        <form id="formModalMedis">
-            <input type="hidden" id="modalNoRM">
-            <input type="hidden" id="modalRowUpdate">
+
+    <!-- Tab Analis Bisnis -->
+    <div id="analisisBisnis" class="tab-content" style="display:none;">
+        <h2>Pusat Analisis Bisnis & Digital Marketing</h2>
+        <p style="color: #666;">Olahan data cerdas untuk kebutuhan strategi promo, retensi pasien, dan pengembangan Klinik Anvaya.</p>
+    
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;">
             
-            <div class="form-group">
-                <label>Nama Pasien</label>
-                <input type="text" id="modalNama" readonly style="background:#e9ecef; font-weight:bold; color:#2c3e50;">
-            </div>
-            <div class="form-group">
-                <label>Anamnesa (Keluhan Pasien)</label>
-                <textarea id="modalAnamnesa" required></textarea>
-            </div>
-            <div class="form-group">
-                <label>Objektif</label>
-                <textarea id="modalObjektif" required></textarea>
-            </div>
-            <div class="form-group">
-                <label>Diagnosa</label>
-                <input type="text" id="modalDiagnosa" required>
-            </div>
-            <div class="form-group">
-                <label>Perawatan (Tindakan Hari Ini)</label>
-                <textarea id="modalPerawatan" required></textarea>
-            </div>
-            <div class="form-group">
-                <label>Pro Perawatan (Rencana Lanjutan)</label>
-                <textarea id="modalProPerawatan"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Resep Obat</label>
-                <textarea id="modalResep"></textarea>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Pro Kontrol</label>
-                    <input type="text" id="modalProKontrol">
-                </div>
-                <div class="form-group">
-                    <label>Foto Dokumentasi</label>
-                    <!-- Input teks biarkan tetap ada (set ke readonly) untuk menampung link lama saat edit -->
-                    <input type="text" id="modalLinkFoto" readonly placeholder="Belum ada foto" style="background-color: #f5f5f5; margin-bottom: 5px;">
-                    <!-- 🔥 Tambahkan input file komputer di bawahnya -->
-                    <input type="file" id="modalFileFoto" accept="image/*" style="font-size: 12px;">
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); grid-column: span 2;">
+                <h4 style="margin-top: 0; color: #e74c3c; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    ⚠️ Pasien Wajib Kontrol Rutin (6 Bulan Lebih Belum Kembali)
+                </h4>
+                <p style="font-size: 13px; color: gray; margin-bottom: 15px;">
+                    💡 Eksport/Hubungi daftar pasien di bawah ini via WhatsApp untuk menawarkan promo pemeriksaan rutin atau scaling 6 bulanan.
+                </p>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left;">
+                        <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                            <tr style="border-bottom: 2px solid #dee2e6;">
+                                <th style="padding: 8px;">No. RM</th>
+                                <th style="padding: 8px;">Nama Pasien</th>
+                                <th style="padding: 8px;">No. WhatsApp</th>
+                                <th style="padding: 8px;">Kunjungan Terakhir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mktBodyRetensi">
+                            <tr><td colspan="4" style="text-align:center; padding:15px; color:gray;">⏳ Menganalisis riwayat kunjungan pasien...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <br>
-            <div style="display: flex; gap: 10px;">
-                <!-- 🔥 Tambahkan ID pada Button Simpan di bawah ini -->
-                <button type="submit" id="btnSimpanRME" style="background-color: #2ecc71; color:white; width:70%;">Simpan Perubahan</button>
-                <button type="button" onclick="document.getElementById('modalRME').style.display='none'" style="background-color: #e74c3c; color:white; width:30%; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Tutup</button>
+    
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h4 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    📍 Peta Zonasi Domisili Pasien Terbanyak
+                </h4>
+                <p style="font-size: 13px; color: gray; margin-bottom: 15px;">Target wilayah potensial untuk akurasi jangkauan iklan Instagram/FB Ads.</p>
+                <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                    <thead style="background: #f8f9fa;">
+                        <tr style="border-bottom: 2px solid #dee2e6; text-align: left;">
+                            <th style="padding: 8px;">Nama Wilayah / Alamat</th>
+                            <th style="padding: 8px; text-align: center; width: 90px;">Total Pasien</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mktBodyZonasi">
+                        <tr><td colspan="2" style="text-align:center; padding:15px; color:gray;">⏳ Memetakan alamat...</td></tr>
+                    </tbody>
+                </table>
             </div>
-        </form>
+    
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h4 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    📅 Analisis Hari Kunjungan Terpadat
+                </h4>
+                <p style="font-size: 13px; color: gray; margin-bottom: 15px;">Gunakan data ini untuk membuat diskon khusus "Happy Hour" di hari sepi.</p>
+                <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+                    <thead style="background: #f8f9fa;">
+                        <tr style="border-bottom: 2px solid #dee2e6; text-align: left;">
+                            <th style="padding: 8px;">Hari Operasional</th>
+                            <th style="padding: 8px; text-align: center; width: 90px;">Kunjungan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mktBodyHariSibuk">
+                        <tr><td colspan="2" style="text-align:center; padding:15px; color:gray;">⏳ Menghitung statistik hari...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+    
+        </div>
     </div>
-</div>
 
-<!-- MODAL DETAIL REKAM MEDIS FULL -->
-<div id="modalRiwayatFull" class="modal-backdrop" style="display:none;">
-    <div class="modal-content-box">
-        <div class="modal-custom-header">
-            <h2>👁️ Detail RME: <span id="lblModalNamaLengkap"></span> (<span id="lblModalRMFull"></span>)</h2>
-            <button type="button" onclick="document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
-        </div>
-
-        <div id="alertMedisContainer" style="display:none; background-color:#fff3cd; color:#856404; padding:15px; border-left:5px solid #ffc107; margin-bottom:15px; border-radius:4px; font-size:14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div id="textAlergi" style="margin-bottom:5px; font-size: 15px;"></div>
-            <div id="textObatRutin" style="font-size: 15px;"></div>
-        </div>
-        
-        <div class="table-responsive">
-            <div id="bannerPeringatanMedis" style="display: none; gap: 12px; margin-bottom: 20px; font-size: 14px;">
-                <div id="boxAlergiRME" style="display: none; flex: 1; background-color: #fde8e8; border-left: 5px solid #e74c3c; padding: 12px; border-radius: 4px; color: #9b1c1c;">
-                    <strong style="display: block; margin-bottom: 3px;">⚠️ RIWAYAT ALERGI:</strong>
-                    <span id="kontenAlergiRME">-</span>
-                </div>
+    <div id="modalRME" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; overflow-y:auto;">
+        <div style="background:white; max-width:600px; margin: 30px auto; padding:20px; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <!-- 🔥 Tambahkan ID pada H2 di bawah ini -->
+            <h2 id="judulModalRME" style="color:#3498db; border-bottom: 2px solid #3498db; margin-bottom:15px;">👁️ Lihat / Edit Rekam Medis</h2>
+            
+            <form id="formModalMedis">
+                <input type="hidden" id="modalNoRM">
+                <input type="hidden" id="modalRowUpdate">
                 
-                <div id="boxObatRME" style="display: none; flex: 1; background-color: #edf2f7; border-left: 5px solid #4a5568; padding: 12px; border-radius: 4px; color: #2d3748;">
-                    <strong style="display: block; margin-bottom: 3px;">💊 OBAT RUTIN KONSUMSI:</strong>
-                    <span id="kontenObatRME">-</span>
+                <div class="form-group">
+                    <label>Nama Pasien</label>
+                    <input type="text" id="modalNama" readonly style="background:#e9ecef; font-weight:bold; color:#2c3e50;">
+                </div>
+                <div class="form-group">
+                    <label>Anamnesa (Keluhan Pasien)</label>
+                    <textarea id="modalAnamnesa" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Objektif</label>
+                    <textarea id="modalObjektif" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Diagnosa</label>
+                    <input type="text" id="modalDiagnosa" required>
+                </div>
+                <div class="form-group">
+                    <label>Perawatan (Tindakan Hari Ini)</label>
+                    <textarea id="modalPerawatan" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Pro Perawatan (Rencana Lanjutan)</label>
+                    <textarea id="modalProPerawatan"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Resep Obat</label>
+                    <textarea id="modalResep"></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Pro Kontrol</label>
+                        <input type="text" id="modalProKontrol">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto Dokumentasi</label>
+                        <!-- Input teks biarkan tetap ada (set ke readonly) untuk menampung link lama saat edit -->
+                        <input type="text" id="modalLinkFoto" readonly placeholder="Belum ada foto" style="background-color: #f5f5f5; margin-bottom: 5px;">
+                        <!-- 🔥 Tambahkan input file komputer di bawahnya -->
+                        <input type="file" id="modalFileFoto" accept="image/*" style="font-size: 12px;">
+                    </div>
+                </div>
+                <br>
+                <div style="display: flex; gap: 10px;">
+                    <!-- 🔥 Tambahkan ID pada Button Simpan di bawah ini -->
+                    <button type="submit" id="btnSimpanRME" style="background-color: #2ecc71; color:white; width:70%;">Simpan Perubahan</button>
+                    <button type="button" onclick="document.getElementById('modalRME').style.display='none'" style="background-color: #e74c3c; color:white; width:30%; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Tutup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL REKAM MEDIS FULL -->
+    <div id="modalRiwayatFull" class="modal-backdrop" style="display:none;">
+        <div class="modal-content-box">
+            <div class="modal-custom-header">
+                <h2>👁️ Detail RME: <span id="lblModalNamaLengkap"></span> (<span id="lblModalRMFull"></span>)</h2>
+                <button type="button" onclick="document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
+            </div>
+
+            <div id="alertMedisContainer" style="display:none; background-color:#fff3cd; color:#856404; padding:15px; border-left:5px solid #ffc107; margin-bottom:15px; border-radius:4px; font-size:14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div id="textAlergi" style="margin-bottom:5px; font-size: 15px;"></div>
+                <div id="textObatRutin" style="font-size: 15px;"></div>
+            </div>
+            
+            <div class="table-responsive">
+                <div id="bannerPeringatanMedis" style="display: none; gap: 12px; margin-bottom: 20px; font-size: 14px;">
+                    <div id="boxAlergiRME" style="display: none; flex: 1; background-color: #fde8e8; border-left: 5px solid #e74c3c; padding: 12px; border-radius: 4px; color: #9b1c1c;">
+                        <strong style="display: block; margin-bottom: 3px;">⚠️ RIWAYAT ALERGI:</strong>
+                        <span id="kontenAlergiRME">-</span>
+                    </div>
+                    
+                    <div id="boxObatRME" style="display: none; flex: 1; background-color: #edf2f7; border-left: 5px solid #4a5568; padding: 12px; border-radius: 4px; color: #2d3748;">
+                        <strong style="display: block; margin-bottom: 3px;">💊 OBAT RUTIN KONSUMSI:</strong>
+                        <span id="kontenObatRME">-</span>
+                    </div>
+                </div>
+                <div id="wrapperRiwayatFull" class="rme-timeline-container">
+                    <thead>
+                        <tr style="background-color: #f4f7f6;">
+                            <th>Tanggal</th>
+                            <th>Anamnesa</th>
+                            <th>Pemeriksaan Fisik & Objektif (O)</th>
+                            <th>Diagnosa</th>
+                            <th>Tindakan / Perawatan</th>
+                            <th>Resep Obat</th>
+                            <th>Pro Perawatan</th>
+                            <th>Pro Kontrol</th>
+                            <th>Dokter</th>
+                            <th>Foto / Dokumen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelRiwayatFullBody">
+                        <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
                 </div>
             </div>
-            <div id="wrapperRiwayatFull" class="rme-timeline-container">
-                <thead>
-                    <tr style="background-color: #f4f7f6;">
-                        <th>Tanggal</th>
-                        <th>Anamnesa</th>
-                        <th>Pemeriksaan Fisik & Objektif (O)</th>
-                        <th>Diagnosa</th>
-                        <th>Tindakan / Perawatan</th>
-                        <th>Resep Obat</th>
-                        <th>Pro Perawatan</th>
-                        <th>Pro Kontrol</th>
-                        <th>Dokter</th>
-                        <th>Foto / Dokumen</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelRiwayatFullBody">
-                    <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
-                </tbody>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL LENGKAP PASIEN (ALL COLUMNS) -->
+    <div id="modalDetailPasien" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div style="background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 650px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 12px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #2c3e50;">📋 Detail Lengkap Profil Pasien</h3>
+                <span style="cursor: pointer; font-size: 28px; font-weight: bold; color: #95a5a6;" onclick="window.tutupModalDetailPasien()">&times;</span>
+            </div>
+            
+            <div id="isiDetailPasien" style="max-height: 550px; overflow-y: auto; padding-right: 5px;">
+                </div>
+            <div style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 12px;">
+                <button onclick="window.tutupModalDetailPasien()" style="padding: 10px 20px; border: none; background-color: #7f8c8d; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEditAntrean" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:20px; border-radius:8px; width:340px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
+            <h3 style="margin-top:0; color:#2c3e50;">📝 Edit Antrean Pasien</h3>
+            
+            <input type="hidden" id="editRowNumber">
+            
+            <div style="margin-bottom:12px;">
+                <label style="font-weight:bold; font-size:13px; color:#34495e;">Tanggal Daftar:</label>
+                <input type="date" id="editTanggalInput" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-weight:bold; font-size:13px; color:#34495e;">Waktu Kunjungan:</label>
+                <select id="editJamSelect" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                    <option value="Siang (11.00 - 15.00)">Siang (11.00 - 15.00)</option>
+                    <option value="Sore/Malam (15.00 - Selesai)">Sore/Malam (15.00 - Selesai)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-weight:bold; font-size:13px; color:#34495e;">Tujuan Perawatan:</label>
+                <input type="text" id="editTujuanInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:bold; font-size:13px; color:#34495e;">Pilih Dokter yang Tersedia:</label>
+                <select id="editDokterSelect" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                    <option value="">-- Memuat Dokter... --</option>
+                </select>
+            </div>
+            
+            <div style="display:flex; justify-content:end; gap:8px;">
+                <button onclick="tutupModalEdit()" style="padding:8px 14px; background:#7f8c8d; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batal</button>
+                <button onclick="simpanEditAntrean()" style="padding:8px 14px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Simpan</button>
             </div>
         </div>
     </div>
 </div>
-
-<!-- MODAL DETAIL LENGKAP PASIEN (ALL COLUMNS) -->
-<div id="modalDetailPasien" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-    <div style="background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 650px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 12px; margin-bottom: 15px;">
-            <h3 style="margin: 0; color: #2c3e50;">📋 Detail Lengkap Profil Pasien</h3>
-            <span style="cursor: pointer; font-size: 28px; font-weight: bold; color: #95a5a6;" onclick="window.tutupModalDetailPasien()">&times;</span>
-        </div>
-        
-        <div id="isiDetailPasien" style="max-height: 550px; overflow-y: auto; padding-right: 5px;">
-            </div>
-        <div style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 12px;">
-            <button onclick="window.tutupModalDetailPasien()" style="padding: 10px 20px; border: none; background-color: #7f8c8d; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Tutup</button>
-        </div>
-    </div>
-</div>
-
-<div id="modalEditAntrean" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:white; padding:20px; border-radius:8px; width:340px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
-        <h3 style="margin-top:0; color:#2c3e50;">📝 Edit Antrean Pasien</h3>
-        
-        <input type="hidden" id="editRowNumber">
-        
-        <div style="margin-bottom:12px;">
-            <label style="font-weight:bold; font-size:13px; color:#34495e;">Tanggal Daftar:</label>
-            <input type="date" id="editTanggalInput" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
-        </div>
-
-        <div style="margin-bottom:12px;">
-            <label style="font-weight:bold; font-size:13px; color:#34495e;">Waktu Kunjungan:</label>
-            <select id="editJamSelect" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
-                <option value="Siang (11.00 - 15.00)">Siang (11.00 - 15.00)</option>
-                <option value="Sore/Malam (15.00 - Selesai)">Sore/Malam (15.00 - Selesai)</option>
-            </select>
-        </div>
-
-        <div style="margin-bottom:12px;">
-            <label style="font-weight:bold; font-size:13px; color:#34495e;">Tujuan Perawatan:</label>
-            <input type="text" id="editTujuanInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
-        </div>
-        
-        <div style="margin-bottom:20px;">
-            <label style="font-weight:bold; font-size:13px; color:#34495e;">Pilih Dokter yang Tersedia:</label>
-            <select id="editDokterSelect" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
-                <option value="">-- Memuat Dokter... --</option>
-            </select>
-        </div>
-        
-        <div style="display:flex; justify-content:end; gap:8px;">
-            <button onclick="tutupModalEdit()" style="padding:8px 14px; background:#7f8c8d; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batal</button>
-            <button onclick="simpanEditAntrean()" style="padding:8px 14px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Simpan</button>
-        </div>
-    </div>
-</div>
-
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtKbuvQhrLcVRaoo33z6MmV6oMRBK_ZGTkPFyNH5xNgAxG1j3H5GJAFuGW9WzzvKhS/exec"; 
     let currentRole = "";
@@ -3327,7 +3430,10 @@
             targetTab.style.display = 'block';
         }
         
-        if(tabId === 'beranda') document.getElementById('tabBerandaBtn').classList.add('active');
+        if(tabId === 'beranda') {
+            muatDashboardStatistik();
+            document.getElementById('tabBerandaBtn').classList.add('active');
+        }
     
         // Arahkan ke tombol Pendaftaran jika tab Pendaftaran dibuka
         if(tabId === 'pendaftaran') {
@@ -3344,13 +3450,21 @@
         }
         
         if(tabId === 'dokter') document.getElementById('tabDokterBtn').classList.add('active');
+
         if(tabId === 'riwayatMedis') document.getElementById('tabRiwayatMedisBtn').classList.add('active');
+
         if(tabId === 'daftarPasien') document.getElementById('tabDaftarPasienBtn').classList.add('active');
         
         if(tabId === 'kamusDikte') {
             document.getElementById('tabKamusDikteBtn').classList.add('active');
             muatKamusDikte(); 
         }
+
+        if (tabId === 'analisisBisnis') {
+            document.getElementById('tabAnalisisBisnisBtn').classList.add('active');
+            muatAnalisisBisnis(); // 🔥 PICU FUNGSI MARKETING SAAT TAB DIBUKA
+        }
+
         if(tabId === 'backend') {
             document.getElementById('tabBackendBtn').classList.add('active');
             muatDataUser(); 
@@ -4546,6 +4660,128 @@
         btnNext.onclick = () => muatDataLog(currentPage + 1);
         container.appendChild(btnNext);
     }
+
+    // 🔥 FUNGSI BARU: Mengambil seluruh data statistik untuk halaman dashboard utama
+    // 🔥 SINKRONISASI: Pastikan fungsi ini otomatis dipanggil saat user masuk ke tab Beranda
+    // SUNTIKKAN fungsi "muatDashboardStatistik();" ke dalam baris logika fungsi switchTab('beranda') milik Anda saat ini.
+    function muatDashboardStatistik() {
+        // Berikan efek loading teks awal pada widget tabel analitik
+        document.getElementById('dashBodyTopKasus').innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 15px;">⏳ Mengkalkulasi data medis...</td></tr>`;
+        document.getElementById('dashBodyJamSibuk').innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 15px;">⏳ Memetakan kepadatan jam...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getDashboardStats" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                // 1. Suntikkan Angka Makro ke Card Widget
+                document.getElementById('dashTotalKunjungan').innerText = res.totalKunjungan;
+                document.getElementById('dashPasienBaru').innerText = res.pasienBaru;
+                document.getElementById('dashRmePersen').innerText = res.rmePersen;
+                document.getElementById('dashRasioGender').innerText = res.rasioGender;
+
+                // 2. Render Tabel Top 3 Kasus Medis Terbanyak
+                const tbodyKasus = document.getElementById('dashBodyTopKasus');
+                tbodyKasus.innerHTML = "";
+                if (res.topKasus.length === 0) {
+                    tbodyKasus.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:12px; color:gray;">Belum ada riwayat kasus bulan ini.</td></tr>`;
+                } else {
+                    res.topKasus.forEach((item, index) => {
+                        const medali = ["🥇", "🥈", "🥉"][index] || "•";
+                        tbodyKasus.innerHTML += `<tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px; font-weight:500;">${medali} ${item.nama}</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold; color: #2980b9;">${item.jumlah} Pasien</td>
+                        </tr>`;
+                    });
+                }
+
+                // 3. Render Tabel Distribusi Jam Sibuk Kunjungan Klinik
+                const tbodyJam = document.getElementById('dashBodyJamSibuk');
+                tbodyJam.innerHTML = "";
+                let adaDataJam = false;
+                
+                for (let slot in res.jamSibuk) {
+                    if (res.jamSibuk[slot] > 0) adaDataJam = true;
+                    
+                    tbodyJam.innerHTML += `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight:500;">📅 ${slot}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #27ae60;">${res.jamSibuk[slot]} Orang</td>
+                    </tr>`;
+                }
+                if (!adaDataJam) {
+                    tbodyJam.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:12px; color:gray;">Belum ada kunjungan tercatat hari ini.</td></tr>`;
+                }
+
+            } else {
+                console.error("Gagal memuat analitik dashboard:", res.message);
+            }
+        })
+        .catch(err => {
+            console.error("Error network dashboard stats:", err);
+        });
+    }
+
+    // B. FUNGSI FETCH DATA ANALISIS MARKETING
+    function muatAnalisisBisnis() {
+        document.getElementById('mktBodyRetensi').innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px;">⏳ Mengaudit database rekam medis...</td></tr>`;
+        document.getElementById('mktBodyZonasi').innerHTML = `<tr><td colspan="2" style="text-align:center; padding:15px;">⏳ Mengelompokkan alamat...</td></tr>`;
+        document.getElementById('mktBodyHariSibuk').innerHTML = `<tr><td colspan="2" style="text-align:center; padding:15px;">⏳ Menghitung kepadatan hari...</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getMarketingAnalytics" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                
+                // 1. Render Tabel Retensi Pasien 6 Bulan Pasif
+                const tbodyRetensi = document.getElementById('mktBodyRetensi');
+                tbodyRetensi.innerHTML = "";
+                if (res.retensiPasien.length === 0) {
+                    tbodyRetensi.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:green; font-weight:bold;">✔️ Semua pasien aktif berkunjung dalam 6 bulan terakhir!</td></tr>`;
+                } else {
+                    res.retensiPasien.forEach(pasien => {
+                        tbodyRetensi.innerHTML += `<tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:8px; font-weight:bold;">${pasien.noRM}</td>
+                            <td style="padding:8px;"><strong>${pasien.nama}</strong></td>
+                            <td style="padding:8px; color:#27ae60; font-weight:500;">📞 ${pasien.whatsapp}</td>
+                            <td style="padding:8px; color:#e74c3c; font-weight:500;">⏱️ ${pasien.kunjunganTerakhir}</td>
+                        </tr>`;
+                    });
+                }
+
+                // 2. Render Tabel Zonasi Domisili Terbanyak
+                const tbodyZonasi = document.getElementById('mktBodyZonasi');
+                tbodyZonasi.innerHTML = "";
+                res.zonasiAlamat.forEach(item => {
+                    tbodyZonasi.innerHTML += `<tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:8px; font-weight:500;">📍 ${item.wilayah}</td>
+                        <td style="padding:8px; text-align:center; font-weight:bold; color:#2980b9;">${item.total} Pasien</td>
+                    </tr>`;
+                });
+
+                // 3. Render Tabel Hari Kunjungan Terpadat
+                const tbodyHari = document.getElementById('mktBodyHariSibuk');
+                tbodyHari.innerHTML = "";
+                res.analisisHari.forEach(item => {
+                    tbodyHari.innerHTML += `<tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:8px; font-weight:500;">📅 ${item.hari}</td>
+                        <td style="padding:8px; text-align:center; font-weight:bold; color:#27ae60;">${item.jumlah} Kunjungan</td>
+                    </tr>`;
+                });
+
+            } else {
+                alert("Gagal memuat analisis marketing: " + res.message);
+            }
+        })
+        .catch(err => {
+            console.error("Error marketing analysis:", err);
+        });
+    }
+
 
 </script>
 </body>
