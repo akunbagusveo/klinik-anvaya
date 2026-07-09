@@ -2036,23 +2036,41 @@
         if (!kataKunci) return;
         const keywordBersih = kataKunci.trim().toLowerCase();
         
-        const dataPasien = cachePasienLama.find(row => {
-            const noRM = row[0] ? String(row[0]).toLowerCase() : "";
-            const nama = row[1] ? String(row[1]).toLowerCase() : "";
+        // 1. 🔥 UPGRADE TOTAL: Pemetaan Kolom 100% Dinamis Menggunakan Menggunakan Konsep Kata Kunci (.includes)
+        const headerMaster = cachePasienLama[0].map(h => h.toString().toLowerCase().trim());
+        
+        const idxNoRM      = headerMaster.findIndex(h => h.includes("rm"));
+        const idxNama      = headerMaster.findIndex(h => h.includes("nama"));
+        const idxTempat    = headerMaster.findIndex(h => h.includes("tempat"));
+        const idxTgl       = headerMaster.findIndex(h => h.includes("tanggal"));
+        const idxGender    = headerMaster.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
+        const idxWA        = headerMaster.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp"));
+        const idxKerja     = headerMaster.findIndex(h => h.includes("pekerjaan") || h.includes("pendidikan"));
+        const idxEmail     = headerMaster.findIndex(h => h.includes("email"));
+        const idxAlamat    = headerMaster.findIndex(h => h.includes("alamat"));
+        const idxKTP       = headerMaster.findIndex(h => h.includes("ktp") || h.includes("nik"));
+        const idxKecamatan = headerMaster.findIndex(h => h.includes("kecamatan") || h.includes("wilayah"));
+        const idxKota      = headerMaster.findIndex(h => h.includes("kota")); // 🔥 Pasti Menemukan "Kota Domisili"
+
+        // 2. Cari data baris pasien di dalam cache (Mulai dari indeks 1 melewati header)
+        const dataPasien = cachePasienLama.slice(1).find(row => {
+            const noRM = row[idxNoRM !== -1 ? idxNoRM : 0] ? String(row[idxNoRM !== -1 ? idxNoRM : 0]).toLowerCase() : "";
+            const nama = row[idxNama !== -1 ? idxNama : 1] ? String(row[idxNama !== -1 ? idxNama : 1]).toLowerCase() : "";
             return noRM === keywordBersih || nama === keywordBersih;
         });
         
         if (dataPasien) {
-            document.getElementById('txtNoRM').value = dataPasien[0];    
-            document.getElementById('nama').value = dataPasien[1]; 
-            document.getElementById('tempatLahir').value = dataPasien[2]; 
+            document.getElementById('txtNoRM').value = dataPasien[idxNoRM !== -1 ? idxNoRM : 0] || "";    
+            document.getElementById('nama').value = dataPasien[idxNama !== -1 ? idxNama : 1] || ""; 
+            document.getElementById('tempatLahir').value = dataPasien[idxTempat !== -1 ? idxTempat : 2] || ""; 
             
-            if (dataPasien[3]) {
-                document.getElementById('tanggalLahir').value = formatTanggalUntukInput(dataPasien[3]);
+            if (idxTgl !== -1 && dataPasien[idxTgl]) {
+                document.getElementById('tanggalLahir').value = formatTanggalUntukInput(dataPasien[idxTgl]);
             }
             
-            if (dataPasien[4]) {
-                let genderBersih = String(dataPasien[4]).trim().toLowerCase();
+            var targetGenderIdx = idxGender !== -1 ? idxGender : 4;
+            if (dataPasien[targetGenderIdx]) {
+                let genderBersih = String(dataPasien[targetGenderIdx]).trim().toLowerCase();
                 const semuaRadio = document.querySelectorAll('input[name="gender"]');
                 semuaRadio.forEach(radio => {
                     let val = radio.value.toLowerCase().trim();
@@ -2062,19 +2080,27 @@
                 });
             }
             
-            document.getElementById('whatsapp').value = dataPasien[5];
-            document.getElementById('pekerjaan').value = dataPasien[6];
-            document.getElementById('email').value = dataPasien[7];
+            document.getElementById('whatsapp').value = dataPasien[idxWA !== -1 ? idxWA : 5] || "";
+            document.getElementById('pekerjaan').value = dataPasien[idxKerja !== -1 ? idxKerja : 6] || "";
+            document.getElementById('email').value = dataPasien[idxEmail !== -1 ? idxEmail : 7] || "";
             
-            if (dataPasien[8] && document.getElementById('alamat')) {
-                document.getElementById('alamat').value = dataPasien[8];
+            if (idxAlamat !== -1 && dataPasien[idxAlamat] && document.getElementById('alamat')) {
+                document.getElementById('alamat').value = dataPasien[idxAlamat];
             }
-            if (dataPasien[9]) {
-                document.getElementById('txtKTP').value = dataPasien[9];
+            if (idxKTP !== -1 && dataPasien[idxKTP]) {
+                document.getElementById('txtKTP').value = dataPasien[idxKTP];
+            }
+            
+            // 🔥 SUNTIKAN DINAMIS MUTLAK: Mengisi input wilayah tanpa takut eror indeks lagi
+            if (idxKecamatan !== -1 && document.getElementById('kecamatan')) {
+                document.getElementById('kecamatan').value = dataPasien[idxKecamatan] || ""; 
+            }
+            if (idxKota !== -1 && document.getElementById('kota')) {
+                document.getElementById('kota').value = dataPasien[idxKota] || ""; 
             }
             
             aturStatusProteksiForm(true); 
-            alert("Data medis pasien '" + dataPasien[1] + "' berhasil dimuat!");
+            alert("Data medis pasien '" + dataPasien[idxNama !== -1 ? idxNama : 1] + "' berhasil dimuat!");
         }
     }
 
@@ -2141,6 +2167,9 @@
         document.getElementById('whatsapp').readOnly = status;
         document.getElementById('pekerjaan').readOnly = status;
         document.getElementById('email').readOnly = status;
+        document.getElementById('kecamatan').readOnly = status;
+        document.getElementById('kota').readOnly = status; 
+    
         
         const elemenAlamat = document.getElementById('alamat');
         if (elemenAlamat) { elemenAlamat.readOnly = status; }
