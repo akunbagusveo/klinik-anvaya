@@ -436,7 +436,7 @@
             <button onclick="switchTab('analisisBisnis')" style="font-weight: bold;">📈 Analisis Bisnis</button>
         </div> -->
     
-        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px;">📊 Ikhtisar Kinerja Bulan Ini</h3>
+        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px;">📊 Ikhtisar Kinerja Klinik</h3>
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px;">
             
             <div class="stat-card" style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); border-left: 5px solid #00bcd4; padding: 15px; border-radius: 8px;">
@@ -4721,11 +4721,11 @@
                     
                     tbodyJam.innerHTML += `<tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight:500;">📅 ${slot}</td>
-                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #27ae60;">${res.jamSibuk[slot]} Orang</td>
+                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #27ae60;">${res.jamSibuk[slot]} Pasien</td>
                     </tr>`;
                 }
                 if (!adaDataJam) {
-                    tbodyJam.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:12px; color:gray;">Belum ada kunjungan tercatat hari ini.</td></tr>`;
+                    tbodyJam.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:12px; color:gray;">Belum ada kunjungan tercatat bulan ini.</td></tr>`;
                 }
 
             } else {
