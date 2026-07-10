@@ -1456,7 +1456,7 @@
             
             <div class="modal-custom-header">
                 <h2>👁️ Rekam Medis Elektronik (RME)</h2>
-                <button type="button" onclick="document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
+                <button type="button" onclick="simpanDraftRME(); document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
             </div>
 
             <div style="background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #3498db; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px;">
@@ -1751,6 +1751,10 @@
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === filterStatus);
         } else if (filterStatus === "Perlu Input RME") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled);
+        }
+        else if (pasien.status === "Sedang Diperiksa") {
+            // 🔥 PERUBAHAN ALUR: Tidak ada lagi tombol Selesai Periksa manual. Mengarahkan kembali ke form Draft RME!
+            tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}'), 400);">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
         }
 
         if (dataTerfilter.length === 0) {
@@ -2879,7 +2883,22 @@
         // Siapkan ID Tersembunyi untuk Form Kiri
         document.getElementById('modalNoRM').value = noRM;
         document.getElementById('modalNama').value = namaPasien;
-        document.getElementById('formModalMedis').reset(); // Kosongkan form input baru
+        //document.getElementById('formModalMedis').reset(); // Kosongkan form input baru
+        document.getElementById('formModalMedisSplit').reset();
+
+        const savedDraft = localStorage.getItem('draft_rme_' + noRM);
+        if (savedDraft) {
+            try {
+                const draftObj = JSON.parse(savedDraft);
+                document.getElementById('modalAnamnesa').value = draftObj.anamnesa || "";
+                document.getElementById('modalObjektif').value = draftObj.objektif || "";
+                document.getElementById('modalDiagnosa').value = draftObj.diagnosa || "";
+                document.getElementById('modalPerawatan').value = draftObj.perawatan || "";
+                document.getElementById('modalResep').value = draftObj.resep || "";
+                document.getElementById('modalProPerawatan').value = draftObj.proPerawatan || "";
+                document.getElementById('modalProKontrol').value = draftObj.proKontrol || "";
+            } catch(e) { console.error("Gagal membaca draft"); }
+        }
 
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
         timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
@@ -3317,6 +3336,7 @@
             if(res.result === "success") {
                 alert("✅ Perubahan berkas Rekam Medis sukses disimpan!");
                 // 🔥 FIX: Gunakan ID Modal Split-Screen yang benar untuk menutup jendela
+                localStorage.removeItem('draft_rme_' + document.getElementById('modalNoRM').value);
                 document.getElementById('modalRiwayatFull').style.display = 'none'; 
                 // Me-refresh tabel antrean di latar belakang
                 if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
@@ -4997,6 +5017,24 @@
             });
         });
     });
+
+    // 🌟 FITUR BARU: Auto-Save Draft Sementara ke Browser
+    function simpanDraftRME() {
+        const noRM = document.getElementById('modalNoRM').value;
+        if (!noRM) return; // Jangan simpan jika tidak ada data
+
+        const draft = {
+            anamnesa: document.getElementById('modalAnamnesa').value,
+            objektif: document.getElementById('modalObjektif').value,
+            diagnosa: document.getElementById('modalDiagnosa').value,
+            perawatan: document.getElementById('modalPerawatan').value,
+            resep: document.getElementById('modalResep').value,
+            proPerawatan: document.getElementById('modalProPerawatan').value,
+            proKontrol: document.getElementById('modalProKontrol').value
+        };
+        // Simpan ke brankas lokal browser
+        localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
+    }
 
 
 </script>
