@@ -2955,7 +2955,7 @@
                         const escRes = (r.resep || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         
                         tombolEditRMEHtml = `
-                            <button onclick="salinAtauEditRME('${r.tanggal}', '${r.barisSheet}', '${escAnam}', '${escObj}', '${escDiag}', '${escPer}', '${escRes}', '${r.proPerawatan || ''}', '${r.proKontrol || ''}')" 
+                            <button onclick="salinAtauEditRME(${r.isHariIni}, '${r.barisSheet}', '${escAnam}', '${escObj}', '${escDiag}', '${escPer}', '${escRes}', '${r.proPerawatan || ''}', '${r.proKontrol || ''}')" 
                                     style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                                 📝 Edit / Salin Catatan Ini
                             </button>
@@ -3015,32 +3015,29 @@
     // }
 
     // 🌟 FUNGSI BARU: LOGIKA KOREKSI (TIMPA vs BUAT BARU)
-    function salinAtauEditRME(tglAsli, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
-        // 1. Munculkan form kiri jika sebelumnya tertutup (mode view)
-        document.getElementById('kolomInputRME').style.display = 'block';
-        
-        // 2. Isi form dengan data yang ditarik
-        document.getElementById('modalAnamnesa').value = anam;
-        document.getElementById('modalObjektif').value = obj;
-        document.getElementById('modalDiagnosa').value = diag;
-        document.getElementById('modalPerawatan').value = per;
-        document.getElementById('modalResep').value = res;
-        document.getElementById('modalProPerawatan').value = proPer;
-        document.getElementById('modalProKontrol').value = proKon;
+    function salinAtauEditRME(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
+            // 1. Munculkan form kiri jika sebelumnya tertutup (mode view)
+            document.getElementById('kolomInputRME').style.display = 'block';
+            
+            // 2. Isi form dengan data yang ditarik
+            document.getElementById('modalAnamnesa').value = anam;
+            document.getElementById('modalObjektif').value = obj;
+            document.getElementById('modalDiagnosa').value = diag;
+            document.getElementById('modalPerawatan').value = per;
+            document.getElementById('modalResep').value = res;
+            document.getElementById('modalProPerawatan').value = proPer;
+            document.getElementById('modalProKontrol').value = proKon;
 
-        // 3. Deteksi apakah ini catatan HARI INI atau MASA LALU
-        const h = new Date();
-        const hariIniCek = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
-        
-        if (tglAsli.includes(hariIniCek) || tglAsli === hariIniCek) {
-            // Jika HARI INI -> Kunci untuk menimpa baris yang sama
-            document.getElementById('modalRowUpdate').value = barisSheet;
-            alert("Mode Edit Aktif: Perubahan akan menimpa catatan RME yang dibuat hari ini.");
-        } else {
-            // Jika MASA LALU -> Kosongkan baris agar server membuat KUNJUNGAN BARU
-            document.getElementById('modalRowUpdate').value = ""; 
-            alert("Mode Salin Aktif: Data dari kunjungan lama telah disalin. Saat disimpan, ini akan menjadi rekam medis Kunjungan Baru untuk hari ini.");
-        }
+            // 3. 🔥 LOGIKA BARU: Keputusan 100% Akurat Mengikuti Flag Boolean dari Server
+            if (isHariIni === true || isHariIni === "true") {
+                // Jika dikonfirmasi hari ini oleh server -> Masukkan baris induk untuk ditimpa
+                document.getElementById('modalRowUpdate').value = barisSheet;
+                alert("Mode Edit Aktif: Perubahan akan menimpa catatan RME yang dibuat hari ini.");
+            } else {
+                // Jika records masa lalu -> Kosongkan baris agar server membuat baris kunjungan baru
+                document.getElementById('modalRowUpdate').value = ""; 
+                alert("Mode Salin Aktif: Data dari kunjungan lama telah disalin. Saat disimpan, ini akan menjadi rekam medis Kunjungan Baru untuk hari ini.");
+            }
     }
 
     document.getElementById('txtCariRiwayatGlobal').addEventListener('keypress', function(e) {
