@@ -1772,7 +1772,7 @@
             
             if (pasien.status === "Belum Diperiksa") {
                 // 🔥 B. KONTROL VALIDASI GRANULAR TOMBOL AKSI
-                let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa')">▶️ Mulai</button>` : '';
+                let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}')">▶️ Mulai</button>` : '';
                 let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
                 let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
                 let btnAbsen = bolehEditAntrean ? `<button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>` : '';
@@ -2459,7 +2459,7 @@
         muatAntreanHariIni(1); 
     }
 
-    function gantiStatusPasien(rowNum, statusBaru) {
+    function gantiStatusPasien(rowNum, statusBaru, noRM = "", namaPasien = "") {
         if(!confirm(`Ubah status pasien menjadi "${statusBaru}"?`)) return;
 
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
@@ -2470,19 +2470,38 @@
             action: "updateStatus", 
             rowNumber: rowNum, 
             status: statusBaru,
-            operatorUsername: usernameAktif, // 🔥 Tambahan untuk Log
-            operatorRole: roleAktif         // 🔥 Tambahan untuk Log
+            operatorUsername: usernameAktif, 
+            operatorRole: roleAktif         
         };
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(data => {
             if (data.result === "success") {
+                // Refresh data antrean di latar belakang
                 muatAntreanHariIni(); 
-                if(statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
+                
+                // 🔥 LOGIKA ALUR KERJA BARU: Memicu Switch Tab & Modal RME
+                if (statusBaru === "Sedang Diperiksa") {
+                    if (noRM !== "" && namaPasien !== "") {
+                        // 1. Pindah layar ke Tab Riwayat Medis
+                        switchTab('riwayatMedis'); 
+                        
+                        // 2. Beri jeda 400ms agar transisi animasi CSS selesai, lalu tembak buka Modal Split-Screen
+                        setTimeout(() => {
+                            bukaModalRiwayatFull(noRM, namaPasien);
+                        }, 400); 
+                    } else {
+                        // Jika parameter dari tombol belum lengkap, sistem tetap aman namun tidak auto-switch
+                        alert("Status berhasil diubah. Silakan menuju tab Riwayat Medis secara manual.");
+                    }
+                } 
+                else if (statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
                     document.getElementById('sectionRME').style.display = 'none';
                 }
-            } else { alert("Gagal memperbarui status."); }
+            } else { 
+                alert("Gagal memperbarui status."); 
+            }
         });
     }
 
