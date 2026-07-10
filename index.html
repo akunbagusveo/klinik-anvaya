@@ -1734,7 +1734,6 @@
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData ? sessionData.permissions : {};
         
-        // Default fallback: Jika perms belum terdefinisi di DB, set ke 0 (tidak punya akses)
         const bolehInputRME   = perms.aksesInputRME === 1;
         const bolehEditAntrean = perms.aksesEditAntrean === 1;
 
@@ -1747,15 +1746,11 @@
         if (filterStatus === "Semua") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status !== "Dibatalkan" && pasien.status !== "Tidak Datang");
         } else if (filterStatus === "Belum Diperiksa" || filterStatus === "Sedang Diperiksa" || filterStatus === "Sudah Diperiksa" || filterStatus === "Tidak Datang") {
-            // 🔥 Tambahkan kondisi || filterStatus === "Tidak Datang" di atas agar server bisa menyaring status ini
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === filterStatus);
         } else if (filterStatus === "Perlu Input RME") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled);
         }
-        else if (pasien.status === "Sedang Diperiksa") {
-            // 🔥 PERUBAHAN ALUR: Tidak ada lagi tombol Selesai Periksa manual. Mengarahkan kembali ke form Draft RME!
-            tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}'), 400);">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
-        }
+        // Catatan: Kesalahan copy-paste Anda sebelumnya ada di sini, sudah saya bersihkan!
 
         if (dataTerfilter.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding: 20px;">Tidak ada data pasien untuk kategori <b>${filterStatus}</b>.</td></tr>`;
@@ -1777,7 +1772,6 @@
             let tombolAksi = "";
             
             if (pasien.status === "Belum Diperiksa") {
-                // 🔥 B. KONTROL VALIDASI GRANULAR TOMBOL AKSI
                 let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}')">▶️ Mulai</button>` : '';
                 let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
                 let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
@@ -1789,22 +1783,22 @@
                     </div>
                 `;
                 
-                // Jika role tersebut sama sekali tidak punya akses keduanya, tampilkan teks strip
                 if (!tombolAksi.trim()) tombolAksi = '<span style="color:#7f8c8d; font-size:12px;">Tidak ada akses</span>';
 
             } else if (pasien.status === "Sedang Diperiksa") {
-                // Aksi Selesai Periksa biasanya melekat pada hak akses RME
-                tombolAksi = bolehInputRME ? `<button class="btn-action btn-done" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sudah Diperiksa')">Selesai Periksa</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
+                // 🔥 SOLUSI UTAMA: Mengganti tombol Selesai Periksa menjadi Lanjut Input RME yang mengarah ke Split-Screen!
+                tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}'), 400);">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
+            
             } else if (pasien.status === "Sudah Diperiksa") {
                 if (!pasien.isRmeFilled) {
-                    tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaInputRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">📝 Input RME</button>` : '-';
+                    // 🔥 PENYESUAIAN: Tombol ini juga diarahkan ke modal Split-Screen agar data draf tidak hilang
+                    tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}'), 400);">📝 Input RME (Tertunda)</button>` : '-';
                 } else {
                     if (pasien.tanggalDaftar === formatHariIni && perms.editRME === 1) {
-                        // Jika Dokter / Owner -> Mode Edit Aktif (Kirim parameter true)
-                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}', true)">👁️ Lihat/Edit RME</button>`;
+                        // Jika sudah diisi hari ini, gunakan modal Split Screen (tapi kita butuh penyesuaian untuk mode Edit nanti, untuk sementara gunakan bukaModalRiwayatFull)
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}'), 400);">👁️ Buka RME</button>`;
                     } else {
-                        // Jika Perawat / Staf Non-Dokter / Dokter di hari lain -> Mode Read-Only (Kirim parameter false)
-                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRME('${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}', false)">👁️ Lihat RME</button>`;
+                        tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}'), 400);">👁️ Lihat RME</button>`;
                     }
                 }
             }
@@ -4943,38 +4937,53 @@
 
     // Fungsi Voice-to-Text (Dikte)
     // 🔥 FUNGSI DIKTE SUARA (RE-USE & UPGRADE UNTUK MAC CHROME)
+    // 🔥 FUNGSI DIKTE SUARA CONTINUOUS (Mode Tahan Jeda & Bisa Di-Stop)
+    let pengenalSuaraAktif = null; // Menyimpan status mic
+
     function mulaiDikte(targetId) {
-        // Gunakan standar yang didukung Chrome Mac
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        
         if (!SpeechRecognition) {
             alert("Maaf, browser Anda tidak mendukung fitur Dikte Suara. Mohon gunakan Google Chrome terbaru.");
             return;
         }
-        
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'id-ID';
-        recognition.interimResults = false; 
-        recognition.maxAlternatives = 1;
 
-        // Ambil elemen tombol yang diklik untuk memberikan efek visual
         const targetInput = document.getElementById(targetId);
         const btnMicrophone = event.currentTarget; 
-        const originalIcon = btnMicrophone.innerText;
+        const originalIcon = "🎙️";
+
+        // Jika mic sedang aktif, klik kedua kalinya untuk MENGHENTIKAN
+        if (pengenalSuaraAktif) {
+            pengenalSuaraAktif.stop();
+            pengenalSuaraAktif = null;
+            btnMicrophone.innerText = originalIcon;
+            targetInput.placeholder = "";
+            return;
+        }
         
+        // Jika mic belum aktif, MULAI mendengarkan
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'id-ID';
+        
+        // 🔥 KUNCI UTAMA: Mendengarkan terus-menerus meskipun ada jeda napas
+        recognition.continuous = true; 
+        recognition.interimResults = false; 
+
         recognition.onstart = function() {
-            btnMicrophone.innerText = "🔴"; // Berubah merah saat mendengar
-            targetInput.placeholder = "Mendengarkan suara Anda...";
+            pengenalSuaraAktif = recognition; // Kunci status mic aktif
+            btnMicrophone.innerText = "🛑 (Klik Stop)"; // Berubah indikator stop
+            targetInput.placeholder = "Mendengarkan suara Anda terus-menerus... (Klik 🛑 untuk berhenti)";
         };
 
         recognition.onresult = function(event) {
-            const hasilText = event.results[0][0].transcript;
+            // Karena continuous=true, kita ambil hasil transcript yang paling terakhir masuk
+            const hasilText = event.results[event.results.length - 1][0].transcript.trim();
             
-            // Cek jika elemen tersebut memiliki class 'auto-bullet'
-            if(targetInput.classList.contains('auto-bullet')) {
-                targetInput.value += (targetInput.value.trim() === "" ? "• " : "\n• ") + hasilText.charAt(0).toUpperCase() + hasilText.slice(1) + ".";
-            } else {
-                targetInput.value += (targetInput.value === "" ? "" : " ") + hasilText.charAt(0).toUpperCase() + hasilText.slice(1);
+            if (hasilText) {
+                if(targetInput.classList.contains('auto-bullet')) {
+                    targetInput.value += (targetInput.value.trim() === "" ? "• " : "\n• ") + hasilText.charAt(0).toUpperCase() + hasilText.slice(1) + ".";
+                } else {
+                    targetInput.value += (targetInput.value === "" ? "" : " ") + hasilText.charAt(0).toUpperCase() + hasilText.slice(1);
+                }
             }
         };
 
@@ -4983,10 +4992,13 @@
             if(event.error === 'not-allowed') {
                 alert("Izin mikrofon diblokir. Silakan klik ikon gembok di sebelah URL (kiri atas Chrome) dan izinkan Mikrofon.");
             }
+            pengenalSuaraAktif = null;
+            btnMicrophone.innerText = originalIcon;
         };
 
         recognition.onend = function() {
-            btnMicrophone.innerText = originalIcon; // Kembali ke ikon awal
+            pengenalSuaraAktif = null;
+            btnMicrophone.innerText = originalIcon; 
             targetInput.placeholder = "";
         };
 
