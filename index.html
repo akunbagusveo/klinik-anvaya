@@ -2759,58 +2759,64 @@
     let totalRiwayatPages = 1;
 
     function tampilkanRiwayatGlobal() {
-        const tbody = document.getElementById('tabelDaftarPasienBody');
-        tbody.innerHTML = "";
-        
-        const totalData = cacheRiwayatGlobal.length;
-        totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
-        
-        if (currentRiwayatPage > totalRiwayatPages) currentRiwayatPage = totalRiwayatPages;
-        if (currentRiwayatPage < 1) currentRiwayatPage = 1;
-        
-        const start = (currentRiwayatPage - 1) * riwayatPageSize;
-        const end = Math.min(start + riwayatPageSize, totalData);
-        const dataHalaman = cacheRiwayatGlobal.slice(start, end);
-        
-        document.getElementById('lblTotalDataMasterRiwayat').innerText = totalData;
-        document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
-        document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
-        
-        document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
-        document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
-
-        // 🔥 KOREKSI: Sesuaikan colspan menjadi 6 agar simetris dengan jumlah kolom
-        if (dataHalaman.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
-            return;
-        }
-
-        dataHalaman.forEach(p => {
-            const noRM = p[0] || "-";
-            const namaPasien = p[1] || "-";
+            const tbody = document.getElementById('tabelDaftarPasienBody');
+            tbody.innerHTML = "";
             
-            // 🔥 BARU: Deteksi status akun pasien pada indeks ke-10 (Kolom K di MasterPasien)
-            const statusAkun = p[10] ? p[10].toString().trim().toLowerCase() : "aktif";
+            const totalData = cacheRiwayatGlobal.length;
+            totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
             
-            // Atur tampilan nama secara kondisional berdasarkan statusnya
-            let namaTampil = `<strong>${namaPasien}</strong>`;
-            if (statusAkun === "nonaktif") {
-                namaTampil += ` <span style="background:#e74c3c; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:6px; display:inline-block; vertical-align:middle;">Akun Nonaktif / Terarsip</span>`;
+            if (currentRiwayatPage > totalRiwayatPages) currentRiwayatPage = totalRiwayatPages;
+            if (currentRiwayatPage < 1) currentRiwayatPage = 1;
+            
+            const start = (currentRiwayatPage - 1) * riwayatPageSize;
+            const end = Math.min(start + riwayatPageSize, totalData);
+            const dataHalaman = cacheRiwayatGlobal.slice(start, end);
+            
+            document.getElementById('lblTotalDataMasterRiwayat').innerText = totalData;
+            document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
+            document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
+            
+            document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
+            document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
+
+            if (dataHalaman.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
+                return;
             }
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-weight:bold; color:#2c3e50;">${noRM}</td>
-                <td>${namaTampil}</td>
-                <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p[4] || '-'}</span></td> 
-                <td>${p[5] || '-'}</td> 
-                <td>${p[8] || '-'}</td> 
-                <td>
-                    <button class="btn-action btn-rme" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaModalRiwayatFull('${noRM}', '${namaPasien.replace(/'/g, "\\'")}')">👁️ Lihat RME</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+            // 🔥 UPGRADE DINAMIS MUTLAK: Deteksi Letak Kolom Menggunakan Header Master Cache
+            const headerMaster = cachePasienLama[0].map(h => h.toString().toLowerCase().trim());
+            const idxNoRM   = headerMaster.indexOf("no rm") !== -1 ? headerMaster.indexOf("no rm") : 0;
+            const idxNama   = headerMaster.indexOf("nama pasien") !== -1 ? headerMaster.indexOf("nama pasien") : 1;
+            const idxGender = headerMaster.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
+            const idxWA     = headerMaster.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp"));
+            const idxAlamat = headerMaster.indexOf("alamat lengkap") !== -1 ? headerMaster.indexOf("alamat lengkap") : 8;
+            const idxStatus = headerMaster.indexOf("status") !== -1 ? headerMaster.indexOf("status") : 10;
+
+            dataHalaman.forEach(p => {
+                // Membaca data secara dinamis berdasarkan indeks hasil pelacakan di atas
+                const noRM = p[idxNoRM] || "-";
+                const namaPasien = p[idxNama] || "-";
+                const statusAkun = p[idxStatus !== -1 ? idxStatus : 10] ? p[idxStatus !== -1 ? idxStatus : 10].toString().trim().toLowerCase() : "aktif";
+                
+                let namaTampil = `<strong>${namaPasien}</strong>`;
+                if (statusAkun === "nonaktif") {
+                    namaTampil += ` <span style="background:#e74c3c; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:6px; display:inline-block; vertical-align:middle;">Akun Nonaktif / Terarsip</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold; color:#2c3e50;">${noRM}</td>
+                    <td>${namaTampil}</td>
+                    <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p[idxGender !== -1 ? idxGender : 4] || '-'}</span></td> 
+                    <td>${p[idxWA !== -1 ? idxWA : 5] || '-'}</td> 
+                    <td>${p[idxAlamat !== -1 ? idxAlamat : 8] || '-'}</td> 
+                    <td>
+                        <button class="btn-action btn-rme" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaModalRiwayatFull('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', 'view')">👁️ Lihat RME</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
     }
 
     // Ganti nama fungsi trigger tombol di HTML Anda menjadi nama baru ini:
