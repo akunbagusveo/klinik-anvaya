@@ -1564,7 +1564,7 @@
         const tbody = document.getElementById('tabelAntreanBody');
         tbody.innerHTML = '';
 
-        // 🔥 A. AMBIL DATA HAK AKSES OPERATOR DARI STORAGE
+        // A. AMBIL DATA HAK AKSES OPERATOR DARI STORAGE
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData ? sessionData.permissions : {};
         
@@ -1584,7 +1584,6 @@
         } else if (filterStatus === "Perlu Input RME") {
             dataTerfilter = dataAntreanGlobal.filter(pasien => pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled);
         }
-        // Catatan: Kesalahan copy-paste Anda sebelumnya ada di sini, sudah saya bersihkan!
 
         if (dataTerfilter.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding: 20px;">Tidak ada data pasien untuk kategori <b>${filterStatus}</b>.</td></tr>`;
@@ -1595,9 +1594,19 @@
         const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
 
         dataTerfilter.forEach(pasien => {
+            // =========================================================================
+            // 🔥 KUNCI UTAMA: INTERCEPTOR LOGIKA DISPLAY STATUS (100% DINAMIS)
+            // Jika di database bertuliskan "Sudah Diperiksa" tapi RME-nya terdeteksi kosong,
+            // sistem secara otomatis mengembalikan status tampilannya ke "Sedang Diperiksa"
+            // =========================================================================
+            let statusEfektif = pasien.status;
+            if (pasien.status === "Sudah Diperiksa" && !pasien.isRmeFilled) {
+                statusEfektif = "Sedang Diperiksa";
+            }
+
             let badgeClass = "badge-belum";
-            if(pasien.status === "Sedang Diperiksa") badgeClass = "badge-sedang";
-            if(pasien.status === "Sudah Diperiksa") badgeClass = "badge-sudah";
+            if(statusEfektif === "Sedang Diperiksa") badgeClass = "badge-sedang";
+            if(statusEfektif === "Sudah Diperiksa") badgeClass = "badge-sudah";
 
             let rmeStatusIndicator = pasien.isRmeFilled ? 
                 '<br><span style="color: #2ecc71; font-size: 11px;">✔️ RME Tersimpan</span>' : 
@@ -1605,31 +1614,26 @@
 
             let tombolAksi = "";
             
-            if (pasien.status === "Belum Diperiksa") {
+            if (statusEfektif === "Belum Diperiksa") {
                 let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}')">▶️ Mulai</button>` : '';
                 let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
                 let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
                 let btnAbsen = bolehEditAntrean ? `<button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>` : '';
 
-                tombolAksi = `
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        ${btnMulai} ${btnEdit} ${btnBatal} ${btnAbsen}
-                    </div>
-                `;
-                
+                tombolAksi = `<div style="display: flex; gap: 5px; flex-wrap: wrap;">${btnMulai} ${btnEdit} ${btnBatal} ${btnAbsen}</div>`;
                 if (!tombolAksi.trim()) tombolAksi = '<span style="color:#7f8c8d; font-size:12px;">Tidak ada akses</span>';
 
-            } else if (pasien.status === "Sedang Diperiksa") {
-                // 🔥 JAUH LEBIH BERSIH: Langsung panggil modal tanpa merusak posisi tab aktif!
+            } else if (statusEfektif === "Sedang Diperiksa") {
+                // 🔥 UNIFIKASI TOMBOL AKSI: Menggabungkan pasien "Sedang Diperiksa" asli
+                // dan pasien "Sudah Diperiksa tertunda RME" ke bawah satu tombol biru yang sama!
                 tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
             
-            } else if (pasien.status === "Sudah Diperiksa") {
-                if (!pasien.isRmeFilled) {
-                    // 🔥 Langsung buka mode input tanpa memindahkan pandangan dokter dari antrean
-                    tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input')">📝 Input RME (Tertunda)</button>` : '-';
-                } else {
-                    // 🔥 Langsung buka mode baca (view) murni tepat di atas halaman antrean saat ini
+            } else if (statusEfektif === "Sudah Diperiksa") {
+                // Blok ini sekarang murni diisi oleh pasien yang data rekam medisnya benar-benar sudah tersimpan aman
+                if (pasien.tanggalDaftar === formatHariIni && perms.editRME === 1) {
                     tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view')">👁️ Buka RME</button>`;
+                } else {
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view')">👁️ Lihat RME</button>`;
                 }
             }
 
@@ -1643,7 +1647,10 @@
                 <td>${pasien.waktu}</td>
                 <td>${pasien.tujuan}</td>
                 <td style="font-weight:bold; color:#2c3e50;">${pasien.namaDokter || '-'}</td>
-                <td><span class="badge ${badgeClass}">${pasien.status}</span> ${rmeStatusIndicator}</td>
+                <td>
+                    <span class="badge ${badgeClass}">${statusEfektif}</span> 
+                    ${statusEfektif === "Sudah Diperiksa" ? rmeStatusIndicator : ""}
+                </td>
                 <td>${tombolAksi}</td>
             </tr>`;
         });
