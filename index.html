@@ -4675,7 +4675,8 @@
 
     // 🔥 NAMA FUNGSI DISERAGAMKAN: Menggunakan muatLogAktivitas agar singkron dengan tombol pagination
     function muatLogAktivitas(page = 1) {
-        // 🔥 FIX UTAMA: Ubah targetPage menjadi 'page' agar dinamis dan tidak error lagi!
+        // 🔥 FIX UTAMA: Pindahkan logLimit ke dalam fungsi agar kebal dari error inisialisasi TDZ!
+        const logLimit = 50; 
         window.currentLogPage = page; 
         
         const tbody = document.getElementById('bodyLogAktivitas');
@@ -4686,9 +4687,9 @@
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ 
-                action: "getLogAktivitas", // Pastikan case-sensitive sesuai dengan di Kode.gs
+                action: "getLogAktivitas", 
                 page: window.currentLogPage,
-                limit: logLimit
+                limit: logLimit // Sekarang dijamin 100% aman dan terbaca kapan pun dipanggil
             })
         })
         .then(res => res.json())
@@ -4737,7 +4738,6 @@
                     document.getElementById('logPaginationInfo').innerText = `Menampilkan halaman ${res.currentPage} dari ${res.totalPages}`;
                 }
                 
-                // Memanggil fungsi render pagination yang kemarin sudah disesuaikan
                 renderLogPagination(res.totalPages, res.currentPage);
 
             } else {
@@ -4749,6 +4749,9 @@
             if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Terjadi gangguan koneksi internet.</td></tr>`;
         });
     }
+    if (typeof muatLogAktivitas === "function") {
+            muatLogAktivitas(page);
+        }
 
     // 🔥 3. RAKIT FUNGSI BARU UNTUK MERENDER TOMBOL PAGINATION SECARA DINAMIS
     function renderLogPagination(totalPages, currentPage) {
