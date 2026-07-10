@@ -3490,11 +3490,28 @@
 
     // --- LOGOUT & TAB SWITCHING ---
     function logout() {
-        currentRole = ""; localStorage.removeItem('anvaya_session');
-        document.getElementById('formLogin').reset();
-        document.getElementById('sectionRME').style.display = 'none';
-        document.getElementById('mainPage').style.display = 'none';
-        document.getElementById('loginPage').style.display = 'block';
+        // 1. Bersihkan variabel peran dan hapus penyimpanan sesi lokal browser
+        currentRole = ""; 
+        localStorage.removeItem('anvaya_session');
+        
+        // 2. Reset form login secara aman jika elemennya eksis
+        const formLogin = document.getElementById('formLogin');
+        if (formLogin) formLogin.reset();
+        
+        // 3. 🔥 PEMBERSIHAN KONTEN & MODAL SECARA DINAMIS (ANTI-CRASH)
+        // Kumpulkan semua ID elemen yang ingin disembunyikan saat keluar dari sistem
+        const elemenTutup = ['sectionRME', 'mainPage', 'modalRiwayatFull', 'formModalMedisSplit'];
+        
+        elemenTutup.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.style.display = 'none'; // Hanya dieksekusi jika elemen benar-benar ditemukan di HTML
+            }
+        });
+
+        // 4. Kembalikan tampilan ke halaman login utama
+        const loginPage = document.getElementById('loginPage');
+        if (loginPage) loginPage.style.display = 'block';
     }
 
     function switchTab(tabId) {
