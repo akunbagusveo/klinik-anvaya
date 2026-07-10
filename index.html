@@ -2987,32 +2987,32 @@
     }
 
     // 🔥 VERSI LENGKAP KOREKSI (Validasi Tanggal Ganda)
-    function salinAtauEditRME(tglAsli, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
-        document.getElementById('kolomInputRME').style.display = 'block';
+    // function salinAtauEditRME(tglAsli, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
+    //     document.getElementById('kolomInputRME').style.display = 'block';
         
-        document.getElementById('modalAnamnesa').value = anam;
-        document.getElementById('modalObjektif').value = obj;
-        document.getElementById('modalDiagnosa').value = diag;
-        document.getElementById('modalPerawatan').value = per;
-        document.getElementById('modalResep').value = res;
-        document.getElementById('modalProPerawatan').value = proPer;
-        document.getElementById('modalProKontrol').value = proKon;
+    //     document.getElementById('modalAnamnesa').value = anam;
+    //     document.getElementById('modalObjektif').value = obj;
+    //     document.getElementById('modalDiagnosa').value = diag;
+    //     document.getElementById('modalPerawatan').value = per;
+    //     document.getElementById('modalResep').value = res;
+    //     document.getElementById('modalProPerawatan').value = proPer;
+    //     document.getElementById('modalProKontrol').value = proKon;
 
-        // 🔥 PERBAIKAN: Deteksi multi-format tanggal (YYYY-MM-DD atau DD/MM/YYYY)
-        const h = new Date();
-        const fmtISO = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
-        const fmtLokal = `${String(h.getDate()).padStart(2, '0')}/${String(h.getMonth() + 1).padStart(2, '0')}/${h.getFullYear()}`;
+    //     // 🔥 PERBAIKAN: Deteksi multi-format tanggal (YYYY-MM-DD atau DD/MM/YYYY)
+    //     const h = new Date();
+    //     const fmtISO = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+    //     const fmtLokal = `${String(h.getDate()).padStart(2, '0')}/${String(h.getMonth() + 1).padStart(2, '0')}/${h.getFullYear()}`;
         
-        if (tglAsli.includes(fmtISO) || tglAsli.includes(fmtLokal)) {
-            // Mode EDIT (Hari ini)
-            document.getElementById('modalRowUpdate').value = barisSheet;
-            alert("Mode Edit Aktif: Perubahan akan menimpa catatan RME yang dibuat hari ini.");
-        } else {
-            // Mode SALIN (Masa lalu)
-            document.getElementById('modalRowUpdate').value = ""; 
-            alert("Mode Salin Aktif: Data masa lalu telah disalin menjadi draf kunjungan baru hari ini.");
-        }
-    }
+    //     if (tglAsli.includes(fmtISO) || tglAsli.includes(fmtLokal)) {
+    //         // Mode EDIT (Hari ini)
+    //         document.getElementById('modalRowUpdate').value = barisSheet;
+    //         alert("Mode Edit Aktif: Perubahan akan menimpa catatan RME yang dibuat hari ini.");
+    //     } else {
+    //         // Mode SALIN (Masa lalu)
+    //         document.getElementById('modalRowUpdate').value = ""; 
+    //         alert("Mode Salin Aktif: Data masa lalu telah disalin menjadi draf kunjungan baru hari ini.");
+    //     }
+    // }
 
     // 🌟 FUNGSI BARU: LOGIKA KOREKSI (TIMPA vs BUAT BARU)
     function salinAtauEditRME(tglAsli, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
