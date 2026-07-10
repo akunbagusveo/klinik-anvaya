@@ -2241,56 +2241,48 @@
 
     // 🔥 Fungsi Baru: Membuat Tombol Navigasi Angka
     function buatKomponenPagination(infoPaging) {
-        // 🔥 Hubungkan langsung ke wadah utama yang tersedia di HTML Anda
         const containerUtama = document.getElementById('komponenPagination');
-        if (!containerUtama) return; // Sabuk pengaman jika elemen HTML belum siap
+        if (!containerUtama) return; 
         
-        // Jika data kosong atau hanya 1 halaman, bersihkan wadah dan sembunyikan
         if (!infoPaging || infoPaging.totalItems === 0) {
             containerUtama.innerHTML = `<span style="font-size: 13px; color: #7f8c8d;">Menampilkan 0 antrean</span>`;
             return;
         }
 
-        // 1. HITUNG BATAS BARIS SECARA DINAMIS
         let hitungAwal = (infoPaging.currentPage - 1) * limitDataPerHalaman + 1;
         let hitungAkhir = Math.min(infoPaging.currentPage * limitDataPerHalaman, infoPaging.totalItems);
         
-        // 2. RENDER TEKS INFORMASI HALAMAN
-        let htmlInfo = `<div style="font-size: 13px; color: #7f8c8d; font-weight: 500;">
+        let htmlInfo = `<div style="font-size: 13px; color: #7f8c8d; font-weight: 500; margin-bottom: 5px;">
                             Menampilkan ${hitungAwal}-${hitungAkhir} dari ${infoPaging.totalItems} antrean
                         </div>`;
 
-        // 3. RENDER TOMBOL NAVIGASI
-        let htmlTombol = `<div style="display: flex; gap: 5px; margin-top: 5px;">`;
+        let htmlTombol = `<div style="display: flex; gap: 5px;">`;
 
-        // Tombol Ke Halaman Sebelumnya (Prev)
+        // 🔥 FIX 1: Tombol Sebelum (Ditambahkan color: #2c3e50 untuk override teks hantu)
         if (infoPaging.currentPage > 1) {
-            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage - 1})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; font-weight: bold;">Sebelumnya</button>`;
+            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage - 1})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; color: #2c3e50; border-radius: 4px; font-weight: bold;">Sebelumnya</button>`;
         } else {
-            htmlTombol += `<button disabled style="padding: 6px 12px; color: #ccc; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: not-allowed;">Sebelumnya</button>`;
+            htmlTombol += `<button disabled style="padding: 6px 12px; color: #a0a0a0; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: not-allowed;">Sebelumnya</button>`;
         }
 
-        // Render Angka Halaman secara Sekuensial
+        // 🔥 FIX 2: Angka Halaman Sekuensial (Ditambahkan color: #2c3e50 pada halaman alternatif)
         for (let hal = 1; hal <= infoPaging.totalPages; hal++) {
             if (hal === infoPaging.currentPage) {
-                // Halaman Aktif diberi warna biru
                 htmlTombol += `<button style="padding: 6px 12px; background: #3498db; color: white; border: none; font-weight: bold; border-radius: 4px; min-width: 35px;">${hal}</button>`;
             } else {
-                // Halaman Alternatif bisa diklik
-                htmlTombol += `<button onclick="muatAntreanHariIni(${hal})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; min-width: 35px;">${hal}</button>`;
+                htmlTombol += `<button onclick="muatAntreanHariIni(${hal})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; color: #2c3e50; border-radius: 4px; min-width: 35px;">${hal}</button>`;
             }
         }
 
-        // Tombol Ke Halaman Berikutnya (Next)
+        // 🔥 FIX 3: Tombol Berikutnya (Ditambahkan color: #2c3e50 untuk override teks hantu)
         if (infoPaging.currentPage < infoPaging.totalPages) {
-            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage + 1})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; font-weight: bold;">Berikutnya</button>`;
+            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage + 1})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; color: #2c3e50; border-radius: 4px; font-weight: bold;">Berikutnya</button>`;
         } else {
-            htmlTombol += `<button disabled style="padding: 6px 12px; color: #ccc; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: not-allowed;">Berikutnya</button>`;
+            htmlTombol += `<button disabled style="padding: 6px 12px; color: #a0a0a0; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: not-allowed;">Berikutnya</button>`;
         }
 
         htmlTombol += `</div>`;
 
-        // 4. SATUKAN DAN SUNTIKKAN STRUKTUR KE HTML UTAMA
         containerUtama.style.flexDirection = "column";
         containerUtama.style.alignItems = "center";
         containerUtama.innerHTML = htmlInfo + htmlTombol;
