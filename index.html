@@ -4673,6 +4673,7 @@
     const logLimit = 50; // Menampilkan 50 baris per halaman demi kenyamanan scrolling
 
     function muatDataLog(page = 1) {
+        window.currentLogPage = targetPage;
         currentLogPage = page;
         const tbody = document.getElementById('bodyLogAktivitas');
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 15px;">⏳ Membaca log aktivitas halaman ${page}...</td></tr>`;
@@ -4730,19 +4731,38 @@
     // 🔥 3. RAKIT FUNGSI BARU UNTUK MERENDER TOMBOL PAGINATION SECARA DINAMIS
     function renderLogPagination(totalPages, currentPage) {
         const container = document.getElementById('logPaginationButtons');
-        container.innerHTML = "";
+        
+        // 1. WAJIB diaktifkan agar tombol tidak bertumpuk/ganda saat pindah halaman
+        if (container) container.innerHTML = ""; 
+        
+        // 2. Ganti validasi infoPaging dengan pengecekan totalPages
+        if (!container || totalPages === 0) return;
 
-        // Tombol Previous (Mundur 1 Halaman)
+        // 3. Gunakan window.currentLogPage yang sudah kita set sebelumnya untuk konsistensi
+        const halAktif = window.currentLogPage || currentPage;
+
+        // ==========================================
+        // TOMBOL PREVIOUS (MUNDUR 1 HALAMAN)
+        // ==========================================
         const btnPrev = document.createElement('button');
         btnPrev.innerText = "◀ Prev";
-        btnPrev.disabled = currentPage === 1;
-        btnPrev.style.padding = "5px 10px";
-        btnPrev.style.cursor = "pointer";
-        btnPrev.onclick = () => muatDataLog(currentPage - 1);
+        btnPrev.disabled = halAktif === 1;
+        btnPrev.style.padding = "6px 12px";
+        btnPrev.style.marginRight = "5px";
+        btnPrev.style.borderRadius = "4px";
+        btnPrev.style.border = "1px solid #ddd";
+        btnPrev.style.cursor = halAktif === 1 ? "not-allowed" : "pointer";
+        btnPrev.style.background = halAktif === 1 ? "#f5f5f5" : "white";
+        btnPrev.style.color = halAktif === 1 ? "#ccc" : "#2c3e50"; // 🔥 Fix Teks Hantu
+        
+        // PASTIKAN NAMA FUNGSI INI SESUAI DENGAN FUNGSI PEMUAT LOG ANDA (muatLogAktivitas atau muatDataLog)
+        btnPrev.onclick = () => muatLogAktivitas(halAktif - 1); 
         container.appendChild(btnPrev);
 
-        // Hitung jendela rentang nomor halaman yang tampil (Maksimal 5 tombol nomor)
-        let startPage = Math.max(1, currentPage - 2);
+        // ==========================================
+        // RENDER ANGKA HALAMAN (MAKSIMAL 5 TOMBOL)
+        // ==========================================
+        let startPage = Math.max(1, halAktif - 2);
         let endPage = Math.min(totalPages, startPage + 4);
         if (endPage - startPage < 4) {
             startPage = Math.max(1, endPage - 4);
@@ -4751,26 +4771,41 @@
         for (let i = startPage; i <= endPage; i++) {
             const btnPage = document.createElement('button');
             btnPage.innerText = i;
-            btnPage.disabled = (i === currentPage);
-            btnPage.style.padding = "5px 12px";
-            btnPage.style.cursor = "pointer";
-            if (i === currentPage) {
-                btnPage.style.backgroundColor = "#007bff";
+            btnPage.style.padding = "6px 12px";
+            btnPage.style.marginRight = "5px";
+            btnPage.style.borderRadius = "4px";
+            btnPage.style.border = "1px solid #ddd";
+            
+            if (i === halAktif) {
+                // Tampilan Tombol Halaman Aktif (Biru)
+                btnPage.style.backgroundColor = "#3498db";
                 btnPage.style.color = "white";
                 btnPage.style.fontWeight = "bold";
-                btnPage.style.border = "1px solid #007bff";
+                btnPage.style.cursor = "default";
+                btnPage.disabled = true; 
+            } else {
+                // Tampilan Tombol Halaman Alternatif (Putih, Teks Terlihat)
+                btnPage.style.backgroundColor = "white";
+                btnPage.style.color = "#2c3e50"; // 🔥 Fix Teks Hantu
+                btnPage.style.cursor = "pointer";
+                btnPage.onclick = () => muatLogAktivitas(i); 
             }
-            btnPage.onclick = () => muatDataLog(i);
             container.appendChild(btnPage);
         }
 
-        // Tombol Next (Maju 1 Halaman)
+        // ==========================================
+        // TOMBOL NEXT (MAJU 1 HALAMAN)
+        // ==========================================
         const btnNext = document.createElement('button');
         btnNext.innerText = "Next ▶";
-        btnNext.disabled = currentPage === totalPages;
-        btnNext.style.padding = "5px 10px";
-        btnNext.style.cursor = "pointer";
-        btnNext.onclick = () => muatDataLog(currentPage + 1);
+        btnNext.disabled = halAktif === totalPages;
+        btnNext.style.padding = "6px 12px";
+        btnNext.style.borderRadius = "4px";
+        btnNext.style.border = "1px solid #ddd";
+        btnNext.style.cursor = halAktif === totalPages ? "not-allowed" : "pointer";
+        btnNext.style.background = halAktif === totalPages ? "#f5f5f5" : "white";
+        btnNext.style.color = halAktif === totalPages ? "#ccc" : "#2c3e50"; // 🔥 Fix Teks Hantu
+        btnNext.onclick = () => muatLogAktivitas(halAktif + 1); 
         container.appendChild(btnNext);
     }
 
@@ -4915,6 +4950,9 @@
     // 🔥 FUNGSI DIKTE SUARA CONTINUOUS (Mode Tahan Jeda & Bisa Di-Stop)
     let pengenalSuaraAktif = null; // Menyimpan status mic
 
+    // 🔥 SOLUSI BIJAK: Kita tidak perlu lagi menulis "let pengenalSuaraAktif = null;" secara terpisah di luar fungsi.
+// Kita langsung kelola statusnya secara dinamis menggunakan objek global browser (window.pengenalSuaraAktif)
+
     function mulaiDikte(targetId) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -4926,31 +4964,27 @@
         const btnMicrophone = event.currentTarget; 
         const originalIcon = "🎙️";
 
-        // Jika mic sedang aktif, klik kedua kalinya untuk MENGHENTIKAN
-        if (pengenalSuaraAktif) {
-            pengenalSuaraAktif.stop();
-            pengenalSuaraAktif = null;
+        // 🔥 FIX UTAMA: Gunakan window.pengenalSuaraAktif agar kebal dari error "before initialization"
+        if (window.pengenalSuaraAktif) {
+            window.pengenalSuaraAktif.stop();
+            window.pengenalSuaraAktif = null;
             btnMicrophone.innerText = originalIcon;
             targetInput.placeholder = "";
             return;
         }
         
-        // Jika mic belum aktif, MULAI mendengarkan
         const recognition = new SpeechRecognition();
         recognition.lang = 'id-ID';
-        
-        // 🔥 KUNCI UTAMA: Mendengarkan terus-menerus meskipun ada jeda napas
         recognition.continuous = true; 
         recognition.interimResults = false; 
 
         recognition.onstart = function() {
-            pengenalSuaraAktif = recognition; // Kunci status mic aktif
-            btnMicrophone.innerText = "🛑 (Klik Stop)"; // Berubah indikator stop
+            window.pengenalSuaraAktif = recognition; // Kunci status mic aktif di scope global browser
+            btnMicrophone.innerText = "🛑 (Klik Stop)"; 
             targetInput.placeholder = "Mendengarkan suara Anda terus-menerus... (Klik 🛑 untuk berhenti)";
         };
 
         recognition.onresult = function(event) {
-            // Karena continuous=true, kita ambil hasil transcript yang paling terakhir masuk
             const hasilText = event.results[event.results.length - 1][0].transcript.trim();
             
             if (hasilText) {
@@ -4967,12 +5001,12 @@
             if(event.error === 'not-allowed') {
                 alert("Izin mikrofon diblokir. Silakan klik ikon gembok di sebelah URL (kiri atas Chrome) dan izinkan Mikrofon.");
             }
-            pengenalSuaraAktif = null;
+            window.pengenalSuaraAktif = null;
             btnMicrophone.innerText = originalIcon;
         };
 
         recognition.onend = function() {
-            pengenalSuaraAktif = null;
+            window.pengenalSuaraAktif = null;
             btnMicrophone.innerText = originalIcon; 
             targetInput.placeholder = "";
         };
