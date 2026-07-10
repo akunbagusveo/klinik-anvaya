@@ -1388,68 +1388,6 @@
         </div>
     </div>
 
-    <!--
-    <div id="modalRME" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; overflow-y:auto;">
-        <div style="background:white; max-width:600px; margin: 30px auto; padding:20px; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-             🔥 Tambahkan ID pada H2 di bawah ini 
-            <h2 id="judulModalRME" style="color:#3498db; border-bottom: 2px solid #3498db; margin-bottom:15px;">👁️ Lihat / Edit Rekam Medis</h2>
-            
-            <form id="formModalMedis">
-                <input type="hidden" id="modalNoRM">
-                <input type="hidden" id="modalRowUpdate">
-                
-                <div class="form-group">
-                    <label>Nama Pasien</label>
-                    <input type="text" id="modalNama" readonly style="background:#e9ecef; font-weight:bold; color:#2c3e50;">
-                </div>
-                <div class="form-group">
-                    <label>Anamnesa (Keluhan Pasien)</label>
-                    <textarea id="modalAnamnesa" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Objektif</label>
-                    <textarea id="modalObjektif" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Diagnosa</label>
-                    <input type="text" id="modalDiagnosa" required>
-                </div>
-                <div class="form-group">
-                    <label>Perawatan (Tindakan Hari Ini)</label>
-                    <textarea id="modalPerawatan" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Pro Perawatan (Rencana Lanjutan)</label>
-                    <textarea id="modalProPerawatan"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Resep Obat</label>
-                    <textarea id="modalResep"></textarea>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Pro Kontrol</label>
-                        <input type="text" id="modalProKontrol">
-                    </div>
-                    <div class="form-group">
-                        <label>Foto Dokumentasi</label>
-                        Input teks biarkan tetap ada (set ke readonly) untuk menampung link lama saat edit 
-                        <input type="text" id="modalLinkFoto" readonly placeholder="Belum ada foto" style="background-color: #f5f5f5; margin-bottom: 5px;">
-                         Tambahkan input file komputer di bawahnya
-                        <input type="file" id="modalFileFoto" accept="image/*" style="font-size: 12px;">
-                    </div>
-                </div>
-                <br>
-                <div style="display: flex; gap: 10px;">
-                     Tambahkan ID pada Button Simpan di bawah ini 
-                    <button type="submit" id="btnSimpanRME" style="background-color: #2ecc71; color:white; width:70%;">Simpan Perubahan</button>
-                    <button type="button" onclick="document.getElementById('modalRME').style.display='none'" style="background-color: #e74c3c; color:white; width:30%; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Tutup</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    -->
-
     <!-- MODAL DETAIL REKAM MEDIS FULL -->
     <div id="modalRiwayatFull" class="modal-backdrop" style="display:none;">
         <div class="modal-content-box" style="max-width: 95vw; width: 1400px; height: 92vh; display: flex; flex-direction: column;">
@@ -1786,16 +1724,16 @@
                 if (!tombolAksi.trim()) tombolAksi = '<span style="color:#7f8c8d; font-size:12px;">Tidak ada akses</span>';
 
             } else if (pasien.status === "Sedang Diperiksa") {
-                // Mode INPUT (Form Kiri Terbuka)
-                tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input'), 400);">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
+                // 🔥 JAUH LEBIH BERSIH: Langsung panggil modal tanpa merusak posisi tab aktif!
+                tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
             
             } else if (pasien.status === "Sudah Diperiksa") {
                 if (!pasien.isRmeFilled) {
-                    // Mode INPUT (Karena RME tertunda/kosong)
-                    tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input'), 400);">📝 Input RME (Tertunda)</button>` : '-';
+                    // 🔥 Langsung buka mode input tanpa memindahkan pandangan dokter dari antrean
+                    tombolAksi = bolehInputRME ? `<button class="btn-action btn-rme" style="background-color: #9b59b6;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input')">📝 Input RME (Tertunda)</button>` : '-';
                 } else {
-                    // 🔥 Mode VIEW (RME sudah terisi, form kiri ditutup agar lega)
-                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="switchTab('riwayatMedis'); setTimeout(() => bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view'), 400);">👁️ Buka RME</button>`;
+                    // 🔥 Langsung buka mode baca (view) murni tepat di atas halaman antrean saat ini
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view')">👁️ Buka RME</button>`;
                 }
             }
 
