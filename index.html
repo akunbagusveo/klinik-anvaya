@@ -2759,64 +2759,98 @@
     let totalRiwayatPages = 1;
 
     function tampilkanRiwayatGlobal() {
-            const tbody = document.getElementById('tabelDaftarPasienBody');
-            tbody.innerHTML = "";
-            
-            const totalData = cacheRiwayatGlobal.length;
-            totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
-            
-            if (currentRiwayatPage > totalRiwayatPages) currentRiwayatPage = totalRiwayatPages;
-            if (currentRiwayatPage < 1) currentRiwayatPage = 1;
-            
-            const start = (currentRiwayatPage - 1) * riwayatPageSize;
-            const end = Math.min(start + riwayatPageSize, totalData);
-            const dataHalaman = cacheRiwayatGlobal.slice(start, end);
-            
-            document.getElementById('lblTotalDataMasterRiwayat').innerText = totalData;
-            document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
-            document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
-            
-            document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
-            document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
+        const tbody = document.getElementById('tabelDaftarPasienBody');
+        tbody.innerHTML = "";
+        
+        if (!cacheRiwayatGlobal || cacheRiwayatGlobal.length === 0) {
+            document.getElementById('lblTotalDataMasterRiwayat').innerText = "0";
+            document.getElementById('lblTotalDataTampilRiwayat').innerText = "0";
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
+            return;
+        }
 
-            if (dataHalaman.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
-                return;
+        // =========================================================================
+        // 🔥 EXTRAKSI HEADER 100% DINAMIS & AMAN DARI CRASH (SABUK PENGAMAN MUTLAK)
+        // =========================================================================
+        let headerMaster = [];
+        let dataPasienMurni = cacheRiwayatGlobal;
+
+        // Cek apakah baris pertama di dalam hasil cari adalah baris judul/header
+        if (cacheRiwayatGlobal.length > 0 && Array.isArray(cacheRiwayatGlobal[0])) {
+            const cekBarisPertama = cacheRiwayatGlobal[0].map(h => h.toString().toLowerCase().trim());
+            if (cekBarisPertama.includes("no rm") || cekBarisPertama.includes("nama pasien")) {
+                headerMaster = cekBarisPertama;
+                dataPasienMurni = cacheRiwayatGlobal.slice(1); // Potong baris ke-0 agar judul tidak ikut terhitung sebagai pasien
+            }
+        }
+
+        // Jalur alternatif jika cache Riwayat kosong, coba intip cache Pasien Lama
+        if (headerMaster.length === 0 && typeof cachePasienLama !== "undefined" && cachePasienLama && cachePasienLama.length > 0) {
+            headerMaster = cachePasienLama[0].map(h => h.toString().toLowerCase().trim());
+        }
+
+        // Jalur terakhir (Fallback Teraman) jika seluruh memori browser kosong agar sistem TIDAK BLANK / CRASH
+        if (headerMaster.length === 0) {
+            headerMaster = ["no rm", "nama pasien", "tempat lahir", "tanggal lahir", "gender", "whatsapp", "pekerjaan", "email", "alamat lengkap", "ktp", "status"];
+        }
+
+        // =========================================================================
+        // PENGATURAN HALAMAN PAGINASI (Berbasis Data Murni Tanpa Baris Header)
+        // =========================================================================
+        const totalData = dataPasienMurni.length;
+        totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
+        
+        if (currentRiwayatPage > totalRiwayatPages) currentRiwayatPage = totalRiwayatPages;
+        if (currentRiwayatPage < 1) currentRiwayatPage = 1;
+        
+        const start = (currentRiwayatPage - 1) * riwayatPageSize;
+        const end = Math.min(start + riwayatPageSize, totalData);
+        const dataHalaman = dataPasienMurni.slice(start, end);
+        
+        document.getElementById('lblTotalDataMasterRiwayat').innerText = totalData;
+        document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
+        document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
+        
+        document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
+        document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
+
+        if (dataHalaman.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
+            return;
+        }
+
+        // PELACAKAN INDEKS MATRIKS SECARA OTOMATIS
+        const idxNoRM   = headerMaster.indexOf("no rm") !== -1 ? headerMaster.indexOf("no rm") : 0;
+        const idxNama   = headerMaster.indexOf("nama pasien") !== -1 ? headerMaster.indexOf("nama pasien") : 1;
+        const idxGender = headerMaster.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
+        const idxWA     = headerMaster.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp"));
+        const idxAlamat = headerMaster.indexOf("alamat lengkap") !== -1 ? headerMaster.indexOf("alamat lengkap") : 8;
+        const idxStatus = headerMaster.indexOf("status") !== -1 ? headerMaster.indexOf("status") : 10;
+
+        // MENGGAMBAR BARIS TABEL
+        dataHalaman.forEach(p => {
+            const noRM = p[idxNoRM] || "-";
+            const namaPasien = p[idxNama] || "-";
+            const statusAkun = p[idxStatus !== -1 ? idxStatus : 10] ? p[idxStatus !== -1 ? idxStatus : 10].toString().trim().toLowerCase() : "aktif";
+            
+            let namaTampil = `<strong>${namaPasien}</strong>`;
+            if (statusAkun === "nonaktif") {
+                namaTampil += ` <span style="background:#e74c3c; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:6px; display:inline-block; vertical-align:middle;">Akun Nonaktif / Terarsip</span>`;
             }
 
-            // 🔥 UPGRADE DINAMIS MUTLAK: Deteksi Letak Kolom Menggunakan Header Master Cache
-            const headerMaster = cachePasienLama[0].map(h => h.toString().toLowerCase().trim());
-            const idxNoRM   = headerMaster.indexOf("no rm") !== -1 ? headerMaster.indexOf("no rm") : 0;
-            const idxNama   = headerMaster.indexOf("nama pasien") !== -1 ? headerMaster.indexOf("nama pasien") : 1;
-            const idxGender = headerMaster.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
-            const idxWA     = headerMaster.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp"));
-            const idxAlamat = headerMaster.indexOf("alamat lengkap") !== -1 ? headerMaster.indexOf("alamat lengkap") : 8;
-            const idxStatus = headerMaster.indexOf("status") !== -1 ? headerMaster.indexOf("status") : 10;
-
-            dataHalaman.forEach(p => {
-                // Membaca data secara dinamis berdasarkan indeks hasil pelacakan di atas
-                const noRM = p[idxNoRM] || "-";
-                const namaPasien = p[idxNama] || "-";
-                const statusAkun = p[idxStatus !== -1 ? idxStatus : 10] ? p[idxStatus !== -1 ? idxStatus : 10].toString().trim().toLowerCase() : "aktif";
-                
-                let namaTampil = `<strong>${namaPasien}</strong>`;
-                if (statusAkun === "nonaktif") {
-                    namaTampil += ` <span style="background:#e74c3c; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:6px; display:inline-block; vertical-align:middle;">Akun Nonaktif / Terarsip</span>`;
-                }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight:bold; color:#2c3e50;">${noRM}</td>
-                    <td>${namaTampil}</td>
-                    <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p[idxGender !== -1 ? idxGender : 4] || '-'}</span></td> 
-                    <td>${p[idxWA !== -1 ? idxWA : 5] || '-'}</td> 
-                    <td>${p[idxAlamat !== -1 ? idxAlamat : 8] || '-'}</td> 
-                    <td>
-                        <button class="btn-action btn-rme" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaModalRiwayatFull('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', 'view')">👁️ Lihat RME</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold; color:#2c3e50;">${noRM}</td>
+                <td>${namaTampil}</td>
+                <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p[idxGender !== -1 ? idxGender : 4] || '-'}</span></td> 
+                <td>${p[idxWA !== -1 ? idxWA : 5] || '-'}</td> 
+                <td>${p[idxAlamat !== -1 ? idxAlamat : 8] || '-'}</td> 
+                <td>
+                    <button class="btn-action btn-rme" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaModalRiwayatFull('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', 'view')">👁️ Lihat RME</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     // Ganti nama fungsi trigger tombol di HTML Anda menjadi nama baru ini:
