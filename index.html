@@ -710,110 +710,6 @@
         </div>
 
         <div id="komponenPagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px;"></div>
-
-        <div id="sectionRME" class="modal-popup-container">
-            <div class="modal-popup-content" style="background-color: #ffffff; max-width: 850px; max-height: 90vh; overflow-y: auto; position: relative; padding: 25px;">
-
-                <button type="button" onclick="tutupInputRME()" style="position: absolute; top: 20px; right: 20px; background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; z-index: 10;">✕ Tutup</button>
-                <h2 style="color:#9b59b6; border-bottom: 2px solid #9b59b6; margin-bottom:15px;">Rekam Medis Elektronik (RME)</h2>
-                
-                <div class="nav-tabs" style="margin-bottom: 15px; border-bottom: 2px solid #ddd;">
-                    <button id="tabRmeFormBtn" class="tab-link active" onclick="switchTabRME('form')" style="background: #9b59b6; color: white;">📝 Pemeriksaan Hari Ini</button>
-                    <button id="tabRmeRiwayatBtn" class="tab-link" onclick="switchTabRME('riwayat')" style="background: #e0e0e0; color: #333;">🕒 Riwayat Medis Pasien</button>
-                </div>
-
-                <div id="tabRmeForm" style="display: block;">
-                    <form id="formMedis">
-                        <div class="form-grid">
-                            <div class="form-group full-width">
-                                <label>Nama Pasien</label>
-                                <input type="text" id="namaPasien" readonly style="background:#e9ecef; font-weight:bold; color:#d35400;">
-                            </div>
-                            <div id="alertMedisFormRME" class="form-group full-width" style="display: none; background-color: #fff3cd; color: #856404; padding: 12px; border-left: 5px solid #ffc107; margin-bottom: 15px; font-size: 14px; border-radius: 4px;">
-                                <strong>⚠️ PERINGATAN MEDIS PASIEN:</strong>
-                                <ul style="margin: 5px 0 0 20px; padding: 0;">
-                                    <li><strong>Alergi:</strong> <span id="alertAlergiFormRME">-</span></li>
-                                    <li><strong>Obat Rutin:</strong> <span id="alertObatFormRME">-</span></li>
-                                </ul>
-                            </div>
-                            
-                            <div class="form-group full-width">
-                                <label>Anamnesa (Keluhan Pasien/Subyektif) 🎙️</label>
-                                <textarea id="txtAnamnesa" required></textarea>
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtAnamnesa', this)">🎙️ Mulai Dikte</button>
-                            </div>
-
-                            <div class="form-group full-width">
-                                <label>Pemeriksaan Fisik & Objektif (O) 🎙️</label>
-                                <textarea id="txtObjektif" required placeholder="Tuliskan hasil pemeriksaan fisik, tensi, nadi, dll..."></textarea>
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtObjektif', this)">🎙️ Mulai Dikte</button>
-                            </div>
-                            
-                            <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Diagnosa -->
-                            <div class="form-group full-width">
-                                <label>Diagnosa (Assessment) 🎙️</label>
-                                <input type="text" id="txtDiagnosa" required>
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtDiagnosa', this)">🎙️ Mulai Dikte</button>
-                            </div>
-                            
-                            <div class="form-group full-width">
-                                <label>Perawatan (Tindakan Hari Ini) 🎙️</label>
-                                <textarea id="txtPerawatan" required></textarea>
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtPerawatan', this)">🎙️ Mulai Dikte</button>
-                            </div>
-                            
-                            <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Pro Perawatan -->
-                            <div class="form-group full-width">
-                                <label>Pro Perawatan (Rencana Lanjutan) 🎙️</label>
-                                <textarea id="txtProPerawatan"></textarea>
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtProPerawatan', this)">🎙️ Mulai Dikte</button>
-                            </div>
-                            
-                            <!-- 🔥 PERUBAHAN: Tombol dikte ditambahkan ke Pro Kontrol -->
-                            <div class="form-group">
-                                <label>Pro Kontrol 🎙️</label>
-                                <input type="text" id="txtProKontrol">
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtProKontrol', this)">🎙️ Mulai Dikte</button>
-                            </div>
-
-                            <div class="form-group full-width">
-                                <label>Resep Obat 🎙️</label>
-                                <textarea id="txtResep" placeholder="Tuliskan resep obat di sini..."></textarea>
-                                <button type="button" class="btn-voice" onclick="toggleVoice('txtResep', this)">🎙️ Mulai Dikte</button>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Link Foto Dokumentasi</label>
-                                <input type="text" id="txtLinkFoto">
-                                <input type="file" id="txtFileFoto" accept="image/*" style="font-size: 12px; margin-top: 5px;">
-                            </div>
-                        </div>
-                        <br>
-                        <button type="submit" id="btnSubmitRME" style="background-color: #9b59b6; color:white;">Simpan Catatan Medis</button>
-                    </form>
-                </div>
-
-                <div id="tabRmeRiwayat" style="display: none;">
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Anamnesa</th>
-                                    <th>Objektif (O)</th>
-                                    <th>Diagnosa</th>
-                                    <th>Tindakan / Perawatan</th>
-                                    <th>Dokter</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelRiwayatBody">
-                                <tr><td colspan="5" style="text-align:center;">Memuat riwayat...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>   
     </div>
 
     <div id="riwayatMedis" class="tab-content">
@@ -2345,46 +2241,59 @@
 
     // 🔥 Fungsi Baru: Membuat Tombol Navigasi Angka
     function buatKomponenPagination(infoPaging) {
-        const infoText = document.getElementById('paginationInfo');
-        const btnContainer = document.getElementById('paginationButtons');
+        // 🔥 Hubungkan langsung ke wadah utama yang tersedia di HTML Anda
+        const containerUtama = document.getElementById('komponenPagination');
+        if (!containerUtama) return; // Sabuk pengaman jika elemen HTML belum siap
         
+        // Jika data kosong atau hanya 1 halaman, bersihkan wadah dan sembunyikan
         if (!infoPaging || infoPaging.totalItems === 0) {
-            infoText.innerText = "Menampilkan 0 antrean";
-            btnContainer.innerHTML = "";
+            containerUtama.innerHTML = `<span style="font-size: 13px; color: #7f8c8d;">Menampilkan 0 antrean</span>`;
             return;
         }
 
-        // Teks info baris yang tampil
+        // 1. HITUNG BATAS BARIS SECARA DINAMIS
         let hitungAwal = (infoPaging.currentPage - 1) * limitDataPerHalaman + 1;
         let hitungAkhir = Math.min(infoPaging.currentPage * limitDataPerHalaman, infoPaging.totalItems);
-        infoText.innerText = `Menampilkan ${hitungAwal}-${hitungAkhir} dari ${infoPaging.totalItems} antrean`;
+        
+        // 2. RENDER TEKS INFORMASI HALAMAN
+        let htmlInfo = `<div style="font-size: 13px; color: #7f8c8d; font-weight: 500;">
+                            Menampilkan ${hitungAwal}-${hitungAkhir} dari ${infoPaging.totalItems} antrean
+                        </div>`;
 
-        let htmlTombol = "";
+        // 3. RENDER TOMBOL NAVIGASI
+        let htmlTombol = `<div style="display: flex; gap: 5px; margin-top: 5px;">`;
 
         // Tombol Ke Halaman Sebelumnya (Prev)
         if (infoPaging.currentPage > 1) {
-            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage - 1})" style="padding: 5px 10px; cursor: pointer;">Sebelumnya</button>`;
+            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage - 1})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; font-weight: bold;">Sebelumnya</button>`;
         } else {
-            htmlTombol += `<button disabled style="padding: 5px 10px; color: #ccc;">Sebelumnya</button>`;
+            htmlTombol += `<button disabled style="padding: 6px 12px; color: #ccc; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: not-allowed;">Sebelumnya</button>`;
         }
 
-        // Render Angka Halaman
+        // Render Angka Halaman secara Sekuensial
         for (let hal = 1; hal <= infoPaging.totalPages; hal++) {
             if (hal === infoPaging.currentPage) {
-                htmlTombol += `<button style="padding: 5px 10px; background: #3498db; color: white; border: none; font-weight: bold;">${hal}</button>`;
+                // Halaman Aktif diberi warna biru
+                htmlTombol += `<button style="padding: 6px 12px; background: #3498db; color: white; border: none; font-weight: bold; border-radius: 4px; min-width: 35px;">${hal}</button>`;
             } else {
-                htmlTombol += `<button onclick="muatAntreanHariIni(${hal})" style="padding: 5px 10px; cursor: pointer;">${hal}</button>`;
+                // Halaman Alternatif bisa diklik
+                htmlTombol += `<button onclick="muatAntreanHariIni(${hal})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; min-width: 35px;">${hal}</button>`;
             }
         }
 
         // Tombol Ke Halaman Berikutnya (Next)
         if (infoPaging.currentPage < infoPaging.totalPages) {
-            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage + 1})" style="padding: 5px 10px; cursor: pointer;">Berikutnya</button>`;
+            htmlTombol += `<button onclick="muatAntreanHariIni(${infoPaging.currentPage + 1})" class="btn-action" style="padding: 6px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; font-weight: bold;">Berikutnya</button>`;
         } else {
-            htmlTombol += `<button disabled style="padding: 5px 10px; color: #ccc;">Berikutnya</button>`;
+            htmlTombol += `<button disabled style="padding: 6px 12px; color: #ccc; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: not-allowed;">Berikutnya</button>`;
         }
 
-        btnContainer.innerHTML = htmlTombol;
+        htmlTombol += `</div>`;
+
+        // 4. SATUKAN DAN SUNTIKKAN STRUKTUR KE HTML UTAMA
+        containerUtama.style.flexDirection = "column";
+        containerUtama.style.alignItems = "center";
+        containerUtama.innerHTML = htmlInfo + htmlTombol;
     }
 
     // 🔥 Sesuaikan Fungsi Filter Dropdown bawaan Anda
