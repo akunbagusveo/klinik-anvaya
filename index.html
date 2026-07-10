@@ -592,6 +592,7 @@
                         <option value="Tambal Gigi">Tambal Gigi</option>
                         <option value="Cabut Gigi">Cabut Gigi</option>
                         <option value="Aesthetic (Veneer/Bleaching)">Aesthetic (Veneer/Bleaching)</option>
+                        <option value="Scaling">Kontrol</option>
                         <option value="Lainnya">Lainnya</option>
                     </select>
                 </div>
@@ -1449,48 +1450,85 @@
 
     <!-- MODAL DETAIL REKAM MEDIS FULL -->
     <div id="modalRiwayatFull" class="modal-backdrop" style="display:none;">
-        <div class="modal-content-box">
+        <div class="modal-content-box" style="max-width: 95vw; width: 1400px; height: 92vh; display: flex; flex-direction: column;">
+            
             <div class="modal-custom-header">
-                <h2>👁️ Detail RME: <span id="lblModalNamaLengkap"></span> (<span id="lblModalRMFull"></span>)</h2>
+                <h2>👁️ Rekam Medis Elektronik (RME)</h2>
                 <button type="button" onclick="document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
             </div>
 
-            <div id="alertMedisContainer" style="display:none; background-color:#fff3cd; color:#856404; padding:15px; border-left:5px solid #ffc107; margin-bottom:15px; border-radius:4px; font-size:14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <div id="textAlergi" style="margin-bottom:5px; font-size: 15px;"></div>
-                <div id="textObatRutin" style="font-size: 15px;"></div>
+            <div style="background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #3498db; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px;">
+                <div><strong>👤 Nama:</strong> <span id="lblProfilNama" style="color:#2980b9; font-weight:bold;">-</span></div>
+                <div><strong>🏷️ No. RM:</strong> <span id="lblProfilRM">-</span></div>
+                <div><strong>🎂 TTL (Umur):</strong> <span id="lblProfilUmur">-</span></div>
+                <div><strong>💳 NIK/KTP:</strong> <span id="lblProfilKTP">-</span></div>
+                <div><strong>📱 WhatsApp:</strong> <span id="lblProfilWA">-</span></div>
+                <div><strong>💼 Pekerjaan:</strong> <span id="lblProfilKerja">-</span></div>
+                <div style="grid-column: span 2;"><strong>📍 Domisili:</strong> <span id="lblProfilDomisili">-</span></div>
             </div>
-            
-            <div class="table-responsive">
-                <div id="bannerPeringatanMedis" style="display: none; gap: 12px; margin-bottom: 20px; font-size: 14px;">
-                    <div id="boxAlergiRME" style="display: none; flex: 1; background-color: #fde8e8; border-left: 5px solid #e74c3c; padding: 12px; border-radius: 4px; color: #9b1c1c;">
-                        <strong style="display: block; margin-bottom: 3px;">⚠️ RIWAYAT ALERGI:</strong>
-                        <span id="kontenAlergiRME">-</span>
-                    </div>
+
+            <div id="bannerPeringatanMedis" style="display: none; background-color:#fff3cd; color:#856404; padding:10px 15px; border-left:5px solid #ffc107; font-size:13px; font-weight:bold;">
+                <span id="kontenAlergiRME" style="margin-right: 20px;"></span>
+                <span id="kontenObatRME"></span>
+            </div>
+
+            <div style="display: flex; flex: 1; overflow: hidden; background-color: #ecf0f1;">
+                
+                <div style="flex: 0 0 55%; overflow-y: auto; padding: 20px; background-color: white; border-right: 2px solid #bdc3c7;">
+                    <h3 style="margin-top:0; color:#2c3e50; border-bottom: 2px solid #eee; padding-bottom:10px;">📝 Input Tindakan Hari Ini</h3>
                     
-                    <div id="boxObatRME" style="display: none; flex: 1; background-color: #edf2f7; border-left: 5px solid #4a5568; padding: 12px; border-radius: 4px; color: #2d3748;">
-                        <strong style="display: block; margin-bottom: 3px;">💊 OBAT RUTIN KONSUMSI:</strong>
-                        <span id="kontenObatRME">-</span>
-                    </div>
+                    <form id="formModalMedis">
+                        <input type="hidden" id="modalNoRM">
+                        <input type="hidden" id="modalRowUpdate">
+                        <input type="hidden" id="modalNama">
+                        <input type="hidden" id="modalLinkFoto">
+
+                        <div class="form-group">
+                            <label>💬 Anamnesa / Keluhan Pasien <button type="button" class="btn-mic" onclick="mulaiDikte('modalAnamnesa')">🎙️</button></label>
+                            <textarea id="modalAnamnesa" rows="3" class="auto-bullet" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>🔍 Pemeriksaan Fisik & Objektif (O) <button type="button" class="btn-mic" onclick="mulaiDikte('modalObjektif')">🎙️</button></label>
+                            <textarea id="modalObjektif" rows="3" class="auto-bullet" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>📌 Diagnosa / Penyakit (ICD-10) <button type="button" class="btn-mic" onclick="mulaiDikte('modalDiagnosa')">🎙️</button></label>
+                            <input type="text" id="modalDiagnosa" required>
+                        </div>
+                        <div class="form-group">
+                            <label>🛠️ Tindakan / Perawatan <button type="button" class="btn-mic" onclick="mulaiDikte('modalPerawatan')">🎙️</button></label>
+                            <textarea id="modalPerawatan" rows="3" class="auto-bullet" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>💊 Resep Obat <button type="button" class="btn-mic" onclick="mulaiDikte('modalResep')">🎙️</button></label>
+                            <textarea id="modalResep" rows="3" class="auto-bullet" style="font-family: monospace;"></textarea>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <div class="form-group" style="flex:1;">
+                                <label>📋 Pro Perawatan</label>
+                                <input type="text" id="modalProPerawatan">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>🔁 Pro Kontrol Kembali</label>
+                                <input type="text" id="modalProKontrol">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>📎 Upload Foto / Dokumen Baru (Opsional)</label>
+                            <input type="file" id="modalFileFoto" accept="image/*,.pdf">
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-top: 10px;">💾 Simpan & Selesaikan Kunjungan</button>
+                    </form>
                 </div>
-                <div id="wrapperRiwayatFull" class="rme-timeline-container">
-                    <thead>
-                        <tr style="background-color: #f4f7f6;">
-                            <th>Tanggal</th>
-                            <th>Anamnesa</th>
-                            <th>Pemeriksaan Fisik & Objektif (O)</th>
-                            <th>Diagnosa</th>
-                            <th>Tindakan / Perawatan</th>
-                            <th>Resep Obat</th>
-                            <th>Pro Perawatan</th>
-                            <th>Pro Kontrol</th>
-                            <th>Dokter</th>
-                            <th>Foto / Dokumen</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelRiwayatFullBody">
-                        <tr><td colspan="8" style="text-align:center;">Memuat data...</td></tr>
-                    </tbody>
+
+                <div style="flex: 1; overflow-y: auto; padding: 20px;">
+                    <h3 style="margin-top:0; color:#7f8c8d; border-bottom: 2px solid #dcdde1; padding-bottom:10px;">🕒 Histori Rekam Medis</h3>
+                    <div id="wrapperRiwayatFull" class="rme-timeline-container">
+                        </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -2808,160 +2846,92 @@
         });
     }
 
+    // ==========================================
+    // FUNGSI BUKA MODAL RME
+    // ==========================================
     function bukaModalRiwayatFull(noRM, namaPasien) {
-        // 🔥 PERBAIKAN UTAMA: Ambil data permissions dari session localStorage di awal fungsi
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
         document.getElementById('modalRiwayatFull').style.display = 'flex'; 
-        document.getElementById('lblModalNamaLengkap').innerText = namaPasien;
-        document.getElementById('lblModalRMFull').innerText = noRM;
         
-        
-        // Target pembungkus DIV Timeline
+        // Siapkan ID Tersembunyi untuk Form Kiri
+        document.getElementById('modalNoRM').value = noRM;
+        document.getElementById('modalNama').value = namaPasien;
+        document.getElementById('formModalMedis').reset(); // Kosongkan form input baru
+
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
-        timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil detail rekam medis... ⏳</p>';
+        timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
 
-        const alertBox = document.getElementById('alertMedisContainer');
-        alertBox.style.display = 'none';
-        document.getElementById('textAlergi').innerHTML = '';
-        document.getElementById('textObatRutin').innerHTML = '';
+        const bannerMedis = document.getElementById('bannerPeringatanMedis');
+        bannerMedis.style.display = 'none';
 
-        // FETCH 1: Mengambil Data Peringatan Medis
-        fetch(WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "getDetailPasien", noRM: noRM })
-        })
+        // FETCH 1: Profil & Peringatan Medis
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: noRM }) })
         .then(res => res.json())
         .then(res => {
-            const bannerMedis = document.getElementById('bannerPeringatanMedis');
-            const boxAlergi = document.getElementById('boxAlergiRME');
-            const boxObat = document.getElementById('boxObatRME');
-            
-            bannerMedis.style.display = 'none';
-            boxAlergi.style.display = 'none';
-            boxObat.style.display = 'none';
-
             if(res.result === "success" && res.data) {
+                // Isi Header Profile Card
+                let umur = hitungUmur(res.data.tanggalLahir);
+                document.getElementById('lblProfilNama').innerText = res.data.nama;
+                document.getElementById('lblProfilRM').innerText = res.data.noRM;
+                document.getElementById('lblProfilUmur').innerText = `${res.data.tempatLahir}, ${res.data.tanggalLahir} (${umur} Thn)`;
+                document.getElementById('lblProfilKTP').innerText = res.data.noKTP;
+                document.getElementById('lblProfilWA').innerText = res.data.phone;
+                document.getElementById('lblProfilKerja').innerText = res.data.pekerjaan;
+                
+                let domisiliGabung = (res.data.kecamatan && res.data.kecamatan !== "-") ? `${res.data.kecamatan}, ${res.data.kota}` : res.data.alamat;
+                document.getElementById('lblProfilDomisili').innerText = domisiliGabung;
+
+                // Cek Alergi & Obat
                 let alergi = res.data.alergi ? res.data.alergi.trim() : "-";
                 let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
-                let tampilkanBanner = false;
+                let bannerTampil = false;
 
-                if(alergi !== "" && alergi !== "-" && alergi.toLowerCase() !== "tidak ada" && alergi.toLowerCase() !== "none") {
-                    document.getElementById('kontenAlergiRME').innerText = alergi;
-                    boxAlergi.style.display = 'block';
-                    tampilkanBanner = true;
+                if(alergi !== "-" && alergi.toLowerCase() !== "tidak ada") {
+                    document.getElementById('kontenAlergiRME').innerHTML = `⚠️ <strong>ALERGI:</strong> ${alergi}`;
+                    bannerTampil = true;
                 }
-                
-                if(obatRutin !== "" && obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada" && obatRutin.toLowerCase() !== "none") {
-                    document.getElementById('kontenObatRME').innerText = obatRutin;
-                    boxObat.style.display = 'block';
-                    tampilkanBanner = true;
+                if(obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada") {
+                    document.getElementById('kontenObatRME').innerHTML = `💊 <strong>OBAT RUTIN:</strong> ${obatRutin}`;
+                    bannerTampil = true;
                 }
-
-                if(tampilkanBanner) {
-                    bannerMedis.style.display = 'flex';
-                }
+                if(bannerTampil) bannerMedis.style.display = 'block';
             }
-        })
-        .catch(err => console.error("Gagal memuat data info medis sekunder: ", err));
+        });
 
-        // FETCH 2: Mengambil Data Rekam Medis & Ditransformasikan ke Bentuk Card Timeline
-        fetch(WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: noRM })
-        })
+        // FETCH 2: Riwayat Lama (Timeline Kanan)
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: noRM }) })
         .then(res => res.json())
         .then(res => {
             timelineContainer.innerHTML = "";
-            
             if (res.result === "success" && res.data.length > 0) {
                 const dataRiwayat = res.data.reverse(); 
-                
                 dataRiwayat.forEach(r => {
-                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Lihat Foto / Dokumen</a>` : '<span style="color:#aaa; font-size:12px;">Tidak ada dokumen foto</span>';
+                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Dokumen</a>` : '';
                     
-                    // Deteksi hak akses edit RME secara aman dari variabel perms yang sudah dideklarasikan di atas
-                    let tombolEditRMEHtml = '';
-                    if (perms.editRME === 1) {
-                        const escapedAnamnesa = (r.anamnesa || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escapedObjektif = (r.objektif || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escapedDiagnosa = (r.diagnosa || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escapedPerawatan = (r.perawatan || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escapedResep = (r.resep || "-").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-
-                        tombolEditRMEHtml = `
-                            <button onclick="pemicuKoreksiRMEDariTimeline('${r.noRM}', '${namaPasien}', '${r.tanggal}', '${r.barisSheet || ''}', '${escapedAnamnesa}', '${escapedObjektif}', '${escapedDiagnosa}', '${escapedPerawatan}', '${escapedResep}')" 
-                                    style="background-color: #e67e22; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 8px;">
-                                📝 Edit Catatan
-                            </button>
-                        `;
-                    }
-
                     const card = document.createElement('div');
                     card.className = 'rme-card';
-                    
                     card.innerHTML = `
-                        <div class="rme-card-header">
-                            <div>
-                                <span style="background-color: #34495e; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 14px;">📅 Kunjungan: ${r.tanggal}</span>
-                            </div>
-                            <div style="font-size: 14px; color: #2c3e50;">
-                                🩺 Pemeriksa: <strong>${r.namaDokter || r.idDokter}</strong>
-                            </div>
+                        <div class="rme-card-header" style="background-color:#fff; padding:10px; border-bottom:1px solid #eee; border-left:4px solid #34495e; margin-bottom:10px;">
+                            <strong>📅 ${r.tanggal}</strong> | 🩺 Dr. ${r.namaDokter || r.idDokter}
                         </div>
-                        
-                        <div class="rme-card-grid">
-                            <div class="rme-section-box grid-span-full" style="border-left-color: #e67e22;">
-                                <div class="rme-section-title">💬 Anamnesa / Keluhan Pasien</div>
-                                <div class="rme-section-content">${r.anamnesa || '-'}</div>
-                            </div>
-                            
-                            <div class="rme-section-box grid-span-full" style="border-left-color: #2980b9;">
-                                <div class="rme-section-title">🔍 Pemeriksaan Fisik & Objektif (O)</div>
-                                <div class="rme-section-content" style="white-space: pre-wrap;">${r.objektif || '-'}</div>
-                            </div>
-                            
-                            <div class="rme-section-box" style="border-left-color: #e74c3c;">
-                                <div class="rme-section-title">📌 Diagnosa / Penyakit</div>
-                                <div class="rme-section-content" style="font-weight: bold; color:#c0392b;">${r.diagnosa || '-'}</div>
-                            </div>
-                            
-                            <div class="rme-section-box" style="border-left-color: #27ae60;">
-                                <div class="rme-section-title">🛠️ Tindakan / Perawatan</div>
-                                <div class="rme-section-content">${r.perawatan || '-'}</div>
-                            </div>
-                            
-                            <div class="rme-section-box grid-span-full" style="border-left-color: #9b59b6; background-color: #fdf2f9;">
-                                <div class="rme-section-title">💊 Resep Obat</div>
-                                <div class="rme-section-content" style="white-space: pre-wrap; font-family: monospace; font-weight: bold;">${r.resep || '-'}</div>
-                            </div>
-                            
-                            <div class="rme-section-box">
-                                <div class="rme-section-title">📋 Pro Perawatan</div>
-                                <div class="rme-section-content">${r.proPerawatan || '-'}</div>
-                            </div>
-                            
-                            <div class="rme-section-box">
-                                <div class="rme-section-title">🔁 Pro Kontrol Kembali</div>
-                                <div class="rme-section-content">${r.proKontrol || '-'}</div>
-                            </div>
-
-                            <div class="grid-span-full" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
-                                <div>${tombolEditRMEHtml}</div>
-                                <div>${linkFotoHtml}</div>
+                        <div style="font-size:13px; padding:0 10px;">
+                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${r.anamnesa || '-'}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${r.objektif || '-'}</span></div>
+                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong> ${r.diagnosa || '-'}</div>
+                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${r.perawatan || '-'}</span></div>
+                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${r.resep || '-'}</span></div>
+                            <div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
+                                <span>${linkFotoHtml}</span>
                             </div>
                         </div>
                     `;
                     timelineContainer.appendChild(card);
                 });
             } else {
-                timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#7f8c8d;">Tidak ada riwayat rekam medis untuk pasien ini.</p>';
+                timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#7f8c8d;">Belum ada riwayat (Pasien Baru).</p>';
             }
-        })
-        .catch(err => {
-            timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#e74c3c; font-weight:bold;">⚠️ Terjadi kesalahan saat memuat data riwayat.</p>';
-            console.error(err);
         });
     }
 
@@ -4864,6 +4834,62 @@
             console.error("Error marketing analysis:", err);
         });
     }
+
+    // ==========================================
+    // 🌟 UTILITAS BARU: UMUR, MIC & AUTO-BULLET
+    // ==========================================
+    function hitungUmur(tglLahir) {
+        if (!tglLahir || tglLahir === "-") return "-";
+        const dob = new Date(tglLahir);
+        if (isNaN(dob)) return "-";
+        const ageDifMs = Date.now() - dob.getTime();
+        const ageDate = new Date(ageDifMs);
+        return Math.abs(ageDate.getUTCFullYear() - 1970);
+    }
+
+    // Fungsi Voice-to-Text (Dikte)
+    function mulaiDikte(targetId) {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Maaf, browser Anda tidak mendukung fitur Dikte Suara. Gunakan Google Chrome.");
+            return;
+        }
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'id-ID';
+        recognition.interimResults = false;
+        recognition.onresult = function(event) {
+            const hasilText = event.results[0][0].transcript;
+            const targetEl = document.getElementById(targetId);
+            // Gabungkan dengan format bullet point
+            targetEl.value += (targetEl.value === "" ? "• " : "\n• ") + hasilText; 
+        };
+        recognition.start();
+        alert("🎙️ Silakan mulai berbicara...");
+    }
+
+    // Listener Auto-Bullet Point pada textarea
+    document.addEventListener('DOMContentLoaded', function() {
+        const textareas = document.querySelectorAll('.auto-bullet');
+        textareas.forEach(ta => {
+            ta.addEventListener('focus', function() {
+                if (this.value.trim() === '') this.value = '• ';
+            });
+            ta.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const insert = '\n• ';
+                    const start = this.selectionStart;
+                    this.value = this.value.substring(0, start) + insert + this.value.substring(this.selectionEnd);
+                    this.selectionStart = this.selectionEnd = start + insert.length;
+                } else if (e.key === '.') {
+                    e.preventDefault();
+                    const insert = '.\n• ';
+                    const start = this.selectionStart;
+                    this.value = this.value.substring(0, start) + insert + this.value.substring(this.selectionEnd);
+                    this.selectionStart = this.selectionEnd = start + insert.length;
+                }
+            });
+        });
+    });
 
 
 </script>
