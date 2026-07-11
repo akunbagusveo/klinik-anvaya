@@ -1341,11 +1341,11 @@
                         </div>
                         <div style="display:flex; gap:10px;">
                             <div class="form-group" style="flex:1;">
-                                <label>📋 Pro Perawatan</label>
+                                <label>📋 Pro Perawatan<button type="button" class="btn-mic" onclick="mulaiDikte('modalProKontrol')">🎙️</button></label>
                                 <input type="text" id="modalProPerawatan">
                             </div>
                             <div class="form-group" style="flex:1;">
-                                <label>🔁 Pro Kontrol Kembali</label>
+                                <label>🔁 Pro Kontrol Kembali<button type="button" class="btn-mic" onclick="mulaiDikte('modalProKontrol')">🎙️</button></label>
                                 <input type="text" id="modalProKontrol">
                             </div>
                         </div>
@@ -2327,30 +2327,29 @@
         .then(response => response.json())
         .then(data => {
             if (data.result === "success") {
-                // Refresh data antrean di latar belakang
-                muatAntreanHariIni(); 
                 
-                // 🔥 LOGIKA ALUR KERJA BARU: Memicu Switch Tab & Modal RME
-                if (statusBaru === "Sedang Diperiksa") {
-                    if (noRM !== "" && namaPasien !== "") {
-                        // 1. Pindah layar ke Tab Riwayat Medis
-                        switchTab('riwayatMedis'); 
-                        
-                        // 2. Beri jeda 400ms agar transisi animasi CSS selesai, lalu tembak buka Modal Split-Screen
-                        setTimeout(() => {
-                            bukaModalRiwayatFull(noRM, namaPasien);
-                        }, 400); 
-                    } else {
-                        // Jika parameter dari tombol belum lengkap, sistem tetap aman namun tidak auto-switch
-                        alert("Status berhasil diubah. Silakan menuju tab Riwayat Medis secara manual.");
-                    }
-                } 
-                else if (statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
+                // 🔥 FIX UTAMA 1: JIKA STATUS "Sedang Diperiksa", BUKA MODAL RME TERLEBIH DAHULU
+                // Kita buka modal secara instan menggunakan parameter aman tanpa menunggu / bergantung pada fetch tabel
+                if (statusBaru === "Sedang Diperiksa" && noRM !== "" && namaPasien !== "") {
+                    
+                    // Buka modal split view secara langsung di atas layar antrean aktif (Sama seperti alur Lanjut Input RME)
+                    bukaModalRiwayatFull(noRM, namaPasien);
+                    
+                } else if (statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
                     document.getElementById('sectionRME').style.display = 'none';
                 }
+
+                // 🔥 FIX UTAMA 2: SEKARANG AMAN UNTUK REFRESH TABEL DI LATAR BELAKANG
+                // Jalankan setelah modal berhasil diinisialisasi agar tidak terjadi tabrakan memori global
+                muatAntreanHariIni(); 
+
             } else { 
                 alert("Gagal memperbarui status."); 
             }
+        })
+        .catch(err => {
+            console.error("Error update status antrean:", err);
+            alert("Terjadi gangguan jaringan saat memperbarui status antrean.");
         });
     }
 
