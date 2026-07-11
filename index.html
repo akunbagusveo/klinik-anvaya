@@ -2933,7 +2933,7 @@
             // 1. Munculkan form kiri jika sebelumnya tertutup (mode view)
             document.getElementById('kolomInputRME').style.display = 'block';
             
-            // 2. Isi form dengan data yang ditarik
+            // 2. Isi form dengan data yang ditarik secara dinamis
             document.getElementById('modalAnamnesa').value = anam;
             document.getElementById('modalObjektif').value = obj;
             document.getElementById('modalDiagnosa').value = diag;
@@ -2942,15 +2942,15 @@
             document.getElementById('modalProPerawatan').value = proPer;
             document.getElementById('modalProKontrol').value = proKon;
 
-            // 3. 🔥 LOGIKA BARU: Keputusan 100% Akurat Mengikuti Flag Boolean dari Server
+            // 3. 🔥 LOGIKA TEKS UX YANG DIPERBAIKI (TIDAK ADA LAGI KATA "HARI INI")
             if (isHariIni === true || isHariIni === "true") {
-                // Jika dikonfirmasi hari ini oleh server -> Masukkan baris induk untuk ditimpa
+                // Mode Overwrite: Baris ID dikirim untuk menimpa data
                 document.getElementById('modalRowUpdate').value = barisSheet;
-                alert("Mode Edit Aktif: Perubahan akan menimpa catatan RME yang dibuat hari ini.");
+                alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis ini secara langsung.");
             } else {
-                // Jika records masa lalu -> Kosongkan baris agar server membuat baris kunjungan baru
+                // Mode Template / Salin: Kosongkan baris agar sistem membuat record baru
                 document.getElementById('modalRowUpdate').value = ""; 
-                alert("Mode Salin Aktif: Data dari kunjungan lama telah disalin. Saat disimpan, ini akan menjadi rekam medis Kunjungan Baru untuk hari ini.");
+                alert("Mode Salin Aktif: Data riwayat lama telah disalin sebagai template. Saat disimpan, sistem akan mencatatnya sebagai Kunjungan Baru.");
             }
     }
 
