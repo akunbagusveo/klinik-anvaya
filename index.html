@@ -1355,7 +1355,14 @@
                             <input type="file" id="modalFileFoto" accept="image/*,.pdf">
                         </div>
 
-                        <button type="submit" class="btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-top: 10px;">💾 Simpan & Selesaikan Kunjungan</button>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button type="button" id="btnBatalEdit" class="btn-action" style="display: none; background-color: #e74c3c; color: white; padding: 15px; font-size: 15px; font-weight: bold; flex: 1; border: none; border-radius: 4px; cursor: pointer;" onclick="batalEditRME()">
+                                ❌ Batal Edit
+                            </button>
+                            <button type="submit" id="btnSimpanRME" class="btn-primary" style="flex: 2; padding: 15px; font-size: 15px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
+                                💾 Simpan & Selesaikan Kunjungan
+                            </button>
+                        </div>
                     </form>
                 </div>
 
@@ -2944,14 +2951,34 @@
 
             // 3. 🔥 LOGIKA TEKS UX YANG DIPERBAIKI (TIDAK ADA LAGI KATA "HARI INI")
             if (isHariIni === true || isHariIni === "true") {
-                // Mode Overwrite: Baris ID dikirim untuk menimpa data
                 document.getElementById('modalRowUpdate').value = barisSheet;
+                document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan Perubahan Edit"; // Ubah teks dinamis
                 alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis ini secara langsung.");
             } else {
-                // Mode Template / Salin: Kosongkan baris agar sistem membuat record baru
                 document.getElementById('modalRowUpdate').value = ""; 
+                document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan Sebagai Kunjungan Baru"; // Ubah teks dinamis
                 alert("Mode Salin Aktif: Data riwayat lama telah disalin sebagai template. Saat disimpan, sistem akan mencatatnya sebagai Kunjungan Baru.");
             }
+
+            // 🔥 SUNTIKAN BARU: Munculkan tombol Batal Edit agar dokter bisa berubah pikiran
+            document.getElementById('btnBatalEdit').style.display = 'block';
+    }
+
+    // 🔥 FUNGSI BARU: Mengamankan form jika dokter membatalkan proses edit
+    function batalEditRME() {
+        // 1. Kosongkan semua isian teks di form
+        document.getElementById('formModalMedisSplit').reset();
+        
+        // 2. KUNCI KEAMANAN: Hapus ID baris dari memori agar saat disave tidak menimpa data lama
+        document.getElementById('modalRowUpdate').value = "";
+        
+        // 3. Sembunyikan kembali tombol Batal Edit
+        document.getElementById('btnBatalEdit').style.display = 'none';
+        
+        // 4. Kembalikan teks tombol Simpan ke mode Kunjungan Baru
+        document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan & Selesaikan Kunjungan";
+        
+        alert("Proses edit dibatalkan. Form telah dikosongkan dan aman untuk menginput data baru.");
     }
 
     document.getElementById('txtCariRiwayatGlobal').addEventListener('keypress', function(e) {
