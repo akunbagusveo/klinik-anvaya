@@ -2753,6 +2753,8 @@
     // 🔥 UPGRADE: Terima parameter 'mode'
     // 🔥 VERSI LENGKAP BUKA MODAL (Dengan Profil Pasien)
     function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input') {
+        const dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM);
+        window.tanggalKunjunganAktif = dataPasienObj ? dataPasienObj.tanggalDaftar : "";
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
@@ -3273,6 +3275,7 @@
             proPerawatan: document.getElementById('modalProPerawatan').value,
             proKontrol: document.getElementById('modalProKontrol').value,
             resep: document.getElementById('modalResep').value,
+            tanggalKunjungan: window.tanggalKunjunganAktif,
             idDokter: idDokterAktif,
             operatorUsername: usernameAktif, 
             operatorRole: roleAktif,         
