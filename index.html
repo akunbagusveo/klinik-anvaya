@@ -2966,19 +2966,19 @@
 
     // 🔥 FUNGSI BARU: Mengamankan form jika dokter membatalkan proses edit
     function batalEditRME() {
-        // 1. Kosongkan semua isian teks di form
+        // 1. Kosongkan isian dan memori form untuk keamanan
         document.getElementById('formModalMedisSplit').reset();
-        
-        // 2. KUNCI KEAMANAN: Hapus ID baris dari memori agar saat disave tidak menimpa data lama
         document.getElementById('modalRowUpdate').value = "";
         
-        // 3. Sembunyikan kembali tombol Batal Edit
+        // 2. Sembunyikan tombol batal dan kembalikan teks tombol simpan
         document.getElementById('btnBatalEdit').style.display = 'none';
-        
-        // 4. Kembalikan teks tombol Simpan ke mode Kunjungan Baru
         document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan & Selesaikan Kunjungan";
         
-        alert("Proses edit dibatalkan. Form telah dikosongkan dan aman untuk menginput data baru.");
+        // 3. 🔥 PERUBAHAN UTAMA: Sembunyikan (tutup) kolom input kiri sepenuhnya
+        document.getElementById('kolomInputRME').style.display = 'none';
+        
+        // Tidak perlu lagi menggunakan alert() yang menginterupsi layar, 
+        // karena hilangnya form sudah menjadi indikator visual yang jelas.
     }
 
     document.getElementById('txtCariRiwayatGlobal').addEventListener('keypress', function(e) {
