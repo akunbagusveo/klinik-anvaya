@@ -2845,19 +2845,40 @@
                         tombolEditRMEHtml = `
                             <button onclick="salinAtauEditRME(${r.isHariIni}, '${r.barisSheet}', '${escAnam}', '${escObj}', '${escDiag}', '${escPer}', '${escRes}', '${r.proPerawatan || ''}', '${r.proKontrol || ''}')" 
                                     style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
-                                📝 Edit / Salin Catatan Ini
+                                📝 Edit / Salin Catatan
                             </button>
                         `;
+                    }
+
+                    // 🔥 LOGIKA DUAL-DATE DISPLAY UTAMA
+                    // Asumsikan r.tanggalKunjungan sudah dikirim dari backend Kode.gs (getAllRiwayatMedis)
+                    let tanggalKunjunganAsli = r.tanggalKunjungan && r.tanggalKunjungan !== "" && r.tanggalKunjungan !== "-" ? r.tanggalKunjungan : r.tanggal.split(" ")[0]; // Fallback ke tanggal lama
+                    
+                    let teksTanggalKunjungan = `<strong>🗓️ Kunjungan: ${tanggalKunjunganAsli}</strong>`;
+                    let teksWaktuInput = `<span style="font-size: 11px; color: #7f8c8d;">⏱️ Input/Edit: ${r.tanggal}</span>`;
+                    
+                    // Beri badge Peringatan jika tanggal klinis beda dengan tanggal input
+                    let tanggalSistemCumaHari = r.tanggal.split(" ")[0]; // potong jam-nya
+                    let infoEditan = "";
+                    if (tanggalKunjunganAsli !== tanggalSistemCumaHari) {
+                         infoEditan = `<div style="background-color: #fcf3cf; color: #d35400; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-top: 4px; display: inline-block; font-weight: 600;">
+                                          ⚠️ Koreksi / Input Susulan
+                                       </div>`;
                     }
 
                     const card = document.createElement('div');
                     card.className = 'rme-card';
                     card.innerHTML = `
-                        <div class="rme-card-header" style="background-color:#fff; padding:10px; border-bottom:1px solid #eee; border-left:4px solid #34495e; margin-bottom:10px; display:flex; justify-content:space-between;">
-                            <div><strong>📅 ${r.tanggal}</strong> | 🩺 Dr. ${r.namaDokter || r.idDokter}</div>
+                        <div class="rme-card-header" style="background-color:#f9f9f9; padding:10px 15px; border-bottom:1px solid #eee; border-left:4px solid #34495e; margin-bottom:10px; display:flex; justify-content:space-between; align-items: flex-start;">
+                            <div>
+                                ${teksTanggalKunjungan}<br>
+                                ${teksWaktuInput}
+                                ${infoEditan}
+                                <div style="margin-top: 5px; color: #2c3e50; font-size: 12px;">🩺 <strong>Dr. ${r.namaDokter || r.idDokter || "Tidak Diketahui"}</strong></div>
+                            </div>
                             <div>${tombolEditRMEHtml}</div>
                         </div>
-                        <div style="font-size:13px; padding:0 10px;">
+                        <div style="font-size:13px; padding:5px 15px 15px 15px;">
                             <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${r.anamnesa || '-'}</span></div>
                             <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${r.objektif || '-'}</span></div>
                             <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong> ${r.diagnosa || '-'}</div>
@@ -2866,6 +2887,11 @@
                             ${linkFotoHtml}
                         </div>
                     `;
+                    card.style.border = "1px solid #e0e0e0";
+                    card.style.borderRadius = "6px";
+                    card.style.marginBottom = "15px";
+                    card.style.backgroundColor = "white";
+                    
                     timelineContainer.appendChild(card);
                 });
             } else {
@@ -3383,6 +3409,7 @@
             noRM: document.getElementById('formMedis').dataset.activeNoRM,
             rowUpdate: document.getElementById('formMedis').dataset.rowUpdate, 
             namaPasien: document.getElementById('namaPasien').value,
+            tanggalKunjungan: window.tanggalKunjunganAktif,
             tanggalDaftar: document.getElementById('formMedis').dataset.tanggalDaftar,
             anamnesa: document.getElementById('txtAnamnesa').value, 
             objektif: document.getElementById('txtObjektif').value,     
@@ -3392,6 +3419,7 @@
             proKontrol: document.getElementById('txtProKontrol').value, 
             resep: document.getElementById('txtResep').value, 
             idDokter: idDokterAktif,
+            namaDokter: usernameAktif,
             
             // 🔥 BARU: Kirim info Operator Sistem untuk kebutuhan validasi Audit Log & Addendum
             operatorUsername: usernameAktif,
