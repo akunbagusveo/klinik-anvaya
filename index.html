@@ -2328,20 +2328,18 @@
         .then(data => {
             if (data.result === "success") {
                 
-                // 🔥 FIX UTAMA 1: JIKA STATUS "Sedang Diperiksa", BUKA MODAL RME TERLEBIH DAHULU
-                // Kita buka modal secara instan menggunakan parameter aman tanpa menunggu / bergantung pada fetch tabel
+                // 🔥 FIX UTAMA 1: Kirim mode 'input' secara eksplisit agar form RME kiri dijamin 100% MUNCUL
                 if (statusBaru === "Sedang Diperiksa" && noRM !== "" && namaPasien !== "") {
-                    
-                    // Buka modal split view secara langsung di atas layar antrean aktif (Sama seperti alur Lanjut Input RME)
-                    bukaModalRiwayatFull(noRM, namaPasien);
-                    
+                    bukaModalRiwayatFull(noRM, namaPasien, 'input');
                 } else if (statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
                     document.getElementById('sectionRME').style.display = 'none';
                 }
 
-                // 🔥 FIX UTAMA 2: SEKARANG AMAN UNTUK REFRESH TABEL DI LATAR BELAKANG
-                // Jalankan setelah modal berhasil diinisialisasi agar tidak terjadi tabrakan memori global
-                muatAntreanHariIni(); 
+                // 🔥 FIX UTAMA 2: Beri jeda mikro 300ms agar Google Sheets selesai melakukan komit data,
+                // sehingga status tombol di layar langsung berubah otomatis TANPA perlu refresh halaman lagi!
+                setTimeout(() => {
+                    muatAntreanHariIni();
+                }, 300);
 
             } else { 
                 alert("Gagal memperbarui status."); 
