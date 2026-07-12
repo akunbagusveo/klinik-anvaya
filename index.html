@@ -2840,8 +2840,9 @@
                 dataRiwayat.forEach(r => {
                     let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Dokumen</a>` : '';
                     
+                    // 🔥 FIX UTAMA DINAMIS: Tombol edit HANYA muncul jika punya akses DAN sedang TIDAK dalam mode input RME
                     let tombolEditRMEHtml = '';
-                    if (perms.editRME === 1) {
+                    if (perms.editRME === 1 && mode !== 'input') { 
                         const escAnam = (r.anamnesa || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         const escObj = (r.objektif || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         const escDiag = (r.diagnosa || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
