@@ -5123,21 +5123,19 @@
         };
 
         recognition.onresult = function(event) {
-            // Ambil transkrip suara mentah paling akhir dari Google
             let hasilText = event.results[event.results.length - 1][0].transcript;
             
-            // 1. NORMALISASI SPASI: Bersihkan spasi ganda dan spasi silunan bawaan Google
+            // 1. NORMALISASI SPASI
             let textNormal = hasilText.replace(/[\s\u00A0]+/g, " ");
             
-            // 2. 🔥 SUNTIKAN INTEGRASI KAMUS DIKTE MULTI-FORMAT (ANTI-CRASH)
+            // 2. INTEGRASI KAMUS DIKTE MULTI-FORMAT
             if (typeof kamusKoreksiDinamis !== 'undefined' && kamusKoreksiDinamis !== null) {
                 let daftarKoreksiAman = [];
-                
                 if (Array.isArray(kamusKoreksiDinamis)) {
                     kamusKoreksiDinamis.forEach(item => {
                         if (Array.isArray(item) && item.length >= 2) {
                             if (item[0].toString().toLowerCase().trim() !== "kata salah") {
-                                daftarKoreksiAman.push({ salah: item[0],携带: item[1], benar: item[1] });
+                                daftarKoreksiAman.push({ salah: item[0], benar: item[1] });
                             }
                         } else if (item && item.salah && item.benar) {
                             daftarKoreksiAman.push({ salah: item.salah, benar: item.benar });
@@ -5149,11 +5147,9 @@
                     }
                 }
 
-                // Eksekusi penyaringan kata secara agresif & case-insensitive
                 daftarKoreksiAman.forEach(koreksi => {
                     let kataSalahBersih = koreksi.salah.toString().trim().replace(/[\s\u00A0]+/g, " ");
                     let kataBenarBersih = koreksi.benar.toString().trim();
-                    
                     if (kataSalahBersih !== "") {
                         const polaRegex = kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s\\u00A0]+');
                         const regexAman = new RegExp(polaRegex, "gi");
@@ -5164,28 +5160,53 @@
             
             hasilText = textNormal.trim();
             
-            // 3. Merapikan tanda baca agar menempel sempurna ke kata sebelumnya
+            // 3. MERAPIKAN TANDA BACA
             hasilText = hasilText.replace(/\s+,/g, ",");
             hasilText = hasilText.replace(/\s+\./g, ".");
             hasilText = hasilText.replace(/,\s*\./g, ",");
             hasilText = hasilText.replace(/\.\s*,/g, ",");
             hasilText = hasilText.replace(/\.{2,}/g, ".");
 
-            // 4. MASUKKAN KE INPUT FIELD BERDASARKAN FORMAT KOLOM
+            // 4. 🔥 UPGRADE DISTRIBUSI TEXT: BULLET POIN DINAMIS PER KALIMAT
             if (hasilText) {
                 if(targetInput.classList.contains('auto-bullet')) {
-                    // Jika kolom RME menggunakan fitur auto-bullet (seperti layar Anamnesa Anda)
-                    targetInput.value += (targetInput.value.trim() === "" ? "• " : "\n• ") + hasilText.charAt(0).toUpperCase() + hasilText.slice(1) + ".";
+                    
+                    // Pecah hasil suara berdasarkan Enter (\n) ATAU Titik yang diikuti spasi
+                    let kumpulanKalimat = hasilText.split(/\n|(?<=\S\.)\s+/);
+                    
+                    kumpulanKalimat.forEach(kalimat => {
+                        let kalimatBersih = kalimat.trim();
+                        if (kalimatBersih) {
+                            // Bersihkan jika ada simbol bullet duplikat yang tidak sengaja terbawa ucapan
+                            kalimatBersih = kalimatBersih.replace(/^[•\-]\s*/, "");
+                            
+                            // Amankan huruf pertama agar selalu Kapital
+                            kalimatBersih = kalimatBersih.charAt(0).toUpperCase() + kalimatBersih.slice(1);
+                            
+                            // Pastikan kalimat ditutup tanda titik jika belum ada tanda baca akhir (. / ! / ?)
+                            if (!/[.\!?]$/.test(kalimatBersih)) {
+                                kalimatBersih += ".";
+                            }
+                            
+                            // Suntikkan ke dalam input field secara berbaris rapi
+                            if (targetInput.value.trim() === "") {
+                                targetInput.value = "• " + kalimatBersih;
+                            } else {
+                                if (!targetInput.value.endsWith("\n")) {
+                                    targetInput.value += "\n";
+                                }
+                                targetInput.value += "• " + kalimatBersih;
+                            }
+                        }
+                    });
                 } else {
-                    // Jika kolom input teks biasa
+                    // Blok untuk input teks biasa (bukan model auto-bullet)
                     let spasiPemisah = (targetInput.value !== "" && !targetInput.value.endsWith(" ")) ? " " : "";
                     targetInput.value += spasiPemisah + hasilText.charAt(0).toUpperCase() + hasilText.slice(1);
                 }
                 
-                // Pembersihan akhir spasi ganda penyusup
+                // Pembersihan akhir spasi ganda penyusup dan picu trigger input DOM
                 targetInput.value = targetInput.value.replace(/\s{2,}/g, " ");
-                
-                // Picu event input agar sistem mendeteksi perubahan data baru
                 targetInput.dispatchEvent(new Event('input'));
             }
         };
@@ -5193,7 +5214,7 @@
         recognition.onerror = function(event) {
             console.error("Mic error:", event.error);
             if(event.error === 'not-allowed') {
-                alert("Izin mikrofon diblokir. Silakan klik ikon gembok di sebelah URL dan izinkan Mikrofon.");
+                alert("Izin mikrofon diblokir. Silakan aktifkan izin mikrofon pada browser Anda.");
             }
             window.pengenalSuaraAktif = null;
             btnMicrophone.innerText = originalIcon;
@@ -5205,8 +5226,8 @@
             targetInput.placeholder = "";
         };
 
-        recognition.start();
-    }
+        recognition.start();    
+    }   
 
     // Listener Auto-Bullet Point pada textarea
     document.addEventListener('DOMContentLoaded', function() {
