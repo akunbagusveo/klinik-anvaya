@@ -1622,7 +1622,8 @@
             let tombolAksi = "";
             
             if (statusEfektif === "Belum Diperiksa") {
-                let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}')">▶️ Mulai</button>` : '';
+                // 🔥 SUNTIKAN 1: Tambahkan '${pasien.tanggalDaftar}' di akhir parameter gantiStatusPasien
+                let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">▶️ Mulai</button>` : '';
                 let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
                 let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
                 let btnAbsen = bolehEditAntrean ? `<button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>` : '';
@@ -1631,16 +1632,15 @@
                 if (!tombolAksi.trim()) tombolAksi = '<span style="color:#7f8c8d; font-size:12px;">Tidak ada akses</span>';
 
             } else if (statusEfektif === "Sedang Diperiksa") {
-                // 🔥 UNIFIKASI TOMBOL AKSI: Menggabungkan pasien "Sedang Diperiksa" asli
-                // dan pasien "Sudah Diperiksa tertunda RME" ke bawah satu tombol biru yang sama!
-                tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
+                // 🔥 SUNTIKAN 2: Tambahkan '${pasien.tanggalDaftar}' di akhir parameter bukaModalRiwayatFull
+                tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input', '${pasien.tanggalDaftar}')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
             
             } else if (statusEfektif === "Sudah Diperiksa") {
-                // Blok ini sekarang murni diisi oleh pasien yang data rekam medisnya benar-benar sudah tersimpan aman
+                // 🔥 SUNTIKAN 3: Tambahkan '${pasien.tanggalDaftar}' di akhir parameter bukaModalRiwayatFull
                 if (pasien.tanggalDaftar === formatHariIni && perms.editRME === 1) {
-                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view')">👁️ Buka RME</button>`;
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view', '${pasien.tanggalDaftar}')">👁️ Buka RME</button>`;
                 } else {
-                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view')">👁️ Lihat RME</button>`;
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view', '${pasien.tanggalDaftar}')">👁️ Lihat RME</button>`;
                 }
             }
 
@@ -2308,7 +2308,8 @@
         muatAntreanHariIni(1); 
     }
 
-    function gantiStatusPasien(rowNum, statusBaru, noRM = "", namaPasien = "") {
+    // 🔥 UPGRADE: Tambahkan parameter tanggalDaftar di akhir fungsi
+    function gantiStatusPasien(rowNum, statusBaru, noRM = "", namaPasien = "", tanggalDaftar = "") {
         if(!confirm(`Ubah status pasien menjadi "${statusBaru}"?`)) return;
 
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
@@ -2328,43 +2329,28 @@
         .then(data => {
             if (data.result === "success") {
                 
-                // 🔥 FIX UTAMA 2: OPTIMISTIC UI UPDATE (ANTI-DELAY & ANTI-REFRESH)
-                // Ubah status di memori lokal secara instan dan langsung gambar ulang tabelnya
                 if (dataAntreanGlobal && noRM !== "") {
-                    const pasienLokal = dataAntreanGlobal.find(p => p.noRM === noRM);
+                    const pasienLokal = dataAntreanGlobal.find(p => p.rowNumber === rowNum); // Cari berbasis rowNumber agar lebih akurat
                     if (pasienLokal) {
                         pasienLokal.status = statusBaru;
-                        if (statusBaru === "Sedang Diperiksa") {
-                            pasienLokal.isRmeFilled = false;
-                        }
+                        if (statusBaru === "Sedang Diperiksa") pasienLokal.isRmeFilled = false;
                     }
-                    // Dapatkan filter status aktif saat ini di layar dokter
                     let filterDropdown = document.getElementById("filterStatusAntrean");
                     let statusSaatIni = filterDropdown ? filterDropdown.value : "Semua";
-                    
-                    // Render ulang tabel detik ini juga, tombol otomatis berubah tanpa kedipan!
                     renderTabelAntrean(statusSaatIni); 
                 }
                 
-                // 🔥 FIX UTAMA 3: Buka modal secara aman dengan parameter input tegas
                 if (statusBaru === "Sedang Diperiksa" && noRM !== "" && namaPasien !== "") {
-                    bukaModalRiwayatFull(noRM, namaPasien, 'input');
+                    // 🔥 FIX UTAMA 2: Salurkan tanggalDaftar asli antrean ke dalam modal
+                    bukaModalRiwayatFull(noRM, namaPasien, 'input', tanggalDaftar);
                 } else if (statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
                     document.getElementById('sectionRME').style.display = 'none';
                 }
 
-                // 🔥 SINKRONISASI AKHIR: Jalankan refresh data server senyap di latar belakang dengan jeda aman 600ms
-                setTimeout(() => {
-                    muatAntreanHariIni();
-                }, 600);
-
+                setTimeout(() => { muatAntreanHariIni(); }, 600);
             } else { 
                 alert("Gagal memperbarui status."); 
             }
-        })
-        .catch(err => {
-            console.error("Error update status antrean:", err);
-            alert("Terjadi gangguan jaringan saat memperbarui status antrean.");
         });
     }
 
@@ -2771,11 +2757,13 @@
     // ==========================================
     // FUNGSI BUKA MODAL RME
     // ==========================================
-    // 🔥 UPGRADE: Terima parameter 'mode'
-    // 🔥 VERSI LENGKAP BUKA MODAL (Dengan Profil Pasien)
-    function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input') {
+    // 🔥 UPGRADE: Tambahkan parameter tanggalDaftarLangsung di akhir
+    function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "") {
         const dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM);
-        window.tanggalKunjunganAktif = dataPasienObj ? dataPasienObj.tanggalDaftar : "";
+        
+        // 🔥 FIX UTAMA 1: Gunakan tanggal daftar dari baris klik antrean yang sah, bukan tebakan .find()
+        window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
+        
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
