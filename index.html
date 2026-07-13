@@ -3519,31 +3519,32 @@
         recognition.onresult = function(event) {
             let textResult = event.results[event.resultIndex][0].transcript;
             
-            // =========================================================================
-            // 🔥 UPGRADE FITUR: PENYARINGAN KAMUS DIKTE ANTI-JEBAKAN BACKSLASH
-            // =========================================================================
+            // 1. 🔥 NORMALISASI AWAL: Satukan semua jenis spasi/jeda menjadi spasi tunggal biasa
+            let textNormal = textResult.replace(/[\s\u00A0]+/g, " ");
+            
+            // 2. 🔥 LOGIKA PENYARINGAN KAMUS PINTAR (ANTI-JEBAKAN STRUCKTUR BROWSER)
             for (const [kataSalah, kataBenar] of Object.entries(kamusKoreksiDinamis)) {
-                const kataSalahBersih = kataSalah.trim();
+                const kataSalahBersih = kataSalah.trim().replace(/[\s\u00A0]+/g, " ");
                 if (!kataSalahBersih) continue;
 
-                // Pecah frasa berdasarkan spasi (misal: ["tanda", "koma"])
-                const kataPecah = kataSalahBersih.split(/\s+/);
-                
-                // Satukan kembali menggunakan kombinasi kelas karakter spasi & spasi siluman Google (\u00A0)
-                // Menggunakan double backslash (\\s) untuk memastikan compiler membacanya sebagai regex whitespace
-                const polaRegex = kataPecah.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s\\u00A0]+');
-                
-                const regex = new RegExp(polaRegex, "gi");
-                textResult = textResult.replace(regex, kataBenar);
+                // Buat regex case-insensitive yang aman untuk mencari kecocokan frasa kata
+                const regexAman = new RegExp(kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "gi");
+                textNormal = textNormal.replace(regexAman, kataBenar);
             }
+            
+            textResult = textNormal;
 
-            // Merapikan spasi sebelum tanda baca (koma dan titik) agar menempel ke kata sebelumnya
+            // 3. Merapikan spasi sebelum tanda baca (koma dan titik) agar menempel sempurna
             textResult = textResult.replace(/\s+,/g, ",");
             textResult = textResult.replace(/\s+\./g, ".");
 
+            // 4. 🔥 FIX UTAMA: Pembersih Benturan Tanda Baca Otomatis dari Google (misal: ",." menjadi ",")
+            textResult = textResult.replace(/,\s*\./g, ",");
+            textResult = textResult.replace(/\.\s*,/g, ",");
+            textResult = textResult.replace(/\.{2,}/g, ".");
+
             if (activeFieldId) {
                 const targetField = document.getElementById(activeFieldId);
-                
                 textResult = textResult.trim();
                 
                 let spasiPemisah = "";
@@ -3551,8 +3552,12 @@
                     spasiPemisah = " ";
                 }
                 
+                // Gabungkan hasil akhir ke dalam kotak input RME
                 targetField.value += spasiPemisah + textResult;
                 targetField.value = targetField.value.replace(/\s{2,}/g, " ");
+                
+                // 🔥 TRIGER KESELARASAN: Picu event input agar fitur auto-bullet di form langsung mengenali teks baru
+                targetField.dispatchEvent(new Event('input'));
             }
         };
         
