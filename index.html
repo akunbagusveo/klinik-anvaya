@@ -3520,21 +3520,24 @@
             let textResult = event.results[event.resultIndex][0].transcript;
             
             // =========================================================================
-            // 🔥 UPGRADE UTAMA: PENYARINGAN TEKS MENGGUNAKAN RADAR SPASI FLEKSIBEL
+            // 🔥 UPGRADE FITUR: PENYARINGAN KAMUS DIKTE ANTI-JEBAKAN BACKSLASH
             // =========================================================================
             for (const [kataSalah, kataBenar] of Object.entries(kamusKoreksiDinamis)) {
                 const kataSalahBersih = kataSalah.trim();
                 if (!kataSalahBersih) continue;
 
-                // Ubah semua variasi spasi di dalam kata kamus menjadi regex \s+ 
-                // Ini akan mencocokkan spasi normal, ganda, maupun spasi silunan bawaan Google
-                const polaSpasiFleksibel = kataSalahBersih.replace(/\s+/g, '\\s+');
+                // Pecah frasa berdasarkan spasi (misal: ["tanda", "koma"])
+                const kataPecah = kataSalahBersih.split(/\s+/);
                 
-                const regex = new RegExp(polaSpasiFleksibel, "gi");
+                // Satukan kembali menggunakan kombinasi kelas karakter spasi & spasi siluman Google (\u00A0)
+                // Menggunakan double backslash (\\s) untuk memastikan compiler membacanya sebagai regex whitespace
+                const polaRegex = kataPecah.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s\\u00A0]+');
+                
+                const regex = new RegExp(polaRegex, "gi");
                 textResult = textResult.replace(regex, kataBenar);
             }
 
-            // Merapikan spasi sebelum tanda baca (koma dan titik) agar menempel sempurna
+            // Merapikan spasi sebelum tanda baca (koma dan titik) agar menempel ke kata sebelumnya
             textResult = textResult.replace(/\s+,/g, ",");
             textResult = textResult.replace(/\s+\./g, ".");
 
