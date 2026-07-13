@@ -3519,26 +3519,53 @@
         recognition.onresult = function(event) {
             let textResult = event.results[event.resultIndex][0].transcript;
             
-            // 1. 🔥 NORMALISASI AWAL: Satukan semua jenis spasi/jeda menjadi spasi tunggal biasa
+            // 1. NORMALISASI AWAL: Bersihkan variasi jeda/spasi hasil transkrip Google
             let textNormal = textResult.replace(/[\s\u00A0]+/g, " ");
             
-            // 2. 🔥 LOGIKA PENYARINGAN KAMUS PINTAR (ANTI-JEBAKAN STRUCKTUR BROWSER)
-            for (const [kataSalah, kataBenar] of Object.entries(kamusKoreksiDinamis)) {
-                const kataSalahBersih = kataSalah.trim().replace(/[\s\u00A0]+/g, " ");
-                if (!kataSalahBersih) continue;
-
-                // Buat regex case-insensitive yang aman untuk mencari kecocokan frasa kata
-                const regexAman = new RegExp(kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "gi");
-                textNormal = textNormal.replace(regexAman, kataBenar);
+            // 2. 🔥 PERLINDUNGAN MULTI-FORMAT: 
+            // Menjamin konversi berjalan mulus baik kamus berbentuk Object, Array 2D, maupun Array Object
+            let daftarKoreksiAman = [];
+            if (typeof kamusKoreksiDinamis === 'object' && kamusKoreksiDinamis !== null) {
+                if (Array.isArray(kamusKoreksiDinamis)) {
+                    kamusKoreksiDinamis.forEach(item => {
+                        if (Array.isArray(item) && item.length >= 2) {
+                            // Format A: Jika berupa Array 2D langsung dari Google Sheets [[salah, benar]]
+                            if (item[0].toString().toLowerCase().trim() !== "kata salah") { // Lewati baris header jika terbawa
+                                daftarKoreksiAman.push({ salah: item[0], benar: item[1] });
+                            }
+                        } else if (item && item.salah && item.benar) {
+                            // Format B: Jika berupa Array dari Objek [{salah: x, benar: y}]
+                            daftarKoreksiAman.push({ salah: item.salah, benar: item.benar });
+                        }
+                    });
+                } else {
+                    // Format C: Jika berupa Objek murni { "kata salah": "kata benar" }
+                    for (const [salah, benar] of Object.entries(kamusKoreksiDinamis)) {
+                        daftarKoreksiAman.push({ salah: salah, benar: benar });
+                    }
+                }
             }
+
+            // 3. 🔥 EKSEKUSI PENGGANTIAN KATA KAMUS SECARA AGRESIF & CASE-INSENSITIVE
+            daftarKoreksiAman.forEach(koreksi => {
+                let kataSalahBersih = koreksi.salah.toString().trim().replace(/[\s\u00A0]+/g, " ");
+                let kataBenarBersih = koreksi.benar.toString().trim();
+                
+                if (kataSalahBersih !== "") {
+                    // Rakit radar regex yang kebal karakter spesial dan toleran terhadap jeda spasi ucapan
+                    const polaRegex = kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s\\u00A0]+');
+                    const regexAman = new RegExp(polaRegex, "gi");
+                    textNormal = textNormal.replace(regexAman, kataBenarBersih);
+                }
+            });
             
             textResult = textNormal;
 
-            // 3. Merapikan spasi sebelum tanda baca (koma dan titik) agar menempel sempurna
+            // 4. Merapikan spasi sebelum tanda baca agar menempel sempurna ke kata sebelumnya
             textResult = textResult.replace(/\s+,/g, ",");
             textResult = textResult.replace(/\s+\./g, ".");
 
-            // 4. 🔥 FIX UTAMA: Pembersih Benturan Tanda Baca Otomatis dari Google (misal: ",." menjadi ",")
+            // 5. Pembersih benturan tanda baca otomatis bawaan mesin Google (misal: ",." menjadi ",")
             textResult = textResult.replace(/,\s*\./g, ",");
             textResult = textResult.replace(/\.\s*,/g, ",");
             textResult = textResult.replace(/\.{2,}/g, ".");
@@ -3552,11 +3579,11 @@
                     spasiPemisah = " ";
                 }
                 
-                // Gabungkan hasil akhir ke dalam kotak input RME
+                // Masukkan teks matang ke kolom input RME
                 targetField.value += spasiPemisah + textResult;
                 targetField.value = targetField.value.replace(/\s{2,}/g, " ");
                 
-                // 🔥 TRIGER KESELARASAN: Picu event input agar fitur auto-bullet di form langsung mengenali teks baru
+                // Picu event input agar fitur UI/tampilan pendukung lain langsung mengenali teks baru
                 targetField.dispatchEvent(new Event('input'));
             }
         };
