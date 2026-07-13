@@ -1454,38 +1454,57 @@
         })
         .then(res => res.json())
         .then(res => {
-            // 🔥 BARU: Intip langsung di console apa isi respon dari server
-            //console.log("👉 Respon mentah dari server:", res);
-
             if (res.result === "success") {
                 
-                // 🔥 BARU: Pengaman jika res.data ternyata kosong/undefined dari server
                 if (!res.data) {
-                    console.error("❌ Error: res.result sukses, tetapi res.data KOSONG atau UNDEFINED!");
-                    document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:orange;">Gagal memuat: Format data server tidak sesuai (res.data kosong).</td></tr>`;
-                    return; // Hentikan proses agar tidak crash ke bawah
+                    console.error("❌ Error: res.data KOSONG atau UNDEFINED!");
+                    document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:orange;">Format data server tidak sesuai.</td></tr>`;
+                    return; 
                 }
 
-                kamusKoreksiDinamis = res.data;
+                // 🔥 TAHAP TRANSFORMATOR DINAMIS (ANTI-MUTASI DATA)
+                let objekKoreksiBersih = {};
+                let arrayUntukTabel = [];
+
+                // Jika data dari Google Sheets berbentuk Array 2D (Standar Apps Script)
+                if (Array.isArray(res.data)) {
+                    // Loop mulai dari indeks 1 (melewati Baris Header Kolom 1)
+                    for (let i = 1; i < res.data.length; i++) {
+                        let salah = res.data[i][0] ? res.data[i][0].toString().trim() : "";
+                        let benar = res.data[i][1] ? res.data[i][1].toString().trim() : "";
+                        
+                        if (salah !== "") {
+                            // Masukkan ke Object dengan huruf kecil (lowercase) agar pencarian suara kebal kapitalisasi
+                            objekKoreksiBersih[salah.toLowerCase()] = benar;
+                            
+                            // Masukkan ke Array untuk kebutuhan visual pagination tabel di layar
+                            arrayUntukTabel.push({
+                                salah: salah,
+                                benar: benar,
+                                barisSheet: i + 1
+                            });
+                        }
+                    }
+                } else {
+                    // Fallback aman jika server suatu saat mengirimkan format Object langsung
+                    objekKoreksiBersih = res.data;
+                    arrayUntukTabel = Object.keys(res.data).map((salah, index) => {
+                        return { salah: salah, benar: res.data[salah], barisSheet: index + 2 };
+                    });
+                }
+
+                // 🔥 KUNCI UTAMA: Amankan kedua variabel global dengan data yang sudah matang
+                kamusKoreksiDinamis = objekKoreksiBersih; 
+                dataKamusArray = arrayUntukTabel;
                 
-                // Ubah object dari backend menjadi array agar mudah di-paginate
-                dataKamusArray = Object.keys(res.data).map((salah, index) => {
-                    return {
-                        salah: salah,
-                        benar: res.data[salah],
-                        barisSheet: index + 2
-                    };
-                });
-                
-                currentPage = 1; // Reset ke halaman 1 setiap load data baru
-                renderKamusTable(); // Gambar tabelnya
+                currentPage = 1; 
+                renderKamusTable(); 
             } else {
-                // Jika res.result bukan success (misal "error")
                 document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Gagal: ${res.message || 'Terjadi kesalahan sistem.'}</td></tr>`;
             }
         })
         .catch(err => {
-            console.log("Gagal memuat kamus dikte:", err);
+            console.error("Gagal memuat kamus dikte:", err);
             document.getElementById('bodyKamus').innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Gagal memuat data.</td></tr>`;
         });
     }
