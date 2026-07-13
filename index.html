@@ -3512,86 +3512,86 @@
     });
 
     // --- VOICE RECOGNITION (VOICE TO TEXT) ---
-    let recognition; let isRecording = false; let activeFieldId = ""; let activeBtnElement = null;
+    // let recognition; let isRecording = false; let activeFieldId = ""; let activeBtnElement = null;
 
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition(); 
-        recognition.lang = 'id-ID'; 
-        recognition.continuous = true; 
-        recognition.interimResults = false;
+    // if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    //     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    //     recognition = new SpeechRecognition(); 
+    //     recognition.lang = 'id-ID'; 
+    //     recognition.continuous = true; 
+    //     recognition.interimResults = false;
 
-        recognition.onresult = function(event) {
-            let textResult = event.results[event.resultIndex][0].transcript;
-            let textNormal = textResult.replace(/[\s\u00A0]+/g, " ");
+    //     recognition.onresult = function(event) {
+    //         let textResult = event.results[event.resultIndex][0].transcript;
+    //         let textNormal = textResult.replace(/[\s\u00A0]+/g, " ");
             
-            // 🔥 FIX UTAMA 2: Validasi pencegah crash jika kamus belum selesai loading di latar belakang
-            if (typeof kamusKoreksiDinamis !== 'undefined' && kamusKoreksiDinamis !== null) {
-                let daftarKoreksiAman = [];
+    //         // 🔥 FIX UTAMA 2: Validasi pencegah crash jika kamus belum selesai loading di latar belakang
+    //         if (typeof kamusKoreksiDinamis !== 'undefined' && kamusKoreksiDinamis !== null) {
+    //             let daftarKoreksiAman = [];
                 
-                if (Array.isArray(kamusKoreksiDinamis)) {
-                    kamusKoreksiDinamis.forEach(item => {
-                        if (Array.isArray(item) && item.length >= 2) {
-                            if (item[0].toString().toLowerCase().trim() !== "kata salah") {
-                                daftarKoreksiAman.push({ salah: item[0], benar: item[1] });
-                            }
-                        } else if (item && item.salah && item.benar) {
-                            daftarKoreksiAman.push({ salah: item.salah, benar: item.benar });
-                        }
-                    });
-                } else {
-                    for (const [salah, benar] of Object.entries(kamusKoreksiDinamis)) {
-                        daftarKoreksiAman.push({ salah: salah, benar: benar });
-                    }
-                }
+    //             if (Array.isArray(kamusKoreksiDinamis)) {
+    //                 kamusKoreksiDinamis.forEach(item => {
+    //                     if (Array.isArray(item) && item.length >= 2) {
+    //                         if (item[0].toString().toLowerCase().trim() !== "kata salah") {
+    //                             daftarKoreksiAman.push({ salah: item[0], benar: item[1] });
+    //                         }
+    //                     } else if (item && item.salah && item.benar) {
+    //                         daftarKoreksiAman.push({ salah: item.salah, benar: item.benar });
+    //                     }
+    //                 });
+    //             } else {
+    //                 for (const [salah, benar] of Object.entries(kamusKoreksiDinamis)) {
+    //                     daftarKoreksiAman.push({ salah: salah, benar: benar });
+    //                 }
+    //             }
 
-                daftarKoreksiAman.forEach(koreksi => {
-                    let kataSalahBersih = koreksi.salah.toString().trim().replace(/[\s\u00A0]+/g, " ");
-                    let kataBenarBersih = koreksi.benar.toString().trim();
+    //             daftarKoreksiAman.forEach(koreksi => {
+    //                 let kataSalahBersih = koreksi.salah.toString().trim().replace(/[\s\u00A0]+/g, " ");
+    //                 let kataBenarBersih = koreksi.benar.toString().trim();
                     
-                    if (kataSalahBersih !== "") {
-                        const polaRegex = kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s\\u00A0]+');
-                        const regexAman = new RegExp(polaRegex, "gi");
-                        textNormal = textNormal.replace(regexAman, kataBenarBersih);
-                    }
-                });
-            }
+    //                 if (kataSalahBersih !== "") {
+    //                     const polaRegex = kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s\\u00A0]+');
+    //                     const regexAman = new RegExp(polaRegex, "gi");
+    //                     textNormal = textNormal.replace(regexAman, kataBenarBersih);
+    //                 }
+    //             });
+    //         }
             
-            textResult = textNormal;
-            textResult = textResult.replace(/\s+,/g, ",");
-            textResult = textResult.replace(/\s+\./g, ".");
-            textResult = textResult.replace(/,\s*\./g, ",");
-            textResult = textResult.replace(/\.\s*,/g, ",");
-            textResult = textResult.replace(/\.{2,}/g, ".");
+    //         textResult = textNormal;
+    //         textResult = textResult.replace(/\s+,/g, ",");
+    //         textResult = textResult.replace(/\s+\./g, ".");
+    //         textResult = textResult.replace(/,\s*\./g, ",");
+    //         textResult = textResult.replace(/\.\s*,/g, ",");
+    //         textResult = textResult.replace(/\.{2,}/g, ".");
 
-            if (activeFieldId) {
-                const targetField = document.getElementById(activeFieldId);
-                textResult = textResult.trim();
+    //         if (activeFieldId) {
+    //             const targetField = document.getElementById(activeFieldId);
+    //             textResult = textResult.trim();
                 
-                let spasiPemisah = "";
-                if (targetField.value !== "" && !targetField.value.endsWith(" ")) {
-                    spasiPemisah = " ";
-                }
+    //             let spasiPemisah = "";
+    //             if (targetField.value !== "" && !targetField.value.endsWith(" ")) {
+    //                 spasiPemisah = " ";
+    //             }
                 
-                targetField.value += spasiPemisah + textResult;
-                targetField.value = targetField.value.replace(/\s{2,}/g, " ");
-                targetField.dispatchEvent(new Event('input'));
-            }
-        };
+    //             targetField.value += spasiPemisah + textResult;
+    //             targetField.value = targetField.value.replace(/\s{2,}/g, " ");
+    //             targetField.dispatchEvent(new Event('input'));
+    //         }
+    //     };
         
-        recognition.onend = function() { resetVoiceState(); };
-    } else {
-        document.querySelectorAll('.btn-voice').forEach(b => b.disabled = true);
-    }
+    //     recognition.onend = function() { resetVoiceState(); };
+    // } else {
+    //     document.querySelectorAll('.btn-voice').forEach(b => b.disabled = true);
+    // }
 
-    function toggleVoice(fieldId, btnElement) {
-        if (!isRecording) {
-            activeFieldId = fieldId; activeBtnElement = btnElement;
-            recognition.start(); isRecording = true;
-            btnElement.innerText = "🛑 Mendengarkan... (Klik untuk Berhenti)";
-            btnElement.classList.add('recording');
-        } else { recognition.stop(); resetVoiceState(); }
-    }
+    // function toggleVoice(fieldId, btnElement) {
+    //     if (!isRecording) {
+    //         activeFieldId = fieldId; activeBtnElement = btnElement;
+    //         recognition.start(); isRecording = true;
+    //         btnElement.innerText = "🛑 Mendengarkan... (Klik untuk Berhenti)";
+    //         btnElement.classList.add('recording');
+    //     } else { recognition.stop(); resetVoiceState(); }
+    // }
 
     function resetVoiceState() {
         isRecording = false;
