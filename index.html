@@ -2893,10 +2893,10 @@
                             <div>${tombolEditRMEHtml}</div>
                         </div>
                         <div style="font-size:13px; padding:5px 15px 15px 15px;">
-                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${r.anamnesa || '-'}</span></div>
-                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${r.objektif || '-'}</span></div>
+                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.anamnesa)}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.objektif)}</span></div>
                             <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong> ${r.diagnosa || '-'}</div>
-                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${r.perawatan || '-'}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.perawatan)}</span></div>
                             
                             <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> ${r.proPerawatan || '-'}</div>
                             <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> ${r.proKontrol || '-'}</div>
@@ -5149,6 +5149,33 @@
         };
         // Simpan ke brankas lokal browser
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
+    }
+
+    // 🔥 FUNGSI PINTAR: Mengubah Paragraf/Kalimat Menjadi Bullet Poin Dinamis
+    function formatKeBulletPoin(teks) {
+        if (!teks || teks.trim() === "-" || teks.trim() === "") return "-";
+        
+        // 1. Pecah teks berdasarkan Enter (\n) ATAU Titik yang diikuti spasi/akhir kalimat
+        // Menggunakan regex pintar agar pemecahan kalimat akurat
+        let kumpulanKalimat = teks.split(/\n|(?<=\S\.)\s+/);
+        
+        let hasilBullet = [];
+        kumpulanKalimat.forEach(kalimat => {
+            let kalimatBersih = kalimat.trim();
+            
+            if (kalimatBersih) {
+                // Jika kalimat sudah diawali bullet bawaan dokter, jangan didobel
+                if (kalimatBersih.startsWith("•") || kalimatBersih.startsWith("-")) {
+                    hasilBullet.push(kalimatBersih);
+                } else {
+                    // Tambahkan simbol bullet di depan kalimat
+                    hasilBullet.push("• " + kalimatBersih);
+                }
+            }
+        });
+        
+        // Satukan kembali dengan ganti baris agar white-space:pre-wrap bekerja
+        return hasilBullet.join("\n");
     }
 
 
