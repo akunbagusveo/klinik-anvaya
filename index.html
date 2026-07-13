@@ -3517,41 +3517,41 @@
         recognition.interimResults = false;
 
         recognition.onresult = function(event) {
-        let textResult = event.results[event.resultIndex][0].transcript;
-        
-        // 🔥 PENYARINGAN TEKS MENGGUNAKAN KAMUS GOOGLE SHEETS 🔥
-        // Proses akan membaca satu per satu kata dari kamusKoreksiDinamis
-        for (const [kataSalah, kataBenar] of Object.entries(kamusKoreksiDinamis)) {
-            const regex = new RegExp(kataSalah, "gi");
-            textResult = textResult.replace(regex, kataBenar);
-        }
+            let textResult = event.results[event.resultIndex][0].transcript;
+            
+            // =========================================================================
+            // 🔥 UPGRADE UTAMA: PENYARINGAN TEKS MENGGUNAKAN RADAR SPASI FLEKSIBEL
+            // =========================================================================
+            for (const [kataSalah, kataBenar] of Object.entries(kamusKoreksiDinamis)) {
+                const kataSalahBersih = kataSalah.trim();
+                if (!kataSalahBersih) continue;
 
-        // Merapikan spasi sebelum tanda baca (koma dan titik)
-        textResult = textResult.replace(/\s+,/g, ",");
-        textResult = textResult.replace(/\s+\./g, ".");
-
-        if (activeFieldId) {
-            const targetField = document.getElementById(activeFieldId);
-            
-            // 🔥 PERBAIKAN SPASI JEDA 🔥
-            
-            // 1. Bersihkan "spasi siluman" bawaan Google di awal dan akhir teks baru
-            textResult = textResult.trim();
-            
-            // 2. Tentukan apakah kita benar-benar butuh menambahkan spasi.
-            // (Hanya tambahkan spasi JIKA kotak tidak kosong DAN teks sebelumnya belum diakhiri spasi)
-            let spasiPemisah = "";
-            if (targetField.value !== "" && !targetField.value.endsWith(" ")) {
-                spasiPemisah = " ";
+                // Ubah semua variasi spasi di dalam kata kamus menjadi regex \s+ 
+                // Ini akan mencocokkan spasi normal, ganda, maupun spasi silunan bawaan Google
+                const polaSpasiFleksibel = kataSalahBersih.replace(/\s+/g, '\\s+');
+                
+                const regex = new RegExp(polaSpasiFleksibel, "gi");
+                textResult = textResult.replace(regex, kataBenar);
             }
-            
-            // 3. Gabungkan teks ke dalam kotak input
-            targetField.value += spasiPemisah + textResult;
-            
-            // 4. (Pembersihan Ekstra) Ubah semua spasi ganda yang terlanjur masuk menjadi spasi tunggal
-            targetField.value = targetField.value.replace(/\s{2,}/g, " ");
-        }
-    };
+
+            // Merapikan spasi sebelum tanda baca (koma dan titik) agar menempel sempurna
+            textResult = textResult.replace(/\s+,/g, ",");
+            textResult = textResult.replace(/\s+\./g, ".");
+
+            if (activeFieldId) {
+                const targetField = document.getElementById(activeFieldId);
+                
+                textResult = textResult.trim();
+                
+                let spasiPemisah = "";
+                if (targetField.value !== "" && !targetField.value.endsWith(" ")) {
+                    spasiPemisah = " ";
+                }
+                
+                targetField.value += spasiPemisah + textResult;
+                targetField.value = targetField.value.replace(/\s{2,}/g, " ");
+            }
+        };
         
         recognition.onend = function() { resetVoiceState(); };
     } else {
