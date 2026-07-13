@@ -1342,11 +1342,11 @@
                         <div style="display:flex; gap:10px;">
                             <div class="form-group" style="flex:1;">
                                 <label>📋 Pro Perawatan<button type="button" class="btn-mic" onclick="mulaiDikte('modalProPerawatan')">🎙️</button></label>
-                                <textarea id="modalProPerawatan rows="3" class="auto-bullet" style="font-family: monospace;"></textarea>
+                                <textarea id="modalProPerawatan" rows="3" class="auto-bullet" style="font-family: monospace;"></textarea>
                             </div>
                             <div class="form-group" style="flex:1;">
                                 <label>🔁 Pro Kontrol Kembali<button type="button" class="btn-mic" onclick="mulaiDikte('modalProKontrol')">🎙️</button></label>
-                                <textarea id="modalProKontrol rows="3" class="auto-bullet" style="font-family: monospace;"></textarea>
+                                <textarea id="modalProKontrol" rows="3" class="auto-bullet" style="font-family: monospace;"></textarea>
                             </div>
                         </div>
                         
@@ -3339,7 +3339,7 @@
 
     // 🔥 MENGGUNAKAN ID BARU AGAR TIDAK BENTROK DENGAN FORM LAMA
     document.getElementById('formModalMedisSplit').addEventListener('submit', async function(e) { 
-        e.preventDefault(); // Mencegah halaman refresh/kembali ke beranda
+        e.preventDefault(); 
         const submitBtn = e.target.querySelector('button[type="submit"]');
         submitBtn.disabled = true; submitBtn.innerText = "⏳ Menyimpan Perubahan...";
 
@@ -3350,24 +3350,30 @@
 
         const dataFileModal = await bacaFileKeBase64('modalFileFoto');
 
+        // 🔥 UTILITAS DINAMIS: Pengambil nilai aman anti-null crash
+        const dapatkanNilaiDOM = (idElement) => {
+            const elemen = document.getElementById(idElement);
+            return elemen ? elemen.value : "";
+        };
+
         const data = {
             action: "submitRekamMedis",
             targetSheet: "RekamMedis",
-            noRM: document.getElementById('modalNoRM').value,
-            rowUpdate: document.getElementById('modalRowUpdate').value, 
-            namaPasien: document.getElementById('modalNama').value,
-            anamnesa: document.getElementById('modalAnamnesa').value,
-            objektif: document.getElementById('modalObjektif').value,
-            diagnosa: document.getElementById('modalDiagnosa').value,
-            perawatan: document.getElementById('modalPerawatan').value,
-            proPerawatan: document.getElementById('modalProPerawatan').value,
-            proKontrol: document.getElementById('modalProKontrol').value,
-            resep: document.getElementById('modalResep').value,
-            tanggalKunjungan: window.tanggalKunjunganAktif,
+            noRM: dapatkanNilaiDOM('modalNoRM'),
+            rowUpdate: dapatkanNilaiDOM('modalRowUpdate'), 
+            namaPasien: dapatkanNilaiDOM('modalNama'),
+            anamnesa: dapatkanNilaiDOM('modalAnamnesa'),
+            objektif: dapatkanNilaiDOM('modalObjektif'),
+            diagnosa: dapatkanNilaiDOM('modalDiagnosa'),
+            perawatan: dapatkanNilaiDOM('modalPerawatan'),
+            proPerawatan: dapatkanNilaiDOM('modalProPerawatan'), // Aman dari typo HTML
+            proKontrol: dapatkanNilaiDOM('modalProKontrol'),     // Aman dari typo HTML
+            resep: dapatkanNilaiDOM('modalResep'),
+            tanggalKunjungan: window.tanggalKunjunganAktif || dapatkanStringFormatAman(new Date()),
             idDokter: idDokterAktif,
             operatorUsername: usernameAktif, 
             operatorRole: roleAktif,         
-            linkFoto: document.getElementById('modalLinkFoto').value || "-",
+            linkFoto: dapatkanNilaiDOM('modalLinkFoto') || "-",
             fileBaru: dataFileModal 
         };
 
@@ -3377,11 +3383,16 @@
             submitBtn.disabled = false; submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan";
             if(res.result === "success") {
                 alert("✅ Perubahan berkas Rekam Medis sukses disimpan!");
-                // 🔥 FIX: Gunakan ID Modal Split-Screen yang benar untuk menutup jendela
-                localStorage.removeItem('draft_rme_' + document.getElementById('modalNoRM').value);
-                document.getElementById('modalRiwayatFull').style.display = 'none'; 
-                switchTab('antrean');
-                // Me-refresh tabel antrean di latar belakang
+                
+                const currentRM = dapatkanNilaiDOM('modalNoRM');
+                if(currentRM) {
+                    localStorage.removeItem('draft_rme_' + currentRM);
+                }
+                
+                const modalFull = document.getElementById('modalRiwayatFull');
+                if(modalFull) modalFull.style.display = 'none'; 
+                
+                if (typeof switchTab === "function") switchTab('antrean');
                 if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
             } else { 
                 alert("❌ Gagal menyimpan: " + (res.message || "Terjadi kesalahan server.")); 
