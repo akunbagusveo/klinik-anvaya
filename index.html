@@ -2919,13 +2919,13 @@
                         <div style="font-size:13px; padding:5px 15px 15px 15px;">
                             <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.anamnesa)}</span></div>
                             <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.objektif)}</span></div>
-                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong> ${r.diagnosa || '-'}</div>
+                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.diagnosa)}</span></div>
                             <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.perawatan)}</span></div>
                             
-                            <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> ${r.proPerawatan || '-'}</div>
-                            <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> ${r.proKontrol || '-'}</div>
+                            <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> <br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.proPerawatan)}</span></div>
+                            <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.proKontrol)}</span></div>
                             
-                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${r.resep || '-'}</span></div>
+                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.resep)}</span></div>
                             ${linkFotoHtml}
                         </div>
                     `;
@@ -5239,18 +5239,30 @@
 
     // 🌟 FITUR BARU: Auto-Save Draft Sementara ke Browser
     function simpanDraftRME() {
-        const noRM = document.getElementById('modalNoRM').value;
-        if (!noRM) return; // Jangan simpan jika tidak ada data
+        // 1. Ambil elemen No RM secara aman (Mendukung input maupun teks biasa)
+        const elNoRM = document.getElementById('modalNoRM');
+        if (!elNoRM) return; // Hentikan jika elemen jangkar tidak ditemukan
+        
+        const noRM = elNoRM.value ? elNoRM.value.trim() : (elNoRM.innerText ? elNoRM.innerText.trim() : "");
+        if (!noRM) return; 
 
-        const draft = {
-            anamnesa: document.getElementById('modalAnamnesa').value,
-            objektif: document.getElementById('modalObjektif').value,
-            diagnosa: document.getElementById('modalDiagnosa').value,
-            perawatan: document.getElementById('modalPerawatan').value,
-            resep: document.getElementById('modalResep').value,
-            proPerawatan: document.getElementById('modalProPerawatan').value,
-            proKontrol: document.getElementById('modalProKontrol').value
+        // 2. 🔥 HELPER PINTAR DINAMIS: Mengambil nilai secara aman tanpa takut error null
+        const ambilNilaiAman = (idElement) => {
+            const el = document.getElementById(idElement);
+            return el ? el.value : "";
         };
+
+        // 3. Susun objek draft dengan proteksi penuh
+        const draft = {
+            anamnesa: ambilNilaiAman('modalAnamnesa'),
+            objektif: ambilNilaiAman('modalObjektif'),
+            diagnosa: ambilNilaiAman('modalDiagnosa'),
+            perawatan: ambilNilaiAman('modalPerawatan'),
+            resep: ambilNilaiAman('modalResep'),
+            proPerawatan: ambilNilaiAman('modalProPerawatan'),
+            proKontrol: ambilNilaiAman('modalProKontrol')
+        };
+        
         // Simpan ke brankas lokal browser
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
     }
