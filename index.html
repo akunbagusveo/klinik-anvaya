@@ -2902,9 +2902,11 @@
                         const escDiag = (r.diagnosa || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         const escPer = (r.perawatan || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         const escRes = (r.resep || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+                        const escProPer = (r.proPerawatan || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+                        const escProKon = (r.proKontrol || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
                         
                         tombolEditRMEHtml = `
-                            <button onclick="salinAtauEditRME(${r.isHariIni}, '${r.barisSheet}', '${escAnam}', '${escObj}', '${escDiag}', '${escPer}', '${escRes}', '${r.proPerawatan || ''}', '${r.proKontrol || ''}')" 
+                            <button onclick="salinAtauEditRME(${r.isHariIni}, '${r.barisSheet}', '${escAnam}', '${escObj}', '${escDiag}', '${escPer}', '${escRes}', '${escProPer}', '${escProKon}')" 
                                     style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                                 📝 Edit / Salin Catatan
                             </button>
@@ -2986,31 +2988,78 @@
 
     // 🌟 FUNGSI BARU: LOGIKA KOREKSI (TIMPA vs BUAT BARU)
     function salinAtauEditRME(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
-            // 1. Munculkan form kiri jika sebelumnya tertutup (mode view)
-            document.getElementById('kolomInputRME').style.display = 'block';
+            // 1. Pastikan area input RME terbuka di layar
+            const kolomKiri = document.getElementById('kolomInputRME');
+            if(kolomKiri) kolomKiri.style.display = 'block';
             
-            // 2. Isi form dengan data yang ditarik secara dinamis
-            document.getElementById('modalAnamnesa').value = anam;
-            document.getElementById('modalObjektif').value = obj;
-            document.getElementById('modalDiagnosa').value = diag;
-            document.getElementById('modalPerawatan').value = per;
-            document.getElementById('modalResep').value = res;
-            document.getElementById('modalProPerawatan').value = proPer;
-            document.getElementById('modalProKontrol').value = proKon;
+            // 2. Distribusikan data teks dasar secara aman dengan fallback string kosong
+            const setNilaiAman = (idElement, nilai) => {
+                const el = document.getElementById(idElement);
+                if (el) el.value = nilai || "";
+            };
 
-            // 3. 🔥 LOGIKA TEKS UX YANG DIPERBAIKI (TIDAK ADA LAGI KATA "HARI INI")
+            setNilaiAman('modalAnamnesa', anam);
+            setNilaiAman('modalObjektif', obj);
+            setNilaiAman('modalDiagnosa', diag);
+            setNilaiAman('modalResep', res);
+            setNilaiAman('modalProPerawatan', proPer);
+            setNilaiAman('modalProKontrol', proKon);
+
+            // 3. 🔥 RE-CONSTRUCT BARIS TINDAKAN DINAMIS (MEMBONGKAR JSON KE UI REPEATER)
+            const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+            if (kontainerTindakan) {
+                kontainerTindakan.innerHTML = ""; // Bersihkan baris sisa sebelumnya
+                
+                try {
+                    let arrTindakan = JSON.parse(per);
+                    if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                        arrTindakan.forEach(t => {
+                            // Panggil pembangun baris bawaan kita dengan parameter dataAwal
+                            if (typeof tambahBarisTindakan === "function") {
+                                tambahBarisTindakan({
+                                    namaTindakan: t.namaTindakan,
+                                    hargaDiinput: t.hargaDiinput,
+                                    catatanKlinis: t.catatanKlinis
+                                });
+                            }
+                        });
+                    }
+                } catch(e) {
+                    // Fallback: Jika data lama berupa text biasa, buat baris kustom agar teks tidak hilang
+                    if (per && per !== "-" && per !== "") {
+                        if (typeof tambahBarisTindakan === "function") {
+                            tambahBarisTindakan({
+                                namaTindakan: "KUSTOM",
+                                hargaDiinput: 0,
+                                catatanKlinis: per
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 4. Logika Penentuan Aksi Simpan & Teks UX Dinamis
+            const btnSimpan = document.getElementById('btnSimpanRME');
+            const hiddenRow = document.getElementById('modalRowUpdate');
+
             if (isHariIni === true || isHariIni === "true") {
-                document.getElementById('modalRowUpdate').value = barisSheet;
-                document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan Perubahan Edit"; // Ubah teks dinamis
+                if(hiddenRow) hiddenRow.value = barisSheet;
+                if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
                 alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis ini secara langsung.");
             } else {
-                document.getElementById('modalRowUpdate').value = ""; 
-                document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan Sebagai Kunjungan Baru"; // Ubah teks dinamis
+                if(hiddenRow) hiddenRow.value = ""; 
+                if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Sebagai Kunjungan Baru"; 
                 alert("Mode Salin Aktif: Data riwayat lama telah disalin sebagai template. Saat disimpan, sistem akan mencatatnya sebagai Kunjungan Baru.");
             }
 
-            // 🔥 SUNTIKAN BARU: Munculkan tombol Batal Edit agar dokter bisa berubah pikiran
-            document.getElementById('btnBatalEdit').style.display = 'block';
+            // Tampilkan tombol batal edit
+            const btnBatal = document.getElementById('btnBatalEdit');
+            if(btnBatal) btnBatal.style.display = 'block';
+            
+            // Picu trigger input pada form agar jika ada draf lama tidak bentrok
+            if (typeof simpanDraftRME === "function") {
+                simpanDraftRME();
+            }
     }
 
     // 🔥 FUNGSI BARU: Mengamankan form jika dokter membatalkan proses edit
@@ -3299,57 +3348,6 @@
         }
     }
 
-    // document.getElementById('formModalMedis').addEventListener('submit', async function(e) { 
-    //     e.preventDefault();
-    //     const submitBtn = e.target.querySelector('button[type="submit"]');
-    //     submitBtn.disabled = true; submitBtn.innerText = "Menyimpan Perubahan...";
-
-    //     // 🔥 1. AMBIL DATA SESI SECARA LENGKAP & DINAMIS
-    //     const sessionData    = JSON.parse(localStorage.getItem('anvaya_session'));
-    //     const idDokterAktif  = sessionData ? sessionData.idUser : "USR-000"; 
-    //     const usernameAktif  = sessionData ? sessionData.username : "Anonymous"; // Tambahan baru
-    //     const roleAktif      = sessionData ? sessionData.role : "Staff";        // Tambahan baru
-
-    //     // Ambil data file komputer dari modal jika ada perubahan foto
-    //     const dataFileModal = await bacaFileKeBase64('modalFileFoto');
-
-    //     // 🔥 2. SISIPIKAN operatorUsername DAN operatorRole KE PAYLOAD
-    //     const data = {
-    //         action: "submitRekamMedis",
-    //         targetSheet: "RekamMedis",
-    //         noRM: document.getElementById('modalNoRM').value,
-    //         rowUpdate: document.getElementById('modalRowUpdate').value, 
-    //         namaPasien: document.getElementById('modalNama').value,
-    //         anamnesa: document.getElementById('modalAnamnesa').value,
-    //         objektif: document.getElementById('modalObjektif').value,
-    //         diagnosa: document.getElementById('modalDiagnosa').value,
-    //         perawatan: document.getElementById('modalPerawatan').value,
-    //         proPerawatan: document.getElementById('modalProPerawatan').value,
-    //         proKontrol: document.getElementById('modalProKontrol').value,
-    //         resep: document.getElementById('modalResep').value,
-    //         idDokter: idDokterAktif,
-    //         operatorUsername: usernameAktif, // 🔥 Dikirim agar Log tidak Unknown
-    //         operatorRole: roleAktif,         // 🔥 Dikirim agar Log tidak Unknown
-    //         linkFoto: document.getElementById('modalLinkFoto').value || "-",
-    //         fileBaru: dataFileModal 
-    //     };
-
-    //     fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
-    //     .then(response => response.json())
-    //     .then(res => {
-    //         submitBtn.disabled = false; submitBtn.innerText = "Simpan Perubahan";
-    //         if(res.result === "success") {
-    //             alert("Perubahan berkas Rekam Medis sukses disimpan!");
-    //             document.getElementById('modalRME').style.display = 'none'; 
-    //             muatAntreanHariIni(); 
-    //         } else { 
-    //             alert("Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
-    //         }
-    //     }).catch(err => {
-    //         submitBtn.disabled = false; submitBtn.innerText = "Simpan Perubahan";
-    //         alert("Terjadi gangguan koneksi jaringan.");
-    //     });
-    // });
 
     // 🔥 MENGGUNAKAN ID BARU AGAR TIDAK BENTROK DENGAN FORM LAMA
     document.getElementById('formModalMedisSplit').addEventListener('submit', async function(e) { 
