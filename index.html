@@ -413,6 +413,7 @@
             <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">Database Pasien</button>
             <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">Kamus Dikte</button>
             <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold;">📈 Analisis Bisnis</button>
+            <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold;">💰 Kasir & Billing</button>
             <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
         </div>
         <div>
@@ -426,15 +427,6 @@
         <p style="font-size: 16px; color: #555; margin-bottom: 25px;">
             Selamat datang kembali, <strong id="lblNamaUser">-</strong>! Anda masuk sebagai <span id="lblRoleUser" style="color:#3498db; font-weight:bold;">-</span>.
         </p>
-        
-        <!-- <h4 style="margin-bottom: 12px; color: #7f8c8d;">⚡ Akses Cepat Menu:</h4>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;">
-            <button onclick="switchTab('pendaftaran')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">📝</span> Form Pendaftaran</button>
-            <button onclick="switchTab('antrean')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">🏥</span> Antrean Hari Ini</button>
-            <button onclick="switchTab('riwayatMedis')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">🕒</span> Riwayat Medis</button>
-            <button onclick="switchTab('daftarPasien')" style="background: #fff; border: 1px solid #ced4da; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><span style="font-size:18px;">📇</span> Database Pasien</button>
-            <button onclick="switchTab('analisisBisnis')" style="font-weight: bold;">📈 Analisis Bisnis</button>
-        </div> -->
     
         <h3 style="border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px;">📊 Ikhtisar Kinerja Klinik</h3>
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px;">
@@ -1281,6 +1273,40 @@
                 </table>
             </div>
     
+        </div>
+    </div>
+
+    <div id="kasir" class="tab-content" style="display: none; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
+            <h2 style="margin: 0; color: #2c3e50;">💰 Menu Kasir & Billing Klinik Anvaya</h2>
+            <button class="btn-primary" onclick="typeof muatAntreanKasir === 'function' && muatAntreanKasir()" style="padding: 8px 15px; border-radius:4px; border:none; background-color:#3498db; color:white; font-weight:bold; cursor:pointer;">🔄 Segarkan Antrean</button>
+        </div>
+    
+        <div style="background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); padding: 20px; border: 1px solid #dee2e6;">
+            <h4 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">📋 Antrean Pembayaran Hari Ini</h4>
+            
+            <div style="max-height: 400px; overflow-y: auto; margin-top: 15px;">
+                <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left;">
+                    <thead>
+                        <tr style="background-color: #34495e; color: white; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px 10px;">No. RM</th>
+                            <th style="padding: 12px 10px;">Nama Pasien</th>
+                            <th style="padding: 12px 10px;">Tanggal Daftar</th>
+                            <th style="padding: 12px 10px;">Dokter</th>
+                            <th style="padding: 12px 10px;">Tindakan Medis</th>
+                            <th style="padding: 12px 10px;">Status Bayar</th>
+                            <th style="padding: 12px 10px; text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAntreanKasir">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d; font-weight: bold;">
+                                Mengambil data antrean kasir... ⏳
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -3711,58 +3737,59 @@
     }
 
     function switchTab(tabId) {
-        // 1. Sembunyikan semua konten tab & bersihkan class active
+        // 1. Sembunyikan semua konten tab & bersihkan class active pada halaman
         document.querySelectorAll('.tab-content').forEach(el => {
             el.classList.remove('active');
             el.style.display = 'none';
         });
-        document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
         
-        // 2. Tampilkan konten tab yang dituju
+        // Bersihkan class active dari semua tombol navigasi menu atas
+        document.querySelectorAll('.nav-tabs .tab-link').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // 2. Tampilkan konten tab yang dituju secara presisi
         const targetTab = document.getElementById(tabId);
         if (targetTab) {
             targetTab.classList.add('active');
             targetTab.style.display = 'block';
         }
         
-        if(tabId === 'beranda') {
+        // 3. 🔥 FIX DINAMIS UTAMA: Otomatis mendeteksi dan menyalakan tombol active menu atas
+        // Pola nama id tombol Anda: 'tab' + huruf kapital diawal tabId + 'Btn' (Contoh: tabKasirBtn, tabRiwayatMedisBtn)
+        const namaIdTombol = 'tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn';
+        const tombolMenuTerkait = document.getElementById(namaIdTombol);
+        if (tombolMenuTerkait) {
+            tombolMenuTerkait.classList.add('active');
+        }
+
+        // 4. Jalankan fungsi spesifik (Triggers) tiap tab secara aman jika eksis
+        if (tabId === 'beranda' && typeof muatDashboardStatistik === "function") {
             muatDashboardStatistik();
-            document.getElementById('tabBerandaBtn').classList.add('active');
         }
-    
-        // Arahkan ke tombol Pendaftaran jika tab Pendaftaran dibuka
-        if(tabId === 'pendaftaran') {
-            const btnDaftar = document.getElementById('tabPendaftaranBtn');
-            if (btnDaftar) btnDaftar.classList.add('active');
-        }
-
-        if(tabId === 'antrean' || tabId === 'pasien') {
-            const btnAntrean = document.getElementById('tabAntreanBtn'); 
+        
+        if ((tabId === 'antrean' || tabId === 'pasien') && typeof muatAntreanHariIni === "function") {
+            // Berikan perlindungan fallback tombol active jika tabId ber-alias nama 'pasien'
+            const btnAntrean = document.getElementById('tabAntreanBtn');
             if (btnAntrean) btnAntrean.classList.add('active');
-            
-            // Jalankan fungsi muat data sekuensial secara aman
-            if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(1);
+            muatAntreanHariIni(1);
         }
         
-        if(tabId === 'dokter') document.getElementById('tabDokterBtn').classList.add('active');
-
-        if(tabId === 'riwayatMedis') document.getElementById('tabRiwayatMedisBtn').classList.add('active');
-
-        if(tabId === 'daftarPasien') document.getElementById('tabDaftarPasienBtn').classList.add('active');
-        
-        if(tabId === 'kamusDikte') {
-            document.getElementById('tabKamusDikteBtn').classList.add('active');
-            muatKamusDikte(); 
+        if (tabId === 'kamusDikte' && typeof muatKamusDikte === "function") {
+            muatKamusDikte();
         }
 
-        if (tabId === 'analisisBisnis') {
-            document.getElementById('tabAnalisisBisnisBtn').classList.add('active');
-            muatAnalisisBisnis(); // 🔥 PICU FUNGSI MARKETING SAAT TAB DIBUKA
+        if (tabId === 'analisisBisnis' && typeof muatAnalisisBisnis === "function") {
+            muatAnalisisBisnis(); 
         }
 
-        if(tabId === 'backend') {
-            document.getElementById('tabBackendBtn').classList.add('active');
-            muatDataUser(); 
+        if (tabId === 'backend' && typeof muatDataUser === "function") {
+            muatDataUser();
+        }
+
+        // 🔥 PENGINTEGRASIAN PEMICU TAB KASIR BARU
+        if (tabId === 'kasir' && typeof muatAntreanKasir === "function") {
+            muatAntreanKasir();
         }
     }
 
