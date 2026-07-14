@@ -3101,6 +3101,13 @@
         
         // Tidak perlu lagi menggunakan alert() yang menginterupsi layar, 
         // karena hilangnya form sudah menjadi indikator visual yang jelas.
+
+        const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+        if (kontainerTindakan) {
+            kontainerTindakan.innerHTML = "";
+        }
+        
+        alert("Mode edit dibatalkan. Formulir telah dibersihkan.");
     }
 
     document.getElementById('txtCariRiwayatGlobal').addEventListener('keypress', function(e) {
