@@ -2823,7 +2823,15 @@
         document.getElementById('modalNoRM').value = noRM;
         document.getElementById('modalNama').value = namaPasien;
         document.getElementById('modalRowUpdate').value = ""; 
-        document.getElementById('formModalMedisSplit').reset(); 
+        document.getElementById('formModalMedisSplit').reset();
+        
+        // =========================================================================
+        // 🔥 FIX UTAMA FASE 1: Bersihkan total cangkang baris tindakan dinamis pasien sebelumnya
+        // =========================================================================
+        const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+        if (kontainerTindakan) {
+            kontainerTindakan.innerHTML = "";
+        }
 
         const savedDraft = localStorage.getItem('draft_rme_' + noRM);
         if (savedDraft && mode === 'input') { 
