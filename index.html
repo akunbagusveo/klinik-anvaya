@@ -2891,22 +2891,18 @@
             timelineContainer.innerHTML = "";
             if (res.result === "success" && res.data.length > 0) {
                 const dataRiwayat = res.data.reverse(); 
+                
+                // 🔥 FIX UTAMA 1: Amankan seluruh objek data ke dalam memori global browser
+                window.currentHistoryData = dataRiwayat; 
+                
                 dataRiwayat.forEach(r => {
-                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="background-color:#3498db; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">🔗 Dokumen</a>` : '';
+                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" ...` : '';
                     
-                    // 🔥 FIX UTAMA DINAMIS: Tombol edit HANYA muncul jika punya akses DAN sedang TIDAK dalam mode input RME
+                    // 🔥 FIX UTAMA 2: Tombol kini sangat bersih, hanya mengirim barisSheet & status hari ini
                     let tombolEditRMEHtml = '';
                     if (perms.editRME === 1 && mode !== 'input') { 
-                        const escAnam = (r.anamnesa || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escObj = (r.objektif || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escDiag = (r.diagnosa || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escPer = (r.perawatan || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escRes = (r.resep || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escProPer = (r.proPerawatan || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        const escProKon = (r.proKontrol || "").replace(/'/g, "\\'").replace(/\n/g, "\\n");
-                        
                         tombolEditRMEHtml = `
-                            <button onclick="salinAtauEditRME(${r.isHariIni}, '${r.barisSheet}', '${escAnam}', '${escObj}', '${escDiag}', '${escPer}', '${escRes}', '${escProPer}', '${escProKon}')" 
+                            <button onclick="pemicuEditCatatanMulai('${r.barisSheet}', ${r.isHariIni})" 
                                     style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                                 📝 Edit / Salin Catatan
                             </button>
@@ -2983,6 +2979,34 @@
                 timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#7f8c8d;">Belum ada riwayat (Pasien Baru).</p>';
             }
         });
+    }
+
+    // 🔥 FUNGSI BARU: Interseptor Aman Pemicu Edit Tanpa Gangguan Tanda Petik HTML
+    function pemicuEditCatatanMulai(barisSheet, isHariIni) {
+        if (!window.currentHistoryData) {
+            alert("⚠️ Gagal membaca memori riwayat. Silakan buka ulang RME.");
+            return;
+        }
+        
+        // Cari data utuh langsung dari registry objek memori browser
+        const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
+        
+        if (dataTerpilih) {
+            // Teruskan data asli murni tanpa takut terdistorsi regex atau tanda petik HTML
+            salinAtauEditRME(
+                isHariIni,
+                dataTerpilih.barisSheet,
+                dataTerpilih.anamnesa,
+                dataTerpilih.objektif,
+                dataTerpilih.diagnosa,
+                dataTerpilih.perawatan,
+                dataTerpilih.resep,
+                dataTerpilih.proPerawatan,
+                dataTerpilih.proKontrol
+            );
+        } else {
+            alert("⚠️ Data rekam medis tidak ditemukan di dalam memori.");
+        }
     }
 
 
