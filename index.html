@@ -1310,6 +1310,70 @@
         </div>
     </div>
 
+    <div id="modalBillingKasir" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 650px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #2c3e50;">🧾 Rincian Billing & Kuitansi Pembayaran</h3>
+                <button type="button" onclick="tutupModalBilling()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #95a5a6;">✕</button>
+            </div>
+    
+            <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                <div><strong>No. RM:</strong> <span id="billNoRM" style="color:#2980b9; font-weight:bold;">-</span></div>
+                <div><strong>Nama Pasien:</strong> <span id="billNama" style="font-weight:bold;">-</span></div>
+                <div><strong>Dokter Pemeriksa:</strong> <span id="billDokter">-</span></div>
+                <div><strong>Tanggal Kunjungan:</strong> <span id="billTanggal">-</span></div>
+                <input type="hidden" id="billBarisPendaftaran">
+            </div>
+    
+            <h4 style="margin: 10px 0; color: #7f8c8d; font-size: 14px;">🛠️ Item Tindakan Medis (RME)</h4>
+            <table width="100%" style="border-collapse: collapse; font-size: 13px; margin-bottom: 15px;">
+                <thead>
+                    <tr style="background: #eaeded; text-align: left; border-bottom: 2px solid #bdc3c7;">
+                        <th style="padding: 8px;">Nama Tindakan Medis</th>
+                        <th style="padding: 8px;">Catatan Klinis</th>
+                        <th style="padding: 8px; text-align: right; width: 130px;">Total Tarif</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyItemBilling">
+                    </tbody>
+            </table>
+    
+            <div style="border-top: 2px solid #eee; padding-top: 15px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+                
+                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; font-size: 14px;">
+                    <span style="color: #7f8c8d;">Total Tindakan:</span>
+                    <span style="font-weight: bold;" id="lblBillTotalTindakan">Rp 0</span>
+                </div>
+    
+                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; align-items: center;">
+                    <span style="color: #7f8c8d; font-size: 14px;">Potongan Diskon (Rp):</span>
+                    <input type="text" id="inpBillDiskon" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; text-align: right; font-weight: bold;">
+                </div>
+    
+                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; align-items: center;">
+                    <span style="color: #7f8c8d; font-size: 14px;">Metode Pembayaran:</span>
+                    <select id="selBillMetode" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; font-weight: bold;">
+                        <option value="Tunai / Cash">Tunai / Cash</option>
+                        <option value="Transfer Bank">Transfer Bank</option>
+                        <option value="QRIS">QRIS</option>
+                    </select>
+                </div>
+    
+                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; font-size: 16px; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 5px;">
+                    <span style="font-weight: bold; color: #2c3e50;">Grand Total Akhir:</span>
+                    <span style="font-weight: bold; color: #27ae60; font-size: 18px;" id="lblBillGrandTotal">Rp 0</span>
+                </div>
+            </div>
+    
+            <div style="display: flex; gap: 10px; margin-top: 25px; justify-content: flex-end;">
+                <button type="button" onclick="tutupModalBilling()" style="background-color: #95a5a6; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">❌ Batal</button>
+                <button type="button" id="btnKunciKuitansi" onclick="eksekusiKunciPembayaranResmi()" style="background-color: #27ae60; color: white; border: none; padding: 10px 25px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 14px;">🔒 Kunci & Cetak Kuitansi</button>
+            </div>
+    
+        </div>
+    </div>
+
     <!-- MODAL DETAIL REKAM MEDIS FULL -->
     <div id="modalRiwayatFull" class="modal-backdrop" style="display:none;">
         <div class="modal-content-box" style="max-width: 95vw; width: 1400px; height: 92vh; display: flex; flex-direction: column;">
@@ -5728,6 +5792,91 @@
             console.error(err);
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">⚠️ Gangguan koneksi jaringan antrean kasir.</td></tr>`;
         });
+    }
+
+    window.totalTindakanAktifKasir = 0;
+
+    // 🔥 FUNGSI: Membuka Jendela Kasir & Membongkar Rincian Objek JSON
+    function bukaModalProsesBilling(noRM, barisPendaftaran) {
+        if (!window.currentKasirQueueData) return;
+        
+        // Cari data pasien di memori kasir global
+        const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && String(p.barisPendaftaran) === String(barisPendaftaran));
+        if (!pasien) {
+            alert("⚠️ Data antrean pasien gagal dibaca dari memori.");
+            return;
+        }
+
+        // Set Identitas Kepala Nota
+        document.getElementById('billNoRM').innerText = pasien.noRM;
+        document.getElementById('billNama').innerText = pasien.namaPasien;
+        document.getElementById('billDokter').innerText = pasien.namaDokter;
+        document.getElementById('billTanggal').innerText = pasien.tanggalDaftar;
+        document.getElementById('billBarisPendaftaran').value = pasien.barisPendaftaran;
+        document.getElementById('inpBillDiskon').value = "";
+        
+        const tbody = document.getElementById('tbodyItemBilling');
+        tbody.innerHTML = "";
+        
+        window.totalTindakanAktifKasir = 0;
+
+        // Bongkar isi array tindakan
+        try {
+            let arrTindakan = JSON.parse(pasien.tindakanRaw);
+            if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                arrTindakan.forEach(t => {
+                    window.totalTindakanAktifKasir += Number(t.hargaDiinput);
+                    
+                    let tr = document.createElement('tr');
+                    tr.style.borderBottom = "1px solid #f2f4f4";
+                    tr.innerHTML = `
+                        <td style="padding: 8px; font-weight: 600; color: #34495e;">• ${t.namaTindakan}</td>
+                        <td style="padding: 8px; color: #7f8c8d; font-style: italic;">${t.catatanKlinis || '-'}</td>
+                        <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${Number(t.hargaDiinput).toLocaleString('id-ID')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:gray;">⚠️ Tidak ada rincian tindakan medis dari dokter.</td></tr>`;
+            }
+        } catch (e) {
+            // Fallback data teks manual lama
+            tbody.innerHTML = `<tr>
+                <td style="padding: 8px; font-weight: 600;">• Biaya Perawatan Klinis</td>
+                <td style="padding: 8px; color: gray;">${pasien.tindakanRaw}</td>
+                <td style="padding: 8px; text-align: right; font-weight: bold;">Rp 0 (Hubungi Dokter)</td>
+            </tr>`;
+        }
+
+        // Render Nilai Awal Kalkulator
+        document.getElementById('lblBillTotalTindakan').innerText = "Rp " + window.totalTindakanAktifKasir.toLocaleString('id-ID');
+        hitungGrandTotalBillingRealtime();
+
+        // Tampilkan Modal melayang ke layar
+        document.getElementById('modalBillingKasir').style.display = 'flex';
+    }
+
+    function tutupModalBilling() {
+        document.getElementById('modalBillingKasir').style.display = 'none';
+    }
+
+    // 🔥 FUNGSI: Perhitungan Realtime Diskon dengan Format Koma
+    function hitungGrandTotalBillingRealtime() {
+        const inpDiskon = document.getElementById('inpBillDiskon');
+        let angkaBersih = inpDiskon.value.replace(/[^0-9]/g, '');
+        let nominalDiskon = Number(angkaBersih) || 0;
+
+        // Format tampilan diskon saat diketik kasir (koma ribuan)
+        inpDiskon.value = angkaBersih ? nominalDiskon.toLocaleString('en-US') : '';
+
+        // Amankan agar nilai diskon tidak melebihi total tagihan tindakan
+        if (nominalDiskon > window.totalTindakanAktifKasir) {
+            nominalDiskon = window.totalTindakanAktifKasir;
+            inpDiskon.value = nominalDiskon.toLocaleString('en-US');
+        }
+
+        let grandTotal = window.totalTindakanAktifKasir - nominalDiskon;
+        document.getElementById('lblBillGrandTotal').innerText = "Rp " + grandTotal.toLocaleString('id-ID');
     }
 
 
