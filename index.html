@@ -2836,6 +2836,13 @@
                 document.getElementById('modalResep').value = draftObj.resep || "";
                 document.getElementById('modalProPerawatan').value = draftObj.proPerawatan || "";
                 document.getElementById('modalProKontrol').value = draftObj.proKontrol || "";
+
+                // 🔥 Bangkitkan kembali baris tindakan dinamis dari draf memori
+                if (draftObj.tindakanDinamis && draftObj.tindakanDinamis.length > 0) {
+                    draftObj.tindakanDinamis.forEach(t => {
+                        tambahBarisTindakan(t);
+                    });
+                }
             } catch(e) {}
         }
 
@@ -2920,6 +2927,24 @@
                                        </div>`;
                     }
 
+                    // =========================================================================
+                    // 🔥 POSISI INDUK LANGKAH 3: Taruh kode pengurai JSON Tindakan di sini!
+                    // =========================================================================
+                    let tampilanTindakanHtml = "";
+                    try {
+                        let arrTindakan = JSON.parse(r.perawatan);
+                        if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                            arrTindakan.forEach(t => {
+                                let labelCatatan = t.catatanKlinis ? ` <span style="color:#7f8c8d; font-style:italic;">(${t.catatanKlinis})</span>` : "";
+                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${Number(t.hargaDiinput).toLocaleString('id-ID')}${labelCatatan}<br>`;
+                            });
+                        } else {
+                            tampilanTindakanHtml = formatKeBulletPoin(r.perawatan);
+                        }
+                    } catch(e) {
+                        tampilanTindakanHtml = formatKeBulletPoin(r.perawatan); // Fallback data lama
+                    }
+
                     const card = document.createElement('div');
                     card.className = 'rme-card';
                     card.innerHTML = `
@@ -2936,7 +2961,7 @@
                             <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.anamnesa)}</span></div>
                             <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.objektif)}</span></div>
                             <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.diagnosa)}</span></div>
-                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.perawatan)}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${tampilanTindakanHtml}</span></div>
                             
                             <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> <br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.proPerawatan)}</span></div>
                             <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.proKontrol)}</span></div>
@@ -3345,6 +3370,26 @@
             return elemen ? elemen.value : "";
         };
 
+        // 🔥 FIX UTAMA 1: Loop Dinamis untuk mengumpulkan seluruh baris tindakan medis dokter
+        const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
+        let listTindakanDipilih = [];
+
+        barisTindakan.forEach(row => {
+            const selNama = row.querySelector('.sel-nama-tindakan');
+            const inpHarga = row.querySelector('.inp-harga-tindakan');
+            const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+            
+            if (selNama && selNama.value) {
+                // Konversi string ber-koma (misal: 700,000) menjadi angka murni sebelum masuk database
+                let hargaMurni = Number(inpHarga.value.replace(/[^0-9]/g, '')) || 0;
+                listTindakanDipilih.push({
+                    namaTindakan: selNama.value.trim(),
+                    hargaDiinput: hargaMurni,
+                    catatanKlinis: inpCatatan ? inpCatatan.value.trim() : ""
+                });
+            }
+        });
+
         const data = {
             action: "submitRekamMedis",
             targetSheet: "RekamMedis",
@@ -3354,7 +3399,7 @@
             anamnesa: dapatkanNilaiDOM('modalAnamnesa'),
             objektif: dapatkanNilaiDOM('modalObjektif'),
             diagnosa: dapatkanNilaiDOM('modalDiagnosa'),
-            perawatan: dapatkanNilaiDOM('modalPerawatan'),
+            perawatan: JSON.stringify(listTindakanDipilih),
             proPerawatan: dapatkanNilaiDOM('modalProPerawatan'), // Aman dari typo HTML
             proKontrol: dapatkanNilaiDOM('modalProKontrol'),     // Aman dari typo HTML
             resep: dapatkanNilaiDOM('modalResep'),
@@ -5238,32 +5283,43 @@
     });
 
     // 🌟 FITUR BARU: Auto-Save Draft Sementara ke Browser
+    // 🔥 FIX UTAMA 2: Integrasikan baris dinamis ke dalam Brankas Draf Lokal
     function simpanDraftRME() {
-        // 1. Ambil elemen No RM secara aman (Mendukung input maupun teks biasa)
         const elNoRM = document.getElementById('modalNoRM');
-        if (!elNoRM) return; // Hentikan jika elemen jangkar tidak ditemukan
-        
+        if (!elNoRM) return;
         const noRM = elNoRM.value ? elNoRM.value.trim() : (elNoRM.innerText ? elNoRM.innerText.trim() : "");
-        if (!noRM) return; 
+        if (!noRM) return;
 
-        // 2. 🔥 HELPER PINTAR DINAMIS: Mengambil nilai secara aman tanpa takut error null
         const ambilNilaiAman = (idElement) => {
             const el = document.getElementById(idElement);
             return el ? el.value : "";
         };
 
-        // 3. Susun objek draft dengan proteksi penuh
+        // Ekstrak baris tindakan aktif untuk draf
+        const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
+        let listTindakanDraft = [];
+        barisTindakan.forEach(row => {
+            const selNama = row.querySelector('.sel-nama-tindakan');
+            const inpHarga = row.querySelector('.inp-harga-tindakan');
+            const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+            if (selNama && selNama.value) {
+                listTindakanDraft.push({
+                    namaTindakan: selNama.value,
+                    hargaDiinput: inpHarga.value,
+                    catatanKlinis: inpCatatan ? inpCatatan.value : ""
+                });
+            }
+        });
+
         const draft = {
             anamnesa: ambilNilaiAman('modalAnamnesa'),
             objektif: ambilNilaiAman('modalObjektif'),
             diagnosa: ambilNilaiAman('modalDiagnosa'),
-            perawatan: ambilNilaiAman('modalPerawatan'),
+            tindakanDinamis: listTindakanDraft, // Masuk ke struktur draf
             resep: ambilNilaiAman('modalResep'),
             proPerawatan: ambilNilaiAman('modalProPerawatan'),
             proKontrol: ambilNilaiAman('modalProKontrol')
         };
-        
-        // Simpan ke brankas lokal browser
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
     }
 
