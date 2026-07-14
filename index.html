@@ -5315,7 +5315,8 @@
         .catch(err => console.error("⚠️ Gangguan jaringan saat memuat master tindakan:", err));
     }
 
-    // 🔥 FUNGSI UTAMA: Menambahkan Baris Tindakan Baru
+
+    // 🔥 FUNGSI UTAMA: Menambahkan Baris Tindakan dengan Filter Kategori & Format Rupiah
     function tambahBarisTindakan(dataAwal = null) {
         const kontainer = document.getElementById('kontainerTindakanDinamis');
         if (!kontainer) return;
@@ -5325,52 +5326,72 @@
         const rowWrapper = document.createElement('div');
         rowWrapper.id = rowId;
         rowWrapper.className = 'baris-tindakan-item';
-        rowWrapper.style = "display: flex; flex-direction: column; background: white; padding: 12px; border: 1px solid #ebd3c7; border-radius: 4px; border-left: 4px solid #3498db;";
+        rowWrapper.style = "display: flex; flex-direction: column; background: white; padding: 15px; border: 1px solid #ebd3c7; border-radius: 4px; border-left: 4px solid #3498db; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
 
-        // Proteksi: Jika data global belum selesai dimuat, tampilkan opsi placeholder dinamis
-        let opsiTindakanHtml = `<option value="">-- Pilih Tindakan Medis --</option>`;
+        // 1. Kumpulkan daftar Kategori Unik secara otomatis dari master data global
+        let setKategori = new Set();
         if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
             window.masterTindakanGlobal.forEach(t => {
-                opsiTindakanHtml += `<option value="${t.nama}">${t.nama}</option>`;
+                if (t.kategori) setKategori.add(t.kategori.trim());
             });
-        } else {
-            opsiTindakanHtml += `<option value="" disabled>⚠️ Menyambungkan ke database katalog...</option>`;
         }
-        opsiTindakanHtml += `<option value="KUSTOM">Lain-lain / Tindakan Kustom</option>`;
 
-        // 🔥 FIX UTAMA UX: Input harga diberikan atribut 'disabled' secara default di awal pembuatan baris
+        let opsiKategoriHtml = `<option value="">-- Pilih Kategori / Spesialis --</option>`;
+        setKategori.forEach(kat => {
+            opsiKategoriHtml += `<option value="${kat}">${kat.toUpperCase()}</option>`;
+        });
+
+        // 2. Susun Layout HTML dengan Input Group Harga yang Rapi (Anti-Offside)
         rowWrapper.innerHTML = `
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <div style="flex: 2; min-width: 200px;">
-                    <select class="sel-nama-tindakan" style="width:100%; padding:8px;" onchange="pilihTindakanDinamis('${rowId}', this.value)" required>
-                        ${opsiTindakanHtml}
+                <div style="flex: 1.2; min-width: 180px;">
+                    <select class="sel-kategori-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7;" onchange="filterTindakanPerKategori('${rowId}', this.value)" required>
+                        ${opsiKategoriHtml}
                     </select>
                 </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <input type="number" class="inp-harga-tindakan" placeholder="Pilih tindakan..." style="width:100%; padding:8px; background-color: #f5f6fa;" disabled required>
+                
+                <div style="flex: 2; min-width: 200px;">
+                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa;" onchange="pilihTindakanDinamis('${rowId}', this.value)" disabled required>
+                        <option value="">-- Pilih Tindakan Medis --</option>
+                    </select>
                 </div>
+                
+                <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa;" class="box-harga-container">
+                    <span style="color: #7f8c8d; font-weight: bold; font-size: 13px; margin-right: 5px;">Rp</span>
+                    <input type="text" class="inp-harga-tindakan" placeholder="0" style="border: none; outline: none; width: 100%; padding: 8px 4px; border-radius: 0 4px 4px 0; background: transparent;" disabled required>
+                </div>
+                
                 <div style="flex: 2; min-width: 200px; display: flex; gap: 5px; align-items: center;">
-                    <input type="text" class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan/Sisi)..." style="width:100%; padding:8px;">
+                    <input type="text" class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan)..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7;">
                     <button type="button" class="btn-mic" style="padding: 6px 10px;" onclick="mulaiDikteInputDinamis('${rowId}')">🎙️</button>
                 </div>
+                
                 <div>
-                    <button type="button" style="background-color:#e74c3c; color:white; border:none; padding:8px 12px; cursor:pointer; border-radius:4px;" onclick="hapusBarisTindakan('${rowId}')">🗑️</button>
+                    <button type="button" style="background-color:#e74c3c; color:white; border:none; padding:8px 12px; cursor:pointer; border-radius:4px; font-weight:bold;" onclick="hapusBarisTindakan('${rowId}')">🗑️</button>
                 </div>
             </div>
-            <div class="info-tindakan-detail" style="font-size: 11px; color: #7f8c8d; margin-top: 5px; display: none;">
-                <span class="lbl-kategori" style="background: #eaeaea; padding: 2px 6px; border-radius: 3px; font-weight: bold; margin-right: 10px;"></span>
-                <span class="lbl-keterangan"></span>
+            
+            <div class="info-tindakan-detail" style="font-size: 11px; color: #7f8c8d; margin-top: 8px; display: none;">
+                <span class="lbl-kategori" style="background: #34495e; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; margin-right: 10px;"></span>
+                <span class="lbl-keterangan" style="font-style: italic;"></span>
             </div>
         `;
 
         kontainer.appendChild(rowWrapper);
 
+        // Otomatisasi handling jika ada pengisian data awal draft/edit
         if (dataAwal) {
-            const selectEl = rowWrapper.querySelector('.sel-nama-tindakan');
-            selectEl.value = dataAwal.namaTindakan;
-            pilihTindakanDinamis(rowId, dataAwal.namaTindakan);
-            rowWrapper.querySelector('.inp-harga-tindakan').value = dataAwal.hargaDiinput;
-            rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
+            const matchTindakan = window.masterTindakanGlobal.find(t => t.nama === dataAwal.namaTindakan);
+            if (matchTindakan) {
+                rowWrapper.querySelector('.sel-kategori-tindakan').value = matchTindakan.kategori;
+                filterTindakanPerKategori(rowId, matchTindakan.kategori);
+                rowWrapper.querySelector('.sel-nama-tindakan').value = dataAwal.namaTindakan;
+                pilihTindakanDinamis(rowId, dataAwal.namaTindakan);
+                
+                const inpHarga = rowWrapper.querySelector('.inp-harga-tindakan');
+                inpHarga.value = Number(dataAwal.hargaDiinput).toLocaleString('en-US');
+                rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
+            }
         }
     }
 
@@ -5380,79 +5401,117 @@
         if (row) row.remove();
     }
 
+    // 🔥 FUNGSI: Filter Cascading Pilihan Tindakan Berdasarkan Kategori
+    function filterTindakanPerKategori(rowId, kategoriTerpilih) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+
+        const selTindakan = row.querySelector('.sel-nama-tindakan');
+        const inpHarga = row.querySelector('.inp-harga-tindakan');
+        const boxHarga = row.querySelector('.box-harga-container');
+        const divInfo = row.querySelector('.info-tindakan-detail');
+
+        // Reset status bawahan jika kategori dikosongkan
+        selTindakan.innerHTML = `<option value="">-- Pilih Tindakan Medis --</option>`;
+        inpHarga.value = "";
+        inpHarga.disabled = true;
+        boxHarga.style.backgroundColor = "#f5f6fa";
+        divInfo.style.display = "none";
+
+        if (!kategoriTerpilih) {
+            selTindakan.disabled = true;
+            selTindakan.style.backgroundColor = "#f5f6fa";
+            return;
+        }
+
+        // Aktifkan dropdown tindakan
+        selTindakan.disabled = false;
+        selTindakan.style.backgroundColor = "white";
+
+        // Suntikkan opsi tindakan yang memiliki kategori yang sesuai
+        window.masterTindakanGlobal.forEach(t => {
+            if (t.kategori && t.kategori.trim() === kategoriTerpilih) {
+                selTindakan.innerHTML += `<option value="${t.nama}">${t.nama}</option>`;
+            }
+        });
+        selTindakan.innerHTML += `<option value="KUSTOM">Lain-lain / Tindakan Kustom</option>`;
+    }
+
     // 🔥 FUNGSI LOGIKA KONTROL: Mengatur Akses & Batasan Harga Secara Dinamis
+    // 🔥 FUNGSI: Validasi Kriteria Harga Katalog & Format Ribuan Koma Realtime
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
         if (!row) return;
 
         const inpHarga = row.querySelector('.inp-harga-tindakan');
+        const boxHarga = row.querySelector('.box-harga-container');
         const divInfo = row.querySelector('.info-tindakan-detail');
         const lblKategori = row.querySelector('.lbl-kategori');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
 
-        // Kondisi 1: Jika dokter mengembalikan dropdown ke opsi kosong
         if (!namaTindakan) {
             divInfo.style.display = 'none';
             inpHarga.value = "";
-            inpHarga.disabled = true; 
-            inpHarga.style.backgroundColor = "#f5f6fa";
-            inpHarga.placeholder = "Pilih tindakan...";
+            inpHarga.disabled = true;
+            boxHarga.style.backgroundColor = "#f5f6fa";
             return;
         }
 
-        // Kondisi 2: Jika dokter memilih Tindakan Kustom
+        // Aktifkan area input harga
+        inpHarga.disabled = false;
+        boxHarga.style.backgroundColor = "white";
+
+        // Opsi Tindakan Kustom bebas biaya
         if (namaTindakan === "KUSTOM") {
             divInfo.style.display = 'block';
             lblKategori.innerText = "KUSTOM";
-            lblKeterangan.innerText = "Bebas menentukan nama tindakan & nominal harga.";
+            lblKeterangan.innerText = "Bebas menentukan nama tindakan dan nominal harga baru.";
             
-            inpHarga.disabled = false; 
             inpHarga.readOnly = false;
-            inpHarga.style.backgroundColor = "white";
-            inpHarga.placeholder = "Harga (Rp)";
-            inpHarga.removeAttribute('min');
-            inpHarga.removeAttribute('max');
             inpHarga.value = "";
             
-            const selectCell = row.querySelector('.sel-nama-tindakan').parentElement;
-            selectCell.innerHTML = `<input type="text" class="sel-nama-tindakan" placeholder="Ketik Nama Tindakan Baru..." style="width:100%; padding:8px;" required>`;
+            // Pasang format ribuan dinamis pada text input kustom
+            inpHarga.oninput = function() {
+                let angkaBersih = this.value.replace(/[^0-9]/g, '');
+                this.value = angkaBersih ? Number(angkaBersih).toLocaleString('en-US') : '';
+                this.setCustomValidity("");
+                this.style.border = "none";
+            };
+            
+            const cellTindakan = row.querySelector('.sel-nama-tindakan').parentElement;
+            cellTindakan.innerHTML = `<input type="text" class="sel-nama-tindakan" placeholder="Ketik Tindakan Baru..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7;" required>`;
             return;
         }
 
-        // Kondisi 3: Jika tindakan resmi dari katalog terpilih
         const match = window.masterTindakanGlobal.find(t => t.nama === namaTindakan);
         if (match) {
             divInfo.style.display = 'block';
             lblKategori.innerText = match.kategori.toUpperCase();
             
-            // Aktifkan kolom input harga karena tindakan sudah valid
-            inpHarga.disabled = false;
-            inpHarga.style.backgroundColor = "white";
-            inpHarga.placeholder = "Harga (Rp)";
-            
             if (match.hargaDasar === match.hargaMaksimal) {
                 lblKeterangan.innerText = `Tarif Tetap: Rp ${match.hargaDasar.toLocaleString('id-ID')}`;
-                inpHarga.value = match.hargaDasar;
-                inpHarga.readOnly = true; // Kunci jika tarif tunggal
-                inpHarga.style.backgroundColor = "#f5f6fa"; // Visual petunjuk bahwa kolom terkunci
-                inpHarga.removeAttribute('min');
-                inpHarga.removeAttribute('max');
+                inpHarga.value = match.hargaDasar.toLocaleString('en-US');
+                inpHarga.readOnly = true;
+                boxHarga.style.backgroundColor = "#f5f6fa";
                 inpHarga.setCustomValidity("");
             } else {
                 lblKeterangan.innerText = `Batas Tarif: Rp ${match.hargaDasar.toLocaleString('id-ID')} s/d Rp ${match.hargaMaksimal.toLocaleString('id-ID')} (${match.keterangan})`;
-                inpHarga.value = match.hargaDasar; 
+                inpHarga.value = match.hargaDasar.toLocaleString('en-US');
                 inpHarga.readOnly = false;
-                inpHarga.min = match.hargaDasar;
-                inpHarga.max = match.hargaMaksimal;
 
-                // Validasi batasan range harga secara realtime
+                // Logika Format Koma Realtime + Pengecekan Rentang Nilai
                 inpHarga.oninput = function() {
-                    const val = Number(this.value);
-                    if (val < match.hargaDasar || val > match.hargaMaksimal) {
-                        this.style.border = "2px solid #e74c3c";
-                        this.setCustomValidity(`Harga harus berada dalam rentang Rp ${match.hargaDasar.toLocaleString('id-ID')} - Rp ${match.hargaMaksimal.toLocaleString('id-ID')}`);
+                    let angkaBersih = this.value.replace(/[^0-9]/g, '');
+                    let nominalAngka = Number(angkaBersih);
+
+                    // Format visual di kotak teks memakai koma en-US (700,000)
+                    this.value = angkaBersih ? nominalAngka.toLocaleString('en-US') : '';
+
+                    if (nominalAngka < match.hargaDasar || nominalAngka > match.hargaMaksimal) {
+                        boxHarga.style.border = "2px solid #e74c3c";
+                        this.setCustomValidity(`Harga harus di antara Rp ${match.hargaDasar.toLocaleString('id-ID')} - Rp ${match.hargaMaksimal.toLocaleString('id-ID')}`);
                     } else {
-                        this.style.border = "1px solid #bdc3c7";
+                        boxHarga.style.border = "1px solid #bdc3c7";
                         this.setCustomValidity("");
                     }
                 };
