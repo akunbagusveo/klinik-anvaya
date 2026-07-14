@@ -1449,6 +1449,8 @@
     let currentPage = 1;
     const rowsPerPage = 10; // Jumlah baris yang ingin ditampilkan per halaman
     let dataKamusArray = []; // Array untuk menyimpan data siap render
+    // Variabel Global Penampung Master Tindakan
+    window.masterTindakanGlobal = [];
 
     // 2. Fungsi untuk menarik data kamus saat halaman web dibuka
     function muatKamusDikte() {
@@ -2795,14 +2797,16 @@
 
         document.getElementById('modalRiwayatFull').style.display = 'flex'; 
 
-        // Jalankan ini di dalam fungsi bukaModalRiwayatFull Anda
-        if (typeof muatMasterTindakan === "function" && window.masterTindakanGlobal.length === 0) {
-            muatMasterTindakan();
-        }
+        
 
         // Ini memastikan variabel kamusKoreksiDinamis langsung terisi data ter-update dari Sheets!
         if (typeof muatKamusDikte === "function") {
             muatKamusDikte();
+        }
+
+        // 🔥 FIX UTAMA: Pengecekan Defensif Kebal Error Undefined Length
+        if (typeof muatMasterTindakan === "function" && (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0)) {
+            muatMasterTindakan();
         }
         
         const kolomKiri = document.getElementById('kolomInputRME');
@@ -2954,33 +2958,6 @@
         });
     }
 
-    // 🔥 VERSI LENGKAP KOREKSI (Validasi Tanggal Ganda)
-    // function salinAtauEditRME(tglAsli, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
-    //     document.getElementById('kolomInputRME').style.display = 'block';
-        
-    //     document.getElementById('modalAnamnesa').value = anam;
-    //     document.getElementById('modalObjektif').value = obj;
-    //     document.getElementById('modalDiagnosa').value = diag;
-    //     document.getElementById('modalPerawatan').value = per;
-    //     document.getElementById('modalResep').value = res;
-    //     document.getElementById('modalProPerawatan').value = proPer;
-    //     document.getElementById('modalProKontrol').value = proKon;
-
-    //     // 🔥 PERBAIKAN: Deteksi multi-format tanggal (YYYY-MM-DD atau DD/MM/YYYY)
-    //     const h = new Date();
-    //     const fmtISO = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
-    //     const fmtLokal = `${String(h.getDate()).padStart(2, '0')}/${String(h.getMonth() + 1).padStart(2, '0')}/${h.getFullYear()}`;
-        
-    //     if (tglAsli.includes(fmtISO) || tglAsli.includes(fmtLokal)) {
-    //         // Mode EDIT (Hari ini)
-    //         document.getElementById('modalRowUpdate').value = barisSheet;
-    //         alert("Mode Edit Aktif: Perubahan akan menimpa catatan RME yang dibuat hari ini.");
-    //     } else {
-    //         // Mode SALIN (Masa lalu)
-    //         document.getElementById('modalRowUpdate').value = ""; 
-    //         alert("Mode Salin Aktif: Data masa lalu telah disalin menjadi draf kunjungan baru hari ini.");
-    //     }
-    // }
 
     // 🌟 FUNGSI BARU: LOGIKA KOREKSI (TIMPA vs BUAT BARU)
     function salinAtauEditRME(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
@@ -5317,8 +5294,7 @@
         return hasilBullet.join("\n");
     }
 
-    // Variabel Global Penampung Master Tindakan
-    window.masterTindakanGlobal = [];
+    
     // Panggil fungsi ini di dalam window.onload atau fungsi inisialisasi awal aplikasi Anda
     // Contoh: 
     // window.addEventListener('DOMContentLoaded', (event) => { muatMasterTindakan(); });
