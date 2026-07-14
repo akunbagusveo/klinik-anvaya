@@ -5654,6 +5654,81 @@
         }
     }
 
+    // 🔥 FUNGSI UTAMA KASIR: Menarik dan Memetakan Antrean Billing Pasien
+    function muatAntreanKasir() {
+        const tbody = document.getElementById('tbodyAntreanKasir');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d; font-weight: bold;">Mengambil data antrean kasir... ⏳</td></tr>`;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getAntreanKasir" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            tbody.innerHTML = ""; // Bersihkan placeholder loading
+            
+            if (res.result !== "success") {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">❌ Gagal memuat data: ${res.message}</td></tr>`;
+                return;
+            }
+
+            if (!res.data || res.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #27ae60; font-weight: bold;">🎉 Semua antrean pembayaran hari ini telah lunas dibayar!</td></tr>`;
+                return;
+            }
+
+            // Simpan data kasir aktif ke memori global browser untuk kebutuhan modal billing nanti
+            window.currentKasirQueueData = res.data;
+
+            // Loop dan suntikkan baris data pasien
+            res.data.forEach(p => {
+                // 🔥 ENGINE PENGURAI JSON TINDAKAN: Ringkas daftar tindakan untuk pratinjau tabel kasir
+                let ringkasanTindakan = "-";
+                try {
+                    let arrTindakan = JSON.parse(p.tindakanRaw);
+                    if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                        // Ambil nama-nama tindakannya saja lalu gabungkan dengan koma
+                        ringkasanTindakan = arrTindakan.map(t => t.namaTindakan).join(", ");
+                    }
+                } catch (e) {
+                    ringkasanTindakan = p.tindakanRaw || "-"; // Fallback jika teks manual data lama
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid #dee2e6";
+                
+                tr.innerHTML = `
+                    <td style="padding: 12px 10px; font-weight: bold; color: #2980b9;">${p.noRM}</td>
+                    <td style="padding: 12px 10px; font-weight: 600;">${p.namaPasien}</td>
+                    <td style="padding: 12px 10px; color: #7f8c8d;">${p.tanggalDaftar}</td>
+                    <td style="padding: 12px 10px;">🩺 Dr. ${p.namaDokter}</td>
+                    <td style="padding: 12px 10px; color: #2c3e50; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${ringkasanTindakan}">
+                        ${ringkasanTindakan}
+                    </td>
+                    <td style="padding: 12px 10px;">
+                        <span style="background-color: #fce4d6; color: #c65911; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">
+                            ${p.statusBayar}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                        <button onclick="bukaModalProsesBilling('${p.noRM}', '${p.barisPendaftaran}')" 
+                                style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                            💰 Proses Bayar
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">⚠️ Gangguan koneksi jaringan antrean kasir.</td></tr>`;
+        });
+    }
+
 
 
 
