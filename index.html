@@ -5884,6 +5884,80 @@
         document.getElementById('lblBillGrandTotal').innerText = "Rp " + grandTotal.toLocaleString('id-ID');
     }
 
+    // 🔥 FUNGSI UTAMA: Mengunci Transaksi Finansial & Mengirim Data Rekap ke Sheets
+    function eksekusiKunciPembayaranResmi() {
+        const barisPendaftaran = document.getElementById('billBarisPendaftaran').value;
+        const noRM = document.getElementById('billNoRM').innerText;
+        const namaPasien = document.getElementById('billNama').innerText;
+        const inpDiskon = document.getElementById('inpBillDiskon').value;
+        const metodeBayar = document.getElementById('selBillMetode').value;
+        const btnKunci = document.getElementById('btnKunciKuitansi');
+        
+        // Konversi nilai diskon ber-koma ke integer murni agar aman dihitung matematika
+        const diskonMurni = Number(inpDiskon.replace(/[^0-9]/g, '')) || 0;
+        const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
+        
+        // Ambil data operator log kasir aktif dari local storage
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const usernameAktif = sessionData ? sessionData.username : "Kasir";
+
+        if (!barisPendaftaran) {
+            alert("⚠️ Gagal memproses, indeks baris antrean terputus. Silakan muat ulang halaman.");
+            return;
+        }
+
+        // Konfirmasi final sebelum merubah database keuangan klinik
+        if (!confirm(`Konfirmasi Pembayaran:\nPasien: ${namaPasien}\nTotal Bayar: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nApakah data kuitansi ini sudah benar?`)) {
+            return;
+        }
+
+        // Kunci tombol untuk menghindari double-click/spam data ganda
+        btnKunci.disabled = true;
+        btnKunci.innerText = "⏳ Mengunci Nota & Pembukuan...";
+
+        const payload = {
+            action: "kunciPembayaran",
+            barisPendaftaran: barisPendaftaran,
+            noRM: noRM,
+            namaPasien: namaPasien,
+            totalTindakan: window.totalTindakanAktifKasir,
+            diskon: diskonMurni,
+            grandTotal: grandTotalMurni,
+            metodePembayaran: metodeBayar,
+            operator: usernameAktif
+        };
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            // Kembalikan status tombol kuitansi
+            btnKunci.disabled = false;
+            btnKunci.innerText = "🔒 Kunci & Cetak Kuitansi";
+            
+            if (res.result === "success") {
+                alert(`🎉 PEMBAYARAN SUKSES DIKUNCI!\n\nNomor Kuitansi Resmi:\n👉 ${res.noKuitansi}\n\nStatus antrean lunas & pembukuan kas berhasil dicatat.`);
+                
+                // Tutup pop-up modal kasir
+                tutupModalBilling();
+                
+                // Segarkan antrean kasir secara dinamis (Pasien yang lunas akan otomatis menghilang dari daftar)
+                if (typeof muatAntreanKasir === "function") {
+                    muatAntreanKasir();
+                }
+            } else {
+                alert("❌ Gagal menyimpan data transaksi: " + res.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btnKunci.disabled = false;
+            btnKunci.innerText = "🔒 Kunci & Cetak Kuitansi";
+            alert("⚠️ Terjadi gangguan jaringan internet. Silakan coba beberapa saat lagi.");
+        });
+    }
 
 
 
