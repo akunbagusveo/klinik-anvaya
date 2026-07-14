@@ -5749,16 +5749,19 @@
 
             // Loop dan suntikkan baris data pasien
             res.data.forEach(p => {
-                // 🔥 ENGINE PENGURAI JSON TINDAKAN: Ringkas daftar tindakan untuk pratinjau tabel kasir
-                let ringkasanTindakan = "-";
+                // 🔥 ALTERNATIF UI 2: ENGINE RINGKASAN BARIS TUNGGAL PINTAR
+                let htmlTindakanRingkas = "-";
                 try {
                     let arrTindakan = JSON.parse(p.tindakanRaw);
                     if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                        // Ambil nama-nama tindakannya saja lalu gabungkan dengan koma
-                        ringkasanTindakan = arrTindakan.map(t => t.namaTindakan).join(", ");
+                        if (arrTindakan.length > 1) {
+                            htmlTindakanRingkas = `<strong style="color: #2c3e50;">${arrTindakan[0].namaTindakan}</strong> <span style="color: #ebd3c7; background: #fdf2e9; padding: 2px 5px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 4px;">+${arrTindakan.length - 1} lainnya</span>`;
+                        } else {
+                            htmlTindakanRingkas = `<span style="color: #2c3e50; font-weight: 500;">${arrTindakan[0].namaTindakan}</span>`;
+                        }
                     }
                 } catch (e) {
-                    ringkasanTindakan = p.tindakanRaw || "-"; // Fallback jika teks manual data lama
+                    htmlTindakanRingkas = p.tindakanRaw || "-";
                 }
 
                 const tr = document.createElement('tr');
@@ -5769,9 +5772,11 @@
                     <td style="padding: 12px 10px; font-weight: 600;">${p.namaPasien}</td>
                     <td style="padding: 12px 10px; color: #7f8c8d;">${p.tanggalDaftar}</td>
                     <td style="padding: 12px 10px;">🩺 Dr. ${p.namaDokter}</td>
-                    <td style="padding: 12px 10px; color: #2c3e50; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${ringkasanTindakan}">
-                        ${ringkasanTindakan}
+                    
+                    <td style="padding: 12px 10px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Klik Proses Bayar untuk detail lengkap">
+                        ${htmlTindakanRingkas}
                     </td>
+                    
                     <td style="padding: 12px 10px;">
                         <span style="background-color: #fce4d6; color: #c65911; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">
                             ${p.statusBayar}
@@ -5779,7 +5784,7 @@
                     </td>
                     <td style="padding: 12px 10px; text-align: center;">
                         <button onclick="bukaModalProsesBilling('${p.noRM}', '${p.barisPendaftaran}')" 
-                                style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                                style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                             💰 Proses Bayar
                         </button>
                     </td>
