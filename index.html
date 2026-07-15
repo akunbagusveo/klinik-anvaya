@@ -1943,6 +1943,25 @@
 
         if (document.getElementById('tglKunjungan')) document.getElementById('tglKunjungan').addEventListener('change', updateDaftarDokter);
         if (document.getElementById('waktuKunjungan')) document.getElementById('waktuKunjungan').addEventListener('change', updateDaftarDokter);
+
+        // =========================================================================
+        // 🎯 TEMPELKAN KODE SENSOR DRAF OTOMATIS DI SINI:
+        // =========================================================================
+        const listIdInputRme = [
+            'modalAnamnesa', 
+            'modalObjektif', 
+            'modalDiagnosa', 
+            'modalResep', 
+            'modalProPerawatan', 
+            'modalProKontrol'
+        ];
+        
+        listIdInputRme.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', simpanDraftRME);
+            }
+        });
     });
 
     // --- AUTHENTICATION ---
@@ -5564,6 +5583,19 @@
 
         kontainer.appendChild(rowWrapper);
 
+        const elemenKategori = rowWrapper.querySelector('.sel-kategori-tindakan');
+        const elemenTindakan = rowWrapper.querySelector('.sel-nama-tindakan');
+        const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
+        const elemenCatatan = rowWrapper.querySelector('.inp-catatan-tindakan');
+
+        if (elemenKategori) elemenKategori.addEventListener('change', simpanDraftRME);
+        if (elemenTindakan) elemenTindakan.addEventListener('change', simpanDraftRME);
+        if (elemenHarga) {
+            elemenHarga.addEventListener('input', simpanDraftRME);
+            elemenHarga.addEventListener('change', simpanDraftRME);
+        }
+        if (elemenCatatan) elemenCatatan.addEventListener('input', simpanDraftRME);
+
         // Otomatisasi handling jika ada pengisian data awal draft/edit
         if (dataAwal) {
             const matchTindakan = window.masterTindakanGlobal.find(t => t.nama === dataAwal.namaTindakan);
@@ -5578,6 +5610,9 @@
                 rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
             }
         }
+
+        // Picu penyimpanan draft sesaat setelah baris baru ditambahkan ke layar
+        simpanDraftRME();
     }
 
     // 🔥 FUNGSI: Menghapus Baris Tindakan Tertentu
