@@ -2929,7 +2929,9 @@
 
         document.getElementById('modalNoRM').value = noRM;
         document.getElementById('modalNama').value = namaPasien;
-        document.getElementById('modalRowUpdate').value = ""; 
+        document.getElementById('modalRowUpdate').value = "";
+        // 🔥 1. AKTIFKAN GEMBOK: Tahan semua auto-save selama proses reset form & load data
+        window.isRestoringDraft = true; 
         document.getElementById('formModalMedisSplit').reset();
         
         // =========================================================================
@@ -2940,7 +2942,8 @@
             kontainerTindakan.innerHTML = "";
         }
 
-        const savedDraft = localStorage.getItem('draft_rme_' + noRM);
+        const cleanNoRM = String(noRM).trim();
+        const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
         if (savedDraft && mode === 'input') { 
             try {
                 const draftObj = JSON.parse(savedDraft);
@@ -3000,6 +3003,10 @@
                 console.error("Gagal merestorasi data draf RME:", e);
             }
         }
+
+        setTimeout(() => {
+            window.isRestoringDraft = false;
+        }, 200);
 
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
         timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
@@ -5410,6 +5417,12 @@
     // 🌟 FITUR BARU: Auto-Save Draft Sementara ke Browser
     // 🔥 FIX UTAMA 2: Integrasikan baris dinamis ke dalam Brankas Draf Lokal
     function simpanDraftRME() {
+        const modalRME = document.getElementById('modalRiwayatFull');
+        // 1. Jangan simpan jika modal sedang disembunyikan (Mencegah sistem menimpa draf dengan form kosong)
+        if (modalRME && (modalRME.style.display === 'none' || modalRME.style.display === '')) return;
+        
+        // 2. Jangan simpan jika sistem sedang dalam proses memuat/merestorasi data
+        if (window.isRestoringDraft) return;
         const elNoRM = document.getElementById('modalNoRM');
         if (!elNoRM) return;
         const noRM = elNoRM.value ? elNoRM.value.trim() : (elNoRM.innerText ? elNoRM.innerText.trim() : "");
