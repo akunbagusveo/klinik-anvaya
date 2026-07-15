@@ -6218,20 +6218,20 @@
     //     setInterval(periksaNotifikasiMasuk, 30000);
     // }
     function jalankanRadarPing() {
-        console.log("🚀 RADAR PING AKTIF: Memulai pemindaian latar belakang...");
+    // Kita hanya catat sekali saja di awal saat aplikasi dimuat
+    console.log("🚀 RADAR PING AKTIF: Berjalan senyap di latar belakang...");
 
         function periksaNotifikasiMasuk() {
-            console.log("🔍 Radar sedang memeriksa data ke Google Sheets...");
-            
+            // 🤫 Semua console.log pemeriksaan rutin telah dihapus agar konsol bersih
             fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'cekPing' })
             })
             .then(res => res.json())
             .then(res => {
-                console.log("📦 Respon dari Server:", res);
+                // Hanya munculkan log JIKA benar-benar ada pesan baru yang masuk
                 if (res.result === 'success' && res.data && res.data.length > 0) {
-                    console.log("🔔 Menemukan " + res.data.length + " pesan UNREAD!");
+                    console.log(`🔔 Radar mendeteksi ${res.data.length} pesan PING baru!`);
                     res.data.forEach(ping => {
                         tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
                     });
@@ -6240,9 +6240,8 @@
             .catch(err => console.error("❌ Gagal melakukan polling notifikasi:", err));
         }
 
-        // 🔥 BYPASS SEMENTARA: Jalankan langsung tanpa filter role untuk keperluan testing
         periksaNotifikasiMasuk();
-        setInterval(periksaNotifikasiMasuk, 30000);
+        setInterval(periksaNotifikasiMasuk, 30000); // Rutin memeriksa setiap 30 detik
     }
 
 
