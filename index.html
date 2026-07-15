@@ -3666,68 +3666,181 @@
     });
 
     // --- SIMPAN REKAM MEDIS DARI SECTION RME UTAMA DOKTER ---
-    const elTersangka = document.getElementById('ID_YANG_ADA_DI_BARIS_3669');
-    if (elTersangka) {
-        elTersangka.addEventListener('click', fungsiAnda);
-    }
-    document.getElementById('formMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
-        e.preventDefault();
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true; submitBtn.innerText = "Menyimpan RME...";
+    // document.getElementById('formMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
+    //     e.preventDefault();
+    //     const submitBtn = e.target.querySelector('button[type="submit"]');
+    //     submitBtn.disabled = true; submitBtn.innerText = "Menyimpan RME...";
 
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const idDokterAktif = sessionData ? sessionData.idUser : "USR-000";
-        const usernameAktif = sessionData ? sessionData.username : "Anonymous";
-        const roleAktif     = sessionData ? sessionData.role : "Staff"; 
+    //     const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+    //     const idDokterAktif = sessionData ? sessionData.idUser : "USR-000";
+    //     const usernameAktif = sessionData ? sessionData.username : "Anonymous";
+    //     const roleAktif     = sessionData ? sessionData.role : "Staff"; 
 
-        // 🔥 Ambil data file komputer jika dokter memilih file
-        const dataFile = await bacaFileKeBase64('txtFileFoto');
+    //     // 🔥 Ambil data file komputer jika dokter memilih file
+    //     const dataFile = await bacaFileKeBase64('txtFileFoto');
 
-        const data = {
-            action: "submitRekamMedis", 
-            targetSheet: "RekamMedis",
-            noRM: document.getElementById('formMedis').dataset.activeNoRM,
-            rowUpdate: document.getElementById('formMedis').dataset.rowUpdate, 
-            namaPasien: document.getElementById('namaPasien').value,
-            tanggalKunjungan: window.tanggalKunjunganAktif,
-            tanggalDaftar: document.getElementById('formMedis').dataset.tanggalDaftar,
-            anamnesa: document.getElementById('txtAnamnesa').value, 
-            objektif: document.getElementById('txtObjektif').value,     
-            diagnosa: document.getElementById('txtDiagnosa').value,      
-            perawatan: document.getElementById('txtPerawatan').value,    
-            proPerawatan: document.getElementById('txtProPerawatan').value, 
-            proKontrol: document.getElementById('txtProKontrol').value, 
-            resep: document.getElementById('txtResep').value, 
-            idDokter: idDokterAktif,
-            namaDokter: usernameAktif,
+    //     const data = {
+    //         action: "submitRekamMedis", 
+    //         targetSheet: "RekamMedis",
+    //         noRM: document.getElementById('formMedis').dataset.activeNoRM,
+    //         rowUpdate: document.getElementById('formMedis').dataset.rowUpdate, 
+    //         namaPasien: document.getElementById('namaPasien').value,
+    //         tanggalKunjungan: window.tanggalKunjunganAktif,
+    //         tanggalDaftar: document.getElementById('formMedis').dataset.tanggalDaftar,
+    //         anamnesa: document.getElementById('txtAnamnesa').value, 
+    //         objektif: document.getElementById('txtObjektif').value,     
+    //         diagnosa: document.getElementById('txtDiagnosa').value,      
+    //         perawatan: document.getElementById('txtPerawatan').value,    
+    //         proPerawatan: document.getElementById('txtProPerawatan').value, 
+    //         proKontrol: document.getElementById('txtProKontrol').value, 
+    //         resep: document.getElementById('txtResep').value, 
+    //         idDokter: idDokterAktif,
+    //         namaDokter: usernameAktif,
             
-            // 🔥 BARU: Kirim info Operator Sistem untuk kebutuhan validasi Audit Log & Addendum
-            operatorUsername: usernameAktif,
-            operatorRole: roleAktif,
+    //         // 🔥 BARU: Kirim info Operator Sistem untuk kebutuhan validasi Audit Log & Addendum
+    //         operatorUsername: usernameAktif,
+    //         operatorRole: roleAktif,
 
-            linkFoto: document.getElementById('txtLinkFoto').value || "-",
-            fileBaru: dataFile
-        };
+    //         linkFoto: document.getElementById('txtLinkFoto').value || "-",
+    //         fileBaru: dataFile
+    //     };
 
-        // ... sisa kode fetch ke bawahnya TETAP SAMA seperti milik Anda ...
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
-        .then(response => response.json())
-        .then(res => {
-            submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
-            if(res.result === "success") {
-                alert("Data Rekam Medis berhasil disimpan!");
-                document.getElementById('formMedis').reset();
-                document.getElementById('sectionRME').style.display = 'none';
-                tutupInputRME();
-                muatAntreanHariIni(); 
-            } else { 
-                alert("Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
+    //     // ... sisa kode fetch ke bawahnya TETAP SAMA seperti milik Anda ...
+    //     fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+    //     .then(response => response.json())
+    //     .then(res => {
+    //         submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
+    //         if(res.result === "success") {
+    //             alert("Data Rekam Medis berhasil disimpan!");
+    //             document.getElementById('formMedis').reset();
+    //             document.getElementById('sectionRME').style.display = 'none';
+    //             tutupInputRME();
+    //             muatAntreanHariIni(); 
+    //         } else { 
+    //             alert("Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
+    //         }
+    //     }).catch(err => {
+    //         submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
+    //         alert("Terjadi gangguan koneksi jaringan.");
+    //     });
+    // });
+    // =========================================================================
+    // 🔥 FIX UTAMA SIMPAN RME: ADAPTIF MULTI-ID DENGAN JARING PENGAMAN DEFENSIF
+    // =========================================================================
+    // Mendeteksi ID form aktif Anda (mendukung variasi formModalMedisSplit, formModalMedis, atau formMedis)
+    const formAktifRme = document.getElementById('formModalMedisSplit') || 
+                         document.getElementById('formModalMedis') || 
+                         document.getElementById('formMedis');
+
+    if (formAktifRme) {
+        formAktifRme.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true; 
+                submitBtn.innerText = "Menyimpan RME...";
             }
-        }).catch(err => {
-            submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
-            alert("Terjadi gangguan koneksi jaringan.");
+
+            const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+            const idDokterAktif = sessionData ? sessionData.idUser : "USR-000";
+            const usernameAktif = sessionData ? sessionData.username : "Anonymous";
+            const roleAktif     = sessionData ? sessionData.role : "Staff"; 
+
+            // Ambil data file komputer jika dokter memilih file dokumen pendukung
+            let dataFile = null;
+            if (typeof bacaFileKeBase64 === "function") {
+                dataFile = await bacaFileKeBase64('txtFileFoto');
+            }
+
+            // 🔥 PERBAIKAN DINAMIS: Mengambil nilai input dari ID kotak teks baru/lama secara paralel
+            const ambilTeksRme = (idUtama, idAlternatif) => {
+                const el1 = document.getElementById(idUtama);
+                if (el1) return el1.value;
+                const el2 = document.getElementById(idAlternatif);
+                return el2 ? el2.value : "";
+            };
+
+            // Kumpulkan daftar tindakan medis dinamis yang sudah diinput
+            const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
+            let listTindakanAktif = [];
+            barisTindakan.forEach(row => {
+                const selNama = row.querySelector('.sel-nama-tindakan');
+                const inpHarga = row.querySelector('.inp-harga-tindakan');
+                const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+                if (selNama && selNama.value) {
+                    listTindakanAktif.push({
+                        namaTindakan: selNama.value,
+                        hargaDiinput: inpHarga ? inpHarga.value.replace(/[^0-9]/g, '') : "0",
+                        catatanKlinis: inpCatatan ? inpCatatan.value : ""
+                    });
+                }
+            });
+
+            const data = {
+                action: "submitRekamMedis", 
+                targetSheet: "RekamMedis",
+                noRM: formAktifRme.dataset.activeNoRM || (document.getElementById('modalNoRM') ? document.getElementById('modalNoRM').value : ""),
+                rowUpdate: formAktifRme.dataset.rowUpdate || (document.getElementById('modalRowUpdate') ? document.getElementById('modalRowUpdate').value : ""), 
+                namaPasien: ambilTeksRme('namaPasien', 'modalNama'),
+                
+                // 🔥 KUNCI LATE INPUT: Amankan pengiriman tanggal asli dari memori jangkar browser
+                tanggalKunjungan: window.tanggalKunjunganAktif || "",
+                tanggalDaftar: formAktifRme.dataset.tanggalDaftar || "",
+                
+                anamnesa: ambilTeksRme('txtAnamnesa', 'modalAnamnesa'), 
+                objektif: ambilTeksRme('txtObjektif', 'modalObjektif'),     
+                diagnosa: ambilTeksRme('txtDiagnosa', 'modalDiagnosa'),      
+                
+                // Tindakan medis dikirim dalam bentuk string JSON terstruktur
+                perawatan: JSON.stringify(listTindakanAktif),    
+                
+                proPerawatan: ambilTeksRme('txtProPerawatan', 'proPerawatan') || ambilTeksRme('modalProPerawatan', ''), 
+                proKontrol: ambilTeksRme('txtProKontrol', 'proKontrol') || ambilTeksRme('modalProKontrol', ''), 
+                resep: ambilTeksRme('txtResep', 'resep') || ambilTeksRme('modalResep', ''), 
+                
+                idDokter: idDokterAktif,
+                namaDokter: usernameAktif,
+                operatorUsername: usernameAktif,
+                operatorRole: roleAktif,
+                linkFoto: ambilTeksRme('txtLinkFoto', 'modalLinkFoto') || "-",
+                fileBaru: dataFile
+            };
+
+            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+            .then(response => response.json())
+            .then(res => {
+                if (submitBtn) {
+                    submitBtn.disabled = false; 
+                    submitBtn.innerText = "Simpan Catatan Rekam Medis";
+                }
+                
+                if(res.result === "success") {
+                    alert("✅ Data Rekam Medis berhasil disimpan!");
+                    
+                    // Reset form dan bersihkan memori lokal
+                    formAktifRme.reset();
+                    const cleanRM = String(data.noRM).trim();
+                    localStorage.removeItem('draft_rme_' + cleanRM);
+                    
+                    // Sembunyikan modal/section RME terpadu
+                    const modalBesar = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
+                    if (modalBesar) modalBesar.style.display = 'none';
+                    
+                    if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
+                } else { 
+                    alert("❌ Gagal menyimpan perubahan: " + (res.message || "Terjadi kesalahan internal server.")); 
+                }
+            }).catch(err => {
+                if (submitBtn) {
+                    submitBtn.disabled = false; 
+                    submitBtn.innerText = "Simpan Catatan Rekam Medis";
+                }
+                console.error("Fetch Error:", err);
+                alert("⚠️ Terjadi gangguan koneksi jaringan saat menyimpan data.");
+            });
         });
-    });
+    }
+    // =========================================================================
 
 
     function resetVoiceState() {
