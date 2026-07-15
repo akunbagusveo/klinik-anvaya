@@ -6119,7 +6119,29 @@
     // =========================================================================
     function tampilkanNotifikasiPing(namaPasien, pesan) {
         const toast = document.createElement('div');
-        toast.style.cssText = "position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 99999; display: flex; align-items: center; gap: 15px; font-family: sans-serif; min-width: 300px; max-width: 400px; box-sizing: border-box;";
+        
+        // 🚀 UPGRADE VISUAL: Menggunakan !important dan memindahkan posisi ke TOP-RIGHT 
+        // agar kebal dari penumpukan (stacking) elemen dashboard utama
+        toast.style.cssText = `
+            position: fixed !important; 
+            top: 20px !important; 
+            right: 20px !important; 
+            background-color: #e74c3c !important; 
+            color: white !important; 
+            padding: 15px 20px !important; 
+            border-radius: 8px !important; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important; 
+            z-index: 9999999 !important; 
+            display: flex !important; 
+            align-items: center !important; 
+            gap: 15px !important; 
+            font-family: sans-serif !important; 
+            min-width: 320px !important; 
+            max-width: 420px !important; 
+            box-sizing: border-box !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        `;
         
         toast.innerHTML = `
             <div style="font-size: 24px;">🔔</div>
@@ -6130,10 +6152,12 @@
             <button style="background:none; border:none; color:white; font-size:16px; cursor:pointer; margin-left:10px; font-weight:bold;" onclick="this.parentElement.remove()">✖</button>
         `;
 
-        document.body.appendChild(toast);
+        // 🎯 TARGET STRATEGIS: Tempelkan ke dalam mainPage jika ada, jika tidak ada baru ke body
+        const targetContainer = document.getElementById('mainPage') || document.body;
+        targetContainer.appendChild(toast);
 
         // =========================================================================
-        // 🚀 GENERATOR BEEP LOKAL (WEB AUDIO API) - BEBAS ERROR & TANPA URL EXTERNAL
+        // 📢 GENERATOR BEEP LOKAL (WEB AUDIO API)
         // =========================================================================
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -6143,25 +6167,23 @@
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
 
-            oscillator.type = 'sine'; // Jenis gelombang suara lembut
-            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frekuensi nada (Nyaring)
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume aman (10%) agar tidak kaget
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
 
             oscillator.start();
             
-            // Matikan suara secara otomatis setelah 0.2 detik (bunyi "Ting!" pendek)
             setTimeout(() => {
                 oscillator.stop();
                 audioCtx.close();
             }, 200);
         } catch(e) {
-            console.log("Autoplay suara diblokir browser hingga user melakukan klik pertama.");
+            console.log("Audio autoplay diblokir browser.");
         }
-        // =========================================================================
 
-        // Lenyap otomatis dalam 10 detik jika tidak ditutup manual
+        // Lenyap otomatis dalam 10 detik
         setTimeout(() => {
-            if(document.body.contains(toast)) toast.remove();
+            if(targetContainer.contains(toast)) toast.remove();
         }, 10000);
     }
 
