@@ -1874,7 +1874,8 @@
         // 🔥 5. JALANKAN FUNGSI ASYNC DI BAWAH AGAR TIDAK MENGGANGGU PROSES LOGIN INITIALIZATION
         muatPilihanRole();
         muatDaftarDokter();
-        muatMasterTindakan()
+        muatMasterTindakan();
+        jalankanRadarPing();
 
         // --- Sisa kode untuk inputTgl dan updateDaftarDokter ke bawah (Biarkan Tetap Sama) ---
         const inputTgl = document.getElementById('tglKunjungan');
@@ -5789,6 +5790,10 @@
                         </span>
                     </td>
                     <td style="padding: 12px 10px; text-align: center;">
+                        <button onclick="kirimPingAsisten('${p.namaPasien}')" 
+                                style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Ingatkan dokter/asisten untuk input RME">
+                            🔔 Ping
+                        </button>
                         <button onclick="bukaModalProsesBilling('${p.noRM}', '${p.barisPendaftaran}')" 
                                 style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                             💰 Proses Bayar
@@ -5963,6 +5968,84 @@
             btnKunci.innerText = "🔒 Kunci & Cetak Kuitansi";
             alert("⚠️ Terjadi gangguan jaringan internet. Silakan coba beberapa saat lagi.");
         });
+    }
+
+    function kirimPingAsisten(namaPasien) {
+        if(!confirm(`Kirim notifikasi ke Ruang Dokter untuk segera menginput RME pasien ${namaPasien}?`)) return;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ 
+                action: "kirimPing", 
+                namaPasien: namaPasien,
+                pesan: "Pasien menunggu di Kasir. Mohon lengkapi tindakan RME."
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                alert("🔔 Pesan Ping berhasil dikirim ke Ruang Dokter!");
+            } else {
+                alert("Gagal mengirim Ping.");
+            }
+        });
+    }
+
+    // 1. Fungsi Pembuat UI Notifikasi Melayang (Toast)
+    function tampilkanNotifikasiPing(namaPasien, pesan) {
+        const toast = document.createElement('div');
+        toast.style = "position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 9999; display: flex; align-items: center; gap: 15px; font-family: sans-serif; animation: slideIn 0.5s ease-out;";
+        
+        toast.innerHTML = `
+            <div style="font-size: 24px;">🔔</div>
+            <div>
+                <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">PING DARI KASIR: ${namaPasien}</div>
+                <div style="font-size: 12px; opacity: 0.9;">${pesan}</div>
+            </div>
+            <button style="background:none; border:none; color:white; font-size:16px; cursor:pointer; margin-left:10px;" onclick="this.parentElement.remove()">✖</button>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Coba putar suara beep (Beberapa browser butuh interaksi user dulu agar suara bisa diputar)
+        try {
+            let audio = new Audio('https://www.soundjay.com/buttons/sounds/button-30.mp3');
+            audio.play();
+        } catch(e) {}
+
+        // Hilang otomatis setelah 10 detik
+        setTimeout(() => {
+            if(document.body.contains(toast)) toast.remove();
+        }, 10000);
+    }
+
+    // 2. Mesin Radar Pengecek (Polling)
+    function jalankanRadarPing() {
+        const session = JSON.parse(localStorage.getItem('anvaya_session'));
+        if (!session) return;
+
+        // HANYA JALANKAN RADAR JIKA USER ADALAH DOKTER ATAU ASISTEN
+        // (Sesuaikan dengan nama role di sistem Anda, misal: 'Dokter', 'rol-03')
+        const role = session.role.toLowerCase();
+        if (role.includes('dokter') || role === 'rol-03') {
+            
+            // Lakukan pengecekan ke server setiap 30 detik (30.000 milidetik)
+            setInterval(() => {
+                fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'cekPing' })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.result === 'success' && res.data.length > 0) {
+                        res.data.forEach(ping => {
+                            tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
+                        });
+                    }
+                })
+                .catch(err => console.log("Gagal memindai notifikasi:", err));
+            }, 30000); 
+        }
     }
 
 
