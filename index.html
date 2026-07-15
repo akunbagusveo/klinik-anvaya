@@ -2895,6 +2895,11 @@
     // 🔥 UPGRADE: Tambahkan parameter tanggalDaftarLangsung di akhir
     function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "") {
         const dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM);
+
+        // 🎯 SUNTIKKAN BARIS INI UNTUK TESTING:
+        if (dataPasienObj && dataPasienObj.statusBayar === undefined) {
+             alert("⚠️ DIAGNOSA SISTEM: Benar saja! Kolom 'Status Bayar' tidak dikirim oleh server ke layar antrean utama. Kita harus update Kode.gs!");
+        }
         
         // 🔥 FIX UTAMA 1: Gunakan tanggal daftar dari baris klik antrean yang sah, bukan tebakan .find()
         window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
