@@ -3666,6 +3666,10 @@
     });
 
     // --- SIMPAN REKAM MEDIS DARI SECTION RME UTAMA DOKTER ---
+    const elTersangka = document.getElementById('ID_YANG_ADA_DI_BARIS_3669');
+    if (elTersangka) {
+        elTersangka.addEventListener('click', fungsiAnda);
+    }
     document.getElementById('formMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
         e.preventDefault();
         const submitBtn = e.target.querySelector('button[type="submit"]');
