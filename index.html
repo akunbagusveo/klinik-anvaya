@@ -6119,7 +6119,6 @@
     // =========================================================================
     function tampilkanNotifikasiPing(namaPasien, pesan) {
         const toast = document.createElement('div');
-        // Menggunakan cssText agar interpretasi gaya visual di browser Chrome 100% mutlak dan solid
         toast.style.cssText = "position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 99999; display: flex; align-items: center; gap: 15px; font-family: sans-serif; min-width: 300px; max-width: 400px; box-sizing: border-box;";
         
         toast.innerHTML = `
@@ -6133,15 +6132,34 @@
 
         document.body.appendChild(toast);
 
-        // Mainkan efek suara peringatan
+        // =========================================================================
+        // 🚀 GENERATOR BEEP LOKAL (WEB AUDIO API) - BEBAS ERROR & TANPA URL EXTERNAL
+        // =========================================================================
         try {
-            let audio = new Audio('https://www.soundjay.com/buttons/sounds/button-30.mp3');
-            audio.play();
-        } catch(e) {
-            console.log("Browser memblokir autoplay audio sebelum ada interaksi klik.");
-        }
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
 
-        // Lenyap otomatis dalam 10 detik
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'sine'; // Jenis gelombang suara lembut
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frekuensi nada (Nyaring)
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume aman (10%) agar tidak kaget
+
+            oscillator.start();
+            
+            // Matikan suara secara otomatis setelah 0.2 detik (bunyi "Ting!" pendek)
+            setTimeout(() => {
+                oscillator.stop();
+                audioCtx.close();
+            }, 200);
+        } catch(e) {
+            console.log("Autoplay suara diblokir browser hingga user melakukan klik pertama.");
+        }
+        // =========================================================================
+
+        // Lenyap otomatis dalam 10 detik jika tidak ditutup manual
         setTimeout(() => {
             if(document.body.contains(toast)) toast.remove();
         }, 10000);
