@@ -2946,21 +2946,30 @@
         if (savedDraft && mode === 'input') { 
             try {
                 const draftObj = JSON.parse(savedDraft);
-                document.getElementById('modalAnamnesa').value = draftObj.anamnesa || "";
-                document.getElementById('modalObjektif').value = draftObj.objektif || "";
-                document.getElementById('modalDiagnosa').value = draftObj.diagnosa || "";
-                document.getElementById('modalPerawatan').value = draftObj.perawatan || "";
-                document.getElementById('modalResep').value = draftObj.resep || "";
-                document.getElementById('modalProPerawatan').value = draftObj.proPerawatan || "";
-                document.getElementById('modalProKontrol').value = draftObj.proKontrol || "";
+                
+                // 1. Kembalikan draf ke kolom teks lama
+                if (document.getElementById('modalAnamnesa')) document.getElementById('modalAnamnesa').value = draftObj.anamnesa || "";
+                if (document.getElementById('modalObjektif')) document.getElementById('modalObjektif').value = draftObj.objektif || "";
+                if (document.getElementById('modalDiagnosa')) document.getElementById('modalDiagnosa').value = draftObj.diagnosa || "";
+                if (document.getElementById('modalPerawatan')) document.getElementById('modalPerawatan').value = draftObj.perawatan || "";
 
-                // 🔥 Bangkitkan kembali baris tindakan dinamis dari draf memori
-                if (draftObj.tindakanDinamis && draftObj.tindakanDinamis.length > 0) {
+                // 2. 🔥 FIX ID: Arahkan ke ID elemen input baru klinik Anda yang tepat (Tanpa prefiks 'modal')
+                if (document.getElementById('resep')) document.getElementById('resep').value = draftObj.resep || "";
+                if (document.getElementById('proPerawatan')) document.getElementById('proPerawatan').value = draftObj.proPerawatan || "";
+                if (document.getElementById('proKontrol')) document.getElementById('proKontrol').value = draftObj.proKontrol || "";
+
+                // 3. Bangkitkan kembali baris tindakan dinamis dari memori draf
+                if (draftObj.tindakanDinamis && Array.isArray(draftObj.tindakanDinamis) && draftObj.tindakanDinamis.length > 0) {
                     draftObj.tindakanDinamis.forEach(t => {
-                        tambahBarisTindakan(t);
+                        // Panggil generator baris dinamis Anda
+                        if (typeof tambahBarisTindakan === "function") {
+                            tambahBarisTindakan(t);
+                        }
                     });
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Gagal memuat struktur draf RME: ", e);
+            }
         }
 
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
@@ -3433,68 +3442,7 @@
     });
 
 
-    // --- POP-UP MODAL EDIT RME UTK DOKTER ---
-    function bukaModalRME(noRM, namaPasien, tanggalDaftar, isEditable) {
-        document.getElementById('formModalMedis').reset();
-        document.getElementById('modalRME').style.display = 'block';
-        document.getElementById('modalNama').value = namaPasien;
-        document.getElementById('modalNoRM').value = noRM;
-
-        // Dapatkan tanggal pakem hari ini
-        const h = new Date();
-        const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
-        
-        // Cek apakah tanggal daftar adalah masa lalu
-        const isMasaLalu = (tanggalDaftar !== formatHariIni);
-
-        // 🔥 LOGIKA KUNCI FORM (READ-ONLY)
-        document.getElementById('judulModalRME').innerText = isMasaLalu ? "👁️ Rincian Rekam Medis (Read-Only)" : "👁️ Lihat / Edit Rekam Medis";
-        document.getElementById('btnSimpanRME').style.display = isMasaLalu ? "none" : "block"; // Sembunyikan tombol simpan jika masa lalu
-
-        const aturField = (readonly) => {
-            const listId = ['modalAnamnesa','modalObjektif' ,'modalDiagnosa', 'modalPerawatan', 'modalProPerawatan', 'modalProKontrol', 'modalResep', 'modalLinkFoto'];
-            const warnaBg = readonly ? "#e9ecef" : "#ffffff";
-            
-            listId.forEach(id => {
-                document.getElementById(id).readOnly = readonly;
-                document.getElementById(id).style.background = warnaBg;
-            });
-        };
-        aturField(isMasaLalu); // Kunci jika masa lalu, buka jika hari ini
-
-        // Fetch data ke server berdasarkan TANGGAL DAFTAR (Bukan selalu hari ini)
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'getRekamMedisPasien', noRM: noRM, tanggal: tanggalDaftar })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.result === 'success' && data.hariIni) {
-                document.getElementById('modalAnamnesa').value = data.hariIni.anamnesa || "";
-                document.getElementById('modalObjektif').value = data.hariIni.objektif || "";
-                document.getElementById('modalDiagnosa').value = data.hariIni.diagnosa || "";
-                document.getElementById('modalPerawatan').value = data.hariIni.perawatan || "";
-                document.getElementById('modalProPerawatan').value = data.hariIni.proPerawatan || "";
-                document.getElementById('modalProKontrol').value = data.hariIni.proKontrol || "";
-                document.getElementById('modalResep').value = data.hariIni.resep || "";
-                document.getElementById('modalLinkFoto').value = data.hariIni.linkFoto || "";
-                document.getElementById('modalRowUpdate').value = data.rowHariIni; 
-            } else {
-                alert(`Gagal memuat rincian rekam medis pasien untuk tanggal ${tanggalDaftar}.`);
-                document.getElementById('modalRME').style.display = 'none';
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Terjadi kendala jaringan saat mengambil data RME.");
-        });
-
-        const btnSimpan = document.getElementById('btnSimpanRME');
-        if (btnSimpan) {
-            // Jika isEditable bernilai true -> tampilkan tombol, jika false -> sembunyikan sepenuhnya!
-            btnSimpan.style.display = isEditable ? 'block' : 'none';
-        }
-    }
+   
 
 
     // 🔥 MENGGUNAKAN ID BARU AGAR TIDAK BENTROK DENGAN FORM LAMA
