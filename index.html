@@ -5992,60 +5992,68 @@
     }
 
     // 1. Fungsi Pembuat UI Notifikasi Melayang (Toast)
+    // =========================================================================
+    // 🔥 FIX 1: TOAST NOTIFIKASI DENGAN TIPE CSS-TEXT YANG LEBIH STABIL
+    // =========================================================================
     function tampilkanNotifikasiPing(namaPasien, pesan) {
         const toast = document.createElement('div');
-        toast.style = "position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 9999; display: flex; align-items: center; gap: 15px; font-family: sans-serif; animation: slideIn 0.5s ease-out;";
+        // Menggunakan cssText agar interpretasi gaya visual di browser Chrome 100% mutlak dan solid
+        toast.style.cssText = "position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 99999; display: flex; align-items: center; gap: 15px; font-family: sans-serif; min-width: 300px; max-width: 400px; box-sizing: border-box;";
         
         toast.innerHTML = `
             <div style="font-size: 24px;">🔔</div>
-            <div>
-                <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">PING DARI KASIR: ${namaPasien}</div>
-                <div style="font-size: 12px; opacity: 0.9;">${pesan}</div>
+            <div style="flex: 1;">
+                <div style="font-weight: bold; font-size: 14px; margin-bottom: 3px;">PING DARI KASIR</div>
+                <div style="font-size: 12px; opacity: 0.95;"><strong>${namaPasien}</strong>: ${pesan}</div>
             </div>
-            <button style="background:none; border:none; color:white; font-size:16px; cursor:pointer; margin-left:10px;" onclick="this.parentElement.remove()">✖</button>
+            <button style="background:none; border:none; color:white; font-size:16px; cursor:pointer; margin-left:10px; font-weight:bold;" onclick="this.parentElement.remove()">✖</button>
         `;
 
         document.body.appendChild(toast);
 
-        // Coba putar suara beep (Beberapa browser butuh interaksi user dulu agar suara bisa diputar)
+        // Mainkan efek suara peringatan
         try {
             let audio = new Audio('https://www.soundjay.com/buttons/sounds/button-30.mp3');
             audio.play();
-        } catch(e) {}
+        } catch(e) {
+            console.log("Browser memblokir autoplay audio sebelum ada interaksi klik.");
+        }
 
-        // Hilang otomatis setelah 10 detik
+        // Lenyap otomatis dalam 10 detik
         setTimeout(() => {
             if(document.body.contains(toast)) toast.remove();
         }, 10000);
     }
 
-    // 2. Mesin Radar Pengecek (Polling)
+    // =========================================================================
+    // 🔥 FIX 2: RADAR PING DENGAN INITIAL LOAD INSTAN (ANTI-WAIT)
+    // =========================================================================
     function jalankanRadarPing() {
         const session = JSON.parse(localStorage.getItem('anvaya_session'));
         if (!session) return;
 
-        // HANYA JALANKAN RADAR JIKA USER ADALAH DOKTER ATAU ASISTEN
-        // (Sesuaikan dengan nama role di sistem Anda, misal: 'Dokter', 'rol-03')
-        const role = session.role.toLowerCase();
-        if (role.includes('dokter') || role === 'rol-03') {
-            
-            // Lakukan pengecekan ke server setiap 30 detik (30.000 milidetik)
-            setInterval(() => {
-                fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'cekPing' })
-                })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.result === 'success' && res.data.length > 0) {
-                        res.data.forEach(ping => {
-                            tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
-                        });
-                    }
-                })
-                .catch(err => console.log("Gagal memindai notifikasi:", err));
-            }, 30000); 
+        // Fungsi inti pengambil data dari Apps Script Notifikasi
+        function periksaNotifikasiMasuk() {
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'cekPing' })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.result === 'success' && res.data && res.data.length > 0) {
+                    res.data.forEach(ping => {
+                        tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
+                    });
+                }
+            })
+            .catch(err => console.error("Gagal melakukan polling notifikasi:", err));
         }
+
+        // 🚀 BYPASS INSTAN: Jalankan sekali langsung di milidetik pertama saat aplikasi dimuat
+        periksaNotifikasiMasuk();
+
+        // Jalankan siklus rutin pemindaian setiap 30 detik ke depan
+        setInterval(periksaNotifikasiMasuk, 30000);
     }
 
 
