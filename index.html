@@ -1427,7 +1427,7 @@
                             <div id="kontainerTindakanDinamis" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
                                 </div>
                         
-                            <button type="button" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;" onclick="tambahBarisTindakan()">
+                            <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;" onclick="tambahBarisTindakan()">
                                 ➕ Tambah Item Tindakan
                             </button>
                         </div>
@@ -2899,6 +2899,18 @@
         // 🔥 FIX UTAMA 1: Gunakan tanggal daftar dari baris klik antrean yang sah, bukan tebakan .find()
         window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
         
+        window.isPasienLunasAktif = false;
+        if (dataPasienObj && (dataPasienObj.statusBayar === "Lunas" || dataPasienObj.statusBayar === "lunas")) {
+            window.isPasienLunasAktif = true;
+        }
+
+        // Sembunyikan tombol "Tambah Item Tindakan" jika sudah lunas
+        // ⚠️ Pastikan ID 'btnTambahTindakan' sesuai dengan ID tombol di HTML Anda
+        const btnTambah = document.getElementById('btnTambahTindakan'); 
+        if (btnTambah) {
+            btnTambah.style.display = window.isPasienLunasAktif ? 'none' : 'inline-block';
+        }
+
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
@@ -2940,7 +2952,27 @@
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
+
+            // 🔥 BANNER INFO LUNAS: Beri tahu dokter bahwa uang sudah terkunci
+            let infoLunas = document.getElementById('infoLunasRME');
+            if (!infoLunas) {
+                infoLunas = document.createElement('div');
+                infoLunas.id = 'infoLunasRME';
+                infoLunas.style.padding = '8px 12px';
+                infoLunas.style.backgroundColor = '#d4edda';
+                infoLunas.style.borderLeft = '4px solid #28a745';
+                infoLunas.style.color = '#155724';
+                infoLunas.style.marginBottom = '12px';
+                infoLunas.style.borderRadius = '4px';
+                infoLunas.style.fontSize = '12px';
+                infoLunas.innerHTML = '🔒 <strong>KUITANSI TELAH DICETAK (LUNAS).</strong><br>Anda dapat mengedit atau melengkapi catatan klinis pasien (Anamnesa, Diagnosa, dll), namun rincian tindakan dan tarif telah dikunci untuk menjaga integritas pembukuan kasir.';
+                
+                kontainerTindakan.parentNode.insertBefore(infoLunas, kontainerTindakan);
+            }
+            infoLunas.style.display = window.isPasienLunasAktif ? 'block' : 'none';
         }
+
+        
 
         const cleanNoRM = String(noRM).trim();
         const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
@@ -3687,87 +3719,6 @@
         });
     });
 
-    // --- VOICE RECOGNITION (VOICE TO TEXT) ---
-    // let recognition; let isRecording = false; let activeFieldId = ""; let activeBtnElement = null;
-
-    // if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-    //     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    //     recognition = new SpeechRecognition(); 
-    //     recognition.lang = 'id-ID'; 
-    //     recognition.continuous = true; 
-    //     recognition.interimResults = false;
-
-    //     recognition.onresult = function(event) {
-    //         let textResult = event.results[event.resultIndex][0].transcript;
-    //         let textNormal = textResult.replace(/[\s\u00A0]+/g, " ");
-            
-    //         // 🔥 FIX UTAMA 2: Validasi pencegah crash jika kamus belum selesai loading di latar belakang
-    //         if (typeof kamusKoreksiDinamis !== 'undefined' && kamusKoreksiDinamis !== null) {
-    //             let daftarKoreksiAman = [];
-                
-    //             if (Array.isArray(kamusKoreksiDinamis)) {
-    //                 kamusKoreksiDinamis.forEach(item => {
-    //                     if (Array.isArray(item) && item.length >= 2) {
-    //                         if (item[0].toString().toLowerCase().trim() !== "kata salah") {
-    //                             daftarKoreksiAman.push({ salah: item[0], benar: item[1] });
-    //                         }
-    //                     } else if (item && item.salah && item.benar) {
-    //                         daftarKoreksiAman.push({ salah: item.salah, benar: item.benar });
-    //                     }
-    //                 });
-    //             } else {
-    //                 for (const [salah, benar] of Object.entries(kamusKoreksiDinamis)) {
-    //                     daftarKoreksiAman.push({ salah: salah, benar: benar });
-    //                 }
-    //             }
-
-    //             daftarKoreksiAman.forEach(koreksi => {
-    //                 let kataSalahBersih = koreksi.salah.toString().trim().replace(/[\s\u00A0]+/g, " ");
-    //                 let kataBenarBersih = koreksi.benar.toString().trim();
-                    
-    //                 if (kataSalahBersih !== "") {
-    //                     const polaRegex = kataSalahBersih.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s\\u00A0]+');
-    //                     const regexAman = new RegExp(polaRegex, "gi");
-    //                     textNormal = textNormal.replace(regexAman, kataBenarBersih);
-    //                 }
-    //             });
-    //         }
-            
-    //         textResult = textNormal;
-    //         textResult = textResult.replace(/\s+,/g, ",");
-    //         textResult = textResult.replace(/\s+\./g, ".");
-    //         textResult = textResult.replace(/,\s*\./g, ",");
-    //         textResult = textResult.replace(/\.\s*,/g, ",");
-    //         textResult = textResult.replace(/\.{2,}/g, ".");
-
-    //         if (activeFieldId) {
-    //             const targetField = document.getElementById(activeFieldId);
-    //             textResult = textResult.trim();
-                
-    //             let spasiPemisah = "";
-    //             if (targetField.value !== "" && !targetField.value.endsWith(" ")) {
-    //                 spasiPemisah = " ";
-    //             }
-                
-    //             targetField.value += spasiPemisah + textResult;
-    //             targetField.value = targetField.value.replace(/\s{2,}/g, " ");
-    //             targetField.dispatchEvent(new Event('input'));
-    //         }
-    //     };
-        
-    //     recognition.onend = function() { resetVoiceState(); };
-    // } else {
-    //     document.querySelectorAll('.btn-voice').forEach(b => b.disabled = true);
-    // }
-
-    // function toggleVoice(fieldId, btnElement) {
-    //     if (!isRecording) {
-    //         activeFieldId = fieldId; activeBtnElement = btnElement;
-    //         recognition.start(); isRecording = true;
-    //         btnElement.innerText = "🛑 Mendengarkan... (Klik untuk Berhenti)";
-    //         btnElement.classList.add('recording');
-    //     } else { recognition.stop(); resetVoiceState(); }
-    // }
 
     function resetVoiceState() {
         isRecording = false;
@@ -5574,6 +5525,19 @@
                 <span class="lbl-keterangan" style="font-style: italic;"></span>
             </div>
         `;
+
+        if (window.isPasienLunasAktif) {
+            const elemenKategori = rowWrapper.querySelector('.sel-kategori-tindakan');
+            const elemenTindakan = rowWrapper.querySelector('.sel-nama-tindakan');
+            const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
+            const btnHapus = rowWrapper.querySelector('button'); // Mengincar tombol hapus (X)
+            
+            // Matikan fungsi klik & ubah warna jadi abu-abu
+            if (elemenKategori) { elemenKategori.disabled = true; elemenKategori.style.backgroundColor = "#e9ecef"; }
+            if (elemenTindakan) { elemenTindakan.disabled = true; elemenTindakan.style.backgroundColor = "#e9ecef"; }
+            if (elemenHarga) { elemenHarga.readOnly = true; elemenHarga.style.backgroundColor = "#e9ecef"; }
+            if (btnHapus) btnHapus.style.display = 'none'; // Hilangkan tombol hapus (X)
+        }
 
         kontainer.appendChild(rowWrapper);
 
