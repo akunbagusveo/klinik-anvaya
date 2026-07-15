@@ -2496,18 +2496,23 @@
 
     // 1. FUNGSI MUAT DOKTER: Jalankan fungsi ini saat halaman web pertama kali dimuat (onload)
     function muatDaftarDokter() {
-        google.script.run.withSuccessHandler(function(response) {
-            let res = JSON.parse(response);
-            if (res.result === "success") {
-                listDokterGlobal = res.data;
-                
-                // Masukkan data dokter ke dalam Dropdown Select di dalam Modal
-                const selectElement = document.getElementById('editDokterSelect');
-                selectElement.innerHTML = listDokterGlobal.map(doc => 
-                    `<option value="${doc.id}">${doc.nama}</option>`
-                ).join('');
-            }
-        }).eksekusiKeBackend({ action: "getDokterList" });
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run.withSuccessHandler(function(response) {
+                let res = JSON.parse(response);
+                if (res.result === "success") {
+                    listDokterGlobal = res.data;
+                    
+                    // Masukkan data dokter ke dalam Dropdown Select di dalam Modal
+                    const selectElement = document.getElementById('editDokterSelect');
+                    selectElement.innerHTML = listDokterGlobal.map(doc => 
+                        `<option value="${doc.id}">${doc.nama}</option>`
+                    ).join('');
+                }
+            }).eksekusiKeBackend({ action: "getDokterList" }); 
+        }
+        else {
+            console.warn("⚠️ Lingkungan eksternal terdeteksi (GitHub Pages). Pemanggilan google.script.run ditangguhkan demi keamanan.");
+        }
     }
 
     // Panggil fungsi di atas secara otomatis saat aplikasi siap
