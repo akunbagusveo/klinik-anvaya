@@ -1948,12 +1948,10 @@
         // 🎯 TEMPELKAN KODE SENSOR DRAF OTOMATIS DI SINI:
         // =========================================================================
         const listIdInputRme = [
-            'modalAnamnesa', 
-            'modalObjektif', 
-            'modalDiagnosa', 
-            'modalResep', 
-            'modalProPerawatan', 
-            'modalProKontrol'
+            'modalAnamnesa', 'modalObjektif', 'modalDiagnosa', 
+            'modalResep', 'resep', 
+            'modalProPerawatan', 'proPerawatan', 
+            'modalProKontrol', 'proKontrol'
         ];
         
         listIdInputRme.forEach(id => {
@@ -2947,28 +2945,59 @@
             try {
                 const draftObj = JSON.parse(savedDraft);
                 
-                // 1. Kembalikan draf ke kolom teks lama
-                if (document.getElementById('modalAnamnesa')) document.getElementById('modalAnamnesa').value = draftObj.anamnesa || "";
-                if (document.getElementById('modalObjektif')) document.getElementById('modalObjektif').value = draftObj.objektif || "";
-                if (document.getElementById('modalDiagnosa')) document.getElementById('modalDiagnosa').value = draftObj.diagnosa || "";
-                if (document.getElementById('modalPerawatan')) document.getElementById('modalPerawatan').value = draftObj.perawatan || "";
+                // 1. Suntikkan nilai ke elemen input teks (Mengisi kedua kemungkinan ID agar aman)
+                const pasokNilai = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val || "";
+                };
 
-                // 2. 🔥 FIX ID: Arahkan ke ID elemen input baru klinik Anda yang tepat (Tanpa prefiks 'modal')
-                if (document.getElementById('resep')) document.getElementById('resep').value = draftObj.resep || "";
-                if (document.getElementById('proPerawatan')) document.getElementById('proPerawatan').value = draftObj.proPerawatan || "";
-                if (document.getElementById('proKontrol')) document.getElementById('proKontrol').value = draftObj.proKontrol || "";
+                pasokNilai('modalAnamnesa', draftObj.anamnesa);
+                pasokNilai('modalObjektif', draftObj.objektif);
+                pasokNilai('modalDiagnosa', draftObj.diagnosa);
+                pasokNilai('modalPerawatan', draftObj.perawatan);
+                
+                // 🔥 Pengisian kolom baru secara paralel ke semua variasi ID elemen
+                pasokNilai('resep', draftObj.resep);
+                pasokNilai('modalResep', draftObj.resep);
+                pasokNilai('proPerawatan', draftObj.proPerawatan);
+                pasokNilai('modalProPerawatan', draftObj.proPerawatan);
+                pasokNilai('proKontrol', draftObj.proKontrol);
+                pasokNilai('modalProKontrol', draftObj.proKontrol);
 
-                // 3. Bangkitkan kembali baris tindakan dinamis dari memori draf
+                // 2. Bangkitkan baris tindakan dinamis
                 if (draftObj.tindakanDinamis && Array.isArray(draftObj.tindakanDinamis) && draftObj.tindakanDinamis.length > 0) {
                     draftObj.tindakanDinamis.forEach(t => {
-                        // Panggil generator baris dinamis Anda
                         if (typeof tambahBarisTindakan === "function") {
                             tambahBarisTindakan(t);
                         }
                     });
+
+                    // 🔥 SOLUSI EMAS ANTI-NaN: Paksa timpa ulang nilai harga asli dari draf setelah
+                    // seluruh event listener dropdown bawaan selesai bergejolak di latar belakang
+                    setTimeout(() => {
+                        const barisAktif = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
+                        barisAktif.forEach((row, index) => {
+                            const dataDrafItem = draftObj.tindakanDinamis[index];
+                            if (dataDrafItem) {
+                                const inpHarga = row.querySelector('.inp-harga-tindakan');
+                                if (inpHarga) {
+                                    // Bersihkan karakter non-angka, ambil nilai murninya
+                                    let hargaMurni = String(dataDrafItem.hargaDiinput).replace(/[^0-9]/g, '');
+                                    if (hargaMurni) {
+                                        inpHarga.value = hargaMurni;
+                                        // Pemicu agar visualisasi ribuan/rupiah bawaan ter-update kembali
+                                        inpHarga.dispatchEvent(new Event('input'));
+                                        inpHarga.dispatchEvent(new Event('change'));
+                                    }
+                                }
+                            }
+                        });
+                        // Kunci ulang draf terkini secara lokal
+                        simpanDraftRME();
+                    }, 80); // Jeda aman 80 milidetik
                 }
             } catch(e) {
-                console.error("Gagal memuat struktur draf RME: ", e);
+                console.error("Gagal merestorasi data draf RME:", e);
             }
         }
 
@@ -5386,9 +5415,12 @@
         const noRM = elNoRM.value ? elNoRM.value.trim() : (elNoRM.innerText ? elNoRM.innerText.trim() : "");
         if (!noRM) return;
 
-        const ambilNilaiAman = (idElement) => {
-            const el = document.getElementById(idElement);
-            return el ? el.value : "";
+        // Fungsi pembaca nilai aman yang mendukung dual-ID (dengan atau tanpa awalan 'modal')
+        const ambilNilaiDualId = (idUtama, idAlternatif) => {
+            const el1 = document.getElementById(idUtama);
+            if (el1) return el1.value;
+            const el2 = document.getElementById(idAlternatif);
+            return el2 ? el2.value : "";
         };
 
         // Ekstrak baris tindakan aktif untuk draf
@@ -5401,20 +5433,21 @@
             if (selNama && selNama.value) {
                 listTindakanDraft.push({
                     namaTindakan: selNama.value,
-                    hargaDiinput: inpHarga.value,
+                    hargaDiinput: inpHarga ? inpHarga.value : "0",
                     catatanKlinis: inpCatatan ? inpCatatan.value : ""
                 });
             }
         });
 
         const draft = {
-            anamnesa: ambilNilaiAman('modalAnamnesa'),
-            objektif: ambilNilaiAman('modalObjektif'),
-            diagnosa: ambilNilaiAman('modalDiagnosa'),
-            tindakanDinamis: listTindakanDraft, // Masuk ke struktur draf
-            resep: ambilNilaiAman('modalResep'),
-            proPerawatan: ambilNilaiAman('modalProPerawatan'),
-            proKontrol: ambilNilaiAman('modalProKontrol')
+            anamnesa: ambilNilaiDualId('modalAnamnesa', 'anamnesa'),
+            objektif: ambilNilaiDualId('modalObjektif', 'objektif'),
+            diagnosa: ambilNilaiDualId('modalDiagnosa', 'diagnosa'),
+            tindakanDinamis: listTindakanDraft, 
+            // 🔥 FIX DUAL ID: Amankan penyimpanan data terlepas dari apapun nama ID elemennya
+            resep: ambilNilaiDualId('resep', 'modalResep'),
+            proPerawatan: ambilNilaiDualId('proPerawatan', 'modalProPerawatan'),
+            proKontrol: ambilNilaiDualId('proKontrol', 'modalProKontrol')
         };
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
     }
