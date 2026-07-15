@@ -6028,31 +6028,58 @@
     // =========================================================================
     // 🔥 FIX 2: RADAR PING DENGAN INITIAL LOAD INSTAN (ANTI-WAIT)
     // =========================================================================
-    function jalankanRadarPing() {
-        const session = JSON.parse(localStorage.getItem('anvaya_session'));
-        if (!session) return;
+    // function jalankanRadarPing() {
+    //     const session = JSON.parse(localStorage.getItem('anvaya_session'));
+    //     if (!session) return;
 
-        // Fungsi inti pengambil data dari Apps Script Notifikasi
+    //     // Fungsi inti pengambil data dari Apps Script Notifikasi
+    //     function periksaNotifikasiMasuk() {
+    //         fetch(WEB_APP_URL, {
+    //             method: 'POST',
+    //             body: JSON.stringify({ action: 'cekPing' })
+    //         })
+    //         .then(res => res.json())
+    //         .then(res => {
+    //             if (res.result === 'success' && res.data && res.data.length > 0) {
+    //                 res.data.forEach(ping => {
+    //                     tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
+    //                 });
+    //             }
+    //         })
+    //         .catch(err => console.error("Gagal melakukan polling notifikasi:", err));
+    //     }
+
+    //     // 🚀 BYPASS INSTAN: Jalankan sekali langsung di milidetik pertama saat aplikasi dimuat
+    //     periksaNotifikasiMasuk();
+
+    //     // Jalankan siklus rutin pemindaian setiap 30 detik ke depan
+    //     setInterval(periksaNotifikasiMasuk, 30000);
+    // }
+    function jalankanRadarPing() {
+        console.log("🚀 RADAR PING AKTIF: Memulai pemindaian latar belakang...");
+
         function periksaNotifikasiMasuk() {
+            console.log("🔍 Radar sedang memeriksa data ke Google Sheets...");
+            
             fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'cekPing' })
             })
             .then(res => res.json())
             .then(res => {
+                console.log("📦 Respon dari Server:", res);
                 if (res.result === 'success' && res.data && res.data.length > 0) {
+                    console.log("🔔 Menemukan " + res.data.length + " pesan UNREAD!");
                     res.data.forEach(ping => {
                         tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
                     });
                 }
             })
-            .catch(err => console.error("Gagal melakukan polling notifikasi:", err));
+            .catch(err => console.error("❌ Gagal melakukan polling notifikasi:", err));
         }
 
-        // 🚀 BYPASS INSTAN: Jalankan sekali langsung di milidetik pertama saat aplikasi dimuat
+        // 🔥 BYPASS SEMENTARA: Jalankan langsung tanpa filter role untuk keperluan testing
         periksaNotifikasiMasuk();
-
-        // Jalankan siklus rutin pemindaian setiap 30 detik ke depan
         setInterval(periksaNotifikasiMasuk, 30000);
     }
 
