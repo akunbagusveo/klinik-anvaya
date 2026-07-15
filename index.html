@@ -5531,17 +5531,24 @@
             </div>
         `;
 
+        // =========================================================================
+        // 🔥 EKSEKUSI PEMBEKUAN JIKA LUNAS (UPGRADE AGRESIF)
+        // =========================================================================
         if (window.isPasienLunasAktif) {
             const elemenKategori = rowWrapper.querySelector('.sel-kategori-tindakan');
             const elemenTindakan = rowWrapper.querySelector('.sel-nama-tindakan');
             const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
-            const btnHapus = rowWrapper.querySelector('button'); // Mengincar tombol hapus (X)
             
             // Matikan fungsi klik & ubah warna jadi abu-abu
             if (elemenKategori) { elemenKategori.disabled = true; elemenKategori.style.backgroundColor = "#e9ecef"; }
             if (elemenTindakan) { elemenTindakan.disabled = true; elemenTindakan.style.backgroundColor = "#e9ecef"; }
             if (elemenHarga) { elemenHarga.readOnly = true; elemenHarga.style.backgroundColor = "#e9ecef"; }
-            if (btnHapus) btnHapus.style.display = 'none'; // Hilangkan tombol hapus (X)
+            
+            // 🚀 PENARGETAN AGRESIF: Sapu bersih semua tombol hapus/tong sampah
+            const elemenTombolHapus = rowWrapper.querySelectorAll('button, [class*="hapus"], [onclick*="hapus"]');
+            elemenTombolHapus.forEach(tombol => {
+                tombol.style.display = 'none';
+            });
         }
 
         kontainer.appendChild(rowWrapper);
