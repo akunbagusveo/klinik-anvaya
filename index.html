@@ -1368,7 +1368,12 @@
     
             <div style="display: flex; gap: 10px; margin-top: 25px; justify-content: flex-end;">
                 <button type="button" onclick="tutupModalBilling()" style="background-color: #95a5a6; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">❌ Batal</button>
-                <button type="button" id="btnKunciKuitansi" onclick="eksekusiKunciPembayaranResmi()" style="background-color: #27ae60; color: white; border: none; padding: 10px 25px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 14px;">🔒 Kunci & Cetak Kuitansi</button>
+                
+                <button type="button" id="btnKunciKuitansi" 
+                        onclick="eksekusiFinalBilling(document.getElementById('billNoRM').innerText)" 
+                        style="background-color: #27ae60; color: white; border: none; padding: 10px 25px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    🔒 Kunci & Cetak Kuitansi
+                </button>
             </div>
     
         </div>
@@ -5584,7 +5589,7 @@
         .then(res => {
             if (res.result === "success") {
                 window.masterTindakanGlobal = res.data;
-                console.log("🚀 Master Tindakan Berhasil Dimuat:", window.masterTindakanGlobal.length, "item.");
+                //console.log("🚀 Master Tindakan Berhasil Dimuat:", window.masterTindakanGlobal.length, "item.");
             } else {
                 console.error("❌ Gagal memuat master tindakan:", res.message);
             }
@@ -5932,6 +5937,108 @@
         });
     }
 
+    function eksekusiFinalBilling(noRM) {
+        // Bersihkan spasi atau karakter tak terlihat pada nomor RM
+        const cleanNoRM = noRM.trim();
+
+        // 1. Ambil data mentah lengkap pasien dari memori global antrean kasir
+        const dataPasien = window.currentKasirQueueData ? window.currentKasirQueueData.find(p => p.noRM.trim() === cleanNoRM) : null;
+        if (!dataPasien) return alert("❌ Kritis: Data antrean pasien gagal ditemukan di memori sistem.");
+
+        // 2. Ambil nilai input langsung dari nama ID HTML asli Anda
+        const elDiskon = document.getElementById('inpBillDiskon'); 
+        const elMetode = document.getElementById('selBillMetode');
+        
+        // Konversi nilai diskon dari input teks Anda
+        const diskon = elDiskon ? parseFloat(elDiskon.value.replace(/[^0-9]/g, '')) || 0 : 0;
+        
+        // Hitung total tarif bersih tindakan murni dari data RME
+        let totalTindakan = 0;
+        let arrayTindakanPecahan = [];
+        
+        try {
+            const listTindakanAsli = JSON.parse(dataPasien.tindakanRaw);
+            listTindakanAsli.forEach(t => {
+                const hargaBersih = parseFloat(t.hargaDiinput || t.hargaBersihPerItem) || 0;
+                totalTindakan += hargaBersih;
+                
+                // Susun struktur item terpecah untuk database DetailLaporanKeuangan (Opsi B)
+                arrayTindakanPecahan.push({
+                    namaTindakan: t.namaTindakan,
+                    hargaBersihPerItem: hargaBersih,
+                    dokterPelaksana: dataPasien.namaDokter
+                });
+            });
+        } catch (e) {
+            console.error("Gagal menyusun rincian tindakan:", e);
+            return alert("❌ Format rincian tindakan medis pasien rusak.");
+        }
+
+        const grandTotal = totalTindakan - diskon;
+
+        // 3. Ambil data sesi kasir yang sedang bertugas
+        const sessionUser = JSON.parse(localStorage.getItem('anvaya_session'));
+        const namaKasirAktif = sessionUser ? sessionUser.username : "Kasir Sistem";
+
+        // 4. Bungkus Payload Data Finansial (Sesuai kolom LaporanKeuangan)
+        const payloadFinansial = {
+            action: "prosesFinalBilling",
+            noRM: dataPasien.noRM,
+            namaPasien: dataPasien.namaPasien,
+            email: dataPasien.email || "-",
+            noHp: dataPasien.noHp || "-",
+            totalTindakan: totalTindakan,
+            diskon: diskon,
+            grandTotal: grandTotal,
+            metodePembayaran: elMetode ? elMetode.value : "Tunai / Cash",
+            kasirOperator: namaKasirAktif,
+            tindakanRaw: JSON.stringify(arrayTindakanPecahan)
+        };
+
+        // 5. Ubah visual tombol milik Anda menjadi status memuat (loading)
+        const btnBayar = document.getElementById('btnKunciKuitansi');
+        if (btnBayar) {
+            btnBayar.disabled = true;
+            btnBayar.innerText = "🔒 Mengunci Finansial & PDF... ⏳";
+        }
+
+        // 6. Tembak data ke Google Apps Script
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payloadFinansial)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (btnBayar) {
+                btnBayar.disabled = false;
+                btnBayar.innerText = "🔒 Kunci & Cetak Kuitansi";
+            }
+
+            if (res.result === "success") {
+                alert("✅ " + res.message);
+                
+                // Buka tab kuitansi PDF otomatis untuk siap cetak
+                if (res.pdfUrl) {
+                    window.open(res.pdfUrl, '_blank');
+                }
+                
+                // Tutup modal menggunakan fungsi bawaan Anda & perbarui tabel kasir
+                tutupModalBilling(); 
+                if (typeof muatAntreanKasir === "function") muatAntreanKasir();
+            } else {
+                alert("❌ Proses Gagal: " + res.message);
+            }
+        })
+        .catch(err => {
+            if (btnBayar) {
+                btnBayar.disabled = false;
+                btnBayar.innerText = "🔒 Kunci & Cetak Kuitansi";
+            }
+            console.error("Billing Network Error:", err);
+            alert("⚠️ Hubungan ke jaringan database terputus. Silakan coba lagi.");
+        });
+    }
+
     window.totalTindakanAktifKasir = 0;
 
     // 🔥 FUNGSI: Membuka Jendela Kasir & Membongkar Rincian Objek JSON
@@ -6231,7 +6338,7 @@
             .then(res => {
                 // Hanya munculkan log JIKA benar-benar ada pesan baru yang masuk
                 if (res.result === 'success' && res.data && res.data.length > 0) {
-                    console.log(`🔔 Radar mendeteksi ${res.data.length} pesan PING baru!`);
+                    //console.log(`🔔 Radar mendeteksi ${res.data.length} pesan PING baru!`);
                     res.data.forEach(ping => {
                         tampilkanNotifikasiPing(ping.namaPasien, ping.pesan);
                     });
