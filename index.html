@@ -3202,6 +3202,26 @@
             return;
         }
         
+        // 🎯 FIX DINAMIS UTAMA: Dobrak paksa status sembunyi akibat fungsi logout (Anti-Putih Polos)
+        const kolomKiri = document.getElementById('kolomInputRME');
+        if (kolomKiri) {
+            kolomKiri.style.setProperty('display', 'block', 'important');
+        }
+
+        // Deteksi form aktif secara paralel (Mendukung ID lama dan layout baru split)
+        const formAktif = document.getElementById('formModalMedisSplit') || 
+                        document.getElementById('formModalMedis') || 
+                        document.getElementById('formMedis');
+        
+        if (formAktif) {
+            formAktif.style.setProperty('display', 'block', 'important');
+            
+            // Pastikan seluruh form-group pembungkus teks input di dalamnya ikut terurai muncul
+            formAktif.querySelectorAll('.form-group').forEach(el => {
+                el.style.setProperty('display', 'block', 'important');
+            });
+        }
+
         // Cari data utuh langsung dari registry objek memori browser
         const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
         
@@ -3218,6 +3238,11 @@
                 dataTerpilih.proPerawatan,
                 dataTerpilih.proKontrol
             );
+            
+            // Pemicu tambahan untuk memunculkan tombol batal edit jika elemennya eksis
+            const btnBatal = document.getElementById('btnBatalEdit');
+            if (btnBatal) btnBatal.style.setProperty('display', 'block', 'important');
+            
         } else {
             alert("⚠️ Data rekam medis tidak ditemukan di dalam memori.");
         }
@@ -3986,15 +4011,20 @@
         currentRole = ""; 
         localStorage.removeItem('anvaya_session');
         
-        // 2. Reset semua form yang ada di dalam dokumen secara dinamis
+        // 2. Reset semua form yang ada di dalam dokumen secara dinamis (Sapu bersih memori)
         document.querySelectorAll('form').forEach(form => form.reset());
         
-        // 3. 🔥 PEMBERSIHAN VISUAL DINAMIS
-        // Sembunyikan semua elemen halaman utama dan modal rekam medis secara aman
-        const elemenTutup = ['sectionRME', 'mainPage', 'modalRiwayatFull', 'formModalMedisSplit', 'kolomInputRME'];
+        // 3. 🔥 PEMBERSIHAN VISUAL DINAMIS (YANG AMAN)
+        // Cukup sembunyikan kontainer luarnya (induk) saja. 
+        // JANGAN PERNAH menyembunyikan elemen terdalam (seperti formModalMedisSplit atau kolomInputRME) 
+        // agar tidak terjadi "bug area putih polos" saat login ulang.
+        const elemenTutup = ['sectionRME', 'mainPage', 'modalRiwayatFull'];
+        
         elemenTutup.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+            if (el) {
+                el.style.display = 'none';
+            }
         });
 
         // 4. Kembalikan tampilan ke halaman login utama
