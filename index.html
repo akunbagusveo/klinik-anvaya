@@ -1936,7 +1936,8 @@
                 body: JSON.stringify({ 
                     action: "getDokterTersedia", 
                     hari: namaHari,
-                    slot: slotInput 
+                    slot: slotInput,
+                    tanggal: tglInput 
                 })
             })
             .then(res => res.json())
