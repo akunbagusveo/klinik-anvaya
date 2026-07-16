@@ -2025,7 +2025,8 @@
     document.getElementById('formLogin').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('btnLogin');
-        btn.disabled = true; btn.innerText = "Memverifikasi...";
+        btn.disabled = true; 
+        btn.innerText = "Memverifikasi...";
 
         const payload = {
             action: "login",
@@ -2034,10 +2035,17 @@
         };
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
-        .then(response => response.json())
+        .then(response => {
+            // Jaring pengaman jika server membalas dengan eror sistem HTML bukan JSON bersih
+            if (!response.ok) throw new Error("Respon server bermasalah (Status: " + response.status + ")");
+            return response.json();
+        })
         .then(data => {
-            btn.disabled = false; btn.innerText = "Masuk";
-            if (data.result === "success") {
+            // 🔥 LEPAS GEMBOK VISUAL DI DETIK PERTAMA DATA DITERIMA
+            btn.disabled = false; 
+            btn.innerText = "Masuk";
+
+            if (data && data.result === "success") {
                 currentRole = data.role;
                 
                 const dataSesi = { 
@@ -2048,14 +2056,12 @@
                 };
                 localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
                 
-                // 🔥 ISOLASI 1: Amankan UI Utama agar jika tabel internal error, login tidak ikut gagal
                 try {
                     bukaAplikasi(data.role, data.username);
                 } catch (errUI) {
                     console.error("Terjadi masalah visual pada dashboard:", errUI);
                 }
                 
-                // 🔥 ISOLASI 2: Amankan Hak Akses Menu Utama
                 try {
                     aplikasikanHakAkses(data.permissions);
                 } catch (errAkses) {
@@ -2063,13 +2069,16 @@
                 }
 
             } else { 
-                alert(data.message); 
+                // 🔥 ANTI-UNDEFINED DISPLAY FALLBACK
+                alert(data.message || "Gagal masuk. Format data autentikasi dari server tidak valid."); 
             }
         })
         .catch(err => {
-            btn.disabled = false; btn.innerText = "Masuk";
+            // 🔥 JAMINAN LOCK-FREE: Pastikan tombol pulih kembali jika terjadi kegagalan jaringan
+            btn.disabled = false; 
+            btn.innerText = "Masuk";
             console.error("Koneksi gagal atau terjadi bug sistem:", err);
-            alert("Gagal terhubung ke server atau terjadi kesalahan sistem internal.");
+            alert("Gagal terhubung ke server. Pastikan jaringan internet stabil atau periksa deployment Web App.");
         });
     });
 
