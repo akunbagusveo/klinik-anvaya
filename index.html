@@ -2655,7 +2655,7 @@
             formAktifRme.dataset.tanggalDaftar = tanggalDaftar;
         }
 
-        // Pastikan area luar kontainer tampil terbuka di layar
+        // Pastikan area luar kontainer modal riwayat full tampil terbuka di layar
         const areaKontainerRME = document.getElementById('modalRiwayatFull') || 
                                 document.getElementById('sectionRME');
         if (areaKontainerRME) {
@@ -2664,21 +2664,21 @@
 
         // 🎯 2. Suntikkan Identitas Pasien Menggunakan Peta ID Paralel
         const setNilaiDOM = (idUtama, idAlternatif, value) => {
-            const el1 = document.getElementById(idUtama);
-            if (el1) { el1.value = value; return; }
-            const el2 = document.getElementById(idAlternatif);
-            if (el2) el2.value = value;
+            const elemenUtama = document.getElementById(idUtama);
+            if (elemenUtama) { elemenUtama.value = value; return; }
+            const elemenAlternatif = document.getElementById(idAlternatif);
+            if (elemenAlternatif) elemenAlternatif.value = value;
         };
 
         setNilaiDOM('modalNama', 'namaPasien', namaPasien);
 
-        // Reset kotak peringatan Alergi medis
+        // 🔥 Reset visual form alergi dan obat rutin
         const alertBox = document.getElementById('alertMedisFormRME');
         if (alertBox) alertBox.style.display = 'none';
         if (document.getElementById('alertAlergiFormRME')) document.getElementById('alertAlergiFormRME').innerText = '-';
         if (document.getElementById('alertObatFormRME')) document.getElementById('alertObatFormRME').innerText = '-';
         
-        // Siapkan tombol konfirmasi internal form
+        // Siapkan tombol konfirmasi internal form (Submit Button)
         const btnSubmit = formAktifRme ? formAktifRme.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
         if (btnSubmit) {
             btnSubmit.innerText = "⏳ Memuat Data...";
@@ -2710,7 +2710,7 @@
                     
                     if (formAktifRme) formAktifRme.dataset.rowUpdate = data.rowHariIni;
                     
-                    // Bongkar array tindakan medis ke kontainer dinamis
+                    // 🔥 Bongkar array tindakan medis ke kontainer dinamis
                     const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
                     if (kontainerTindakan) {
                         kontainerTindakan.innerHTML = "";
@@ -2719,6 +2719,7 @@
                             if (Array.isArray(arrTindakan)) {
                                 arrTindakan.forEach(t => {
                                     if (typeof tambahBarisTindakan === "function") {
+                                        // Adaptif: Mencari properti harga lama atau baru agar anti-NaN
                                         tambahBarisTindakan({
                                             namaTindakan: t.namaTindakan,
                                             hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
@@ -2785,7 +2786,7 @@
             }
         });
 
-        // 🎯 4. REQUEST 2: Ambil data Alergi dan Obat Rutin Pasien
+        // 🎯 4. REQUEST 2: Ambil data Alergi dan Obat Rutin Pasien (Fitur Lookup Otomatis)
         fetch(WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'getDetailPasien', noRM: noRM })
@@ -2809,6 +2810,7 @@
             }
         }).catch(err => console.log("Gagal memuat data alergi:", err));
 
+        // Pastikan sub-tab internal RME langsung membuka bagian 'form' input
         if (typeof switchTabRME === "function") switchTabRME('form'); 
     }
 
@@ -5138,24 +5140,33 @@
 
 
     function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
-        // 1. Amankan visibilitas kontainer utama (Buka paksa area form kiri)
+        // 1. Deteksi form aktif secara dinamis (ID lama atau baru)
         const formKiriSplit = document.getElementById('formModalMedisSplit') || 
                             document.getElementById('formModalMedis') || 
                             document.getElementById('formMedis');
 
+        // 🔥 KUNCI UTAMA GANJAL VISUAL: Paksa kontainer form kiri untuk mencuat muncul di layar
+        // Tanpa baris ini, ketika dokter/admin lain login, kolom kiri akan menjadi putih polos.
         if (formKiriSplit) {
-            formKiriSplit.style.display = 'block'; // 🔥 Solusi Mutlak pembuka ruang putih kosong!
+            formKiriSplit.style.display = 'block'; 
             formKiriSplit.dataset.activeNoRM = noRM;
             formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
-            formKiriSplit.dataset.rowUpdate = barisSheet; // Kunci indeks baris database target
+            formKiriSplit.dataset.rowUpdate = barisSheet; // Nomor baris database untuk target overwrite/addendum
         }
 
-        // 2. Suntikkan Identitas Kepala Form RME
+        // Pastikan area luar kontainer modal riwayat full juga ikut terbuka di layar
+        const areaKontainerRME = document.getElementById('modalRiwayatFull') || 
+                                document.getElementById('sectionRME');
+        if (areaKontainerRME) {
+            areaKontainerRME.style.display = 'flex';
+        }
+
+        // 🎯 2. Suntikkan Identitas Pasien Menggunakan Peta ID Paralel
         const setNilaiDOM = (idUtama, idAlternatif, value) => {
-            const el1 = document.getElementById(idUtama);
-            if (el1) { el1.value = value; return; }
-            const el2 = document.getElementById(idAlternatif);
-            if (el2) el2.value = value;
+            const elemenUtama = document.getElementById(idUtama);
+            if (elemenUtama) { elemenUtama.value = value; return; }
+            const elemenAlternatif = document.getElementById(idAlternatif);
+            if (elemenAlternatif) elemenAlternatif.value = value;
         };
 
         setNilaiDOM('modalNama', 'namaPasien', namaPasien);
@@ -5164,18 +5175,20 @@
         setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
         setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
 
-        // 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis kasir/dokter
+        // 🔥 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis kasir/dokter
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
-            kontainerTindakan.innerHTML = ""; // Bersihkan sisa renderan lama
+            kontainerTindakan.innerHTML = ""; // Bersihkan baris sisa sebelumnya
             
             try {
                 let arrTindakan = JSON.parse(perawatan);
                 if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                     arrTindakan.forEach(t => {
+                        // Panggil pembangun baris bawaan kita dengan parameter dataAwal
                         if (typeof tambahBarisTindakan === "function") {
                             tambahBarisTindakan({
                                 namaTindakan: t.namaTindakan,
+                                // Adaptif: Mencari properti harga lama atau baru agar anti-NaN
                                 hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
                                 catatanKlinis: t.catatanKlinis || ""
                             });
@@ -5183,7 +5196,7 @@
                     });
                 }
             } catch(e) {
-                // Fallback teks lama
+                // Fallback: Jika data lama berupa text biasa, buat baris kustom agar teks tidak hilang
                 if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
                     tambahBarisTindakan({
                         namaTindakan: "KUSTOM",
@@ -5194,7 +5207,7 @@
             }
         }
 
-        // 4. Perbarui status tombol konfirmasi eksekusi
+        // 🎯 4. Perbarui status tombol konfirmasi eksekusi form
         const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
         if (btnSubmit) {
             btnSubmit.disabled = false;
