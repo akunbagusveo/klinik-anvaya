@@ -6155,7 +6155,8 @@
 
     window.totalTindakanAktifKasir = 0;
 
-    // 🔥 FUNGSI: Membuka Jendela Kasir & Membongkar Rincian Objek JSON
+    
+    // 🔥 FUNGSI: Membuka Jendela Kasir & Membongkar Rincian Objek JSON (ANTI-NaN)
     function bukaModalProsesBilling(noRM, barisPendaftaran) {
         if (!window.currentKasirQueueData) return;
         
@@ -6184,14 +6185,16 @@
             let arrTindakan = JSON.parse(pasien.tindakanRaw);
             if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                 arrTindakan.forEach(t => {
-                    window.totalTindakanAktifKasir += Number(t.hargaDiinput);
+                    // 🔥 FIX UTAMA: Mengambil properti baru atau lama secara dinamis & aman
+                    const hargaMurniItem = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
+                    window.totalTindakanAktifKasir += hargaMurniItem;
                     
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
                     tr.innerHTML = `
                         <td style="padding: 8px; font-weight: 600; color: #34495e;">• ${t.namaTindakan}</td>
                         <td style="padding: 8px; color: #7f8c8d; font-style: italic;">${t.catatanKlinis || '-'}</td>
-                        <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${Number(t.hargaDiinput).toLocaleString('id-ID')}</td>
+                        <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${hargaMurniItem.toLocaleString('id-ID')}</td>
                     `;
                     tbody.appendChild(tr);
                 });
