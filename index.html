@@ -2643,107 +2643,173 @@
 
     // --- INTEGRASI FORM RME (VERSI 2 TERKONSOLIDASI) ---
     function bukaInputRME(noRM, namaPasien, tanggalDaftar) { 
-        document.getElementById('formMedis').reset();
-        delete document.getElementById('formMedis').dataset.rowUpdate;
+        // 🎯 1. Deteksi form aktif secara fleksibel (Mendukung ID lama dan baru)
+        const formAktifRme = document.getElementById('formModalMedisSplit') || 
+                            document.getElementById('formModalMedis') || 
+                            document.getElementById('formMedis');
 
-        document.getElementById('sectionRME').style.display = 'flex';
-        document.getElementById('namaPasien').value = namaPasien; 
-        document.getElementById('formMedis').dataset.activeNoRM = noRM;
+        if (formAktifRme) {
+            formAktifRme.reset();
+            delete formAktifRme.dataset.rowUpdate;
+            formAktifRme.dataset.activeNoRM = noRM;
+            formAktifRme.dataset.tanggalDaftar = tanggalDaftar;
+        }
 
-        // 🔥 Reset dan sembunyikan kotak alergi setiap kali form baru dibuka
-        document.getElementById('alertMedisFormRME').style.display = 'none';
-        document.getElementById('alertAlergiFormRME').innerText = '-';
-        document.getElementById('alertObatFormRME').innerText = '-';
+        // Pastikan area luar kontainer tampil terbuka di layar
+        const areaKontainerRME = document.getElementById('modalRiwayatFull') || 
+                                document.getElementById('sectionRME');
+        if (areaKontainerRME) {
+            areaKontainerRME.style.display = 'flex';
+        }
 
-        document.getElementById('formMedis').dataset.tanggalDaftar = tanggalDaftar;
+        // 🎯 2. Suntikkan Identitas Pasien Menggunakan Peta ID Paralel
+        const setNilaiDOM = (idUtama, idAlternatif, value) => {
+            const el1 = document.getElementById(idUtama);
+            if (el1) { el1.value = value; return; }
+            const el2 = document.getElementById(idAlternatif);
+            if (el2) el2.value = value;
+        };
+
+        setNilaiDOM('modalNama', 'namaPasien', namaPasien);
+
+        // Reset kotak peringatan Alergi medis
+        const alertBox = document.getElementById('alertMedisFormRME');
+        if (alertBox) alertBox.style.display = 'none';
+        if (document.getElementById('alertAlergiFormRME')) document.getElementById('alertAlergiFormRME').innerText = '-';
+        if (document.getElementById('alertObatFormRME')) document.getElementById('alertObatFormRME').innerText = '-';
         
-        const btnSubmit = document.getElementById('btnSubmitRME');
-        btnSubmit.innerText = "⏳ Memuat Data...";
-        btnSubmit.disabled = true;
+        // Siapkan tombol konfirmasi internal form
+        const btnSubmit = formAktifRme ? formAktifRme.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
+        if (btnSubmit) {
+            btnSubmit.innerText = "⏳ Memuat Data...";
+            btnSubmit.disabled = true;
+        }
 
-        document.getElementById('tabelRiwayatBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
+        const tbodyRiwayat = document.getElementById('tabelRiwayatBody');
+        if (tbodyRiwayat) tbodyRiwayat.innerHTML = '<tr><td colspan="6" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
         
-        const hariIni = new Date();
-        const formatTanggal = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
-
-        // 🔥 REQUEST 1: Ambil data riwayat sebelumnya (KODE ASLI ANDA)
+        // 🎯 3. REQUEST 1: Ambil data riwayat pemeriksaan sebelumnya dari database
         fetch(WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'getRekamMedisPasien', noRM: noRM, tanggal: tanggalDaftar })
         })
         .then(res => res.json())
         .then(data => {
-            btnSubmit.disabled = false;
+            if (btnSubmit) btnSubmit.disabled = false;
             if (data.result === 'success') {
+                
+                // JIKA SUDAH ADA INPUTAN HARI INI (MODE EDIT OTOMATIS SAAT BUKA)
                 if (data.hariIni) {
-                    document.getElementById('txtAnamnesa').value = data.hariIni.anamnesa || "";
-                    document.getElementById('txtObjektif').value = data.hariIni.objektif || "";
-                    document.getElementById('txtDiagnosa').value = data.hariIni.diagnosa || "";
-                    document.getElementById('txtPerawatan').value = data.hariIni.perawatan || "";
-                    document.getElementById('txtProPerawatan').value = data.hariIni.proPerawatan || "";
-                    document.getElementById('txtProKontrol').value = data.hariIni.proKontrol || "";
-                    document.getElementById('txtResep').value = data.hariIni.resep || "";
-                    document.getElementById('txtLinkFoto').value = data.hariIni.linkFoto || "";
+                    setNilaiDOM('modalAnamnesa', 'txtAnamnesa', data.hariIni.anamnesa || "");
+                    setNilaiDOM('modalObjektif', 'txtObjektif', data.hariIni.objektif || "");
+                    setNilaiDOM('modalDiagnosa', 'txtDiagnosa', data.hariIni.diagnosa || "");
+                    setNilaiDOM('modalProPerawatan', 'txtProPerawatan', data.hariIni.proPerawatan || "");
+                    setNilaiDOM('modalProKontrol', 'txtProKontrol', data.hariIni.proKontrol || "");
+                    setNilaiDOM('modalResep', 'txtResep', data.hariIni.resep || "");
+                    setNilaiDOM('modalLinkFoto', 'txtLinkFoto', data.hariIni.linkFoto || "");
                     
-                    document.getElementById('formMedis').dataset.rowUpdate = data.rowHariIni;
-                    btnSubmit.innerText = "🔄 Update Catatan Rekam Medis";
-                    btnSubmit.style.background = "#e67e22"; 
+                    if (formAktifRme) formAktifRme.dataset.rowUpdate = data.rowHariIni;
+                    
+                    // Bongkar array tindakan medis ke kontainer dinamis
+                    const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+                    if (kontainerTindakan) {
+                        kontainerTindakan.innerHTML = "";
+                        try {
+                            let arrTindakan = JSON.parse(data.hariIni.perawatan);
+                            if (Array.isArray(arrTindakan)) {
+                                arrTindakan.forEach(t => {
+                                    if (typeof tambahBarisTindakan === "function") {
+                                        tambahBarisTindakan({
+                                            namaTindakan: t.namaTindakan,
+                                            hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                                            catatanKlinis: t.catatanKlinis || ""
+                                        });
+                                    }
+                                });
+                            }
+                        } catch(e) {
+                            // Fallback jika data lama berupa teks string biasa
+                            if (data.hariIni.perawatan && typeof tambahBarisTindakan === "function") {
+                                tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: data.hariIni.perawatan });
+                            }
+                        }
+                    }
+
+                    if (btnSubmit) {
+                        btnSubmit.innerText = "🔄 Update Catatan Rekam Medis";
+                        btnSubmit.style.background = "#e67e22"; 
+                    }
                 } else {
-                    btnSubmit.innerText = "💾 Simpan Catatan Medis Baru";
-                    btnSubmit.style.background = "#9b59b6";
+                    // JIKA BELUM ADA INPUTAN PERIKSA HARI INI
+                    if (btnSubmit) {
+                        btnSubmit.innerText = "💾 Simpan Catatan Medis Baru";
+                        btnSubmit.style.background = "#9b59b6";
+                    }
+                    const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+                    if (kontainerTindakan) kontainerTindakan.innerHTML = "";
                 }
 
-                const tbody = document.getElementById('tabelRiwayatBody');
-                tbody.innerHTML = "";
-                if (data.riwayat.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#7f8c8d;">Belum ada riwayat medis terdahulu.</td></tr>';
-                } else {
-                    data.riwayat.reverse().forEach(r => {
-                        tbody.innerHTML += `<tr>
-                            <td><span class="badge badge-sudah">${r.tanggal}</span></td>
-                            <td>${r.anamnesa}</td>
-                            <td>${r.objektif || '-'}</td>
-                            <td><strong>${r.diagnosa}</strong></td>
-                            <td>${r.perawatan}</td>
-                            <td>${r.idDokter}</td>
-                        </tr>`;
-                    });
+                // Gambar histori riwayat mini tabel bawah modal jika ada
+                if (tbodyRiwayat) {
+                    tbodyRiwayat.innerHTML = "";
+                    if (!data.riwayat || data.riwayat.length === 0) {
+                        tbodyRiwayat.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#7f8c8d;">Belum ada riwayat medis terdahulu.</td></tr>';
+                    } else {
+                        data.riwayat.reverse().forEach(r => {
+                            let perawatanClean = r.perawatan;
+                            try {
+                                let parsed = JSON.parse(r.perawatan);
+                                if(Array.isArray(parsed)) {
+                                    perawatanClean = parsed.map(p => `• ${p.namaTindakan}`).join(', ');
+                                }
+                            } catch(e){}
+
+                            tbodyRiwayat.innerHTML += `<tr>
+                                <td><span class="badge badge-sudah">${r.tanggal}</span></td>
+                                <td>${r.anamnesa}</td>
+                                <td>${r.objektif || '-'}</td>
+                                <td><strong>${r.diagnosa}</strong></td>
+                                <td>${perawatanClean}</td>
+                                <td>${r.idDokter || '-'}</td>
+                            </tr>`;
+                        });
+                    }
                 }
             }
         })
         .catch(err => {
-            btnSubmit.disabled = false;
-            btnSubmit.innerText = "Gagal memuat data";
+            console.error("Gagal muat rekam medis:", err);
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "Gagal memuat data";
+            }
         });
 
-        // 🔥 REQUEST 2: Ambil data Alergi dan Obat Rutin (TAMBAHAN BARU)
+        // 🎯 4. REQUEST 2: Ambil data Alergi dan Obat Rutin Pasien
         fetch(WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'getDetailPasien', noRM: noRM })
         })
         .then(res => res.json())
         .then(res => {
-            if (res.result === "success") {
+            if (res.result === "success" && res.data) {
                 let alergi = res.data.alergi || "-";
                 let obat = res.data.obatRutin || "-";
                 let strAlergi = alergi.toString().trim().toLowerCase();
                 let strObat = obat.toString().trim().toLowerCase();
 
-                // Cek apakah data alergi/obat kosong
                 let isAlergiKosong = (strAlergi === "" || strAlergi === "-" || strAlergi === "tidak ada" || strAlergi === "none");
                 let isObatKosong = (strObat === "" || strObat === "-" || strObat === "tidak ada" || strObat === "none");
 
-                // Munculkan kotak kuning hanya jika ada peringatan
                 if (!isAlergiKosong || !isObatKosong) {
-                    document.getElementById('alertAlergiFormRME').innerText = alergi;
-                    document.getElementById('alertObatFormRME').innerText = obat;
-                    document.getElementById('alertMedisFormRME').style.display = 'block';
+                    if (document.getElementById('alertAlergiFormRME')) document.getElementById('alertAlergiFormRME').innerText = alergi;
+                    if (document.getElementById('alertObatFormRME')) document.getElementById('alertObatFormRME').innerText = obat;
+                    if (alertBox) alertBox.style.display = 'block';
                 }
             }
         }).catch(err => console.log("Gagal memuat data alergi:", err));
 
-        switchTabRME('form'); 
-        // document.getElementById('sectionRME').scrollIntoView({ behavior: 'smooth' });
+        if (typeof switchTabRME === "function") switchTabRME('form'); 
     }
 
     // 🔥 BARU: Fungsi untuk menutup jendela pop-up RME
@@ -3794,7 +3860,7 @@
     });
 
     // --- SIMPAN REKAM MEDIS DARI SECTION RME UTAMA DOKTER ---
-    // document.getElementById('formMedis').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
+    // document.getElementById('formMedisx').addEventListener('submit', async function(e) { // 🔥 Tambah async di sini
     //     e.preventDefault();
     //     const submitBtn = e.target.querySelector('button[type="submit"]');
     //     submitBtn.disabled = true; submitBtn.innerText = "Menyimpan RME...";
@@ -3810,11 +3876,11 @@
     //     const data = {
     //         action: "submitRekamMedis", 
     //         targetSheet: "RekamMedis",
-    //         noRM: document.getElementById('formMedis').dataset.activeNoRM,
-    //         rowUpdate: document.getElementById('formMedis').dataset.rowUpdate, 
+    //         noRM: document.getElementById('formMedisx').dataset.activeNoRM,
+    //         rowUpdate: document.getElementById('formMedisx').dataset.rowUpdate, 
     //         namaPasien: document.getElementById('namaPasien').value,
     //         tanggalKunjungan: window.tanggalKunjunganAktif,
-    //         tanggalDaftar: document.getElementById('formMedis').dataset.tanggalDaftar,
+    //         tanggalDaftar: document.getElementById('formMedisx').dataset.tanggalDaftar,
     //         anamnesa: document.getElementById('txtAnamnesa').value, 
     //         objektif: document.getElementById('txtObjektif').value,     
     //         diagnosa: document.getElementById('txtDiagnosa').value,      
@@ -3840,7 +3906,7 @@
     //         submitBtn.disabled = false; submitBtn.innerText = "Simpan Catatan Rekam Medis";
     //         if(res.result === "success") {
     //             alert("Data Rekam Medis berhasil disimpan!");
-    //             document.getElementById('formMedis').reset();
+    //             document.getElementById('formMedisx').reset();
     //             document.getElementById('sectionRME').style.display = 'none';
     //             tutupInputRME();
     //             muatAntreanHariIni(); 
@@ -3858,7 +3924,7 @@
     // Mendeteksi ID form aktif Anda (mendukung variasi formModalMedisSplit, formModalMedis, atau formMedis)
     // const formAktifRme = document.getElementById('formModalMedisSplit') || 
     //                      document.getElementById('formModalMedis') || 
-    //                      document.getElementById('formMedis');
+    //                      document.getElementById('formMedisx');
 
     // if (formAktifRme) {
     //     formAktifRme.addEventListener('submit', async function(e) {
@@ -5072,46 +5138,70 @@
 
 
     function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
-        // 1. Tutup modal riwayat full agar tidak menumpuk di layar
-        document.getElementById('modalRiwayatFull').style.display = 'none';
-        
-        // 2. 🔥 KUNCI UTAMA: Paksa sistem pindah ke Tab Antrean/Dokter terlebih dahulu
-        // Ini agar kontainer induk menjadi 'display: block' dan membebaskan visibilitas pop-up RME
-        if (typeof switchTab === "function") {
-            switchTab('antrean'); // Atau ganti 'dokter' jika sectionRME Anda berada di dalam tab dokter
-        }
-        
-        // 3. Buka jendela pop-up RME sekarang (Sudah pasti terlihat karena induknya sudah aktif)
-        const wadahRME = document.getElementById('sectionRME');
-        if (wadahRME) {
-            wadahRME.style.display = 'flex';
-        }
-        
-        // 4. Pasang jangkar identitas pasien ke form
-        document.getElementById('namaPasien').value = namaPasien; 
-        const formMedis = document.getElementById('formMedis');
-        if (formMedis) {
-            formMedis.dataset.activeNoRM = noRM;
-            formMedis.dataset.tanggalDaftar = tanggalDaftar;
-            formMedis.dataset.rowUpdate = barisSheet; // Nomor baris database untuk target overwrite/addendum
+        // 1. Amankan visibilitas kontainer utama (Buka paksa area form kiri)
+        const formKiriSplit = document.getElementById('formModalMedisSplit') || 
+                            document.getElementById('formModalMedis') || 
+                            document.getElementById('formMedis');
+
+        if (formKiriSplit) {
+            formKiriSplit.style.display = 'block'; // 🔥 Solusi Mutlak pembuka ruang putih kosong!
+            formKiriSplit.dataset.activeNoRM = noRM;
+            formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
+            formKiriSplit.dataset.rowUpdate = barisSheet; // Kunci indeks baris database target
         }
 
-        // 5. Suntikkan data lama ke dalam kolom-kolom input teks untuk siap diedit
-        document.getElementById('txtAnamnesa').value = anamnesa === "-" ? "" : anamnesa;
-        document.getElementById('txtObjektif').value = objektif === "-" ? "" : objektif;
-        document.getElementById('txtDiagnosa').value = diagnosa === "-" ? "" : diagnosa;
-        document.getElementById('txtPerawatan').value = perawatan === "-" ? "" : perawatan;
-        document.getElementById('txtResep').value = resep === "-" ? "" : resep;
+        // 2. Suntikkan Identitas Kepala Form RME
+        const setNilaiDOM = (idUtama, idAlternatif, value) => {
+            const el1 = document.getElementById(idUtama);
+            if (el1) { el1.value = value; return; }
+            const el2 = document.getElementById(idAlternatif);
+            if (el2) el2.value = value;
+        };
 
-        // 6. Ubah teks tombol submit agar informatif bagi dokter/admin
-        const btnSubmit = document.getElementById('btnSubmitRME');
+        setNilaiDOM('modalNama', 'namaPasien', namaPasien);
+        setNilaiDOM('modalAnamnesa', 'txtAnamnesa', anamnesa === "-" ? "" : anamnesa);
+        setNilaiDOM('modalObjektif', 'txtObjektif', objektif === "-" ? "" : objektif);
+        setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
+        setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
+
+        // 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis kasir/dokter
+        const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+        if (kontainerTindakan) {
+            kontainerTindakan.innerHTML = ""; // Bersihkan sisa renderan lama
+            
+            try {
+                let arrTindakan = JSON.parse(perawatan);
+                if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                    arrTindakan.forEach(t => {
+                        if (typeof tambahBarisTindakan === "function") {
+                            tambahBarisTindakan({
+                                namaTindakan: t.namaTindakan,
+                                hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                                catatanKlinis: t.catatanKlinis || ""
+                            });
+                        }
+                    });
+                }
+            } catch(e) {
+                // Fallback teks lama
+                if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
+                    tambahBarisTindakan({
+                        namaTindakan: "KUSTOM",
+                        hargaDiinput: 0,
+                        catatanKlinis: perawatan
+                    });
+                }
+            }
+        }
+
+        // 4. Perbarui status tombol konfirmasi eksekusi
+        const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
         if (btnSubmit) {
             btnSubmit.disabled = false;
             btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis (Ditinjau System Log)";
             btnSubmit.style.background = "#e67e22";
         }
 
-        // 7. Pastikan sub-tab internal RME langsung membuka bagian 'form' input, bukan history mini
         if (typeof switchTabRME === "function") {
             switchTabRME('form');
         }
