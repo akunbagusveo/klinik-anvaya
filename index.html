@@ -1857,16 +1857,10 @@
         if (sessionAktif) {
             try {
                 const dataUser = JSON.parse(sessionAktif);
-                
-                // 🔥 2. PAKSA UBAH VISUAL SEBELUM JALANKAN LOGIKA LAINNYA
-                // ⚠️ PENTING: Ganti 'loginPage' dan 'mainPage' sesuai dengan ID elemen pembungkus halaman Anda!
                 if (document.getElementById('loginPage')) document.getElementById('loginPage').style.display = 'none';
                 if (document.getElementById('mainPage')) document.getElementById('mainPage').style.display = 'block';
                 
-                // 3. Jalankan aplikasi utama
                 bukaAplikasi(dataUser.role, dataUser.username);
-                
-                // 4. Aplikasikan Hak Akses Menu
                 if (dataUser.permissions) {
                     aplikasikanHakAkses(dataUser.permissions);
                 }
@@ -1876,29 +1870,47 @@
             }
         }
 
-        // 🔥 5. JALANKAN FUNGSI ASYNC DI BAWAH AGAR TIDAK MENGGANGGU PROSES LOGIN INITIALIZATION
+        // 🔥 2. JALANKAN FUNGSI INITIALIZATION
         muatPilihanRole();
         muatDaftarDokter();
         muatMasterTindakan();
         jalankanRadarPing();
 
-        // --- Sisa kode untuk inputTgl dan updateDaftarDokter ke bawah (Biarkan Tetap Sama) ---
+        // --- Manajemen Batas Minimum Tanggal Kunjungan ---
         const inputTgl = document.getElementById('tglKunjungan');
         if (inputTgl) {
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
-            
-            const tanggalHariIni = `${yyyy}-${mm}-${dd}`;
-            inputTgl.min = tanggalHariIni; 
+            inputTgl.min = `${yyyy}-${mm}-${dd}`; 
         }
 
+        // 🔥 3. PENGUNCIAN AWAL DROPDOWN BERANTAI (UX REINFORCEMENT)
+        const selectWaktu = document.getElementById('waktuKunjungan');
+        const selectDokter = document.getElementById('pilihDokter');
+
+        if (selectWaktu && selectDokter) {
+            // Kunci dropdown waktu & dokter saat halaman pertama kali dimuat
+            selectWaktu.disabled = true;
+            selectDokter.disabled = true;
+            selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
+            selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulan --</option>';
+        }
+
+        // 🔥 4. FUNGSI UTAMA: AMBIL DATA DOKTER (SUDAH DI-FIX AGAR ADAPTIF & ANTI-PREMATUR)
         function updateDaftarDokter() {
             const tglInput = document.getElementById('tglKunjungan').value;
             const slotInput = document.getElementById('waktuKunjungan').value;
             
-            if (!tglInput) return;
+            // JARING PENGAMAN: Jika salah satu parameter belum lengkap, jangan tembak server!
+            if (!tglInput || !slotInput) {
+                if (selectDokter) {
+                    selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    selectDokter.disabled = true;
+                }
+                return;
+            }
 
             const bagianTanggal = tglInput.split('-'); 
             const tanggalPilihan = new Date(bagianTanggal[0], bagianTanggal[1] - 1, bagianTanggal[2]);
@@ -1908,12 +1920,14 @@
             if (namaHari === 'Minggu') {
                 alert('Maaf, Klinik Anvaya tutup pada hari Minggu. Silakan pilih hari praktik lainnya.');
                 document.getElementById('tglKunjungan').value = '';
-                document.getElementById('pilihDokter').innerHTML = '<option value="">-- Pilih Tanggal Kunjungan Terlebih Dahulu --</option>';
-                document.getElementById('pilihDokter').disabled = true;
+                selectWaktu.value = '';
+                selectWaktu.disabled = true;
+                selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
+                selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                selectDokter.disabled = true;
                 return;
             }
             
-            const selectDokter = document.getElementById('pilihDokter');
             selectDokter.innerHTML = '<option value="">⏳ Memuat dokter yang bertugas...</option>';
             selectDokter.disabled = true;
 
@@ -1947,12 +1961,52 @@
             });
         }
 
-        if (document.getElementById('tglKunjungan')) document.getElementById('tglKunjungan').addEventListener('change', updateDaftarDokter);
-        if (document.getElementById('waktuKunjungan')) document.getElementById('waktuKunjungan').addEventListener('change', updateDaftarDokter);
+        // 🔥 5. LINTAS EVENT LISTENER UNTUK KONTROL RANTAI DROPDOWN
+        if (inputTgl) {
+            inputTgl.addEventListener('change', function() {
+                if (this.value) {
+                    // Tanggal diisi: Buka dropdown waktu
+                    selectWaktu.disabled = false;
+                    selectWaktu.innerHTML = `
+                        <option value="">-- Pilih Jam Kunjungan --</option>
+                        <option value="11:00">11:00</option><option value="11:30">11:30</option>
+                        <option value="12:00">12:00</option><option value="12:30">12:30</option>
+                        <option value="13:00">13:00</option><option value="13:30">13:30</option>
+                        <option value="14:00">14:00</option><option value="14:30">14:30</option>
+                        <option value="15:00">15:00</option><option value="15:30">15:30</option>
+                        <option value="16:00">16:00</option><option value="16:30">16:30</option>
+                        <option value="17:00">17:00</option><option value="17:30">17:30</option>
+                        <option value="18:00">18:00</option><option value="18:30">18:30</option>
+                        <option value="19:00">19:00</option>
+                    `;
+                } else {
+                    // Tanggal kosong: Reset & kunci semua anak
+                    selectWaktu.value = '';
+                    selectWaktu.disabled = true;
+                    selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
+                    selectDokter.value = '';
+                    selectDokter.disabled = true;
+                    selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                }
+                updateDaftarDokter();
+            });
+        }
 
-        // =========================================================================
-        // 🎯 TEMPELKAN KODE SENSOR DRAF OTOMATIS DI SINI:
-        // =========================================================================
+        if (selectWaktu) {
+            selectWaktu.addEventListener('change', function() {
+                if (this.value) {
+                    // Waktu diisi: Aktifkan proses pencarian dokter
+                    updateDaftarDokter();
+                } else {
+                    // Waktu kosong: Kunci kembali dropdown dokter
+                    selectDokter.value = '';
+                    selectDokter.disabled = true;
+                    selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                }
+            });
+        }
+
+        // --- Sensor Draf Otomatis ---
         const listIdInputRme = [
             'modalAnamnesa', 'modalObjektif', 'modalDiagnosa', 
             'modalResep', 'resep', 
@@ -1962,9 +2016,7 @@
         
         listIdInputRme.forEach(id => {
             const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('input', simpanDraftRME);
-            }
+            if (el) el.addEventListener('input', simpanDraftRME);
         });
     });
 
