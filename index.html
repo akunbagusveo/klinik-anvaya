@@ -2643,6 +2643,7 @@
 
     // --- INTEGRASI FORM RME (VERSI 2 TERKONSOLIDASI) ---
     function bukaInputRME(noRM, namaPasien, tanggalDaftar) { 
+        document.getElementById('kolomInputRME').style.display = 'block';
     // 🎯 1. BUKA KUNCI VISUAL FORM (SOLUSI MUTLAK AREA PUTIH POLOS)
     const formAktifRme = document.getElementById('formModalMedisSplit') || 
                          document.getElementById('formModalMedis') || 
@@ -5111,77 +5112,84 @@
         window.tutupModalDetailPasien = tutupModalDetailPasien;
 
 
-    function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
-        // 🎯 1. BUKA KUNCI VISUAL FORM (BAHKAN SAAT KLIK EDIT)
-        const formKiriSplit = document.getElementById('formModalMedisSplit') || 
-                            document.getElementById('formModalMedis') || 
-                            document.getElementById('formMedis');
+        function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
+    
+            // 🎯 1. BONGKAR PAKSA STATUS SEMBUNYI KOLOM KIRI (SOLUSI AREA PUTIH POLOS)
+            const kolomKiri = document.getElementById('kolomInputRME'); // 🔥 Ini ID Asli Anda!
+            if (kolomKiri) {
+                kolomKiri.style.display = 'block'; // Memunculkan kembali pembungkus form
+            }
 
-        if (formKiriSplit) {
-            formKiriSplit.style.display = 'block'; // 🔥 Paksa form muncul
-            formKiriSplit.style.visibility = 'visible';
-            formKiriSplit.classList.remove('d-none', 'hidden'); 
+            const formKiriSplit = document.getElementById('formModalMedisSplit');
+            if (formKiriSplit) {
+                formKiriSplit.style.display = 'block'; // Memastikan form di dalamnya juga muncul
+                formKiriSplit.dataset.activeNoRM = noRM;
+                formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
+                formKiriSplit.dataset.rowUpdate = barisSheet; 
+            }
 
-            formKiriSplit.dataset.activeNoRM = noRM;
-            formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
-            formKiriSplit.dataset.rowUpdate = barisSheet; 
-        }
+            // Pastikan modal riwayat utama juga ikut terbuka
+            const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
+            if (areaKontainerRME) {
+                areaKontainerRME.style.display = 'flex';
+            }
 
-        const areaKiri = document.getElementById('areaInputTindakan') || document.getElementById('kontainerKiriRme');
-        if (areaKiri) {
-            areaKiri.style.display = 'block';
-            areaKiri.classList.remove('d-none', 'hidden');
-        }
+            // 🎯 2. Suntikkan Identitas & Data Teks Lama ke Form
+            const setNilaiDOM = (idUtama, idAlternatif, value) => {
+                const el1 = document.getElementById(idUtama);
+                if (el1) { el1.value = value; return; }
+                const el2 = document.getElementById(idAlternatif);
+                if (el2) el2.value = value;
+            };
 
-        const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
-        if (areaKontainerRME) areaKontainerRME.style.display = 'flex';
+            setNilaiDOM('modalNama', 'namaPasien', namaPasien);
+            setNilaiDOM('modalAnamnesa', 'txtAnamnesa', anamnesa === "-" ? "" : anamnesa);
+            setNilaiDOM('modalObjektif', 'txtObjektif', objektif === "-" ? "" : objektif);
+            setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
+            setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
 
-        // 🎯 2. Isi data form
-        const setNilaiDOM = (idUtama, idAlternatif, value) => {
-            const el1 = document.getElementById(idUtama);
-            if (el1) { el1.value = value; return; }
-            const el2 = document.getElementById(idAlternatif);
-            if (el2) el2.value = value;
-        };
-
-        setNilaiDOM('modalNama', 'namaPasien', namaPasien);
-        setNilaiDOM('modalAnamnesa', 'txtAnamnesa', anamnesa === "-" ? "" : anamnesa);
-        setNilaiDOM('modalObjektif', 'txtObjektif', objektif === "-" ? "" : objektif);
-        setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
-        setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
-
-        const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
-        if (kontainerTindakan) {
-            kontainerTindakan.innerHTML = ""; 
-            try {
-                let arrTindakan = JSON.parse(perawatan);
-                if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                    arrTindakan.forEach(t => {
-                        if (typeof tambahBarisTindakan === "function") {
-                            tambahBarisTindakan({
-                                namaTindakan: t.namaTindakan,
-                                hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
-                                catatanKlinis: t.catatanKlinis || ""
-                            });
-                        }
-                    });
-                }
-            } catch(e) {
-                if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
-                    tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: perawatan });
+            // 🎯 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis
+            const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+            if (kontainerTindakan) {
+                kontainerTindakan.innerHTML = ""; 
+                try {
+                    let arrTindakan = JSON.parse(perawatan);
+                    if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                        arrTindakan.forEach(t => {
+                            if (typeof tambahBarisTindakan === "function") {
+                                tambahBarisTindakan({
+                                    namaTindakan: t.namaTindakan,
+                                    hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                                    catatanKlinis: t.catatanKlinis || ""
+                                });
+                            }
+                        });
+                    }
+                } catch(e) {
+                    if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
+                        tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: perawatan });
+                    }
                 }
             }
-        }
 
-        const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
-        if (btnSubmit) {
-            btnSubmit.disabled = false;
-            btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis (Ditinjau System Log)";
-            btnSubmit.style.background = "#e67e22";
-        }
+            // 🎯 4. Perbarui Teks Tombol Simpan
+            const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis";
+                btnSubmit.style.background = "#e67e22";
+            }
+            
+            // Munculkan tombol batal edit jika ada
+            const btnBatal = document.getElementById('btnBatalEdit');
+            if (btnBatal) {
+                btnBatal.style.display = 'block';
+            }
 
-        if (typeof switchTabRME === "function") switchTabRME('form');
-    }
+            if (typeof switchTabRME === "function") {
+                switchTabRME('form');
+            }
+        }
 
     // 🔥 FUNGSI BARU: Khusus untuk memuat dokter di Form Pendaftaran Pasien Baru
     function muatDokterPendaftaran() {
