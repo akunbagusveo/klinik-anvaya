@@ -2631,14 +2631,25 @@
 
 
     function switchTabRME(tab) {
-        document.getElementById('tabRmeForm').style.display = tab === 'form' ? 'block' : 'none';
-        document.getElementById('tabRmeRiwayat').style.display = tab === 'riwayat' ? 'block' : 'none';
+        // 🔥 FITUR HIDE/SHOW DIMATIKAN
+        // Karena menggunakan Split Layout (Kiri dan Kanan tampil bersamaan), 
+        // kita tidak boleh lagi menyembunyikan form secara bergantian.
         
-        document.getElementById('tabRmeFormBtn').style.background = tab === 'form' ? '#9b59b6' : '#e0e0e0';
-        document.getElementById('tabRmeFormBtn').style.color = tab === 'form' ? 'white' : '#333';
+        // document.getElementById('tabRmeForm').style.display = tab === 'form' ? 'block' : 'none';
+        // document.getElementById('tabRmeRiwayat').style.display = tab === 'riwayat' ? 'block' : 'none';
         
-        document.getElementById('tabRmeRiwayatBtn').style.background = tab === 'riwayat' ? '#9b59b6' : '#e0e0e0';
-        document.getElementById('tabRmeRiwayatBtn').style.color = tab === 'riwayat' ? 'white' : '#333';
+        // Hanya pertahankan perubahan warna tombol (jika tombol tab UI masih Anda gunakan)
+        const btnForm = document.getElementById('tabRmeFormBtn');
+        const btnRiwayat = document.getElementById('tabRmeRiwayatBtn');
+        
+        if (btnForm) {
+            btnForm.style.background = tab === 'form' ? '#9b59b6' : '#e0e0e0';
+            btnForm.style.color = tab === 'form' ? 'white' : '#333';
+        }
+        if (btnRiwayat) {
+            btnRiwayat.style.background = tab === 'riwayat' ? '#9b59b6' : '#e0e0e0';
+            btnRiwayat.style.color = tab === 'riwayat' ? 'white' : '#333';
+        }
     }
 
     // --- INTEGRASI FORM RME (VERSI 2 TERKONSOLIDASI) ---
