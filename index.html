@@ -3144,7 +3144,11 @@
                         if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                             arrTindakan.forEach(t => {
                                 let labelCatatan = t.catatanKlinis ? ` <span style="color:#7f8c8d; font-style:italic;">(${t.catatanKlinis})</span>` : "";
-                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${Number(t.hargaDiinput).toLocaleString('id-ID')}${labelCatatan}<br>`;
+                                
+                                // 🔥 PERBAIKAN DINAMIS: Mengambil properti lama ATAU baru secara aman agar anti-NaN
+                                let hargaAman = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
+                                
+                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}<br>`;
                             });
                         } else {
                             tampilanTindakanHtml = formatKeBulletPoin(r.perawatan);
@@ -3252,7 +3256,8 @@
                             if (typeof tambahBarisTindakan === "function") {
                                 tambahBarisTindakan({
                                     namaTindakan: t.namaTindakan,
-                                    hargaDiinput: t.hargaDiinput,
+                                    // 🔥 PERBAIKAN DINAMIS: Mengirimkan harga murni dari manifes lama atau baru
+                                    hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
                                     catatanKlinis: t.catatanKlinis
                                 });
                             }
