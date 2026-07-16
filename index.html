@@ -3559,10 +3559,10 @@
                 dataFileModal = await bacaFileKeBase64(idInputFile);
             }
 
-            // Utilitas dinamis pengambil nilai elemen anti-null crash
+            // 🔥 FIX TYPO UTAMA DI SINI: Mengubah 'elemen1' menjadi 'el1' agar tidak error
             const dapatkanNilaiDOM = (idUtama, idAlternatif) => {
                 const el1 = document.getElementById(idUtama);
-                if (elemen1) return el1.value;
+                if (el1) return el1.value;
                 const el2 = document.getElementById(idAlternatif);
                 return el2 ? el2.value : "";
             };
@@ -3620,8 +3620,6 @@
                 if(res.result === "success") {
                     alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
                     
-                    // 🤫 PENTING: Jangan gunakan formAktifRme.reset() jika textareanya memiliki placeholder bermasalah.
-                    // Cukup hapus draft localstorage dan tutup jendela
                     const currentRM = data.noRM;
                     if(currentRM) {
                         localStorage.removeItem('draft_rme_' + String(currentRM).trim());
