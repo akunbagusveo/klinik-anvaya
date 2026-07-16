@@ -5992,7 +5992,8 @@
             grandTotal: grandTotal,
             metodePembayaran: elMetode ? elMetode.value : "Tunai / Cash",
             kasirOperator: namaKasirAktif,
-            tindakanRaw: JSON.stringify(arrayTindakanPecahan)
+            tindakanRaw: JSON.stringify(arrayTindakanPecahan),
+            barisPendaftaran: dataPasien.barisPendaftaran // 🔥 TAMBAHAN UTAMA DI SINI
         };
 
         // 5. Ubah visual tombol milik Anda menjadi status memuat (loading)
