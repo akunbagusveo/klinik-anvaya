@@ -1899,6 +1899,10 @@
         }
 
         // 🔥 4. FUNGSI UTAMA: AMBIL DATA DOKTER (SUDAH DI-FIX AGAR ADAPTIF & ANTI-PREMATUR)
+        // 🔥 TAMBAHKAN VARIABEL INI TEPAT DI ATAS FUNGSI UPDATE DOKTER
+        // Ini berfungsi sebagai loket tiket antrean untuk mendeteksi klik terakhir
+        let antreanRequestDokter = 0;
+
         function updateDaftarDokter() {
             const tglInput = document.getElementById('tglKunjungan').value;
             const slotInput = document.getElementById('waktuKunjungan').value;
@@ -1906,14 +1910,13 @@
             const selectDokter = document.getElementById('pilihDokter');
             const selectWaktu = document.getElementById('waktuKunjungan');
             
-            // 🔥 FIX MUTLAK (UPGRADE): JARING PENGAMAN LAPIS BAJA!
-            // Kita blokir jika nilainya kosong, ATAU jika mengandung teks bawaan HTML seperti "--" atau "Pilih"
+            // Jaring pengaman (Lapis Baja)
             if (!tglInput || !slotInput || slotInput.includes("--") || slotInput.toLowerCase().includes("pilih")) {
                 if (selectDokter) {
                     selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
                     selectDokter.disabled = true;
                 }
-                return; // 🛑 Proses PASTI berhenti di sini. Server aman dari tembakan palsu!
+                return; 
             }
 
             const bagianTanggal = tglInput.split('-'); 
@@ -1940,6 +1943,10 @@
             selectDokter.innerHTML = '<option value="">⏳ Memuat dokter yang bertugas...</option>';
             selectDokter.disabled = true;
 
+            // 🔥 KUNCI ANTI-BALAPAN: Buat ID tiket unik untuk setiap pencarian
+            antreanRequestDokter++;
+            const idRequestSaatIni = antreanRequestDokter;
+
             fetch(WEB_APP_URL, {
                 method: "POST",
                 body: JSON.stringify({ 
@@ -1951,6 +1958,12 @@
             })
             .then(res => res.json())
             .then(res => {
+                // 🔥 JARING PENGAMAN KE-2: Abaikan data server jika user sudah klik jam lain!
+                if (idRequestSaatIni !== antreanRequestDokter) {
+                    console.warn("Data lama dibuang untuk mencegah tumpang tindih UI.");
+                    return; // Jangan update UI dengan data usang!
+                }
+
                 if (res.result === "success") {
                     selectDokter.innerHTML = '<option value="">-- Pilih Dokter Bertugas --</option>';
                     if (res.data.length > 0) {
@@ -1966,6 +1979,9 @@
                 }
             })
             .catch(err => {
+                // Abaikan error jaringan dari request yang sudah kadaluarsa
+                if (idRequestSaatIni !== antreanRequestDokter) return;
+
                 console.error("Gagal memuat data dokter:", err);
                 selectDokter.innerHTML = '<option value="">⚠️ Gagal memuat jadwal dokter</option>';
             });
