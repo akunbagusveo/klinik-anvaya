@@ -3251,9 +3251,21 @@
                     let teksWaktuInput = `<span style="font-size: 11px; color: #7f8c8d;">⏱️ Input/Edit: ${r.tanggal}</span>`;
                     
                     // Beri badge Peringatan jika tanggal klinis beda dengan tanggal input
-                    let tanggalSistemCumaHari = r.tanggal.split(" ")[0]; // potong jam-nya
+                    // 🔥 PERBAIKAN LOGIKA TANGGAL: Samakan format sebelum dibandingkan
+                    let tanggalSistemCumaHari = r.tanggal.split(" ")[0]; // Ambil "17/07/2026"
+                    let formatSistemSama = tanggalSistemCumaHari;
+                    
+                    // Jika dari server bentuknya DD/MM/YYYY, kita putar jadi YYYY-MM-DD
+                    if (tanggalSistemCumaHari.includes("/")) {
+                        let parts = tanggalSistemCumaHari.split("/");
+                        if (parts.length === 3 && parts[2].length === 4) { // Pastikan indeks ke-2 adalah Tahun
+                            formatSistemSama = `${parts[2]}-${parts[1]}-${parts[0]}`; 
+                        }
+                    }
+
                     let infoEditan = "";
-                    if (tanggalKunjunganAsli !== tanggalSistemCumaHari) {
+                    // Sekarang kita membandingkan Apel vs Apel (Contoh: "2026-07-17" vs "2026-07-17")
+                    if (tanggalKunjunganAsli !== formatSistemSama) {
                          infoEditan = `<div style="background-color: #fcf3cf; color: #d35400; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-top: 4px; display: inline-block; font-weight: 600;">
                                           ⚠️ Koreksi / Input Susulan
                                        </div>`;
