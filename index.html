@@ -1903,13 +1903,17 @@
             const tglInput = document.getElementById('tglKunjungan').value;
             const slotInput = document.getElementById('waktuKunjungan').value;
             
-            // JARING PENGAMAN: Jika salah satu parameter belum lengkap, jangan tembak server!
+            // 🔥 FIX 1: Pindahkan deklarasi elemen ke paling atas agar jaring pengaman tidak error!
+            const selectDokter = document.getElementById('pilihDokter');
+            const selectWaktu = document.getElementById('waktuKunjungan');
+            
+            // JARING PENGAMAN: Jika salah satu belum diisi, blokir pemanggilan ke server!
             if (!tglInput || !slotInput) {
                 if (selectDokter) {
                     selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
                     selectDokter.disabled = true;
                 }
-                return;
+                return; // Berhenti di sini
             }
 
             const bagianTanggal = tglInput.split('-'); 
@@ -1917,14 +1921,19 @@
             const daftarHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             const namaHari = daftarHari[tanggalPilihan.getDay()];
             
+            // Pengecekan Hari Minggu Tutup
             if (namaHari === 'Minggu') {
                 alert('Maaf, Klinik Anvaya tutup pada hari Minggu. Silakan pilih hari praktik lainnya.');
                 document.getElementById('tglKunjungan').value = '';
-                selectWaktu.value = '';
-                selectWaktu.disabled = true;
-                selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
-                selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
-                selectDokter.disabled = true;
+                if (selectWaktu) {
+                    selectWaktu.value = '';
+                    selectWaktu.disabled = true;
+                    selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
+                }
+                if (selectDokter) {
+                    selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    selectDokter.disabled = true;
+                }
                 return;
             }
             
@@ -1966,43 +1975,57 @@
         if (inputTgl) {
             inputTgl.addEventListener('change', function() {
                 if (this.value) {
-                    // Tanggal diisi: Buka dropdown waktu
-                    selectWaktu.disabled = false;
-                    selectWaktu.innerHTML = `
-                        <option value="">-- Pilih Jam Kunjungan --</option>
-                        <option value="11:00">11:00</option><option value="11:30">11:30</option>
-                        <option value="12:00">12:00</option><option value="12:30">12:30</option>
-                        <option value="13:00">13:00</option><option value="13:30">13:30</option>
-                        <option value="14:00">14:00</option><option value="14:30">14:30</option>
-                        <option value="15:00">15:00</option><option value="15:30">15:30</option>
-                        <option value="16:00">16:00</option><option value="16:30">16:30</option>
-                        <option value="17:00">17:00</option><option value="17:30">17:30</option>
-                        <option value="18:00">18:00</option><option value="18:30">18:30</option>
-                        <option value="19:00">19:00</option>
-                    `;
+                    // Tanggal diisi: Buka opsi dropdown waktu
+                    if (selectWaktu) {
+                        selectWaktu.disabled = false;
+                        selectWaktu.innerHTML = `
+                            <option value="">-- Pilih Jam Kunjungan --</option>
+                            <option value="11:00">11:00</option><option value="11:30">11:30</option>
+                            <option value="12:00">12:00</option><option value="12:30">12:30</option>
+                            <option value="13:00">13:00</option><option value="13:30">13:30</option>
+                            <option value="14:00">14:00</option><option value="14:30">14:30</option>
+                            <option value="15:00">15:00</option><option value="15:30">15:30</option>
+                            <option value="16:00">16:00</option><option value="16:30">16:30</option>
+                            <option value="17:00">17:00</option><option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option><option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option>
+                        `;
+                    }
+                    
+                    // 🔥 KUNCI UTAMA: Cukup reset dokter, JANGAN panggil updateDaftarDokter() di sini!
+                    if (selectDokter) {
+                        selectDokter.value = '';
+                        selectDokter.disabled = true;
+                        selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    }
                 } else {
-                    // Tanggal kosong: Reset & kunci semua anak
-                    selectWaktu.value = '';
-                    selectWaktu.disabled = true;
-                    selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
-                    selectDokter.value = '';
-                    selectDokter.disabled = true;
-                    selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    // Tanggal kosong: Kunci kembali waktu & dokter
+                    if (selectWaktu) {
+                        selectWaktu.value = '';
+                        selectWaktu.disabled = true;
+                        selectWaktu.innerHTML = '<option value="">-- Pilih Tanggal Terlebih Dahulu --</option>';
+                    }
+                    if (selectDokter) {
+                        selectDokter.value = '';
+                        selectDokter.disabled = true;
+                        selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    }
                 }
-                updateDaftarDokter();
             });
         }
 
         if (selectWaktu) {
             selectWaktu.addEventListener('change', function() {
                 if (this.value) {
-                    // Waktu diisi: Aktifkan proses pencarian dokter
+                    // 🔥 Waktu diisi: BARU sistem boleh menembak server untuk mencari dokter!
                     updateDaftarDokter();
                 } else {
-                    // Waktu kosong: Kunci kembali dropdown dokter
-                    selectDokter.value = '';
-                    selectDokter.disabled = true;
-                    selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    // Waktu dikosongkan kembali: Kunci dropdown dokter
+                    if (selectDokter) {
+                        selectDokter.value = '';
+                        selectDokter.disabled = true;
+                        selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+                    }
                 }
             });
         }
