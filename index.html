@@ -2305,22 +2305,28 @@
         setDisplayAman('loginPage', 'none');
         setDisplayAman('mainPage', 'block');
 
-        // 1. SEMBUNYIKAN SEMUA TAB & KARTU DI AWAL
-        // Biarkan fungsi aplikasikanHakAkses yang nanti membukanya sesuai database
+        // 1. SEMBUNYIKAN SEMUA TAB & KARTU DI AWAL (Diselaraskan dengan ID asli)
         setDisplayAman('tabBerandaBtn', 'block');
         setDisplayAman('tabPendaftaranBtn', 'none');
-        setDisplayAman('tabDokterBtn', 'none');
+        
+        // 🔥 FIX 1: Ubah tabDokterBtn menjadi tabAntreanBtn
+        setDisplayAman('tabAntreanBtn', 'none'); 
+        
         setDisplayAman('tabRiwayatMedisBtn', 'none'); 
         setDisplayAman('tabDaftarPasienBtn', 'none'); 
         setDisplayAman('tabKamusDikteBtn', 'none'); 
         setDisplayAman('tabBackendBtn', 'none');    
+        
+        // 🔥 FIX 2: Masukkan penyamaran awal untuk tab baru
+        setDisplayAman('tabAnalisisBisnisBtn', 'none');
+        setDisplayAman('tabKasirBtn', 'none');
 
         setDisplayAman('menuPendaftaranCard', 'none');
         setDisplayAman('menuAntreanCard', 'none');
         setDisplayAman('menuRiwayatCard', 'none');
         setDisplayAman('menuDaftarPasienCard', 'none'); 
 
-        // 2. JALANKAN FUNGSI SPESIFIK ROLE (Tanpa mengatur tombol display)
+        // 2. JALANKAN FUNGSI SPESIFIK ROLE
         const roleCek = role ? role.toString().trim().toLowerCase() : "";
         if (roleCek === "perawat" || roleCek === "rol-04") {
             if (typeof ambilNoRMOtomatis === "function") { ambilNoRMOtomatis(); }
@@ -4262,48 +4268,64 @@
     function aplikasikanHakAkses(perms) {
         if (!perms) return;
         
-        // Fungsi pembantu untuk tombol navigasi atas
-        const setMenuDisplay = (id, permissionValue) => {
+        // 🔥 MESIN SUPER-PENCARI: Mengabaikan huruf besar, garis bawah (_), dan awalan Akses
+        // Jadi 'Akses_AnalisisBisnis', 'Analisis Bisnis', atau 'aksesanalisisbisnis' akan dianggap SAMA!
+        const cekIzin = (kataKunci) => {
+            const kunciDicari = kataKunci.toLowerCase();
+            for (let key in perms) {
+                const keyAsli = key.toLowerCase().replace(/[^a-z0-9]/g, ''); // Bersihkan semua simbol
+                if (keyAsli.includes(kunciDicari)) {
+                    return perms[key] === 1;
+                }
+            }
+            return false;
+        };
+
+        const setMenuDisplay = (id, kataKunci) => {
             const el = document.getElementById(id);
-            if (el) el.style.display = permissionValue === 1 ? 'inline-block' : 'none';
+            if (el) el.style.display = cekIzin(kataKunci) ? 'inline-block' : 'none';
         };
         
-        // Fungsi pembantu untuk kotak kartu di halaman Beranda Utama
-        const setCardDisplay = (id, permissionValue) => {
+        const setCardDisplay = (id, kataKunci) => {
             const el = document.getElementById(id);
-            if (el) el.style.display = permissionValue === 1 ? 'block' : 'none';
+            if (el) el.style.display = cekIzin(kataKunci) ? 'block' : 'none';
         };
 
-        // === 1. KONTROL AKSES TAB MENU UTAMA (100% Dinamis dari DB) ===
-        setMenuDisplay('tabPendaftaranBtn', perms.pendaftaran);
-        setMenuDisplay('tabRiwayatMedisBtn', perms.rekamMedis);
-        setMenuDisplay('tabDaftarPasienBtn', perms.databasePasien);
-        setMenuDisplay('tabDokterBtn', perms.antrian);
-        setMenuDisplay('tabKamusDikteBtn', perms.kamusDikte);
-        setMenuDisplay('tabBackendBtn', perms.pengaturan);
+        // === 1. KONTROL AKSES TAB MENU UTAMA (100% Anti-Gagal) ===
+        setMenuDisplay('tabPendaftaranBtn', 'pendaftaran');
+        setMenuDisplay('tabRiwayatMedisBtn', 'rekammedis');
+        setMenuDisplay('tabDaftarPasienBtn', 'databasepasien');
+        
+        // FIX 1: Sinkronisasi ID Antrean
+        setMenuDisplay('tabAntreanBtn', 'antrian');
+        
+        setMenuDisplay('tabKamusDikteBtn', 'kamusdikte');
+        setMenuDisplay('tabBackendBtn', 'pengaturan');
+        
+        // FIX 2: Tab Baru
+        setMenuDisplay('tabAnalisisBisnisBtn', 'analisisbisnis');
+        setMenuDisplay('tabKasirBtn', 'kasir');
 
-        // === 2. KONTROL AKSES KARTU BERANDA (Sinkron dengan Menu Utama) ===
-        setCardDisplay('menuPendaftaranCard', perms.pendaftaran);
-        setCardDisplay('menuAntreanCard', perms.antrian);
-        setCardDisplay('menuRiwayatCard', perms.rekamMedis);
-        setCardDisplay('menuDaftarPasienCard', perms.databasePasien);
+        // === 2. KONTROL AKSES KARTU BERANDA ===
+        setCardDisplay('menuPendaftaranCard', 'pendaftaran');
+        setCardDisplay('menuAntreanCard', 'antrian');
+        setCardDisplay('menuRiwayatCard', 'rekammedis');
+        setCardDisplay('menuDaftarPasienCard', 'databasepasien');
 
         // === 3. KONTROL AKSES GRANULAR SUB-TAB (Pengaturan Sistem) ===
-        const punyaAksesUser = perms.manajemenUser === 1;
+        const punyaAksesUser = cekIzin('manajemenuser');
         const elUserBtn = document.getElementById('subTabUserBtn');
         const elAksesBtn = document.getElementById('subTabAksesBtn');
         if (elUserBtn) elUserBtn.style.display = punyaAksesUser ? 'inline-block' : 'none';
         if (elAksesBtn) elAksesBtn.style.display = punyaAksesUser ? 'inline-block' : 'none';
 
-        const punyaAksesJadwal = perms.kelolaJadwal === 1;
+        const punyaAksesJadwal = cekIzin('kelolajadwal');
         const elJadwalBtn = document.getElementById('subTabJadwalBtn');
         if (elJadwalBtn) elJadwalBtn.style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
         // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
         setTimeout(() => {
-            // Jika user punya akses tab Pengaturan Sistem
-            if (perms.pengaturan === 1) {
-                // Prioritaskan buka tab User jika punya akses, kalau tidak, buka tab Jadwal
+            if (cekIzin('pengaturan')) {
                 if (punyaAksesUser) {
                     if (typeof bukaSubTab === "function") bukaSubTab('manajemenUser');
                 } else if (punyaAksesJadwal) {
