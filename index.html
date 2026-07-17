@@ -1901,7 +1901,7 @@
         // 🔥 4. FUNGSI UTAMA: AMBIL DATA DOKTER (SUDAH DI-FIX AGAR ADAPTIF & ANTI-PREMATUR)
         // 🔥 TAMBAHKAN VARIABEL INI TEPAT DI ATAS FUNGSI UPDATE DOKTER
         // Ini berfungsi sebagai loket tiket antrean untuk mendeteksi klik terakhir
-        let antreanRequestDokter = 0;
+        //let antreanRequestDokter = 0;
 
         function updateDaftarDokter() {
             const tglInput = document.getElementById('tglKunjungan').value;
@@ -1910,7 +1910,6 @@
             const selectDokter = document.getElementById('pilihDokter');
             const selectWaktu = document.getElementById('waktuKunjungan');
             
-            // Jaring pengaman (Lapis Baja)
             if (!tglInput || !slotInput || slotInput.includes("--") || slotInput.toLowerCase().includes("pilih")) {
                 if (selectDokter) {
                     selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
@@ -1924,7 +1923,6 @@
             const daftarHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             const namaHari = daftarHari[tanggalPilihan.getDay()];
             
-            // Pengecekan Hari Minggu Tutup
             if (namaHari === 'Minggu') {
                 alert('Maaf, Klinik Anvaya tutup pada hari Minggu. Silakan pilih hari praktik lainnya.');
                 document.getElementById('tglKunjungan').value = '';
@@ -1943,12 +1941,18 @@
             selectDokter.innerHTML = '<option value="">⏳ Memuat dokter yang bertugas...</option>';
             selectDokter.disabled = true;
 
-            // 🔥 KUNCI ANTI-BALAPAN: Buat ID tiket unik untuk setiap pencarian
-            antreanRequestDokter++;
-            const idRequestSaatIni = antreanRequestDokter;
+            // 🔥 FITUR PEMBATAL PINTAR (ABORT CONTROLLER GLOBAL)
+            // Membatalkan request fetch sebelumnya yang masih nyangkut/loading di latar belakang!
+            if (window.currentDokterFetch) {
+                window.currentDokterFetch.abort(); 
+            }
+            // Buat pengontrol baru, tempelkan ke "window" agar kebal dari masalah blok/scope!
+            window.currentDokterFetch = new AbortController();
+            const signal = window.currentDokterFetch.signal;
 
             fetch(WEB_APP_URL, {
                 method: "POST",
+                signal: signal, // 🔗 Kaitkan sinyal pembatalan mutlak ke Fetch API ini
                 body: JSON.stringify({ 
                     action: "getDokterTersedia", 
                     hari: namaHari,
@@ -1958,12 +1962,6 @@
             })
             .then(res => res.json())
             .then(res => {
-                // 🔥 JARING PENGAMAN KE-2: Abaikan data server jika user sudah klik jam lain!
-                if (idRequestSaatIni !== antreanRequestDokter) {
-                    console.warn("Data lama dibuang untuk mencegah tumpang tindih UI.");
-                    return; // Jangan update UI dengan data usang!
-                }
-
                 if (res.result === "success") {
                     selectDokter.innerHTML = '<option value="">-- Pilih Dokter Bertugas --</option>';
                     if (res.data.length > 0) {
@@ -1979,9 +1977,12 @@
                 }
             })
             .catch(err => {
-                // Abaikan error jaringan dari request yang sudah kadaluarsa
-                if (idRequestSaatIni !== antreanRequestDokter) return;
-
+                // 🔥 TANGKAP PEMBATALAN: Jika sistem me-kill request lama, diamkan saja (UI tidak akan tertimpa)
+                if (err.name === 'AbortError') {
+                    console.warn("Request server 14:00 dibatalkan otomatis karena user mengubah ke 14:30");
+                    return; // Proses berhenti bersih tanpa error lanjutan
+                }
+                
                 console.error("Gagal memuat data dokter:", err);
                 selectDokter.innerHTML = '<option value="">⚠️ Gagal memuat jadwal dokter</option>';
             });
