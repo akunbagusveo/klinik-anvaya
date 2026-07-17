@@ -1903,17 +1903,17 @@
             const tglInput = document.getElementById('tglKunjungan').value;
             const slotInput = document.getElementById('waktuKunjungan').value;
             
-            // 🔥 FIX 1: Pindahkan deklarasi elemen ke paling atas agar jaring pengaman tidak error!
             const selectDokter = document.getElementById('pilihDokter');
             const selectWaktu = document.getElementById('waktuKunjungan');
             
-            // JARING PENGAMAN: Jika salah satu belum diisi, blokir pemanggilan ke server!
-            if (!tglInput || !slotInput) {
+            // 🔥 FIX MUTLAK (UPGRADE): JARING PENGAMAN LAPIS BAJA!
+            // Kita blokir jika nilainya kosong, ATAU jika mengandung teks bawaan HTML seperti "--" atau "Pilih"
+            if (!tglInput || !slotInput || slotInput.includes("--") || slotInput.toLowerCase().includes("pilih")) {
                 if (selectDokter) {
                     selectDokter.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
                     selectDokter.disabled = true;
                 }
-                return; // Berhenti di sini
+                return; // 🛑 Proses PASTI berhenti di sini. Server aman dari tembakan palsu!
             }
 
             const bagianTanggal = tglInput.split('-'); 
