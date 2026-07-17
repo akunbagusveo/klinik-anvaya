@@ -2619,30 +2619,45 @@
     // 3. Fungsi Mengambil Daftar Dokter dari Roster via FETCH (Ganti fungsi yang lama)
     function muatDokterTersedia(tanggal, jam, namaDokterAktif) {
         const selectElement = document.getElementById('editDokterSelect');
-        selectElement.innerHTML = '<option value="">-- Memuat Dokter... --</option>';
+        if (!selectElement) return;
 
-        // Buat payload dinamis menggunakan pola standard Anda
+        // 🔥 JARING PENGAMAN UTAMA (ANTI-PREMATUR)
+        // Jika tanggal atau jam masih kosong, blokir proses fetch ke server!
+        if (!tanggal || !jam) {
+            selectElement.innerHTML = '<option value="">-- Pilih Waktu Terlebih Dahulu --</option>';
+            return; // 🛑 Proses berhenti total di sini, server aman dari spam
+        }
+
+        // Jika lolos jaring pengaman (Tanggal & Jam sudah terisi), baru eksekusi pencarian
+        selectElement.innerHTML = '<option value="">⏳ Memuat Dokter...</option>';
+
+        // Buat payload dinamis
         const payload = { 
             action: "getAvailableDokter", 
             tanggal: tanggal, 
             jam: jam 
         };
 
-        // Gunakan Fetch API ke WEB_APP_URL agar kompatibel dengan GitHub Pages
+        // Gunakan Fetch API ke WEB_APP_URL
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(res => {
             if (res.result === "success" && res.data.length > 0) {
-                selectElement.innerHTML = res.data.map(doc => 
+                // Pilihan default jika ingin user sadar untuk memilih
+                let opsiHTML = '<option value="">-- Pilih Dokter --</option>';
+                
+                opsiHTML += res.data.map(doc => 
                     `<option value="${doc.nama}" ${doc.nama === namaDokterAktif ? 'selected' : ''}>${doc.nama}</option>`
                 ).join('');
+                
+                selectElement.innerHTML = opsiHTML;
             } else {
-                selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas</option>';
+                selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas di slot ini</option>';
             }
         })
         .catch(err => {
             console.error("Error:", err);
-            selectElement.innerHTML = '<option value="">❌ Gagal memuat data dokter</option>';
+            selectElement.innerHTML = '<option value="">⚠️ Gagal memuat data dokter</option>';
         });
     }
 
