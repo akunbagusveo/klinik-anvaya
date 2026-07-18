@@ -4336,18 +4336,27 @@
     // ketika user melakukan refresh halaman (misal pada fungsi checkSession atau init aplikasi)
     function aplikasikanHakAkses(perms) {
         if (!perms) return;
+
+        // 🔥 1. DETEKSI STATUS SUPER ADMIN (GOD MODE)
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        // Di fungsi ini, variabel namaRole memang kita definisikan secara manual
+        const namaRole = sessionData && sessionData.role ? String(sessionData.role).toLowerCase() : "";
         
-        // 🔥 MESIN SUPER-PENCARI: Mengabaikan huruf besar, garis bawah (_), dan awalan Akses
-        // Jadi 'Akses_AnalisisBisnis', 'Analisis Bisnis', atau 'aksesanalisisbisnis' akan dianggap SAMA!
+        // Mode Dewa HANYA untuk Owner atau ROL-01
+        const isSuperAdmin = namaRole === "owner" || namaRole === "rol-01";
+        
+        // 🔥 2. MESIN SUPER-PENCARI DENGAN BYPASS
         const cekIzin = (kataKunci) => {
+            if (isSuperAdmin) return true;
+
             const kunciDicari = kataKunci.toLowerCase();
             for (let key in perms) {
-                const keyAsli = key.toLowerCase().replace(/[^a-z0-9]/g, ''); // Bersihkan semua simbol
+                const keyAsli = key.toLowerCase().replace(/[^a-z0-9]/g, ''); 
                 if (keyAsli.includes(kunciDicari)) {
                     return perms[key] === 1;
                 }
             }
-            return false;
+            return false; 
         };
 
         const setMenuDisplay = (id, kataKunci) => {
@@ -4692,7 +4701,7 @@
                 
                 res.data.forEach(role => {
                     // 🔥 GOD MODE SUPER KETAT: Hanya berlaku untuk role bernama persis "owner" atau ID "rol-01"
-                    const isSuperAdmin = namaRole === "owner" || (sessionData && sessionData.role.toLowerCase() === "rol-01");
+                    const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01' || role.namaRole.toLowerCase() === 'owner';
                     const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
 
                     const chkPendaftaran = (role.pendaftaran == 1 || role.pendaftaran === true) ? 'checked' : '';
