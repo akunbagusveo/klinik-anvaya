@@ -2209,6 +2209,11 @@
                     permissions: data.permissions 
                 };
                 localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
+
+                const topNav = document.querySelector('.top-navbar');
+                const sidebar = document.getElementById('appSidebar');
+                if (topNav) topNav.style.display = 'flex'; 
+                if (sidebar) sidebar.style.display = 'block';
                 
                 try {
                     bukaAplikasi(data.role, data.username);
@@ -2460,6 +2465,11 @@
         
         setDisplayAman('loginPage', 'none');
         setDisplayAman('mainPage', 'block');
+
+        const topNav = document.querySelector('.top-navbar');
+        const sidebar = document.getElementById('appSidebar');
+        if (topNav) topNav.style.display = 'flex'; 
+        if (sidebar) sidebar.style.display = 'block';
 
         // 1. SEMBUNYIKAN SEMUA TAB & KARTU DI AWAL (Diselaraskan dengan ID asli)
         setDisplayAman('tabBerandaBtn', 'block');
@@ -4262,6 +4272,11 @@
         // 1. Bersihkan variabel peran dan hapus penyimpanan sesi lokal browser
         currentRole = ""; 
         localStorage.removeItem('anvaya_session');
+
+        const topNav = document.querySelector('.top-navbar');
+        const sidebar = document.getElementById('appSidebar');
+        if (topNav) topNav.style.display = 'none';
+        if (sidebar) sidebar.style.display = 'none';
         
         // 2. Reset semua form yang ada di dalam dokumen secara dinamis (Sapu bersih memori)
         document.querySelectorAll('form').forEach(form => form.reset());
