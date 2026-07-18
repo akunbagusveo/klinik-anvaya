@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Klinik Anvaya Beta Version - Dashboard Dokter</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;}
         .container { max-width: 900px; background: white; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
         h3 { color: #2980b9; margin-top: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
@@ -146,6 +148,81 @@
         .modal-custom-header h2 { color: #9b59b6; margin: 0; font-size: 20px; border: none; border-bottom: none; padding: 0; }
         .btn-close-modal { background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; flex-shrink: 0; }
 
+        /* Top Navbar */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); /* Warna elegan khas Enterprise */
+            color: white;
+            padding: 10px 20px;
+            height: 60px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .navbar-left, .navbar-right { display: flex; align-items: center; gap: 15px; }
+        .burger-btn {
+            background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px;
+        }
+        .brand-logo { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+
+        /* Sidebar Samping */
+        .sidebar {
+            position: fixed;
+            top: 60px; /* Di bawah Top Navbar */
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 60px);
+            background-color: #2c3e50;
+            color: white;
+            overflow-y: auto;
+            transition: transform 0.3s ease; /* Animasi mulus */
+            z-index: 999;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar-menu { display: flex; flex-direction: column; padding: 15px 0; }
+        .sidebar-category {
+            font-size: 12px; color: #95a5a6; padding: 10px 20px 5px; margin-top: 10px; font-weight: bold; letter-spacing: 1px;
+        }
+        
+        /* Tombol Menu di Sidebar */
+        .sidebar-menu .tab-link {
+            background: transparent; color: #ecf0f1; border: none; padding: 12px 20px; text-align: left;
+            font-size: 15px; cursor: pointer; transition: background 0.2s, border-left 0.2s;
+            border-left: 4px solid transparent; width: 100%;
+        }
+        .sidebar-menu .tab-link:hover { background-color: #34495e; border-left: 4px solid #3498db; }
+        .sidebar-menu .tab-link.active { background-color: #1abc9c; border-left: 4px solid #16a085; font-weight: bold;}
+
+        /* Kontainer Konten Utama */
+        #mainPage.container {
+            margin-top: 80px !important; /* Memberi ruang untuk Top Navbar */
+            margin-left: 260px; /* Memberi ruang untuk Sidebar di Laptop */
+            padding: 15px;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Overlay (Gelap di belakang sidebar untuk HP) */
+        .sidebar-overlay {
+            display: none; position: fixed; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px);
+            background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s;
+        }
+
+        /* === RESPONSIVE UNTUK HP & TABLET === */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); /* Sembunyikan sidebar ke kiri di HP */ }
+            .sidebar.open { transform: translateX(0); /* Munculkan saat burger diklik */ }
+            #mainPage.container { margin-left: 0; /* Konten penuh layar di HP */ }
+            .sidebar-overlay.show { display: block; opacity: 1; }
+            .brand-logo { font-size: 16px; }
+            .user-info { display: none; /* Sembunyikan nama user agar tidak sesak di HP */ }
+        }
+        
         /* =========================================================
            🔥 ATURAN RESPONSIVE UNTUK LAYAR HP & TABLET 🔥
            ========================================================= */
@@ -403,8 +480,44 @@
     </form>
 </div>
 
+<!-- 1. TOP NAVBAR (Selalu ada di atas, tipis, berisi Burger Menu & Profil) -->
+<div class="top-navbar">
+    <div class="navbar-left">
+        <button class="burger-btn" onclick="toggleSidebar()">☰</button>
+        <span class="brand-logo">🏥 Klinik Anvaya</span>
+    </div>
+    <div class="navbar-right">
+        <span id="txtUserStatus" class="user-info"></span>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<!-- 2. SIDEBAR (Menu Samping, bisa di-slide) -->
+<div id="appSidebar" class="sidebar">
+    <div class="sidebar-menu">
+        <span class="sidebar-category">OPERASIONAL</span>
+        <!-- PENTING: ID tombol tetap sama agar mesin RBAC / God Mode tetap bekerja -->
+        <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">🏠 Beranda Utama</button>
+        <button id="tabPendaftaranBtn" class="tab-link" onclick="switchTab('pendaftaran')">📝 Form Pendaftaran</button>
+        <button id="tabAntreanBtn" class="tab-link" onclick="switchTab('antrean')">👥 Antrian Pasien</button>
+        <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">🗂️ Riwayat Medis</button>
+        <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">📂 Database Pasien</button>
+        
+        <span class="sidebar-category">KEUANGAN & ANALISIS</span>
+        <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold; color: #ffeb3b;">📈 Analisis Bisnis</button>
+        <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold; color: #4CAF50;">💰 Kasir & Billing</button>
+        
+        <span class="sidebar-category">SISTEM KAMI</span>
+        <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">📖 Kamus Dikte</button>
+        <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
+    </div>
+</div>
+
+<!-- Overlay Gelap (Muncul saat sidebar terbuka di HP) -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <div id="mainPage" class="container">
-    <div class="header-area">
+    <!-- <div class="header-area">
         <div class="nav-tabs">
             <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">Beranda Utama</button>
             <button id="tabPendaftaranBtn" class="tab-link" onclick="switchTab('pendaftaran')">Form Pendaftaran</button>
@@ -420,7 +533,7 @@
             <span id="txtUserStatus" class="user-info"></span>
             <button class="btn-logout" onclick="logout()">Logout</button>
         </div>
-    </div>
+    </div> -->
 
     <div id="beranda" class="tab-content">
         <h2>Dashboard Eksekutif Klinik Anvaya</h2>
@@ -602,7 +715,7 @@
                 </div>
                 <div class="form-group">
                     <label>Pilihan Waktu</label>
-                    <select id="waktuKunjungan" onchange="muatDokterPendaftaran()">
+                    <select id="waktuKunjungan" >
                         <option value="" disabled selected>-- Pilih Jam Kunjungan --</option>
                         <option value="11:00">11:00</option>
                         <option value="11:30">11:30</option>
@@ -620,7 +733,7 @@
                         <option value="17:30">17:30</option>
                         <option value="18:00">18:00</option>
                         <option value="18:30">18:30</option>
-                        <option value="19:00">19:00</option>
+                        <!-- <option value="19:00">19:00</option> -->
                     </select>
                 </div>
                 
@@ -4172,6 +4285,12 @@
     }
 
     function switchTab(tabId) {
+
+        if (window.innerWidth <= 768) {
+            document.getElementById('appSidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+        
         // 1. Sembunyikan semua konten tab & bersihkan class active pada halaman
         document.querySelectorAll('.tab-content').forEach(el => {
             el.classList.remove('active');
@@ -6714,6 +6833,21 @@
 
         periksaNotifikasiMasuk();
         setInterval(periksaNotifikasiMasuk, 30000); // Rutin memeriksa setiap 30 detik
+    }
+
+    // Fungsi untuk membuka dan menutup Sidebar (Burger Menu)
+    function toggleSidebar() {
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        sidebar.classList.toggle('open');
+        
+        // Atur overlay gelap jika di layar HP
+        if (sidebar.classList.contains('open')) {
+            overlay.classList.add('show');
+        } else {
+            overlay.classList.remove('show');
+        }
     }
 
 
