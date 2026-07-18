@@ -4290,7 +4290,31 @@
             document.getElementById('appSidebar').classList.remove('open');
             document.getElementById('sidebarOverlay').classList.remove('show');
         }
+
+        // === 1. MATIKAN SEMUA LAMPU MENU ===
+        // Ambil semua tombol menu yang ada di dalam sidebar
+        const semuaTombolMenu = document.querySelectorAll('.sidebar-menu .tab-link');
+        semuaTombolMenu.forEach(tombol => {
+            tombol.classList.remove('active'); // Hapus warna hijaunya
+        });
+
+        // === 2. NYALAKAN LAMPU MENU YANG DIPILIH SAJA ===
+        // Karena parameter tabId bentuknya 'pendaftaran', dan ID tombolnya 'tabPendaftaranBtn',
+        // kita ubah huruf pertamanya jadi kapital agar cocok (pendaftaran -> Pendaftaran)
+        const idTombolAktif = 'tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn';
+        const tombolAktif = document.getElementById(idTombolAktif);
+        if (tombolAktif) {
+            tombolAktif.classList.add('active'); // Beri warna hijau ke tombol ini saja
+        }
         
+        // === 3. AUTO-TUTUP SIDEBAR DI HP (Jika belum ditambahkan sebelumnya) ===
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('appSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('show');
+        }
+
         // 1. Sembunyikan semua konten tab & bersihkan class active pada halaman
         document.querySelectorAll('.tab-content').forEach(el => {
             el.classList.remove('active');
