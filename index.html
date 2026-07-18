@@ -4691,7 +4691,8 @@
                 tbody.innerHTML = "";
                 
                 res.data.forEach(role => {
-                    const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01';
+                    // 🔥 GOD MODE SUPER KETAT: Hanya berlaku untuk role bernama persis "owner" atau ID "rol-01"
+                    const isSuperAdmin = namaRole === "owner" || (sessionData && sessionData.role.toLowerCase() === "rol-01");
                     const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
 
                     const chkPendaftaran = (role.pendaftaran == 1 || role.pendaftaran === true) ? 'checked' : '';
