@@ -495,6 +495,15 @@
             border-radius: 5px; font-size: 13px; cursor: pointer; transition: 0.2s;
         }
         .pill-btn.active { background: #3498db; color: white; font-weight: bold; }
+
+        /* Tombol Preset Filter Finansial */
+        .preset-dates { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .preset-btn {
+            background: #f1f2f6; border: 1px solid #dcdde1; padding: 5px 12px; 
+            border-radius: 15px; font-size: 11px; font-weight: bold; color: #2f3640; 
+            cursor: pointer; transition: all 0.2s;
+        }
+        .preset-btn:hover, .preset-btn:active { background: #3498db; color: white; border-color: #3498db; }
 </style>
 </head>
 <body>
@@ -1436,11 +1445,24 @@
         <!-- ========================================================= -->
         <div id="subTabFinansial" class="sub-tab-content" style="display: none; margin-top: 20px;">
             
-            <!-- A. Filter Finansial -->
-            <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <span style="font-weight: bold; color: #34495e;">Pilih Bulan Laporan:</span>
-                <input type="month" id="filterBulanFinansial" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                <button onclick="muatDataFinansial()" style="padding: 8px 15px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer;">Terapkan Filter</button>
+            <!-- A. Filter Finansial Lanjutan (Date Range & Presets) -->
+            <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+                    <span style="font-weight: bold; color: #34495e; margin-right: 5px;">Periode Laporan:</span>
+                    <input type="date" id="tglMulaiFinansial" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif;">
+                    <span style="color: #7f8c8d;">sampai</span>
+                    <input type="date" id="tglAkhirFinansial" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif;">
+                    <button onclick="muatDataFinansial()" style="padding: 8px 20px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Terapkan Filter</button>
+                </div>
+                
+                <!-- 🔥 Tombol Preset Cepat -->
+                <div class="preset-dates">
+                    <span style="font-size: 12px; color: #95a5a6; margin-right: 8px;">Pilih Cepat:</span>
+                    <button class="preset-btn" onclick="setPresetTanggal('hariIni')">Hari Ini</button>
+                    <button class="preset-btn" onclick="setPresetTanggal('mingguIni')">Minggu Ini</button>
+                    <button class="preset-btn" onclick="setPresetTanggal('bulanIni')">Bulan Ini</button>
+                    <button class="preset-btn" onclick="setPresetTanggal('tahunIni')">Tahun Ini</button>
+                </div>
             </div>
 
             <!-- B. Kartu Metrik (Ringkasan Cepat) -->
@@ -7067,25 +7089,27 @@
         }).format(angka);
     }
 
-    // === FUNGSI MENARIK DATA KEUANGAN ===
+    // === FUNGSI MENARIK DATA KEUANGAN (BERDASARKAN DATE RANGE) ===
     function muatDataFinansial() {
-        const inputBulan = document.getElementById('filterBulanFinansial').value;
-        if (!inputBulan) {
-            alert("⚠️ Harap pilih bulan laporan terlebih dahulu pada kalender!");
+        const tglMulai = document.getElementById('tglMulaiFinansial').value;
+        const tglAkhir = document.getElementById('tglAkhirFinansial').value;
+        
+        if (!tglMulai || !tglAkhir) {
+            alert("⚠️ Harap pilih rentang tanggal Mulai dan Sampai terlebih dahulu!");
             return;
         }
 
-        // Efek loading pada tombol
         const btnFilter = document.querySelector('button[onclick="muatDataFinansial()"]');
         const teksAsli = btnFilter.innerText;
-        btnFilter.innerText = "⏳ Menarik Data...";
+        btnFilter.innerText = "⏳ Menarik...";
         btnFilter.disabled = true;
 
         fetch(WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ 
                 action: "getLaporanFinansial", 
-                bulan: inputBulan 
+                startDate: tglMulai, 
+                endDate: tglAkhir 
             })
         })
         .then(res => res.json())
@@ -7094,18 +7118,18 @@
             btnFilter.disabled = false;
 
             if (res.result === "success") {
-                // 1. Suntikkan Data ke Kartu Metrik!
+                // Suntik Metrik
                 document.getElementById('valPendapatanBersih').innerText = formatRupiahFinansial(res.metrik.pendapatan);
                 document.getElementById('valTotalTransaksi').innerHTML = `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`;
                 document.getElementById('valRataTransaksi').innerText = formatRupiahFinansial(res.metrik.rataRata);
                 document.getElementById('valTotalDiskon').innerText = formatRupiahFinansial(res.metrik.diskon);
-
+                
+                // Suntik Tabel Detail
                 const tbody = document.getElementById('tbodyLaporanFinansial');
-                tbody.innerHTML = ''; // Kosongkan tabel dulu
+                tbody.innerHTML = ''; 
                 
                 if (res.dataTabel && res.dataTabel.length > 0) {
                     res.dataTabel.forEach(nota => {
-                        // Bikin tombol PDF elegan
                         let btnPdf = nota.linkPdf !== "#" 
                             ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:11px;">📄 Buka</a>` 
                             : `<span style="color:#bdc3c7; font-size:11px;">Tidak Ada</span>`;
@@ -7123,11 +7147,8 @@
                         `;
                     });
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:gray;">Tidak ada transaksi di bulan ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
                 }
-                
-                // (Nantinya, kita panggil fungsi pembuat Grafik dan Tabel di sini)
-                
             } else {
                 alert("⚠️ Gagal memuat laporan: " + res.message);
             }
@@ -7135,10 +7156,58 @@
         .catch(err => {
             btnFilter.innerText = teksAsli;
             btnFilter.disabled = false;
-            console.error("Kesalahan jaringan Kokpit Finansial:", err);
-            alert("⚠️ Terjadi kesalahan saat menghubungi server.");
+            alert("⚠️ Terjadi kesalahan jaringan.");
         });
     }
+
+    // === OTOMATISASI TOMBOL PRESET CEPAT ===
+    function setPresetTanggal(tipe) {
+        const today = new Date();
+        let start = new Date(today);
+        let end = new Date(today);
+
+        if (tipe === 'hariIni') {
+            // start & end sama-sama hari ini
+        } 
+        else if (tipe === 'mingguIni') {
+            // Tarik ke hari Senin minggu ini
+            const day = today.getDay(); // 0 (Minggu) sampai 6 (Sabtu)
+            const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
+            start.setDate(diffToMonday);
+            // Akhir minggu diset ke hari Minggu (Senin + 6)
+            end = new Date(start);
+            end.setDate(start.getDate() + 6);
+        } 
+        else if (tipe === 'bulanIni') {
+            start = new Date(today.getFullYear(), today.getMonth(), 1); // Tanggal 1
+            end = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Hari terakhir bulan ini
+        } 
+        else if (tipe === 'tahunIni') {
+            start = new Date(today.getFullYear(), 0, 1); // 1 Januari
+            end = new Date(today.getFullYear(), 11, 31); // 31 Desember
+        }
+
+        const format = (d) => {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        };
+
+        // Isi input tanggal secara otomatis
+        document.getElementById('tglMulaiFinansial').value = format(start);
+        document.getElementById('tglAkhirFinansial').value = format(end);
+        
+        // Pemicu Cerdas: Langsung tarik data tanpa perlu klik tombol biru lagi!
+        muatDataFinansial();
+    }
+
+    // Ubah default loader menjadi "Bulan Ini" saat halaman dimuat
+    document.addEventListener("DOMContentLoaded", function() {
+        if (document.getElementById('tglMulaiFinansial')) {
+            setPresetTanggal('bulanIni'); // Otomatis mengisi form dengan awal s/d akhir bulan ini
+        }
+    });
 
     // === FUNGSI FILTER PENCARIAN REAL-TIME TABEL TRANSAKSI ===
     function cariTabelFinansial() {
