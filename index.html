@@ -1529,7 +1529,7 @@
                                 <th style="padding: 12px; border-right: 1px solid #34495e; text-align: center;">Pembayaran</th>
                                 <th style="padding: 12px; border-right: 1px solid #34495e; text-align: right;">Diskon</th>
                                 <th style="padding: 12px; border-right: 1px solid #34495e; text-align: right;">Grand Total</th>
-                                <th style="padding: 12px; border-right: 1px solid #34495e; text-align: center;">Arsip PDF</th>
+                                <th style="padding: 12px; text-align: center; min-width: 100px; white-space: nowrap;">Arsip PDF</th>    
                             </tr>
                         </thead>
                         <tbody id="tbodyLaporanFinansial">
@@ -7134,8 +7134,8 @@
                 if (res.dataTabel && res.dataTabel.length > 0) {
                     res.dataTabel.forEach(nota => {
                         let btnPdf = nota.linkPdf !== "#" 
-                            ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:11px;">📄 Buka</a>` 
-                            : `<span style="color:#bdc3c7; font-size:11px;">Tidak Ada</span>`;
+                            ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` 
+                            : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
 
                         // 🔥 MENCETAK BARIS DENGAN DATA RELASI LENGKAP
                         tbody.innerHTML += `
