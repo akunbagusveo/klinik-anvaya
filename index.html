@@ -1484,9 +1484,19 @@
             </div>
 
             <div id="pillTabel" class="pill-content" style="display: none;">
-                <div style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                
+                <!-- 🔥 KOTAK PENCARIAN (LIVE SEARCH) -->
+                <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 350px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
+                    <span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak</span>
+                </div>
+
+                <!-- 🔥 KONTAINER TABEL DENGAN SCROLL INTERNAL (max-height & overflow-y) -->
+                <div style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow-x: auto; max-height: 450px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
                     <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left; min-width: 800px;">
-                        <thead style="background: #2c3e50; color: white;">
+                        
+                        <!-- 🔥 STICKY HEADER (position: sticky; top: 0;) -->
+                        <thead style="background: #2c3e50; color: white; position: sticky; top: 0; z-index: 2;">
                             <tr>
                                 <th style="padding: 12px; border-right: 1px solid #34495e;">No. Kuitansi</th>
                                 <th style="padding: 12px; border-right: 1px solid #34495e;">Tanggal</th>
@@ -7127,6 +7137,31 @@
             btnFilter.disabled = false;
             console.error("Kesalahan jaringan Kokpit Finansial:", err);
             alert("⚠️ Terjadi kesalahan saat menghubungi server.");
+        });
+    }
+
+    // === FUNGSI FILTER PENCARIAN REAL-TIME TABEL TRANSAKSI ===
+    function cariTabelFinansial() {
+        // Ambil huruf yang diketik dan ubah ke huruf kecil semua
+        const inputTeks = document.getElementById("inputCariFinansial").value.toLowerCase();
+        
+        // Ambil semua baris (tr) di dalam tabel laporan
+        const barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
+
+        barisTabel.forEach(baris => {
+            // Abaikan baris pesan kosong (yang biasanya memakai colspan="7")
+            if (baris.cells.length < 2) return; 
+            
+            // Ambil teks dari kolom No. Kuitansi (index 0) dan Nama Pasien (index 2)
+            const noNota = baris.cells[0].innerText.toLowerCase();
+            const namaPasien = baris.cells[2].innerText.toLowerCase();
+
+            // Jika teks yang dicari ada di Nota ATAU Nama Pasien, tampilkan barisnya
+            if (noNota.includes(inputTeks) || namaPasien.includes(inputTeks)) {
+                baris.style.display = ""; 
+            } else {
+                baris.style.display = "none"; // Jika tidak cocok, sembunyikan!
+            }
         });
     }
 
