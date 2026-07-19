@@ -1507,34 +1507,33 @@
             </div>
 
             <div id="pillTabel" class="pill-content" style="display: none;">
-                
-                <!-- 🔥 KOTAK PENCARIAN (LIVE SEARCH) -->
+                <!-- Kotak Pencarian -->
                 <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 350px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
                     <span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak</span>
                 </div>
 
-                <!-- 🔥 KONTAINER TABEL DENGAN SCROLL INTERNAL (max-height & overflow-y) -->
+                <!-- Kontainer Tabel -->
                 <div style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow-x: auto; max-height: 450px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                    <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left; min-width: 800px;">
-                        
-                        <!-- 🔥 STICKY HEADER DIPERBARUI -->
+                    <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left; min-width: 900px;">
+                        <!-- 🔥 STICKY HEADER BARU (8 KOLOM) -->
                         <thead style="background: #2c3e50; color: white; position: sticky; top: 0; z-index: 2;">
                             <tr>
                                 <th style="padding: 12px; border-right: 1px solid #34495e;">No. Kuitansi</th>
                                 <th style="padding: 12px; border-right: 1px solid #34495e;">Tanggal</th>
                                 <th style="padding: 12px; border-right: 1px solid #34495e;">Nama Pasien</th>
-                                <!-- 🔥 2 KOLOM BARU -->
-                                <th style="padding: 12px; border-right: 1px solid #34495e; min-width: 180px;">Rincian Tindakan & Dokter</th>
+                                
+                                <th style="padding: 12px; border-right: 1px solid #34495e; min-width: 150px;">Rincian Tindakan</th>
+                                <th style="padding: 12px; border-right: 1px solid #34495e; min-width: 130px;">Dokter Pelaksana</th>
+                                
                                 <th style="padding: 12px; border-right: 1px solid #34495e; text-align: center;">Pembayaran</th>
-                                <!-- ================ -->
                                 <th style="padding: 12px; border-right: 1px solid #34495e; text-align: right;">Diskon</th>
                                 <th style="padding: 12px; border-right: 1px solid #34495e; text-align: right;">Grand Total</th>
                                 <th style="padding: 12px; text-align: center;">Arsip PDF</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyLaporanFinansial">
-                            <tr><td colspan="7" style="text-align:center; padding:20px; color:gray;">Pilih bulan dan terapkan filter untuk melihat rincian nota...</td></tr>
+                            <tr><td colspan="8" style="text-align:center; padding:20px; color:gray;">Pilih bulan dan terapkan filter untuk melihat rincian nota...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -7145,16 +7144,15 @@
                                 <td style="padding: 12px;">${nota.tanggal}</td>
                                 <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
                                 
-                                <!-- Kolom Rincian Tindakan (Mendukung Multi-Baris) -->
-                                <td style="padding: 12px; font-size: 12px; line-height: 1.4;">${nota.tindakanDanDokter}</td>
+                                <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
                                 
-                                <!-- Kolom Metode Bayar (Diberi gaya Badge) -->
+                                <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${nota.dokter}</td>
+                                
                                 <td style="padding: 12px; text-align:center;">
                                     <span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">
                                         ${nota.metodeBayar}
                                     </span>
                                 </td>
-                                
                                 <td style="padding: 12px; text-align:right; color:#e74c3c;">${nota.diskon > 0 ? formatRupiahFinansial(nota.diskon) : '-'}</td>
                                 <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${formatRupiahFinansial(nota.grandTotal)}</td>
                                 <td style="padding: 12px; text-align:center;">${btnPdf}</td>
@@ -7162,8 +7160,8 @@
                         `;
                     });
                 } else {
-                    // Karena kolom nambah jadi 8, colspan juga ubah jadi 8
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
+                    // Jangan lupa sesuaikan colspan kosongnya menjadi 9 kolom
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
                 }
             } else {
                 alert("⚠️ Gagal memuat laporan: " + res.message);
