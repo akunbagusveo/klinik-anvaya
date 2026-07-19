@@ -1092,6 +1092,7 @@
                             <th style="padding: 10px; text-align: center;">Analisis Bisnis</th>
                             <th style="padding: 10px; text-align: center;">Kasir</th>
                             <th style="padding: 10px; text-align: center;">Log Aktifitas</th>
+                            <th style="padding: 10px; text-align: center;">Kokpit Finansial</th>
                         </tr>
                     </thead>
                     <tbody id="bodyMatriksAkses">
@@ -4597,7 +4598,6 @@
 
         // 🔥 1. DETEKSI STATUS SUPER ADMIN (GOD MODE)
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        // Di fungsi ini, variabel namaRole memang kita definisikan secara manual
         const namaRole = sessionData && sessionData.role ? String(sessionData.role).toLowerCase() : "";
         
         // Mode Dewa HANYA untuk Owner atau ROL-01
@@ -4619,7 +4619,8 @@
 
         const setMenuDisplay = (id, kataKunci) => {
             const el = document.getElementById(id);
-            if (el) el.style.display = cekIzin(kataKunci) ? 'inline-block' : 'none';
+            // Catatan: Saya ubah jadi 'block' agar tombol Sidebar tampil penuh dan rapi
+            if (el) el.style.display = cekIzin(kataKunci) ? 'block' : 'none'; 
         };
         
         const setCardDisplay = (id, kataKunci) => {
@@ -4631,16 +4632,18 @@
         setMenuDisplay('tabPendaftaranBtn', 'pendaftaran');
         setMenuDisplay('tabRiwayatMedisBtn', 'rekammedis');
         setMenuDisplay('tabDaftarPasienBtn', 'databasepasien');
-        
-        // FIX 1: Sinkronisasi ID Antrean
         setMenuDisplay('tabAntreanBtn', 'antrian');
-        
         setMenuDisplay('tabKamusDikteBtn', 'kamusdikte');
         setMenuDisplay('tabBackendBtn', 'pengaturan');
-        
-        // FIX 2: Tab Baru
-        setMenuDisplay('tabAnalisisBisnisBtn', 'analisisbisnis');
         setMenuDisplay('tabKasirBtn', 'kasir');
+
+        // 🔥 FIX 1: AKSES GANDA UNTUK TAB ANALISIS BISNIS UTAMA (DI SIDEBAR)
+        // Tab ini wajib muncul jika user punya minimal SALAH SATU izin (Operasional ATAU Finansial)
+        const punyaAksesAnalisis = cekIzin('analisisbisnis') || cekIzin('kokpitfinansial');
+        const elAnalisisBtn = document.getElementById('tabAnalisisBisnisBtn');
+        if (elAnalisisBtn) {
+            elAnalisisBtn.style.display = punyaAksesAnalisis ? 'block' : 'none';
+        }
 
         // === 2. KONTROL AKSES KARTU BERANDA ===
         setCardDisplay('menuPendaftaranCard', 'pendaftaran');
@@ -4648,7 +4651,8 @@
         setCardDisplay('menuRiwayatCard', 'rekammedis');
         setCardDisplay('menuDaftarPasienCard', 'databasepasien');
 
-        // === 3. KONTROL AKSES GRANULAR SUB-TAB (Pengaturan Sistem) ===
+        // === 3. KONTROL AKSES GRANULAR SUB-TAB ===
+        // A. Pengaturan Sistem
         const punyaAksesUser = cekIzin('manajemenuser');
         const elUserBtn = document.getElementById('subTabUserBtn');
         const elAksesBtn = document.getElementById('subTabAksesBtn');
@@ -4659,12 +4663,17 @@
         const elJadwalBtn = document.getElementById('subTabJadwalBtn');
         if (elJadwalBtn) elJadwalBtn.style.display = punyaAksesJadwal ? 'inline-block' : 'none';
 
-        // 🔥 KONTROL AKSES LOG AKTIFITAS
-        const punyaAksesLog = cekIzin('logaktifitas'); // Mesin akan mendeteksi dari Akses_LogAktifitas
-        
-        // ⚠️ PENTING: Ganti 'subTabLogBtn' dengan ID HTML asli milik tombol navigasi Log Aktifitas Anda
+        const punyaAksesLog = cekIzin('logaktifitas'); 
         const elLogBtn = document.getElementById('subTabLogBtn'); 
         if (elLogBtn) elLogBtn.style.display = punyaAksesLog ? 'inline-block' : 'none';
+
+        // 🔥 B. KONTROL EKSKLUSIF SUB-TAB KOKPIT FINANSIAL (DI DALAM TAB ANALISIS BISNIS)
+        // Tombol gembok uang ini HANYA terbuka jika spesifik punya izin 'kokpitfinansial'
+        const punyaAksesFinansial = cekIzin('kokpitfinansial');
+        const btnSubTabFinansial = document.getElementById('btnSubTabFinansial');
+        if (btnSubTabFinansial) {
+            btnSubTabFinansial.style.display = punyaAksesFinansial ? 'inline-block' : 'none';
+        }
 
         // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
         setTimeout(() => {
@@ -4953,7 +4962,7 @@
     function muatMatriksAkses() {
         const tbody = document.getElementById('bodyMatriksAkses');
         // colspan diubah dari 14 menjadi 16
-        tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -4987,6 +4996,7 @@
                     const chkAnalisisBisnis = (role.analisisBisnis == 1 || role.analisisBisnis === true || role.aksesAnalisisBisnis == 1) ? 'checked' : '';
                     const chkKasir          = (role.kasir == 1 || role.kasir === true || role.aksesKasir == 1) ? 'checked' : '';
                     const chkLogAktifitas = (role.logAktifitas == 1 || role.logAktifitas === true || role.aksesLogAktifitas == 1) ? 'checked' : '';
+                    const chkKokpit = (role.kokpitFinansial == 1 || role.kokpitFinansial === true) ? 'checked' : '';
 
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
@@ -5008,6 +5018,7 @@
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-analisis-bisnis" ${chkAnalisisBisnis} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kasir" ${chkKasir} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-log-aktifitas" ${chkLogAktifitas} ${disabledAttr}></td>
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kokpit-finansial" ${chkKokpit} ${disabledAttr}></td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -5051,7 +5062,8 @@
                 // 🔥 TAMBAHAN BARU: Tangkap status checkbox saat tombol Simpan diklik
                 analisisBisnis: row.querySelector('.chk-analisis-bisnis').checked,
                 kasir: row.querySelector('.chk-kasir').checked,
-                logAktifitas: row.querySelector('.chk-log-aktifitas').checked
+                logAktifitas: row.querySelector('.chk-log-aktifitas').checked,
+                kokpitFinansial: row.querySelector('.chk-kokpit-finansial').checked
             });
         });
 
