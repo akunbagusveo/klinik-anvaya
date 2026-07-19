@@ -7033,6 +7033,73 @@
         if (idKonten) document.getElementById(idKonten).style.display = 'block';
     }
 
+    // === FUNGSI FORMAT RUPIAH ===
+    function formatRupiahFinansial(angka) {
+        return new Intl.NumberFormat('id-ID', { 
+            style: 'currency', 
+            currency: 'IDR', 
+            minimumFractionDigits: 0 
+        }).format(angka);
+    }
+
+    // === FUNGSI MENARIK DATA KEUANGAN ===
+    function muatDataFinansial() {
+        const inputBulan = document.getElementById('filterBulanFinansial').value;
+        if (!inputBulan) {
+            alert("⚠️ Harap pilih bulan laporan terlebih dahulu pada kalender!");
+            return;
+        }
+
+        // Efek loading pada tombol
+        const btnFilter = document.querySelector('button[onclick="muatDataFinansial()"]');
+        const teksAsli = btnFilter.innerText;
+        btnFilter.innerText = "⏳ Menarik Data...";
+        btnFilter.disabled = true;
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ 
+                action: "getLaporanFinansial", 
+                bulan: inputBulan 
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            btnFilter.innerText = teksAsli;
+            btnFilter.disabled = false;
+
+            if (res.result === "success") {
+                // 1. Suntikkan Data ke Kartu Metrik!
+                document.getElementById('valPendapatanBersih').innerText = formatRupiahFinansial(res.metrik.pendapatan);
+                document.getElementById('valTotalTransaksi').innerHTML = `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`;
+                document.getElementById('valRataTransaksi').innerText = formatRupiahFinansial(res.metrik.rataRata);
+                document.getElementById('valTotalDiskon').innerText = formatRupiahFinansial(res.metrik.diskon);
+                
+                // (Nantinya, kita panggil fungsi pembuat Grafik dan Tabel di sini)
+                
+            } else {
+                alert("⚠️ Gagal memuat laporan: " + res.message);
+            }
+        })
+        .catch(err => {
+            btnFilter.innerText = teksAsli;
+            btnFilter.disabled = false;
+            console.error("Kesalahan jaringan Kokpit Finansial:", err);
+            alert("⚠️ Terjadi kesalahan saat menghubungi server.");
+        });
+    }
+
+    // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputFinansial = document.getElementById('filterBulanFinansial');
+        if (inputFinansial) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            inputFinansial.value = `${yyyy}-${mm}`; // Set default ke bulan ini
+        }
+    });
+
 
 
 </script>
