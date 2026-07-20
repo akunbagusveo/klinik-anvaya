@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Klinik Anvaya Beta Version - Dashboard Dokter</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; margin: 0;
             padding: 0;
@@ -504,7 +505,7 @@
             cursor: pointer; transition: all 0.2s;
         }
         .preset-btn:hover, .preset-btn:active { background: #3498db; color: white; border-color: #3498db; }
-</style>
+    </style>
 </head>
 <body>
 
@@ -1471,6 +1472,7 @@
                 <div class="metric-card">
                     <div class="metric-title">Total Pendapatan Bersih</div>
                     <div class="metric-value" id="valPendapatanBersih">Rp 0</div>
+                    <div id="valPertumbuhan" style="font-size: 13px; margin-top: 8px; font-weight: bold; background: rgba(0,0,0,0.1); display: inline-block; padding: 3px 10px; border-radius: 20px;">-</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-title">Total Transaksi Selesai</div>
@@ -1494,9 +1496,25 @@
             </div>
 
             <!-- D. Area Konten Kapsul Laporan -->
-            <div id="pillGrafik" class="pill-content" style="display: block;">
-                <div style="padding: 40px; text-align: center; color: gray; background: #fff; border-radius: 8px; border: 1px solid #dee2e6;">
-                    *(Ruang untuk Grafik Chart.js akan kita bangun di sini)*
+            <!-- 🔥 RUMAH GRAFIK DINAMIS (CHART.JS) -->
+            <!-- Note: display diubah ke 'none' agar tidak menumpuk saat awal dimuat -->
+            <div id="pillGrafik" class="pill-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    
+                    <!-- Kanvas 1: Grafik Harian & ATV (Line Chart) -->
+                    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                        <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">📈 Tren Omzet Harian & ATV</h4>
+                        <canvas id="canvasChartHarian"></canvas>
+                    </div>
+
+                    <!-- Kanvas 2: Grafik Kontribusi Tindakan (Doughnut Chart) -->
+                    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                        <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">💰 Top 10 Kontribusi Rupiah Tindakan</h4>
+                        <div style="height: 300px; display: flex; justify-content: center;">
+                            <canvas id="canvasChartTindakan"></canvas>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
 
@@ -7151,7 +7169,22 @@
                 // 🔥 3. KOSONGKAN DAN ISI OPSI DEFAULT
                 selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
                 selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
-                selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>'; 
+                selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>';
+                
+                // 🔥 SUNTIKAN BARU: Indikator Pertumbuhan vs Bulan Lalu
+                const divTumbuh = document.getElementById('valPertumbuhan');
+                if (res.metrik.pertumbuhan.arah === "naik") {
+                    divTumbuh.innerHTML = `📈 Naik ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
+                    divTumbuh.style.color = "#a8ffc4"; // Hijau terang
+                } else if (res.metrik.pertumbuhan.arah === "turun") {
+                    divTumbuh.innerHTML = `📉 Turun ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
+                    divTumbuh.style.color = "#ffcccc"; // Merah muda
+                } else {
+                    divTumbuh.innerHTML = `➖ Stabil (0%)`;
+                    divTumbuh.style.color = "#ffffff";
+                }
+
+                renderGrafikFinansial(res.chartData);
 
                 // 🔥 4. SUNTIK DATA DARI SERVER KE MASING-MASING DROPDOWN
                 if (res.opsiFilter) {
@@ -7308,6 +7341,69 @@
                 baris.style.display = ""; 
             } else {
                 baris.style.display = "none"; 
+            }
+        });
+    }
+
+    // === MESIN PENGGAMBAR GRAFIK (CHART.JS) ===
+    let chartHarianInst = null;
+    let chartTindakanInst = null;
+
+    function renderGrafikFinansial(chartData) {
+        // Hancurkan grafik lama jika ada (agar tidak tumpang tindih saat ganti bulan)
+        if(chartHarianInst) chartHarianInst.destroy();
+        if(chartTindakanInst) chartTindakanInst.destroy();
+
+        // 1. Gambar Grafik Tren Harian & ATV (Garis Ganda)
+        const ctxHarian = document.getElementById('canvasChartHarian').getContext('2d');
+        chartHarianInst = new Chart(ctxHarian, {
+            type: 'line',
+            data: {
+                labels: chartData.harian.labels,
+                datasets: [
+                    {
+                        label: 'Omzet (Rp)',
+                        data: chartData.harian.omzet,
+                        borderColor: '#2ecc71', backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderWidth: 3, fill: true, tension: 0.3, yAxisID: 'y'
+                    },
+                    {
+                        label: 'ATV / Rata-rata Trx (Rp)',
+                        data: chartData.harian.atv,
+                        borderColor: '#3498db', borderWidth: 2, borderDash: [5, 5],
+                        type: 'line', tension: 0.3, yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID'); } } } },
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left', ticks: { callback: function(val) { return 'Rp ' + (val/1000000).toFixed(1) + ' Jt'; } } },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: function(val) { return 'Rp ' + (val/1000).toLocaleString('id-ID') + 'k'; } } }
+                }
+            }
+        });
+
+        // 2. Gambar Grafik Kontribusi Tindakan (Kue Donat)
+        const ctxTindakan = document.getElementById('canvasChartTindakan').getContext('2d');
+        chartTindakanInst = new Chart(ctxTindakan, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.tindakan.labels,
+                datasets: [{
+                    data: chartData.tindakan.omzet,
+                    backgroundColor: ['#e74c3c', '#f1c40f', '#3498db', '#9b59b6', '#34495e', '#1abc9c', '#e67e22', '#d35400', '#c0392b', '#7f8c8d'],
+                    borderWidth: 2, hoverOffset: 5
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    legend: { position: 'right', labels: { font: { size: 10 } } },
+                    tooltip: { callbacks: { label: function(context) { return ' Rp ' + context.raw.toLocaleString('id-ID'); } } }
+                } 
             }
         });
     }
