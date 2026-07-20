@@ -1508,8 +1508,20 @@
 
             <div id="pillTabel" class="pill-content" style="display: none;">
                 <!-- Kotak Pencarian -->
+                <!-- 🔥 KOTAK PENCARIAN & FILTER MULTI-KRITERIA -->
                 <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 350px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1;">
+                        <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 250px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
+                        
+                        <!-- Dropdown Dinamis -->
+                        <select id="filterSelectDokter" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
+                            <option value="">👨‍⚕️ Semua Dokter</option>
+                        </select>
+                        
+                        <select id="filterSelectTindakan" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
+                            <option value="">🩺 Semua Tindakan</option>
+                        </select>
+                    </div>
                     <span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak</span>
                 </div>
 
@@ -7126,6 +7138,24 @@
                 document.getElementById('valTotalTransaksi').innerHTML = `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`;
                 document.getElementById('valRataTransaksi').innerText = formatRupiahFinansial(res.metrik.rataRata);
                 document.getElementById('valTotalDiskon').innerText = formatRupiahFinansial(res.metrik.diskon);
+
+                const selectDokter = document.getElementById('filterSelectDokter');
+                const selectTindakan = document.getElementById('filterSelectTindakan');
+                
+                // Simpan pilihan user saat ini agar tidak tereset saat refresh bulan
+                const valDokter = selectDokter.value;
+                const valTindakan = selectTindakan.value;
+
+                selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
+                selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
+
+                if (res.opsiFilter) {
+                    res.opsiFilter.dokter.forEach(d => selectDokter.innerHTML += `<option value="${d}">${d}</option>`);
+                    res.opsiFilter.tindakan.forEach(t => selectTindakan.innerHTML += `<option value="${t}">${t}</option>`);
+                }
+                
+                selectDokter.value = valDokter;
+                selectTindakan.value = valTindakan;
                 
                 // Suntik Tabel Detail
                 const tbody = document.getElementById('tbodyLaporanFinansial');
@@ -7158,6 +7188,7 @@
                                 <td style="padding: 12px; text-align:center;">${btnPdf}</td>
                             </tr>
                         `;
+                        setTimeout(cariTabelFinansial, 100);
                     });
                 } else {
                     // Jangan lupa sesuaikan colspan kosongnya menjadi 9 kolom
@@ -7233,27 +7264,34 @@
         }
     });
 
-    // === FUNGSI FILTER PENCARIAN REAL-TIME TABEL TRANSAKSI ===
+    // === FUNGSI FILTER PENCARIAN REAL-TIME (MULTI-KRITERIA) ===
     function cariTabelFinansial() {
-        // Ambil huruf yang diketik dan ubah ke huruf kecil semua
         const inputTeks = document.getElementById("inputCariFinansial").value.toLowerCase();
-        
-        // Ambil semua baris (tr) di dalam tabel laporan
+        const filterDokter = document.getElementById("filterSelectDokter").value.toLowerCase();
+        const filterTindakan = document.getElementById("filterSelectTindakan").value.toLowerCase();
+
         const barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
 
         barisTabel.forEach(baris => {
-            // Abaikan baris pesan kosong (yang biasanya memakai colspan="7")
-            if (baris.cells.length < 2) return; 
+            if (baris.cells.length < 2) return; // Abaikan baris kosong
             
-            // Ambil teks dari kolom No. Kuitansi (index 0) dan Nama Pasien (index 2)
             const noNota = baris.cells[0].innerText.toLowerCase();
             const namaPasien = baris.cells[2].innerText.toLowerCase();
+            
+            // Mengambil teks asli dari dalam HTML Kapsul (Browser otomatis mengabaikan HTML tag-nya)
+            const teksTindakan = baris.cells[3].innerText.toLowerCase(); 
+            const teksDokter = baris.cells[4].innerText.toLowerCase();   
 
-            // Jika teks yang dicari ada di Nota ATAU Nama Pasien, tampilkan barisnya
-            if (noNota.includes(inputTeks) || namaPasien.includes(inputTeks)) {
+            // 🔥 LOGIKA "INCLUDES" (SALAH SATU COCOK)
+            let matchTeks = noNota.includes(inputTeks) || namaPasien.includes(inputTeks);
+            let matchDokter = filterDokter === "" || teksDokter.includes(filterDokter);
+            let matchTindakan = filterTindakan === "" || teksTindakan.includes(filterTindakan);
+
+            // Ketiga syarat harus terpenuhi (AND) agar baris muncul
+            if (matchTeks && matchDokter && matchTindakan) {
                 baris.style.display = ""; 
             } else {
-                baris.style.display = "none"; // Jika tidak cocok, sembunyikan!
+                baris.style.display = "none"; 
             }
         });
     }
