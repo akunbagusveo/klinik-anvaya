@@ -7352,7 +7352,7 @@
     let chartTindakanInst = null;
 
     function renderGrafikFinansial(chartData) {
-        // Hancurkan grafik lama jika ada (agar tidak tumpang tindih saat ganti bulan)
+        // Hancurkan grafik lama jika ada
         if(chartHarianInst) chartHarianInst.destroy();
         if(chartTindakanInst) chartTindakanInst.destroy();
 
@@ -7388,12 +7388,19 @@
             }
         });
 
+        // 🔥 SUNTIKAN BARU: Gabungkan Nama Tindakan dengan Nilai Rupiahnya untuk Label Keterangan
+        let labelTindakanRupiah = chartData.tindakan.labels.map((namaTindakan, index) => {
+            let nilaiRupiah = chartData.tindakan.omzet[index];
+            return `${namaTindakan} (Rp ${nilaiRupiah.toLocaleString('id-ID')})`;
+        });
+
         // 2. Gambar Grafik Kontribusi Tindakan (Kue Donat)
         const ctxTindakan = document.getElementById('canvasChartTindakan').getContext('2d');
         chartTindakanInst = new Chart(ctxTindakan, {
             type: 'doughnut',
             data: {
-                labels: chartData.tindakan.labels,
+                // Gunakan array label baru yang sudah diisi angka Rupiah
+                labels: labelTindakanRupiah, 
                 datasets: [{
                     data: chartData.tindakan.omzet,
                     backgroundColor: ['#e74c3c', '#f1c40f', '#3498db', '#9b59b6', '#34495e', '#1abc9c', '#e67e22', '#d35400', '#c0392b', '#7f8c8d'],
@@ -7403,8 +7410,18 @@
             options: { 
                 responsive: true, maintainAspectRatio: false,
                 plugins: { 
-                    legend: { position: 'right', labels: { font: { size: 10 } } },
-                    tooltip: { callbacks: { label: function(context) { return ' Rp ' + context.raw.toLocaleString('id-ID'); } } }
+                    legend: { 
+                        position: 'right', 
+                        labels: { 
+                            font: { size: 11, weight: '500' }, // Sedikit ditebalkan agar mudah dibaca
+                            padding: 15 // Beri jarak antar baris keterangan
+                        } 
+                    },
+                    tooltip: { 
+                        callbacks: { 
+                            label: function(context) { return ' Kontribusi: Rp ' + context.raw.toLocaleString('id-ID'); } 
+                        } 
+                    }
                 } 
             }
         });
