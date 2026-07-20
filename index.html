@@ -1526,26 +1526,35 @@
 
             <div id="pillTabel" class="pill-content" style="display: none;">
                 <!-- Kotak Pencarian -->
-                <!-- 🔥 KOTAK PENCARIAN & FILTER MULTI-KRITERIA -->
+                <!-- 🔥 KOTAK PENCARIAN, FILTER, & TOMBOL EXPORT -->
                 <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    
+                    <!-- Area Kiri: Filter -->
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1;">
-                        <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 250px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
+                        <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 200px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
                         
-                        <!-- Dropdown Dinamis -->
-                        <select id="filterSelectDokter" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
+                        <select id="filterSelectDokter" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
                             <option value="">👨‍⚕️ Semua Dokter</option>
                         </select>
                         
-                        <select id="filterSelectTindakan" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
+                        <select id="filterSelectTindakan" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
                             <option value="">🩺 Semua Tindakan</option>
                         </select>
 
-                        <select id="filterSelectPembayaran" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
+                        <select id="filterSelectPembayaran" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
                             <option value="">💳 Semua Pembayaran</option>
                         </select>
                     </div>
-                    <span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak</span>
+
+                    <!-- 🔥 Area Kanan: Tombol Export (BARU) -->
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="exportKeCSV()" style="background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📥 Excel / CSV</button>
+                        
+                        <button onclick="cetakTabelPDF()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🖨️ Cetak / PDF</button>
+                    </div>
+
                 </div>
+                <div style="margin-bottom: 10px;"><span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak. Export akan mengikuti hasil filter Anda.</span></div>
 
                 <!-- Kontainer Tabel -->
                 <div style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow-x: auto; max-height: 450px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
@@ -7425,6 +7434,105 @@
                 } 
             }
         });
+    }
+
+    // ==========================================================
+    // 🔥 FITUR EXPORT: EXCEL (CSV) & CETAK PDF
+    // ==========================================================
+    
+    // 1. Fungsi Export ke Excel (CSV)
+    function exportKeCSV() {
+        let csv = [];
+        // Header Kolom (Kita buang kolom ke-9 yaitu Arsip PDF karena tidak berguna di Excel)
+        let header = ["No. Kuitansi", "Tanggal", "Nama Pasien", "Rincian Tindakan", "Dokter Pelaksana", "Pembayaran", "Diskon", "Grand Total"];
+        csv.push(header.join(","));
+
+        // Ambil semua baris dari tabel
+        let barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
+        
+        barisTabel.forEach(row => {
+            // Hanya proses baris yang TAMPIL (tidak disembunyikan oleh filter) dan bukan baris kosong
+            if (row.style.display !== "none" && row.cells.length > 1) { 
+                let barisCsv = [];
+                for (let i = 0; i < 8; i++) { // Ambil kolom index 0 sampai 7 saja
+                    // Ambil teks murni, hilangkan enter/jarak baris agar Excel tidak berantakan
+                    let teks = row.cells[i].innerText.replace(/(\r\n|\n|\r)/gm, " - "); 
+                    teks = teks.replace(/"/g, '""'); // Pengaman untuk tanda kutip ganda
+                    barisCsv.push(`"${teks}"`); // Bungkus dengan tanda kutip agar aman
+                }
+                csv.push(barisCsv.join(","));
+            }
+        });
+
+        // Trigger Download
+        let csvString = csv.join("\n");
+        let blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Laporan_Keuangan_Klinik.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // 2. Fungsi Cetak & Save as PDF
+    function cetakTabelPDF() {
+        // Buat tabel HTML baru yang bersih khusus untuk dicetak
+        let tableHtml = `<table border="1" cellpadding="8" style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; text-align: left;">`;
+        tableHtml += `<thead style="background-color: #f2f2f2;"><tr>
+            <th>No. Kuitansi</th><th>Tanggal</th><th>Nama Pasien</th>
+            <th>Tindakan</th><th>Dokter</th><th>Bayar</th>
+            <th style="text-align:right;">Diskon</th><th style="text-align:right;">Grand Total</th>
+        </tr></thead><tbody>`;
+
+        let barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
+        let adaData = false;
+
+        barisTabel.forEach(row => {
+            if (row.style.display !== "none" && row.cells.length > 1) {
+                adaData = true;
+                tableHtml += `<tr>`;
+                for(let i=0; i<8; i++){
+                    let align = (i === 6 || i === 7) ? 'text-align:right;' : '';
+                    let teksBersih = row.cells[i].innerText.replace(/(\r\n|\n|\r)/gm, "<br>");
+                    tableHtml += `<td style="${align}">${teksBersih}</td>`;
+                }
+                tableHtml += `</tr>`;
+            }
+        });
+        tableHtml += `</tbody></table>`;
+
+        if(!adaData) {
+            alert("⚠️ Tidak ada data untuk dicetak!"); return;
+        }
+
+        // Buka Jendela Cetak
+        let jendelaCetak = window.open('', '_blank', 'width=900,height=600');
+        jendelaCetak.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Laporan Keuangan</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="text-align: center; margin-bottom: 5px;">Laporan Keuangan Klinik</h2>
+                    <p style="text-align: center; font-size: 14px; color: gray; margin-top: 0; margin-bottom: 20px;">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+                    ${tableHtml}
+                    <div style="margin-top:30px; text-align:right; font-size:12px;">
+                        <p>Mengetahui,</p><br><br><br><p><b>Bagian Keuangan</b></p>
+                    </div>
+                </body>
+            </html>
+        `);
+        jendelaCetak.document.close();
+        jendelaCetak.focus();
+        
+        // Panggil dialog Print bawaan browser (Bisa Save as PDF di sini)
+        setTimeout(() => { 
+            jendelaCetak.print(); 
+            jendelaCetak.close();
+        }, 500); // Jeda setengah detik agar HTML dirender dulu
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
