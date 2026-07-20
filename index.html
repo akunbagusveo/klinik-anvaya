@@ -7551,13 +7551,19 @@
     }
 
     // 2. Fungsi Cetak & Save as PDF
+    // 2. Fungsi Cetak & Save as PDF (Versi Super Rapi & Terstruktur)
     function cetakTabelPDF() {
-        // Buat tabel HTML baru yang bersih khusus untuk dicetak
-        let tableHtml = `<table border="1" cellpadding="8" style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; text-align: left;">`;
+        // 🔥 TRIK 1: Kunci lebar masing-masing kolom dengan persentase (%) agar proporsional
+        let tableHtml = `<table border="1" cellpadding="8" style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px; text-align: left;">`;
         tableHtml += `<thead style="background-color: #f2f2f2;"><tr>
-            <th>No. Kuitansi</th><th>Tanggal</th><th>Nama Pasien</th>
-            <th>Tindakan</th><th>Dokter</th><th>Bayar</th>
-            <th style="text-align:right;">Diskon</th><th style="text-align:right;">Grand Total</th>
+            <th style="width: 12%;">No. Nota</th>
+            <th style="width: 10%;">Tanggal</th>
+            <th style="width: 14%;">Nama Pasien</th>
+            <th style="width: 25%;">Rincian Tindakan</th>
+            <th style="width: 15%;">Dokter</th>
+            <th style="width: 7%; text-align:center;">Bayar</th>
+            <th style="width: 8%; text-align:right;">Diskon</th>
+            <th style="width: 9%; text-align:right;">Total</th>
         </tr></thead><tbody>`;
 
         let barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
@@ -7567,10 +7573,21 @@
             if (row.style.display !== "none" && row.cells.length > 1) {
                 adaData = true;
                 tableHtml += `<tr>`;
-                for(let i=0; i<8; i++){
-                    let align = (i === 6 || i === 7) ? 'text-align:right;' : '';
-                    let teksBersih = row.cells[i].innerText.replace(/(\r\n|\n|\r)/gm, "<br>");
-                    tableHtml += `<td style="${align}">${teksBersih}</td>`;
+                for(let i = 0; i < 8; i++){
+                    // Atur tata letak teks per kolom
+                    let align = (i === 6 || i === 7) ? 'text-align:right;' : (i === 5 ? 'text-align:center;' : '');
+                    let teksBersih = "";
+                    let spans = row.cells[i].querySelectorAll('span');
+                    
+                    // 🔥 TRIK 2: Ubah Kapsul menjadi Daftar Titik (Bullet Points) <ul><li>
+                    if (spans.length > 0 && (i === 3 || i === 4)) {
+                        let arrSpan = Array.from(spans).map(s => `<li style="margin-bottom: 2px;">${s.innerText.trim()}</li>`);
+                        teksBersih = `<ul style="margin: 0; padding-left: 14px;">${arrSpan.join("")}</ul>`; 
+                    } else {
+                        teksBersih = row.cells[i].innerText.trim().replace(/(\r\n|\n|\r)/gm, "<br>");
+                    }
+
+                    tableHtml += `<td style="${align} vertical-align: top;">${teksBersih}</td>`;
                 }
                 tableHtml += `</tr>`;
             }
@@ -7581,18 +7598,26 @@
             alert("⚠️ Tidak ada data untuk dicetak!"); return;
         }
 
-        // Buka Jendela Cetak
         let jendelaCetak = window.open('', '_blank', 'width=900,height=600');
         jendelaCetak.document.write(`
             <html>
                 <head>
                     <title>Cetak Laporan Keuangan</title>
+                    <style>
+                        /* 🔥 TRIK 3: Anti-Potong Halaman (Mencegah 1 baris terbelah jadi 2 halaman) */
+                        tr { page-break-inside: avoid; }
+                        @media print {
+                            @page { margin: 1.5cm; } /* Beri margin putih elegan di kertas */
+                        }
+                    </style>
                 </head>
-                <body style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2 style="text-align: center; margin-bottom: 5px;">Laporan Keuangan Klinik</h2>
-                    <p style="text-align: center; font-size: 14px; color: gray; margin-top: 0; margin-bottom: 20px;">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+                <body style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="text-align: center; margin-bottom: 5px; color: #2c3e50;">Laporan Keuangan Klinik</h2>
+                    <p style="text-align: center; font-size: 12px; color: #7f8c8d; margin-top: 0; margin-bottom: 25px;">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+                    
                     ${tableHtml}
-                    <div style="margin-top:30px; text-align:right; font-size:12px;">
+                    
+                    <div style="margin-top:40px; text-align:right; font-size:12px;">
                         <p>Mengetahui,</p><br><br><br><p><b>Bagian Keuangan</b></p>
                     </div>
                 </body>
@@ -7601,11 +7626,10 @@
         jendelaCetak.document.close();
         jendelaCetak.focus();
         
-        // Panggil dialog Print bawaan browser (Bisa Save as PDF di sini)
         setTimeout(() => { 
             jendelaCetak.print(); 
             jendelaCetak.close();
-        }, 500); // Jeda setengah detik agar HTML dirender dulu
+        }, 500);
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
