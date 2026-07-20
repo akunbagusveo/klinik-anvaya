@@ -1521,6 +1521,10 @@
                         <select id="filterSelectTindakan" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
                             <option value="">🩺 Semua Tindakan</option>
                         </select>
+
+                        <select id="filterSelectPembayaran" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 150px;">
+                            <option value="">💳 Semua Pembayaran</option>
+                        </select>
                     </div>
                     <span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak</span>
                 </div>
@@ -7109,11 +7113,6 @@
         const tglMulai = document.getElementById('tglMulaiFinansial').value;
         const tglAkhir = document.getElementById('tglAkhirFinansial').value;
         
-        // if (!tglMulai || !tglAkhir) {
-        //     alert("⚠️ Harap pilih rentang tanggal Mulai dan Sampai terlebih dahulu!");
-        //     return;
-        // }
-
         const btnFilter = document.querySelector('button[onclick="muatDataFinansial()"]');
         const teksAsli = btnFilter.innerText;
         btnFilter.innerText = "⏳ Menarik...";
@@ -7139,23 +7138,36 @@
                 document.getElementById('valRataTransaksi').innerText = formatRupiahFinansial(res.metrik.rataRata);
                 document.getElementById('valTotalDiskon').innerText = formatRupiahFinansial(res.metrik.diskon);
 
+                // 🔥 1. TANGKAP ELEMEN DROPDOWN PEMBAYARAN
                 const selectDokter = document.getElementById('filterSelectDokter');
                 const selectTindakan = document.getElementById('filterSelectTindakan');
+                const selectPembayaran = document.getElementById('filterSelectPembayaran');
                 
-                // Simpan pilihan user saat ini agar tidak tereset saat refresh bulan
+                // 🔥 2. SIMPAN PILIHAN SEBELUMNYA
                 const valDokter = selectDokter.value;
                 const valTindakan = selectTindakan.value;
+                const valPembayaran = selectPembayaran.value; 
 
+                // 🔥 3. KOSONGKAN DAN ISI OPSI DEFAULT
                 selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
                 selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
+                selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>'; 
 
+                // 🔥 4. SUNTIK DATA DARI SERVER KE MASING-MASING DROPDOWN
                 if (res.opsiFilter) {
                     res.opsiFilter.dokter.forEach(d => selectDokter.innerHTML += `<option value="${d}">${d}</option>`);
                     res.opsiFilter.tindakan.forEach(t => selectTindakan.innerHTML += `<option value="${t}">${t}</option>`);
+                    
+                    // Kita beri pengaman 'if' agar tidak error jika versi backend lama ter-cache
+                    if(res.opsiFilter.pembayaran) {
+                        res.opsiFilter.pembayaran.forEach(p => selectPembayaran.innerHTML += `<option value="${p}">${p}</option>`);
+                    }
                 }
                 
+                // 🔥 5. KEMBALIKAN PILIHAN USER
                 selectDokter.value = valDokter;
                 selectTindakan.value = valTindakan;
+                selectPembayaran.value = valPembayaran; 
                 
                 // Suntik Tabel Detail
                 const tbody = document.getElementById('tbodyLaporanFinansial');
@@ -7167,7 +7179,6 @@
                             ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` 
                             : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
 
-                        // 🔥 MENCETAK BARIS DENGAN DATA RELASI LENGKAP
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
                                 <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
@@ -7188,12 +7199,15 @@
                                 <td style="padding: 12px; text-align:center;">${btnPdf}</td>
                             </tr>
                         `;
-                        setTimeout(cariTabelFinansial, 100);
                     });
                 } else {
-                    // Jangan lupa sesuaikan colspan kosongnya menjadi 9 kolom
                     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
                 }
+
+                // 🔥 PENTING: setTimeout ini dipindah ke LUAR putaran `forEach`
+                // Memastikan tabel terfilter ulang (jika ada dropdown yang aktif) setelah tabel selesai dirender.
+                setTimeout(cariTabelFinansial, 100);
+
             } else {
                 alert("⚠️ Gagal memuat laporan: " + res.message);
             }
@@ -7269,26 +7283,28 @@
         const inputTeks = document.getElementById("inputCariFinansial").value.toLowerCase();
         const filterDokter = document.getElementById("filterSelectDokter").value.toLowerCase();
         const filterTindakan = document.getElementById("filterSelectTindakan").value.toLowerCase();
+        const filterPembayaran = document.getElementById("filterSelectPembayaran").value.toLowerCase(); // Baru
 
         const barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
 
         barisTabel.forEach(baris => {
-            if (baris.cells.length < 2) return; // Abaikan baris kosong
+            if (baris.cells.length < 2) return; 
             
             const noNota = baris.cells[0].innerText.toLowerCase();
             const namaPasien = baris.cells[2].innerText.toLowerCase();
-            
-            // Mengambil teks asli dari dalam HTML Kapsul (Browser otomatis mengabaikan HTML tag-nya)
             const teksTindakan = baris.cells[3].innerText.toLowerCase(); 
             const teksDokter = baris.cells[4].innerText.toLowerCase();   
+            
+            // Kolom ke-5 (Index 5) adalah Pembayaran
+            const teksPembayaran = baris.cells[5].innerText.toLowerCase(); // Baru
 
-            // 🔥 LOGIKA "INCLUDES" (SALAH SATU COCOK)
             let matchTeks = noNota.includes(inputTeks) || namaPasien.includes(inputTeks);
             let matchDokter = filterDokter === "" || teksDokter.includes(filterDokter);
             let matchTindakan = filterTindakan === "" || teksTindakan.includes(filterTindakan);
+            let matchPembayaran = filterPembayaran === "" || teksPembayaran.includes(filterPembayaran); // Baru
 
-            // Ketiga syarat harus terpenuhi (AND) agar baris muncul
-            if (matchTeks && matchDokter && matchTindakan) {
+            // 🔥 Keempat syarat harus cocok agar baris muncul
+            if (matchTeks && matchDokter && matchTindakan && matchPembayaran) {
                 baris.style.display = ""; 
             } else {
                 baris.style.display = "none"; 
