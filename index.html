@@ -7248,6 +7248,8 @@
         .catch(err => {
             btnFilter.innerText = teksAsli;
             btnFilter.disabled = false;
+            // 🔥 TAMBAHKAN BARIS INI UNTUK MENGUNGKAP TERSANGKA:
+            console.error("🚨 TERSANGKA ERROR DITEMUKAN:", err); 
             alert("⚠️ Terjadi kesalahan jaringan.");
         });
     }
