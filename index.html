@@ -6506,11 +6506,12 @@
                 const hargaBersih = parseFloat(t.hargaDiinput || t.hargaBersihPerItem) || 0;
                 totalTindakan += hargaBersih;
                 
-                // Susun struktur item terpecah untuk database DetailLaporanKeuangan (Opsi B)
+                // Susun struktur item terpecah untuk database DetailLaporanKeuangan
                 arrayTindakanPecahan.push({
                     namaTindakan: t.namaTindakan,
                     hargaBersihPerItem: hargaBersih,
-                    dokterPelaksana: dataPasien.namaDokter
+                    // 🔥 FIX: Gunakan nama spesifik (t.dokterPelaksana). Jika gagal, baru gunakan nama gabungan.
+                    dokterPelaksana: t.dokterPelaksana || dataPasien.namaDokter 
                 });
             });
         } catch (e) {
@@ -6560,7 +6561,8 @@
             }
 
             if (res.result === "success") {
-                alert("✅ " + res.message);
+                // 🔥 FIX: Buat pesan sukses manual karena backend tidak mengirim res.message
+                alert("✅ Kuitansi berhasil dibuat dan pembayaran telah ditutup!");
                 
                 // Buka tab kuitansi PDF otomatis untuk siap cetak
                 if (res.pdfUrl) {
@@ -6571,6 +6573,7 @@
                 tutupModalBilling(); 
                 if (typeof muatAntreanKasir === "function") muatAntreanKasir();
             } else {
+                // Untuk error, backend tetap mengirimkan res.message
                 alert("❌ Proses Gagal: " + res.message);
             }
         })
