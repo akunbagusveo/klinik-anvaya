@@ -6958,13 +6958,21 @@
 
     // === FUNGSI MENARIK DATA KEUANGAN (BERDASARKAN DATE RANGE) ===
     function muatDataFinansial() {
-        const tglMulai = document.getElementById('tglMulaiFinansial').value;
-        const tglAkhir = document.getElementById('tglAkhirFinansial').value;
+        // Ambil elemen tanggal secara aman
+        const elTglMulai = document.getElementById('tglMulaiFinansial');
+        const elTglAkhir = document.getElementById('tglAkhirFinansial');
+        const tglMulai = elTglMulai ? elTglMulai.value : "";
+        const tglAkhir = elTglAkhir ? elTglAkhir.value : "";
         
-        const btnFilter = document.querySelector('button[onclick="muatDataFinansial()"]');
-        const teksAsli = btnFilter.innerText;
-        btnFilter.innerText = "⏳ Menarik...";
-        btnFilter.disabled = true;
+        // 🔥 FIX 1: Pencarian tombol menggunakan '*=' (Contains) sehingga tahan banting!
+        const btnFilter = document.querySelector('button[onclick*="muatDataFinansial"]');
+        let teksAsli = "Terapkan Filter";
+        
+        if (btnFilter) {
+            teksAsli = btnFilter.innerText;
+            btnFilter.innerText = "⏳ Menarik...";
+            btnFilter.disabled = true;
+        }
 
         fetch(WEB_APP_URL, {
             method: 'POST',
@@ -6976,109 +6984,120 @@
         })
         .then(res => res.json())
         .then(res => {
-            btnFilter.innerText = teksAsli;
-            btnFilter.disabled = false;
+            if (btnFilter) {
+                btnFilter.innerText = teksAsli;
+                btnFilter.disabled = false;
+            }
 
             if (res.result === "success") {
-                // Suntik Metrik
-                document.getElementById('valPendapatanBersih').innerText = formatRupiahFinansial(res.metrik.pendapatan);
-                document.getElementById('valTotalTransaksi').innerHTML = `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`;
-                document.getElementById('valRataTransaksi').innerText = formatRupiahFinansial(res.metrik.rataRata);
-                document.getElementById('valTotalDiskon').innerText = formatRupiahFinansial(res.metrik.diskon);
+                // 🔥 FIX 2: Suntik Metrik dengan Pelindung (Safety Check)
+                const elPendapatan = document.getElementById('valPendapatanBersih');
+                if(elPendapatan) elPendapatan.innerText = formatRupiahFinansial(res.metrik.pendapatan);
+                
+                const elTransaksi = document.getElementById('valTotalTransaksi');
+                if(elTransaksi) elTransaksi.innerHTML = `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`;
+                
+                const elRata = document.getElementById('valRataTransaksi');
+                if(elRata) elRata.innerText = formatRupiahFinansial(res.metrik.rataRata);
+                
+                const elDiskon = document.getElementById('valTotalDiskon');
+                if(elDiskon) elDiskon.innerText = formatRupiahFinansial(res.metrik.diskon);
 
-                // 🔥 1. TANGKAP ELEMEN DROPDOWN PEMBAYARAN
+                // 1. TANGKAP ELEMEN DROPDOWN PEMBAYARAN DENGAN AMAN
                 const selectDokter = document.getElementById('filterSelectDokter');
                 const selectTindakan = document.getElementById('filterSelectTindakan');
                 const selectPembayaran = document.getElementById('filterSelectPembayaran');
                 
-                // 🔥 2. SIMPAN PILIHAN SEBELUMNYA
-                const valDokter = selectDokter.value;
-                const valTindakan = selectTindakan.value;
-                const valPembayaran = selectPembayaran.value; 
+                // Jika elemen filter ada, proses isinya
+                if (selectDokter && selectTindakan && selectPembayaran) {
+                    const valDokter = selectDokter.value;
+                    const valTindakan = selectTindakan.value;
+                    const valPembayaran = selectPembayaran.value; 
 
-                // 🔥 3. KOSONGKAN DAN ISI OPSI DEFAULT
-                selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
-                selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
-                selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>';
-                
-                // 🔥 SUNTIKAN BARU: Indikator Pertumbuhan vs Bulan Lalu
-                const divTumbuh = document.getElementById('valPertumbuhan');
-                if (res.metrik.pertumbuhan.arah === "naik") {
-                    divTumbuh.innerHTML = `📈 Naik ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
-                    divTumbuh.style.color = "#a8ffc4"; // Hijau terang
-                } else if (res.metrik.pertumbuhan.arah === "turun") {
-                    divTumbuh.innerHTML = `📉 Turun ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
-                    divTumbuh.style.color = "#ffcccc"; // Merah muda
-                } else {
-                    divTumbuh.innerHTML = `➖ Stabil (0%)`;
-                    divTumbuh.style.color = "#ffffff";
-                }
-
-                renderGrafikFinansial(res.chartData);
-
-                // 🔥 4. SUNTIK DATA DARI SERVER KE MASING-MASING DROPDOWN
-                if (res.opsiFilter) {
-                    res.opsiFilter.dokter.forEach(d => selectDokter.innerHTML += `<option value="${d}">${d}</option>`);
-                    res.opsiFilter.tindakan.forEach(t => selectTindakan.innerHTML += `<option value="${t}">${t}</option>`);
+                    selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
+                    selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
+                    selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>';
                     
-                    // Kita beri pengaman 'if' agar tidak error jika versi backend lama ter-cache
-                    if(res.opsiFilter.pembayaran) {
-                        res.opsiFilter.pembayaran.forEach(p => selectPembayaran.innerHTML += `<option value="${p}">${p}</option>`);
+                    if (res.opsiFilter) {
+                        res.opsiFilter.dokter.forEach(d => selectDokter.innerHTML += `<option value="${d}">${d}</option>`);
+                        res.opsiFilter.tindakan.forEach(t => selectTindakan.innerHTML += `<option value="${t}">${t}</option>`);
+                        if(res.opsiFilter.pembayaran) {
+                            res.opsiFilter.pembayaran.forEach(p => selectPembayaran.innerHTML += `<option value="${p}">${p}</option>`);
+                        }
+                    }
+                    
+                    selectDokter.value = valDokter;
+                    selectTindakan.value = valTindakan;
+                    selectPembayaran.value = valPembayaran; 
+                }
+                
+                // Indikator Pertumbuhan
+                const divTumbuh = document.getElementById('valPertumbuhan');
+                if (divTumbuh) {
+                    if (res.metrik.pertumbuhan.arah === "naik") {
+                        divTumbuh.innerHTML = `📈 Naik ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
+                        divTumbuh.style.color = "#a8ffc4";
+                    } else if (res.metrik.pertumbuhan.arah === "turun") {
+                        divTumbuh.innerHTML = `📉 Turun ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
+                        divTumbuh.style.color = "#ffcccc";
+                    } else {
+                        divTumbuh.innerHTML = `➖ Stabil (0%)`;
+                        divTumbuh.style.color = "#ffffff";
                     }
                 }
-                
-                // 🔥 5. KEMBALIKAN PILIHAN USER
-                selectDokter.value = valDokter;
-                selectTindakan.value = valTindakan;
-                selectPembayaran.value = valPembayaran; 
+
+                // Render Grafik jika fungsinya ada
+                if (typeof renderGrafikFinansial === "function") {
+                    renderGrafikFinansial(res.chartData);
+                }
                 
                 // Suntik Tabel Detail
                 const tbody = document.getElementById('tbodyLaporanFinansial');
-                tbody.innerHTML = ''; 
-                
-                if (res.dataTabel && res.dataTabel.length > 0) {
-                    res.dataTabel.forEach(nota => {
-                        let btnPdf = nota.linkPdf !== "#" 
-                            ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` 
-                            : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
+                if (tbody) {
+                    tbody.innerHTML = ''; 
+                    
+                    if (res.dataTabel && res.dataTabel.length > 0) {
+                        res.dataTabel.forEach(nota => {
+                            let btnPdf = nota.linkPdf !== "#" 
+                                ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` 
+                                : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
 
-                        tbody.innerHTML += `
-                            <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
-                                <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
-                                <td style="padding: 12px;">${nota.tanggal}</td>
-                                <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
-                                
-                                <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
-                                
-                                <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${nota.dokter}</td>
-                                
-                                <td style="padding: 12px; text-align:center;">
-                                    <span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">
-                                        ${nota.metodeBayar}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px; text-align:right; color:#e74c3c;">${nota.diskon > 0 ? formatRupiahFinansial(nota.diskon) : '-'}</td>
-                                <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${formatRupiahFinansial(nota.grandTotal)}</td>
-                                <td style="padding: 12px; text-align:center;">${btnPdf}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
+                            tbody.innerHTML += `
+                                <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+                                    <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
+                                    <td style="padding: 12px;">${nota.tanggal}</td>
+                                    <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
+                                    <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
+                                    <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${nota.dokter}</td>
+                                    <td style="padding: 12px; text-align:center;">
+                                        <span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">
+                                            ${nota.metodeBayar}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align:right; color:#e74c3c;">${nota.diskon > 0 ? formatRupiahFinansial(nota.diskon) : '-'}</td>
+                                    <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${formatRupiahFinansial(nota.grandTotal)}</td>
+                                    <td style="padding: 12px; text-align:center;">${btnPdf}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
+                    }
                 }
 
-                // 🔥 PENTING: setTimeout ini dipindah ke LUAR putaran `forEach`
-                // Memastikan tabel terfilter ulang (jika ada dropdown yang aktif) setelah tabel selesai dirender.
-                setTimeout(cariTabelFinansial, 100);
+                if (typeof cariTabelFinansial === "function") {
+                    setTimeout(cariTabelFinansial, 100);
+                }
 
             } else {
                 alert("⚠️ Gagal memuat laporan: " + res.message);
             }
         })
         .catch(err => {
-            btnFilter.innerText = teksAsli;
-            btnFilter.disabled = false;
-            // 🔥 TAMBAHKAN BARIS INI UNTUK MENGUNGKAP TERSANGKA:
+            if (btnFilter) {
+                btnFilter.innerText = teksAsli;
+                btnFilter.disabled = false;
+            }
             console.error("🚨 TERSANGKA ERROR DITEMUKAN:", err); 
             alert("⚠️ Terjadi kesalahan jaringan.");
         });
