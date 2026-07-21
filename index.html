@@ -7499,8 +7499,9 @@
 
     // Fungsi Utama: Eksekusi Rumus Bisnis & Render UI (Reaktif terhadap filter)
     function kalkulasiDanRenderBagiHasil() {
-        let tglMulai = document.getElementById('filterTanggalMulai').value;
-        let tglAkhir = document.getElementById('filterTanggalAkhir').value;
+        // 🔥 FIX: Ambil tanggal dari ID Kalender Finansial yang benar!
+        let tglMulai = document.getElementById('tglMulaiFinansial').value;
+        let tglAkhir = document.getElementById('tglAkhirFinansial').value;
         
         // 1. FILTER TANGGAL
         let dataTerfilter = rawDataBagiHasil.filter(item => {
