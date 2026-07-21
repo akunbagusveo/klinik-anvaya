@@ -2910,8 +2910,8 @@
                 }
                 
                 if (statusBaru === "Sedang Diperiksa" && noRM !== "" && namaPasien !== "") {
-                    // 🔥 FIX UTAMA 2: Salurkan tanggalDaftar asli antrean ke dalam modal
-                    bukaModalRiwayatFull(noRM, namaPasien, 'input', tanggalDaftar);
+                    // 🔥 FIX: Salurkan tanggalDaftar DAN rowNum agar tidak dicuri dokter lain!
+                    bukaModalRiwayatFull(noRM, namaPasien, 'input', tanggalDaftar, rowNum);
                 } else if (statusBaru === "Belum Diperiksa" && document.getElementById('sectionRME')) {
                     document.getElementById('sectionRME').style.display = 'none';
                 }
@@ -3347,24 +3347,27 @@
     // FUNGSI BUKA MODAL RME
     // ==========================================
     // 🔥 UPGRADE: Tambahkan parameter tanggalDaftarLangsung di akhir
-    function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "") {
-        const dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM);
+    function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "", rowNumberTarget = "") {
+        // Cari berbasis No RM DAN Row Number (Sangat Akurat)
+        let dataPasienObj = null;
+        if (rowNumberTarget !== "") {
+            dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM && String(p.rowNumber) === String(rowNumberTarget));
+        } else {
+            dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM); // Fallback jika mode view
+        }
 
-        // 🎯 SUNTIKKAN BARIS INI UNTUK TESTING:
-        if (dataPasienObj && dataPasienObj.statusBayar === undefined) {
-             alert("⚠️ DIAGNOSA SISTEM: Benar saja! Kolom 'Status Bayar' tidak dikirim oleh server ke layar antrean utama. Kita harus update Kode.gs!");
+        if (!dataPasienObj) {
+            alert("⚠️ Data antrean tidak ditemukan di memori!");
+            return;
         }
         
-        // 🔥 FIX UTAMA 1: Gunakan tanggal daftar dari baris klik antrean yang sah, bukan tebakan .find()
-        window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
+        window.tanggalKunjunganAktif = tanggalDaftarLangsung || dataPasienObj.tanggalDaftar;
         
         window.isPasienLunasAktif = false;
         if (dataPasienObj && (dataPasienObj.statusBayar === "Lunas" || dataPasienObj.statusBayar === "lunas")) {
             window.isPasienLunasAktif = true;
         }
 
-        // Sembunyikan tombol "Tambah Item Tindakan" jika sudah lunas
-        // ⚠️ Pastikan ID 'btnTambahTindakan' sesuai dengan ID tombol di HTML Anda
         const btnTambah = document.getElementById('btnTambahTindakan'); 
         if (btnTambah) {
             btnTambah.style.display = window.isPasienLunasAktif ? 'none' : 'inline-block';
@@ -3375,17 +3378,8 @@
 
         document.getElementById('modalRiwayatFull').style.display = 'flex'; 
 
-        
-
-        // Ini memastikan variabel kamusKoreksiDinamis langsung terisi data ter-update dari Sheets!
-        if (typeof muatKamusDikte === "function") {
-            muatKamusDikte();
-        }
-
-        // 🔥 FIX UTAMA: Pengecekan Defensif Kebal Error Undefined Length
-        if (typeof muatMasterTindakan === "function" && (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0)) {
-            muatMasterTindakan();
-        }
+        if (typeof muatKamusDikte === "function") muatKamusDikte();
+        if (typeof muatMasterTindakan === "function" && (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0)) muatMasterTindakan();
         
         const kolomKiri = document.getElementById('kolomInputRME');
         const formSplit = document.getElementById('formModalMedisSplit');
@@ -3394,14 +3388,17 @@
             kolomKiri.style.display = 'none'; 
         } else {
             kolomKiri.style.display = 'block'; 
-            // 🔥 FIX UTAMA 1: Paksa form di dalam kontainer untuk selalu muncul secara dinamis
             if (formSplit) formSplit.style.display = 'block'; 
         }
 
         document.getElementById('modalNoRM').value = noRM;
         document.getElementById('modalNama').value = namaPasien;
-        document.getElementById('modalRowUpdate').value = "";
-        // 🔥 1. AKTIFKAN GEMBOK: Tahan semua auto-save selama proses reset form & load data
+        
+        // =====================================================================
+        // 🔥 FIX UTAMA ESTAFET DATA: Simpan Row Number ke Form Tersembunyi!
+        // =====================================================================
+        document.getElementById('modalRowUpdate').value = rowNumberTarget; 
+        
         window.isRestoringDraft = true; 
         document.getElementById('formModalMedisSplit').reset();
         
@@ -6625,8 +6622,13 @@
                     
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
+                    
+                    // 🔥 UI BARU: Tanpa bullet (•), menggunakan styling blok nama yang lebih rapi
                     tr.innerHTML = `
-                        <td style="padding: 8px; font-weight: 600; color: #34495e;">• ${t.namaTindakan} <br><span style="font-size:10px; color:#7f8c8d;">👨‍⚕️ ${t.dokterPelaksana || '-'}</span></td>
+                        <td style="padding: 8px; font-weight: 600; color: #34495e;">
+                            ${t.namaTindakan} <br>
+                            <span style="font-size:10px; color:#16a085; font-weight: bold;">👨‍⚕️ Dr. ${t.dokterPelaksana || 'Umum'}</span>
+                        </td>
                         <td style="padding: 8px; color: #7f8c8d; font-style: italic;">${t.catatanKlinis || '-'}</td>
                         <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${hargaMurniItem.toLocaleString('id-ID')}</td>
                     `;
