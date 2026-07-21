@@ -6644,7 +6644,7 @@
                                 style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Ingatkan dokter/asisten untuk input RME">
                             🔔 Ping
                         </button>
-                        <button onclick="bukaModalProsesBilling('${p.noRM}', '${p.barisPendaftaran}')" 
+                        <button onclick="bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran)}')" 
                                 style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                             💰 Proses Bayar
                         </button>
@@ -6767,11 +6767,11 @@
 
     
     // 🔥 FUNGSI: Membuka Jendela Kasir & Membongkar Rincian Objek JSON (ANTI-NaN)
-    function bukaModalProsesBilling(noRM, barisPendaftaran) {
+    function bukaModalProsesBilling(noRM, barisPendaftaranStr) { // 🔥 Terima input sebagai string
         if (!window.currentKasirQueueData) return;
         
-        // Cari data pasien di memori kasir global
-        const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && String(p.barisPendaftaran) === String(barisPendaftaran));
+        // Cari data pasien di memori kasir global (Berdasarkan No RM dan string baris yang cocok)
+        const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaranStr);
         if (!pasien) {
             alert("⚠️ Data antrean pasien gagal dibaca dari memori.");
             return;
@@ -6782,49 +6782,41 @@
         document.getElementById('billNama').innerText = pasien.namaPasien;
         document.getElementById('billDokter').innerText = pasien.namaDokter;
         document.getElementById('billTanggal').innerText = pasien.tanggalDaftar;
-        document.getElementById('billBarisPendaftaran').value = pasien.barisPendaftaran;
+        
+        // 🔥 FIX: Kirim baris pendaftaran sebagai teks JSON (Array [10, 11]) ke form sembunyi
+        document.getElementById('billBarisPendaftaran').value = JSON.stringify(pasien.barisPendaftaran);
+        
         document.getElementById('inpBillDiskon').value = "";
         
         const tbody = document.getElementById('tbodyItemBilling');
         tbody.innerHTML = "";
-        
         window.totalTindakanAktifKasir = 0;
 
-        // Bongkar isi array tindakan
         try {
             let arrTindakan = JSON.parse(pasien.tindakanRaw);
             if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                 arrTindakan.forEach(t => {
-                    // 🔥 FIX UTAMA: Mengambil properti baru atau lama secara dinamis & aman
                     const hargaMurniItem = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
                     window.totalTindakanAktifKasir += hargaMurniItem;
                     
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
                     tr.innerHTML = `
-                        <td style="padding: 8px; font-weight: 600; color: #34495e;">• ${t.namaTindakan}</td>
+                        <td style="padding: 8px; font-weight: 600; color: #34495e;">• ${t.namaTindakan} <br><span style="font-size:10px; color:#7f8c8d;">👨‍⚕️ ${t.dokterPelaksana || '-'}</span></td>
                         <td style="padding: 8px; color: #7f8c8d; font-style: italic;">${t.catatanKlinis || '-'}</td>
                         <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${hargaMurniItem.toLocaleString('id-ID')}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:gray;">⚠️ Tidak ada rincian tindakan medis dari dokter.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:gray;">⚠️ Tidak ada rincian tindakan medis.</td></tr>`;
             }
         } catch (e) {
-            // Fallback data teks manual lama
-            tbody.innerHTML = `<tr>
-                <td style="padding: 8px; font-weight: 600;">• Biaya Perawatan Klinis</td>
-                <td style="padding: 8px; color: gray;">${pasien.tindakanRaw}</td>
-                <td style="padding: 8px; text-align: right; font-weight: bold;">Rp 0 (Hubungi Dokter)</td>
-            </tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:red;">⚠️ Error membaca data tindakan.</td></tr>`;
         }
 
-        // Render Nilai Awal Kalkulator
         document.getElementById('lblBillTotalTindakan').innerText = "Rp " + window.totalTindakanAktifKasir.toLocaleString('id-ID');
         hitungGrandTotalBillingRealtime();
-
-        // Tampilkan Modal melayang ke layar
         document.getElementById('modalBillingKasir').style.display = 'flex';
     }
 
