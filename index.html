@@ -3353,25 +3353,32 @@
     function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "", rowNumberTarget = "") {
         // Cari berbasis No RM DAN Row Number (Sangat Akurat)
         let dataPasienObj = null;
-        if (rowNumberTarget !== "") {
-            dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM && String(p.rowNumber) === String(rowNumberTarget));
-        } else {
-            dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM); // Fallback jika mode view
+        
+        // Pastikan variabel dataAntreanGlobal eksis sebelum mencari
+        if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal !== null) {
+            if (rowNumberTarget !== "") {
+                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM && String(p.rowNumber) === String(rowNumberTarget));
+            } else {
+                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM); // Fallback jika mode view
+            }
         }
 
-        if (!dataPasienObj) {
+        // 🔥 FIX UTAMA: Jangan blokir jika hanya mode 'view' (Berasal dari tab Database/Pencarian Pasien)
+        // Blokir HANYA JIKA dokter mau 'input' tapi pasien tidak ada di antrean hari ini.
+        if (!dataPasienObj && mode === 'input') {
             alert("⚠️ Data antrean tidak ditemukan di memori!");
             return;
         }
         
-        window.tanggalKunjunganAktif = tanggalDaftarLangsung || dataPasienObj.tanggalDaftar;
+        // Tetapkan fallback (nilai pengganti) jika dataPasienObj kosong
+        window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
         
         window.isPasienLunasAktif = false;
-        if (dataPasienObj && (dataPasienObj.statusBayar === "Lunas" || dataPasienObj.statusBayar === "lunas")) {
+        if (dataPasienObj && (dataPasienObj.statusBayar === "Lunas" || dataPasienObj.statusBayar.toLowerCase() === "lunas")) {
             window.isPasienLunasAktif = true;
         }
 
-        const btnTambah = document.getElementById('btnTambahTindakan'); 
+        const btnTambah = document.getElementById('btnTambahTindakan');
         if (btnTambah) {
             btnTambah.style.display = window.isPasienLunasAktif ? 'none' : 'inline-block';
         }
