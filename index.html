@@ -547,6 +547,7 @@
         <button id="tabAntreanBtn" class="tab-link" onclick="switchTab('antrean')">👥 Antrian Pasien</button>
         <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">🗂️ Riwayat Medis</button>
         <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">📂 Database Pasien</button>
+        <button id="tabPengingatKontrolBtn" class="tab-link" onclick="switchTab('pengingatKontrol')">🔔 Worklist Kontrol</button>
         
         <span class="sidebar-category">KEUANGAN & ANALISIS</span>
         <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold; color: #ffeb3b;">📈 Analisis Bisnis</button>
@@ -562,23 +563,6 @@
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <div id="mainPage" class="container">
-    <!-- <div class="header-area">
-        <div class="nav-tabs">
-            <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">Beranda Utama</button>
-            <button id="tabPendaftaranBtn" class="tab-link" onclick="switchTab('pendaftaran')">Form Pendaftaran</button>
-            <button id="tabAntreanBtn" class="tab-link" onclick="switchTab('antrean')">Antrian Pasien</button>
-            <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">Riwayat Medis Pasien</button>
-            <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">Database Pasien</button>
-            <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">Kamus Dikte</button>
-            <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold;">📈 Analisis Bisnis</button>
-            <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold;">💰 Kasir & Billing</button>
-            <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
-        </div>
-        <div>
-            <span id="txtUserStatus" class="user-info"></span>
-            <button class="btn-logout" onclick="logout()">Logout</button>
-        </div>
-    </div> -->
 
     <div id="beranda" class="tab-content">
         <h2>Dashboard Eksekutif Klinik Anvaya</h2>
@@ -961,6 +945,47 @@
             
         </div>
 
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- HALAMAN WORKLIST PENGINGAT KONTROL -->
+    <!-- ======================================================= -->
+    <div id="pengingatKontrol" class="tab-content">
+        <h2>Worklist Pengingat Kontrol</h2>
+        <p style="color: #666;">Daftar antrean pasien yang harus dihubungi hari ini, besok, atau minggu depan.</p>
+        
+        <div class="form-group" style="background: white; padding: 20px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+                <label for="filterWaktuKontrol" style="font-weight: bold; margin-bottom: 8px; display: block;">Tampilkan Jadwal (Waktu Target):</label>
+                <select id="filterWaktuKontrol" onchange="muatDataPengingat()" style="height: 42px; width: 100%; max-width: 400px; border-radius: 4px; border: 1px solid #ccc; padding: 0 10px; font-weight: bold; cursor: pointer;">
+                    <option value="hari_ini">🔴 Mendesak: Jadwal Hari Ini (H-0)</option>
+                    <option value="besok">🟡 Persiapan: Jadwal Besok (H-1)</option>
+                    <option value="minggu_depan">🟢 7 Hari Kedepan</option>
+                    <option value="semua">📋 Semua Jadwal (Menunggu)</option>
+                </select>
+            </div>
+            
+            <button type="button" onclick="muatDataPengingat()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔄 Refresh Data</button>
+        </div>
+
+        <div class="table-responsive" style="margin-top: 25px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tgl Kontrol</th>
+                        <th>No. RM</th>
+                        <th>Nama Pasien</th>
+                        <th>No. WhatsApp</th>
+                        <th>Pesan Dokter</th>
+                        <th style="text-align:center;">Status</th>
+                        <th style="text-align:center;">Aksi Eksekusi</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelPengingatBody">
+                    <tr><td colspan="7" style="text-align:center;">Silakan klik "Refresh Data" untuk memuat tugas... ⏳</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Tab Kamus Dikte -->
