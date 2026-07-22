@@ -7741,6 +7741,49 @@
         tbody.innerHTML = html;
     }
 
+    // =========================================================
+    // EKSEKUTOR MAGIC WHATSAPP & UPDATE STATUS
+    // =========================================================
+    function kirimWaKontrol(noWA, namaPasien, tanggal, pesan, rowSheet) {
+        if (!noWA || noWA === "-" || noWA === "") {
+            alert("⚠️ Nomor WhatsApp pasien tidak ditemukan di database!");
+            return;
+        }
+
+        // 1. Format Nomor Telepon (Otomatis ubah 08... menjadi 628...)
+        let noWaBersih = noWA.toString().replace(/\D/g, '');
+        if (noWaBersih.startsWith('0')) {
+            noWaBersih = '62' + noWaBersih.substring(1);
+        }
+
+        // 2. Merakit Template Kalimat Otomatis
+        let teksPesan = `Halo Kak ${namaPasien}, 👋\n\nIni dari *Klinik Anvaya*. Mengingatkan pesan dari dokter bahwa jadwal kontrol gigi kakak adalah tanggal *${tanggal}*.\n\n📝 *Catatan Dokter:* ${pesan}\n\nApakah kakak ingin dibantu reservasi jam kedatangannya? 😊`;
+        
+        // 3. Eksekusi Buka WhatsApp Web
+        let linkWA = `https://api.whatsapp.com/send?phone=${noWaBersih}&text=${encodeURIComponent(teksPesan)}`;
+        window.open(linkWA, '_blank');
+
+        // 4. Diam-diam update status di Database menjadi "Sudah Di-WA"
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "updateStatusKontrol",
+                row: rowSheet,
+                statusBaru: "Sudah Di-WA"
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                // Jika berhasil update, refresh tabel dalam 2 detik
+                setTimeout(() => {
+                    muatDataPengingat();
+                }, 2000);
+            }
+        })
+        .catch(err => console.error("Gagal update status otomatis", err));
+    }
+
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
     document.addEventListener("DOMContentLoaded", function() {
         const inputFinansial = document.getElementById('filterBulanFinansial');
