@@ -7626,7 +7626,7 @@
     }
 
     // =========================================================
-    // Fungsi Eksekutor Cetak (Tambahkan di bagian paling bawah)
+    // Fungsi Eksekutor Cetak (Anti-Spam & Anti-Drive Penuh)
     // =========================================================
     function cetakSlipDokter(index, event) {
         event.stopPropagation(); // Mencegah baris Rincian ikut terbuka saat tombol diklik
@@ -7649,15 +7649,31 @@
         })
         .then(res => res.json())
         .then(res => {
-            btn.innerText = teksAsli;
-            btn.disabled = false;
             if (res.result === "success") {
+                // 1. Langsung buka tab baru pertama kali
                 window.open(res.pdfUrl, '_blank');
+                
+                // 🔥 2. UBAH WUJUD TOMBOL (ANTI-SPAM)
+                btn.innerHTML = "📂 Buka Slip";
+                btn.style.backgroundColor = "#27ae60"; // Berubah jadi hijau elegan
+                btn.style.boxShadow = "0 1px 3px rgba(39, 174, 96, 0.4)";
+                btn.disabled = false;
+                
+                // 🔥 3. GANTI TUGAS TOMBOL: Hanya buka tab, jangan request cetak lagi!
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    window.open(res.pdfUrl, '_blank');
+                };
+
             } else {
+                // Jika gagal, kembalikan ke tombol cetak merah
+                btn.innerText = teksAsli;
+                btn.disabled = false;
                 alert("Gagal mencetak: " + res.message);
             }
         })
         .catch(err => {
+            // Jika error jaringan, kembalikan ke tombol cetak merah
             btn.innerText = teksAsli;
             btn.disabled = false;
             alert("Kesalahan jaringan saat mencetak slip.");
