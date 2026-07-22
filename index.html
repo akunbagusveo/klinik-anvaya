@@ -7646,6 +7646,101 @@
         }
     }
 
+    // =========================================================
+    // MESIN WORKLIST PENGINGAT KONTROL
+    // =========================================================
+    let rawDataKontrol = []; // Menyimpan data sementara agar filter cepat tanpa loading
+
+    function muatDataPengingat() {
+        const tbody = document.getElementById('tabelPengingatBody');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Menarik data dari server... ⏳</td></tr>';
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getJadwalKontrol" })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                rawDataKontrol = res.data;
+                renderTabelPengingat(); // Lanjut merender tabel sesuai filter
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal: ${res.message}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Koneksi jaringan terputus.</td></tr>`;
+        });
+    }
+
+    function renderTabelPengingat() {
+        const filter = document.getElementById('filterWaktuKontrol').value;
+        const tbody = document.getElementById('tabelPengingatBody');
+        
+        // Alat Bantu Pencetak Format Tanggal (YYYY-MM-DD)
+        const formatYMD = (d) => {
+            let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [year, month, day].join('-');
+        };
+
+        // Tetapkan Target Waktu
+        const hariIni = new Date();
+        const strHariIni = formatYMD(hariIni);
+        
+        const besok = new Date(hariIni);
+        besok.setDate(besok.getDate() + 1);
+        const strBesok = formatYMD(besok);
+        
+        const mingguDepan = new Date(hariIni);
+        mingguDepan.setDate(mingguDepan.getDate() + 7);
+        const strMingguDepan = formatYMD(mingguDepan);
+
+        // Proses Penyaringan (Filter)
+        let dataTerfilter = rawDataKontrol.filter(item => {
+            if (filter === "hari_ini") return item.tanggal === strHariIni;
+            if (filter === "besok") return item.tanggal === strBesok;
+            if (filter === "minggu_depan") return item.tanggal >= strHariIni && item.tanggal <= strMingguDepan;
+            return true; // Jika filter "semua"
+        });
+
+        if (dataTerfilter.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding:30px;">🎉 Yeay! Tidak ada tugas pengingat kontrol untuk jadwal ini.</td></tr>';
+            return;
+        }
+
+        let html = "";
+        dataTerfilter.forEach(item => {
+            // Efek visual: Baris akan sedikit berwarna kuning-merah bata jika jadwalnya HARI INI
+            let bgRow = item.tanggal === strHariIni ? "#fff3cd" : "transparent"; 
+            
+            // Visualisasi Status
+            let badgeStatus = item.status === "Menunggu" ? 
+                `<span style="background:#f39c12; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">⏳ Menunggu</span>` : 
+                `<span style="background:#27ae60; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Di-WA</span>`;
+
+            html += `
+                <tr style="background-color: ${bgRow}; transition: 0.3s;">
+                    <td style="font-weight:bold; color:#c0392b;">${item.tanggal}</td>
+                    <td>${item.noRM}</td>
+                    <td style="font-weight:bold; color:#2c3e50;">${item.namaPasien}</td>
+                    <td>${item.noWA}</td>
+                    <td style="color:#555;"><small>${item.pesan}</small></td>
+                    <td style="text-align:center;">${badgeStatus}</td>
+                    <td style="text-align:center;">
+                        <!-- Tombol Cerdas untuk Tahap 4 Nanti -->
+                        <button onclick="kirimWaKontrol('${item.noWA}', '${item.namaPasien}', '${item.tanggal}', '${item.pesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <i style="font-style:normal;">📲</i> Hubungi via WA
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    }
+
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
     document.addEventListener("DOMContentLoaded", function() {
         const inputFinansial = document.getElementById('filterBulanFinansial');
