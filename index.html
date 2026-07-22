@@ -7702,7 +7702,7 @@
             if (filter === "hari_ini") return item.tanggal === strHariIni;
             if (filter === "besok") return item.tanggal === strBesok;
             if (filter === "minggu_depan") return item.tanggal >= strHariIni && item.tanggal <= strMingguDepan;
-            return true; // Jika filter "semua"
+            return true; 
         });
 
         if (dataTerfilter.length === 0) {
@@ -7712,13 +7712,18 @@
 
         let html = "";
         dataTerfilter.forEach(item => {
-            // Efek visual: Baris akan sedikit berwarna kuning-merah bata jika jadwalnya HARI INI
             let bgRow = item.tanggal === strHariIni ? "#fff3cd" : "transparent"; 
             
-            // Visualisasi Status
             let badgeStatus = item.status === "Menunggu" ? 
                 `<span style="background:#f39c12; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">⏳ Menunggu</span>` : 
                 `<span style="background:#27ae60; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Di-WA</span>`;
+
+            // 🔥 FIX ERROR: Sanitasi (Pembersihan) karakter Enter dan Kutip agar HTML tidak patah
+            let amanPesan = item.pesan.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
+            let amanNama = item.namaPasien.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            
+            // Mempercantik tampilan Enter di tabel menggunakan tag <br>
+            let pesanTabel = item.pesan.replace(/\n/g, '<br>');
 
             html += `
                 <tr style="background-color: ${bgRow}; transition: 0.3s;">
@@ -7726,11 +7731,10 @@
                     <td>${item.noRM}</td>
                     <td style="font-weight:bold; color:#2c3e50;">${item.namaPasien}</td>
                     <td>${item.noWA}</td>
-                    <td style="color:#555;"><small>${item.pesan}</small></td>
+                    <td style="color:#555;"><small>${pesanTabel}</small></td>
                     <td style="text-align:center;">${badgeStatus}</td>
                     <td style="text-align:center;">
-                        <!-- Tombol Cerdas untuk Tahap 4 Nanti -->
-                        <button onclick="kirimWaKontrol('${item.noWA}', '${item.namaPasien}', '${item.tanggal}', '${item.pesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <button onclick="kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                             <i style="font-style:normal;">📲</i> Hubungi via WA
                         </button>
                     </td>
@@ -7741,7 +7745,7 @@
         tbody.innerHTML = html;
     }
 
-    // =========================================================
+    /// =========================================================
     // EKSEKUTOR MAGIC WHATSAPP & UPDATE STATUS
     // =========================================================
     function kirimWaKontrol(noWA, namaPasien, tanggal, pesan, rowSheet) {
@@ -7750,20 +7754,20 @@
             return;
         }
 
-        // 1. Format Nomor Telepon (Otomatis ubah 08... menjadi 628...)
+        // 1. Format Nomor Telepon
         let noWaBersih = noWA.toString().replace(/\D/g, '');
         if (noWaBersih.startsWith('0')) {
             noWaBersih = '62' + noWaBersih.substring(1);
         }
 
-        // 2. Merakit Template Kalimat Otomatis
-        let teksPesan = `Halo Kak ${namaPasien}, 👋\n\nIni dari *Klinik Anvaya*. Mengingatkan pesan dari dokter bahwa jadwal kontrol gigi kakak adalah tanggal *${tanggal}*.\n\n📝 *Catatan Dokter:* ${pesan}\n\nApakah kakak ingin dibantu reservasi jam kedatangannya? 😊`;
+        // 2. Merakit Template (Disesuaikan agar tidak dobel kata)
+        let teksPesan = `Halo Kak ${namaPasien}, 👋\n\nIni dari *Klinik Anvaya*. Mengingatkan bahwa jadwal kontrol gigi kakak sudah dekat.\n\n${pesan}\n\nApakah kakak ingin dibantu reservasi jam kedatangannya? 😊`;
         
         // 3. Eksekusi Buka WhatsApp Web
         let linkWA = `https://api.whatsapp.com/send?phone=${noWaBersih}&text=${encodeURIComponent(teksPesan)}`;
         window.open(linkWA, '_blank');
 
-        // 4. Diam-diam update status di Database menjadi "Sudah Di-WA"
+        // 4. Diam-diam update status di Database
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
@@ -7775,7 +7779,6 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
-                // Jika berhasil update, refresh tabel dalam 2 detik
                 setTimeout(() => {
                     muatDataPengingat();
                 }, 2000);
