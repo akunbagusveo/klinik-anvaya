@@ -786,6 +786,56 @@
         </form>
     </div>
 
+    <!-- ========================================================= -->
+    <!-- 🔍 MODAL POPUP PENCARIAN PASIEN LAMA (FRONTEND CACHING) -->
+    <!-- ========================================================= -->
+    <div id="modalCariPasienLama" style="display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(3px); justify-content: center; align-items: center;">
+        <div style="background-color: #fff; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
+            
+            <!-- Header Modal -->
+            <div style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px;">🔍 Cari & Pilih Pasien Lama</h3>
+                <button type="button" onclick="tutupModalPasien()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Body Modal: Kotak Pencarian -->
+            <div style="padding: 20px; background-color: #f8f9fa; border-bottom: 1px solid #eee;">
+                <input type="text" id="inputCariModalPasien" oninput="filterPasienDariCache()" placeholder="⚡ Ketik Nama Pasien, No. RM, atau No. WhatsApp..." style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #2a5298; border-radius: 8px; outline: none;">
+                <small style="color: #666; display: block; margin-top: 6px;">💡 Tips: Ketik minimal 2 huruf. Hasil pencarian dimuat instan dari memori lokal (Zero-Lag).</small>
+            </div>
+
+            <!-- Area Loading Spinner Animasi -->
+            <div id="spinnerCariPasien" style="display: none; text-align: center; padding: 40px 20px;">
+                <div style="display: inline-block; width: 45px; height: 45px; border: 5px solid #f3f3f3; border-top: 5px solid #2a5298; border-radius: 50%; animation: putarSpinner 1s linear infinite;"></div>
+                <p style="margin-top: 15px; color: #555; font-weight: bold;">Mengsinkronkan database pasien ke memori... ⏳</p>
+            </div>
+
+            <!-- Tabel Hasil Pencarian -->
+            <div id="areaTabelCariPasien" style="padding: 0 20px 20px 20px; overflow-y: auto; flex-grow: 1;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #eee; text-align: left;">
+                            <th style="padding: 10px; border-bottom: 2px solid #ccc;">No. RM</th>
+                            <th style="padding: 10px; border-bottom: 2px solid #ccc;">Nama Pasien</th>
+                            <th style="padding: 10px; border-bottom: 2px solid #ccc;">Tgl Lahir</th>
+                            <th style="padding: 10px; border-bottom: 2px solid #ccc;">No. WhatsApp</th>
+                            <th style="padding: 10px; border-bottom: 2px solid #ccc;">Alamat / Domisili</th>
+                            <th style="padding: 10px; border-bottom: 2px solid #ccc; text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyTabelCariPasien">
+                        <tr><td colspan="6" style="text-align: center; padding: 30px; color: #888;">Silakan ketik nama pasien di kotak pencarian atas.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Modal -->
+            <div style="background-color: #f1f2f6; padding: 12px 24px; text-align: right; border-top: 1px solid #ddd;">
+                <button type="button" onclick="tutupModalPasien()" style="background-color: #7f8c8d; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <div id="antrean" class="tab-content">
         <h2>Antrian Pasien Klinik Anvaya</h2>
     
@@ -7901,6 +7951,13 @@
         const areaTabel = document.getElementById('areaTabelCariPasien');
         const inputCari = document.getElementById('inputCariModalPasien');
         
+        // 🔥 SAFETY CHECK: Jika HTML modal belum terpasang, beri peringatan jelas (bukan error console)
+        if (!modal || !spinner || !areaTabel || !inputCari) {
+            alert("⚠️ Gagal membuka jendela pencarian: Struktur HTML Modal belum terpasang dengan benar di index.html!");
+            console.error("Elemen modal bernilai null. Pastikan tag <div id='modalCariPasienLama'> sudah terpasang sebelum </body>.");
+            return;
+        }
+        
         modal.style.display = 'flex';
         inputCari.value = '';
         document.getElementById('bodyTabelCariPasien').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #888;">Silakan ketik nama pasien di kotak pencarian atas.</td></tr>';
@@ -7915,10 +7972,9 @@
         spinner.style.display = 'block';
         areaTabel.style.display = 'none';
 
-        // Panggil API Backend (Sesuaikan dengan action pembaca data pasien Anda, misal: 'getPasien' / 'getAllPatients')
         fetch(WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "getPasien" }) // atau "getDaftarPasien" sesuai backend Anda
+            body: JSON.stringify({ action: "getPasien" }) 
         })
         .then(res => res.json())
         .then(res => {
@@ -7926,7 +7982,6 @@
             areaTabel.style.display = 'block';
             
             if (res.result === "success" || res.status === "success") {
-                // Simpan data dari server ke RAM Browser
                 cacheMasterPasien = res.data || res.pasien || [];
                 inputCari.focus();
             } else {
