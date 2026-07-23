@@ -505,6 +505,15 @@
             cursor: pointer; transition: all 0.2s;
         }
         .preset-btn:hover, .preset-btn:active { background: #3498db; color: white; border-color: #3498db; }
+
+        @keyframes putarSpinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -650,14 +659,13 @@
                 <label><input type="radio" name="tipePasien" value="lama" onclick="aturTipePasien('lama')"> Pasien Lama</label>
             </div>
 
-            <div id="boxPasienLama" style="display: none;">
-                <label for="txtCariPasien">Cari Nama / No. RM Pasien Lama:</label>
-                <input type="text" id="txtCariPasien" 
-                       list="listPasienLama" 
-                       oninput="handlePencarianPasien(this.value)" 
-                       onchange="eksekusiAutoFill(this.value)" 
-                       placeholder="Ketik nama atau No. RM di sini..." class="form-control">
-                <datalist id="listPasienLama"></datalist>
+            <!-- 🔥 UPGRADE: Ganti Datalist yang lambat dengan Tombol Pemanggil Modal Instan -->
+            <div id="boxPasienLama" style="display: none; background: #e8f4f8; padding: 15px; border-radius: 8px; border: 1px dashed #2a5298; margin-bottom: 15px; text-align: center;">
+                <p style="margin: 0 0 10px 0; color: #1e3c72; font-weight: bold;">Pasien sudah pernah berobat sebelumnya?</p>
+                <button type="button" onclick="bukaModalCariPasien()" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">
+                    🔍 Klik untuk Cari & Pilih Pasien Lama (Zero-Lag)
+                </button>
+                <small style="display: block; color: #555; margin-top: 8px;">⚡ Database pasien dimuat ke memori lokal untuk pencarian super cepat tanpa loading.</small>
             </div>
 
             <div class="form-group">
@@ -2523,20 +2531,31 @@
 
     // --- REGISTRATION FORM LOGIC ---
     function aturTipePasien(tipe) {
-        const form = document.getElementById('formPasien');
-        document.getElementById('txtNoRM').readOnly = true; 
+        const boxLama = document.getElementById('boxPasienLama');
+        
+        // Daftar seluruh ID input yang perlu dibersihkan/dikunci
+        const daftarInput = ['txtNoRM', 'nama', 'txtKTP', 'tempatLahir', 'tanggalLahir', 'pekerjaan', 'whatsapp', 'email', 'alamat', 'kecamatan', 'kota'];
 
         if (tipe === 'lama') {
-            document.getElementById('boxPasienLama').style.display = 'block';
-            form.reset();
-            document.querySelector('input[name="tipePasien"][value="lama"]').checked = true;
-            document.getElementById('txtNoRM').value = ""; 
+            boxLama.style.display = 'block';
+            
+            // 🔥 Langsung otomatis buka Jendela Modal saat staf klik radio Pasien Lama!
+            bukaModalCariPasien(); 
         } else {
-            document.getElementById('boxPasienLama').style.display = 'none';
-            form.reset();
-            document.getElementById('txtNoRM').value = "Membuat No. RM...";
-            aturStatusProteksiForm(false);
-            ambilNoRMOtomatis();
+            boxLama.style.display = 'none';
+            
+            // Jika Pasien Baru: Kosongkan seluruh form & buka kunci readonly
+            daftarInput.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id !== 'txtNoRM') el.readOnly = false; // txtNoRM tetap readonly karena digenerate sistem
+                    el.style.backgroundColor = "#fff";
+                    el.value = "";
+                }
+            });
+            
+            // Reset radio gender ke default
+            if (document.getElementById('rbLaki')) document.getElementById('rbLaki').checked = true;
         }
     }
 
@@ -7869,6 +7888,175 @@
             }
         })
         .catch(err => console.error("Gagal update status otomatis", err));
+    }
+
+    // =========================================================
+    // 🚀 MESIN PENCARIAN PASIEN LAMA (FRONTEND CACHING)
+    // =========================================================
+    let cacheMasterPasien = []; // Memori penampung di RAM Browser
+
+    function bukaModalCariPasien() {
+        const modal = document.getElementById('modalCariPasienLama');
+        const spinner = document.getElementById('spinnerCariPasien');
+        const areaTabel = document.getElementById('areaTabelCariPasien');
+        const inputCari = document.getElementById('inputCariModalPasien');
+        
+        modal.style.display = 'flex';
+        inputCari.value = '';
+        document.getElementById('bodyTabelCariPasien').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #888;">Silakan ketik nama pasien di kotak pencarian atas.</td></tr>';
+        
+        // 🔥 CEK CACHE: Jika data sudah ada di RAM, jangan loading lagi dari server!
+        if (cacheMasterPasien.length > 0) {
+            inputCari.focus();
+            return;
+        }
+
+        // Jika cache masih kosong, nyalakan Loading Spinner Animasi
+        spinner.style.display = 'block';
+        areaTabel.style.display = 'none';
+
+        // Panggil API Backend (Sesuaikan dengan action pembaca data pasien Anda, misal: 'getPasien' / 'getAllPatients')
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getPasien" }) // atau "getDaftarPasien" sesuai backend Anda
+        })
+        .then(res => res.json())
+        .then(res => {
+            spinner.style.display = 'none';
+            areaTabel.style.display = 'block';
+            
+            if (res.result === "success" || res.status === "success") {
+                // Simpan data dari server ke RAM Browser
+                cacheMasterPasien = res.data || res.pasien || [];
+                inputCari.focus();
+            } else {
+                alert("⚠️ Gagal mengsinkronkan data pasien: " + (res.message || "Error tidak diketahui"));
+            }
+        })
+        .catch(err => {
+            spinner.style.display = 'none';
+            areaTabel.style.display = 'block';
+            console.error("Error cache pasien:", err);
+            alert("❌ Terjadi kesalahan koneksi saat memuat database pasien.");
+        });
+    }
+
+    function tutupModalPasien() {
+        document.getElementById('modalCariPasienLama').style.display = 'none';
+    }
+
+    // 🔥 MESIN PENCARI ZERO-LAG (100% dari RAM lokal)
+    function filterPasienDariCache() {
+        const kataKunci = document.getElementById('inputCariModalPasien').value.toLowerCase().trim();
+        const tbody = document.getElementById('bodyTabelCariPasien');
+
+        if (kataKunci.length < 1) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #888;">Silakan ketik nama pasien di kotak pencarian atas.</td></tr>';
+            return;
+        }
+
+        // Filter array di dalam memori
+        const hasil = cacheMasterPasien.filter(p => {
+            const rm   = (p.noRM || p[0] || "").toString().toLowerCase();
+            const nama = (p.namaPasien || p.nama || p[1] || "").toString().toLowerCase();
+            const wa   = (p.noWA || p.whatsapp || p[5] || "").toString().toLowerCase();
+            return rm.includes(kataKunci) || nama.includes(kataKunci) || wa.includes(kataKunci);
+        });
+
+        if (hasil.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #e74c3c;">😢 Pasien tidak ditemukan. Coba kata kunci lain atau daftarkan sebagai Pasien Baru.</td></tr>';
+            return;
+        }
+
+        // Batasi render maksimal 15 baris teratas agar browser tidak berat (Ultra Fast DOM)
+        let html = "";
+        hasil.slice(0, 15).forEach(p => {
+            // Pemetaan fleksibel (mendukung format Object maupun Array dari spreadsheet)
+            let noRM   = p.noRM || p[0] || "-";
+            let nama   = p.namaPasien || p.nama || p[1] || "-";
+            let tgl    = p.tanggalLahir || p.tglLahir || p[3] || "-";
+            let wa     = p.noWA || p.whatsapp || p[5] || "-";
+            let alamat = p.alamat || p[8] || "-";
+            
+            // Sanitasi data untuk dimasukkan ke fungsi pilih
+            let amanObj = encodeURIComponent(JSON.stringify(p));
+
+            html += `
+                <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f1f8ff'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 10px; font-weight: bold; color: #2a5298;">${noRM}</td>
+                    <td style="padding: 10px; font-weight: bold;">${nama}</td>
+                    <td style="padding: 10px;">${tgl}</td>
+                    <td style="padding: 10px;">${wa}</td>
+                    <td style="padding: 10px; color: #555;"><small>${alamat}</small></td>
+                    <td style="padding: 10px; text-align: center;">
+                        <button onclick="pilihPasienKeForm('${amanObj}')" style="background-color: #27ae60; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            ✔ Pilih
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // 🔥 AUTOMATISASI PENGISIAN FORM (PRE-FILL & LOCK)
+    function pilihPasienKeForm(encodedData) {
+        const p = JSON.parse(decodeURIComponent(encodedData));
+        
+        // Pemetaan data dari array / object cache ke variabel
+        let noRM   = p.noRM || p[0] || "";
+        let nama   = p.namaPasien || p.nama || p[1] || "";
+        let tmpLhr = p.tempatLahir || p[2] || "";
+        let tglLhr = p.tanggalLahir || p[3] || "";
+        let gender = p.gender || p[4] || "Laki-laki";
+        let wa     = p.noWA || p.whatsapp || p[5] || "";
+        let kerja  = p.pekerjaan || p[6] || "";
+        let email  = p.email || p[7] || "";
+        let alamat = p.alamat || p[8] || "";
+        let ktp    = p.noKTP || p.ktp || p[9] || "";
+        let kec    = p.kecamatan || p[11] || "";
+        let kota   = p.kota || p[12] || "";
+
+        // 🔥 SUNTIKAN TEPAT SASARAN KE ID ASLI FORM PENDAFTARAN ANDA:
+        if (document.getElementById('txtNoRM'))      document.getElementById('txtNoRM').value = noRM;
+        if (document.getElementById('nama'))         document.getElementById('nama').value = nama;
+        if (document.getElementById('txtKTP'))       document.getElementById('txtKTP').value = ktp.toString().replace(/'/g, '');
+        if (document.getElementById('tempatLahir'))  document.getElementById('tempatLahir').value = tmpLhr;
+        if (document.getElementById('tanggalLahir')) document.getElementById('tanggalLahir').value = tglLhr;
+        if (document.getElementById('pekerjaan'))    document.getElementById('pekerjaan').value = kerja;
+        if (document.getElementById('whatsapp'))     document.getElementById('whatsapp').value = wa.toString().replace(/'/g, '');
+        if (document.getElementById('email'))        document.getElementById('email').value = email;
+        if (document.getElementById('alamat'))       document.getElementById('alamat').value = alamat;
+        if (document.getElementById('kecamatan'))    document.getElementById('kecamatan').value = kec;
+        if (document.getElementById('kota'))         document.getElementById('kota').value = kota;
+
+        // 🔥 ATUR RADIO BUTTON JENIS KELAMIN (Menggunakan ID asli: rbLaki & rbPerempuan)
+        const rbLaki = document.getElementById('rbLaki');
+        const rbPerempuan = document.getElementById('rbPerempuan');
+        if (gender.toString().toLowerCase().includes('perempuan') && rbPerempuan) {
+            rbPerempuan.checked = true;
+        } else if (rbLaki) {
+            rbLaki.checked = true;
+        }
+
+        // 🔥 KUNCI IDENTITAS UTAMA (Menggunakan ID asli agar No. RM & KTP tidak rusak diedit manual)
+        ['txtNoRM', 'nama', 'txtKTP'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.readOnly = true;
+                el.style.backgroundColor = "#e9ecef"; // Warna abu penanda terkunci
+            }
+        });
+
+        // Tutup modal popup
+        tutupModalPasien();
+        
+        // Beri konfirmasi & langsung alihkan fokus kursor ke kolom Tujuan / Keluhan
+        alert(`✅ Pasien Terpilih:\nNo. RM: ${noRM}\nNama: ${nama}\n\nSilakan lengkapi Rencana Tanggal Kunjungan & Dokter!`);
+        if (document.getElementById('tujuan')) {
+            document.getElementById('tujuan').focus();
+        }
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
