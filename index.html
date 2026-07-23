@@ -871,12 +871,20 @@
             <div class="filter-group">
                 <label style="font-size: 13px; font-weight: bold;">Filter Status:</label>
                 <select id="filterStatusAntrean" onchange="filterAntreanLokal()">
-                    <option value="Semua">Semua Status</option>
-                    <option value="Belum Diperiksa">Belum Diperiksa</option>
-                    <option value="Sedang Diperiksa">Sedang Diperiksa</option>
-                    <option value="Selesai">Selesai</option>
+                    <option value="Semua">📋 Semua Status</option>
+                    <option value="Belum Diperiksa">🟡 Belum Diperiksa</option>
+                    <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
+                    <option value="Selesai">🟢 Selesai / Sudah Diperiksa</option>
+                    <option value="Perlu Input RME">⚠️ Perlu Input RME (Prioritas)</option>
                     <option value="Tidak Datang">🕒 Pasien Tidak Datang (Absen)</option>
                 </select>
+            </div>
+
+            <!-- 🔥 TOMBOL EXPORT YANG KINI KEMBALI DAN BERADA DI POSISI YANG TEPAT -->
+            <div class="filter-group" style="display: flex; align-items: flex-end;">
+                <button type="button" onclick="unduhLaporanAntrean()" style="background-color: #16a34a; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s;">
+                    📥 Export ke Excel/CSV
+                </button>
             </div>
         </div>
     
@@ -901,7 +909,8 @@
             </table>
         </div>
 
-        <div id="komponenPagination" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px;"></div>
+        <!-- Mengabungkan kompatibilitas id pagination lama dan baru agar tidak error di JavaScript -->
+        <div id="komponenPagination" class="pagination-container" style="display: flex; justify-content: center; gap: 8px; margin-top: 15px;"></div>
     </div>
 
     <div id="riwayatMedis" class="tab-content">
@@ -1373,83 +1382,34 @@
                 </ul>
             </div>
             
+            <!-- Kokpit Statistik Ringkas (Untuk melihat ringkasan cepat saat dokter login) -->
             <div class="stats-grid">
                 <div class="stat-card bg-total">
                     <h4>Total Antrean Hari Ini</h4>
-                    <p id="statTotal">0</p>
+                    <p id="homeStatTotal">0</p>
                 </div>
                 <div class="stat-card bg-belum">
                     <h4>Belum Diperiksa</h4>
-                    <p id="statBelum">0</p>
+                    <p id="homeStatBelum">0</p>
                 </div>
                 <div class="stat-card bg-sedang">
                     <h4>Sedang Diperiksa</h4>
-                    <p id="statSedang">0</p>
+                    <p id="homeStatSedang">0</p>
                 </div>
                 <div class="stat-card bg-sudah">
                     <h4>Sudah Diperiksa</h4>
-                    <p id="statSudah">0</p>
+                    <p id="homeStatSudah">0</p>
                 </div>
             </div>
 
-            <h3>Daftar Antrean Pasien</h3>
-            <!-- 🔥 FITUR BARU: Dropdown Filter Antrean & Tanggal -->
-            <!-- 🔥 PERBAIKAN: Menggunakan kelas pembungkus agar bisa otomatis menyusun ke bawah di HP -->
-            <div class="antrean-filter-wrapper">
-                <div class="filter-group">
-                    <label>Pilih Tanggal:</label>
-                    <div class="date-range-inputs">
-                        <input type="date" id="filterTanggalMulai" onchange="validasiRentangTanggal()">
-                        <span class="filter-separator">s/d</span>
-                        <input type="date" id="filterTanggalAkhir" onchange="validasiRentangTanggal()">
-                    </div>
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterStatusAntrean">Pilih Status Pasien:</label>
-                    <select id="filterStatusAntrean" onchange="terapkanFilterAntrean()">
-                        <option value="Semua">📋 Tampilkan Semua Antrean</option>
-                        <option value="Belum Diperiksa">🟡 Belum Diperiksa</option>
-                        <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
-                        <option value="Sudah Diperiksa">🟢 Sudah Diperiksa</option>
-                        <option value="Perlu Input RME">⚠️ Perlu Input RME (Prioritas)</option>
-                        <option value="Tidak Datang">🕒 Pasien Tidak Datang (Absen)</option>
-                    </select>
-                </div>
-
-                <div class="filter-group" style="display: flex; align-items: flex-end;">
-                    <button type="button" onclick="unduhLaporanAntrean()" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%;">
-                        📥 Export ke Excel/CSV
-                    </button>
-                </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px; border: 1px dashed #cbd5e1;">
+                <h3 style="color: #334155; margin-top:0;">📋 Manajemen Antrean & Pemeriksaan</h3>
+                <p style="color: #64748b; font-size: 14px;">Untuk memeriksa pasien, mengisi Rekam Medis Elektronik (RME), memfilter tanggal, atau mengunduh laporan, silakan buka menu <strong>Antrian Pasien</strong>.</p>
+                <!-- Tombol pintas cepat agar dokter bisa langsung lompat ke tab antrean -->
+                <button type="button" onclick="switchTab('antrean')" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    👥 Buka Antrian Pasien Sekarang ➔
+                </button>
             </div>
-            
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama Pasien</th>
-                            <th>Tanggal Daftar</th>
-                            <th>Waktu</th>
-                            <th>Keluhan/Tujuan</th>
-                            <th>Nama Dokter</th>
-                            <th>Status</th>
-                            <th>Aksi Manajemen Antrean</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelAntreanBody">
-                        <tr><td colspan="7" style="text-align:center;">Memuat daftar antrean...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div id="paginationNav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                <div id="paginationInfo" style="font-size: 14px; color: #555;">
-                    Menampilkan 0 dari 0 antrean
-                </div>
-                <div id="paginationButtons" style="display: flex; gap: 5px;">
-                    <!-- Tombol angka halaman akan di-render via JavaScript -->
-                </div>
-            </div>            
         </div>
     </div>
 
@@ -2889,12 +2849,16 @@
         .then(response => response.json())
         .then(data => {
             if (data.result === "success") {
-                document.getElementById('statTotal').innerText = data.stats.total;
-                document.getElementById('statBelum').innerText = data.stats.belum;
-                document.getElementById('statSedang').innerText = data.stats.sedang;
-                document.getElementById('statSudah').innerText = data.stats.sudah;
+                // 1. Update Statistik di Tab Antrian Pasien (#antrean)
+                if(document.getElementById('statTotal')) document.getElementById('statTotal').innerText = data.stats.total;
+                if(document.getElementById('statBelum')) document.getElementById('statBelum').innerText = data.stats.belum;
+                if(document.getElementById('statSedang')) document.getElementById('statSedang').innerText = data.stats.sedang;
+                if(document.getElementById('statSudah')) document.getElementById('statSudah').innerText = data.stats.sudah;
 
+                // 2. Update Statistik di Tab Beranda Dokter (#dokter)
                 if(document.getElementById('homeStatTotal')) document.getElementById('homeStatTotal').innerText = data.stats.total;
+                if(document.getElementById('homeStatBelum')) document.getElementById('homeStatBelum').innerText = data.stats.belum;
+                if(document.getElementById('homeStatSedang')) document.getElementById('homeStatSedang').innerText = data.stats.sedang;
                 if(document.getElementById('homeStatSudah')) document.getElementById('homeStatSudah').innerText = data.stats.sudah;
 
                 dataAntreanGlobal = data.queue;
