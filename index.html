@@ -8248,19 +8248,29 @@
     }
 
     // =========================================================================
-    // 🎨 MESIN RENDER KALENDER (DENGAN OMNI-MATCHER & INSPEKTUR DATA)
+    // 🎨 MESIN RENDER KALENDER (DENGAN BONGKAR PAKSA TAB & ADAPTASI DATA SERVER)
     // =========================================================================
     function renderKalenderInstan() {
         console.log("🎨 [DEBUG 6] Memulai render grid kalender ke layar...");
         
-        // 🔥 1. INSPEKTUR DATA: Cetak 1 contoh data pasien ke Console agar kita tahu isi aslinya!
-        if (cacheDataKalender && cacheDataKalender.length > 0) {
-            console.log("🕵️ [DEBUG CONTOH DATA PASIEN KE-1 DARI SERVER]:", cacheDataKalender[0]);
-        }
-
         const gridBody = document.getElementById('gridKalenderBody');
         if (!gridBody) return;
-        gridBody.innerHTML = ""; 
+
+        // =====================================================================
+        // 🔥 1. BONGKAR PAKSA TAB PEMBUNGKUS (Mengatasi Duplikasi ID / Tab Tersembunyi)
+        // =====================================================================
+        const tabPembungkus = gridBody.closest('.tab-content');
+        if (tabPembungkus) {
+            // Matikan semua tab lain terlebih dahulu
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            // Paksa buka tab yang menampung grid kalender ini!
+            tabPembungkus.style.display = 'block';
+            tabPembungkus.classList.add('active');
+            console.log("✔️ [DEBUG FIX] Tab pembungkus kalender dipaksa terbuka ke layar!");
+        }
+        // =====================================================================
+
+        gridBody.innerHTML = ""; // Bersihkan grid
 
         const hariIni = new Date();
         const formatHariIni = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
@@ -8269,7 +8279,7 @@
         let indexKolomMulai = (hariPertama === 0) ? 6 : hariPertama - 1;
         const totalHariBulanIni = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
 
-        // Buat kotak kosong sebelum tanggal 1
+        // Buat kotak kosong untuk hari sebelum tanggal 1
         for (let i = 0; i < indexKolomMulai; i++) {
             const kotakKosong = document.createElement('div');
             kotakKosong.style.cssText = "background: #f1f5f9; min-height: 100px; border-radius: 4px; opacity: 0.5;";
@@ -8280,10 +8290,10 @@
 
         // Buat kotak tanggal 1 s/d tanggal akhir bulan ini
         for (let tgl = 1; tgl <= totalHariBulanIni; tgl++) {
-            // Siapkan 3 variasi format tanggal sekaligus (YYYY-MM-DD, DD/MM/YYYY, dan DD-MM-YYYY)
-            const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`; // 2026-07-15
-            const tglIndo1 = `${String(tgl).padStart(2, '0')}/${String(kalenderBulanAktif + 1).padStart(2, '0')}/${kalenderTahunAktif}`; // 15/07/2026
-            const tglIndo2 = `${String(tgl).padStart(2, '0')}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${kalenderTahunAktif}`; // 15-07-2026
+            // Siapkan variasi format pencarian tanggal
+            const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`; // 2026-07-01
+            const tglIndo1 = `${String(tgl).padStart(2, '0')}/${String(kalenderBulanAktif + 1).padStart(2, '0')}/${kalenderTahunAktif}`; // 01/07/2026
+            const tglIndo2 = `${String(tgl).padStart(2, '0')}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${kalenderTahunAktif}`; // 01-07-2026
             
             const apakahHariIni = (strTgl === formatHariIni);
 
@@ -8306,26 +8316,22 @@
                 </div>
             `;
 
-            // =====================================================================
-            // 🔥 2. MESIN OMNI-MATCHER (Mencari tanggal tanpa peduli nama properti!)
-            // =====================================================================
+            // 🔥 2. MESIN PENCARI TANGGAL (Omni-Matcher)
             const pasienHariIni = cacheDataKalender.filter(p => {
-                // Ubah seluruh data pasien menjadi teks string tunggal agar semua kolom terscan
                 const teksPasien = JSON.stringify(p);
                 return teksPasien.includes(strTgl) || teksPasien.includes(tglIndo1) || teksPasien.includes(tglIndo2);
             });
-            // =====================================================================
 
             if (pasienHariIni.length > 0) {
                 pasienHariIni.forEach(p => {
                     totalKartuTerpasang++;
                     
-                    // Ambil data nama, jam, dan tujuan secara fleksibel (dukung format Objek maupun Array)
-                    const namaPasien = p.namaPasien || p.nama || p[1] || "Pasien";
-                    const noRM = p.noRM || p[0] || "";
-                    const idAntrean = p.idAntrean || "";
-                    const jam = p.jam || p[3] || "";
-                    const tujuan = p.tujuan || p[4] || "Konsultasi";
+                    // 🔥 3. PEMETAAN DATA AKURAT (Sesuai bocoran DEBUG CONTOH DATA milik Anda)
+                    const namaPasien = p.nama || p.namaPasien || p[1] || "Pasien";
+                    const noRM       = p.noRM || p[0] || "";
+                    const idAntrean  = p.idAntrean || p.rowNumber || "";
+                    const jam        = p.waktu || p.jam || p[3] || ""; // Menangkap 'Siang (11.00 - 15.00)'
+                    const tujuan     = p.tujuan || p.keluhan || p[4] || "Konsultasi";
                     const statusBersih = (p.status || p[6] || "").toString().toLowerCase().trim();
                     
                     let bgKartu = "#e0f2fe"; let teksKartu = "#075985"; let borderKartu = "#0ea5e9"; let ikon = "🔵"; let dicoret = "";
@@ -8338,13 +8344,15 @@
                         bgKartu = "#fef3c7"; teksKartu = "#92400e"; borderKartu = "#f59e0b"; ikon = "🟠"; 
                     }
 
+                    // Render Kartu Pasien dengan format jam dan nama yang sudah rapi
                     htmlKartu += `
                         <div class="kartu-pasien-kalender" 
                             onclick="klikKartuPasienKalender('${noRM}', '${namaPasien}', '${idAntrean}')"
                             style="background: ${bgKartu}; color: ${teksKartu}; border-left: 3px solid ${borderKartu}; ${dicoret}"
                             title="Klik untuk lihat detail ${namaPasien}">
-                            <strong>${ikon} ${jam}</strong> - ${namaPasien}<br>
-                            <small style="opacity: 0.85;">${tujuan}</small>
+                            <strong>${ikon} ${jam}</strong><br>
+                            <span style="font-size:11px; font-weight:bold;">${namaPasien}</span><br>
+                            <small style="opacity: 0.85; font-size:9px;">${tujuan}</small>
                         </div>
                     `;
                 });
@@ -8353,6 +8361,7 @@
             kotakHari.innerHTML = htmlKartu;
             gridBody.appendChild(kotakHari);
         }
+        
         console.log(`🎉 [DEBUG 7] Render selesai! Total ${totalKartuTerpasang} kartu pasien berhasil dipasang ke dalam kotak kalender.`);
     }
 
