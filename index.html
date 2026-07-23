@@ -2774,10 +2774,22 @@
         .then(res => res.json())
         .then(res => {
             const list = document.getElementById('listJadwalDokter');
+            const card = document.getElementById('cardJadwalDokter');
+            
+            // =====================================================================
+            // 🔥 SATPAM ANTI-CRASH: Cek apakah elemen masih ada di HTML
+            // Jika elemen sudah diganti dengan Kalender Praktik baru, hentikan aman!
+            // =====================================================================
+            if (!list) {
+                console.log("ℹ️ Info: Elemen listJadwalDokter dialihkan ke mode Kalender Praktik baru.");
+                return; 
+            }
+            // =====================================================================
+            
             list.innerHTML = '';
             
             if(res.result === 'success' && res.data.length > 0) {
-                document.getElementById('cardJadwalDokter').style.display = 'block';
+                if (card) card.style.display = 'block';
                 res.data.forEach(row => {
                     list.innerHTML += `<li><strong>${row[1]}</strong> : ${row[2]} - ${row[3]} (${row[4]})</li>`;
                 });
@@ -2785,7 +2797,7 @@
                 list.innerHTML = '<li>Anda tidak memiliki jadwal terdaftar minggu ini atau login bukan sebagai Dokter.</li>';
             }
         })
-        .catch(err => console.error(err));
+        .catch(err => console.error("Error muat jadwal dokter:", err));
     }
 
     async function bukaAplikasi(role, username) {
