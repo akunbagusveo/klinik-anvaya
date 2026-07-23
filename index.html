@@ -8173,94 +8173,107 @@
 
     const namaBulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-    // -------------------------------------------------------------------------
-    // 2. FUNGSI PENJEMPUT DATA BULANAN DARI SERVER (Dipanggil 1x saat ganti bulan)
-    // -------------------------------------------------------------------------
+    // =========================================================================
+    // 📅 MESIN KALENDER DOKTER (DENGAN PELACAK BUG / DEBUG MODE)
+    // =========================================================================
+
     function muatKalenderDokter() {
+        console.log("🚀 [DEBUG 1] Tombol Kalender diklik! Menjalankan muatKalenderDokter()...");
+        
         const gridBody = document.getElementById('gridKalenderBody');
         const labelBulan = document.getElementById('labelBulanTahunKalender');
-        if (!gridBody) return;
+        
+        // 🔥 SATPAM PELACAK HTML: Jika ID tidak ditemukan, langsung beri peringatan keras!
+        if (!gridBody) {
+            alert("❌ ERROR HTML: Elemen dengan id 'gridKalenderBody' tidak ditemukan di index.html!\n\nPastikan struktur HTML Kalender sudah Anda paste ke dalam <div id=\"dokter\">.");
+            console.error("❌ [DEBUG ERROR] gridKalenderBody bernilai NULL!");
+            return;
+        }
 
-        // Update label judul bulan (Contoh: "Juli 2026")
+        console.log("✔️ [DEBUG 2] Elemen HTML gridKalenderBody ditemukan!");
+
+        // Update label judul bulan
         if (labelBulan) {
             labelBulan.innerText = `${namaBulanIndo[kalenderBulanAktif]} ${kalenderTahunAktif}`;
         }
 
-        // Tampilkan loading animasi saat sinkronisasi pertama kali
+        // Tampilkan loading di layar
         gridBody.innerHTML = `
-            <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold; border-radius: 6px;">
-                ⏳ Mengsinkronkan jadwal bulan ${namaBulanIndo[kalenderBulanAktif]} dari server...
+            <div style="grid-column: span 7; background: #e0f2fe; color: #0369a1; padding: 40px; text-align: center; font-weight: bold; border-radius: 6px; border: 1px dashed #0284c7;">
+                ⏳ Mengsinkronkan jadwal bulan ${namaBulanIndo[kalenderBulanAktif]} ${kalenderTahunAktif} dari server...<br>
+                <small style="color:#64748b; font-weight:normal;">Silakan cek tab Console (F12) untuk melihat proses data.</small>
             </div>
         `;
 
-        // Hitung tanggal 1 dan tanggal terakhir di bulan yang sedang aktif
         const tglMulai = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-01`;
         const hariTerakhir = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
         const tglSelesai = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(hariTerakhir).padStart(2, '0')}`;
 
-        // Ambil data sesi pengguna (Dokter)
         const sesiAktif = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
 
         const payload = {
-            action: "getTodayQueue", // Kita manfaatkan rute getTodayQueue dengan rentang tanggal 1 bulan
+            action: "getTodayQueue", 
             startDate: tglMulai,
             endDate: tglSelesai,
+            realToday: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`,
             role: sesiAktif.role || "",
             idDokter: sesiAktif.idUser || "",
             username: sesiAktif.username || "",
-            statusFilter: "Semua", // Wajib ambil SEMUA status agar warna kalender komplit
+            statusFilter: "Semua", 
             page: 1,
-            limit: 500 // Kapasitas besar untuk menampung pasien sebulan
+            limit: 500 
         };
+
+        console.log("📤 [DEBUG 3] Mengirim permintaan ke server Apps Script dengan payload:", payload);
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(data => {
-            if (data.result === "success") {
-                // 🔥 SIMPAN DATA SEBULAN KE RAM BROWSER
-                cacheDataKalender = data.queue || [];
-                // 🔥 LANGSUNG RENDER KALENDER DALAM 0 MILIDETIK
+            console.log("📥 [DEBUG 4] Respon dari server berhasil diterima:", data);
+            
+            if (data && (data.result === "success" || data.status === "success")) {
+                cacheDataKalender = data.queue || data.data || [];
+                console.log(`✔️ [DEBUG 5] Total data antrean bulan ini yang tersimpan di RAM: ${cacheDataKalender.length} pasien.`);
+                
                 renderKalenderInstan();
             } else {
-                gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">❌ Gagal memuat jadwal kalender: ${data.message}</div>`;
+                gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">❌ Gagal dari server: ${data.message || "Format respon tidak dikenali."}</div>`;
+                console.error("❌ [DEBUG ERROR] Respon server bukan success:", data);
             }
         })
         .catch(err => {
-            gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">⚠️ Terjadi gangguan koneksi internet saat memuat kalender.</div>`;
+            console.error("❌ [DEBUG ERROR] Gagal koneksi fetch:", err);
+            gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">⚠️ Terjadi gangguan jaringan/script saat menghubungi server. Detail: ${err.message}</div>`;
         });
     }
 
-    // -------------------------------------------------------------------------
-    // 3. MESIN RENDER GRID & KARTU PASIEN 0 DETIK (Sepenuhnya dari RAM)
-    // -------------------------------------------------------------------------
     function renderKalenderInstan() {
+        console.log("🎨 [DEBUG 6] Memulai render grid kalender ke layar...");
         const gridBody = document.getElementById('gridKalenderBody');
         if (!gridBody) return;
-        gridBody.innerHTML = ""; // Bersihkan grid
+        gridBody.innerHTML = ""; 
 
         const hariIni = new Date();
         const formatHariIni = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
 
-        // Tentukan hari pertama bulan ini (0 = Minggu, 1 = Senin, ... 6 = Sabtu)
         let hariPertama = new Date(kalenderTahunAktif, kalenderBulanAktif, 1).getDay();
-        // Konversi agar Senin menjadi kolom ke-0, dan Minggu menjadi kolom ke-6
         let indexKolomMulai = (hariPertama === 0) ? 6 : hariPertama - 1;
-
         const totalHariBulanIni = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
 
-        // A. Buat kotak kosong untuk hari sebelum tanggal 1 (jika bulan tidak dimulai hari Senin)
+        // Buat kotak kosong sebelum tanggal 1
         for (let i = 0; i < indexKolomMulai; i++) {
             const kotakKosong = document.createElement('div');
             kotakKosong.style.cssText = "background: #f1f5f9; min-height: 100px; border-radius: 4px; opacity: 0.5;";
             gridBody.appendChild(kotakKosong);
         }
 
-        // B. Loop untuk membuat kotak tanggal dari tanggal 1 sampai tanggal terakhir
+        let totalKartuTerpasang = 0;
+
+        // Buat kotak tanggal 1 s/d tanggal akhir
         for (let tgl = 1; tgl <= totalHariBulanIni; tgl++) {
             const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`;
             const apakahHariIni = (strTgl === formatHariIni);
 
-            // Buat elemen kotak tanggal
             const kotakHari = document.createElement('div');
             kotakHari.style.cssText = `
                 background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; 
@@ -8272,7 +8285,6 @@
                 flex-direction: column;
             `;
 
-            // Header Angka Tanggal di pojok kotak
             let htmlKartu = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px;">
                     <span style="font-weight: bold; font-size: 13px; color: ${apakahHariIni ? '#d97706' : '#334155'};">
@@ -8281,30 +8293,32 @@
                 </div>
             `;
 
-            // C. Cari pasien di memori cache yang jadwalnya cocok dengan tanggal kotak ini
-            const pasienHariIni = cacheDataKalender.filter(p => (p.tglDaftar || "").toString().trim() === strTgl);
+            // Cari pasien di RAM yang tanggal daftarnya cocok
+            const pasienHariIni = cacheDataKalender.filter(p => {
+                const tglDaftarPasien = (p.tglDaftar || p.tanggal || "").toString().split('T')[0].trim();
+                return tglDaftarPasien === strTgl;
+            });
 
             if (pasienHariIni.length > 0) {
                 pasienHariIni.forEach(p => {
+                    totalKartuTerpasang++;
                     const statusBersih = (p.status || "").toString().toLowerCase().trim();
                     
-                    // Tentukan Warna Kartu Pasien berdasarkan aturan psikologi medis
                     let bgKartu = "#e0f2fe"; let teksKartu = "#075985"; let borderKartu = "#0ea5e9"; let ikon = "🔵"; let dicoret = "";
 
                     if (statusBersih.includes("sudah") || statusBersih.includes("selesai")) {
-                        bgKartu = "#d1fae5"; teksKartu = "#065f46"; borderKartu = "#10b981"; ikon = "🟢"; // Hijau (Selesai)
+                        bgKartu = "#d1fae5"; teksKartu = "#065f46"; borderKartu = "#10b981"; ikon = "🟢"; 
                     } else if (statusBersih.includes("batal") || statusBersih.includes("absen") || statusBersih.includes("tidak datang")) {
-                        bgKartu = "#f1f5f9"; teksKartu = "#64748b"; borderKartu = "#cbd5e1"; ikon = "🔘"; dicoret = "text-decoration: line-through;"; // Abu (Batal/Absen)
+                        bgKartu = "#f1f5f9"; teksKartu = "#64748b"; borderKartu = "#cbd5e1"; ikon = "🔘"; dicoret = "text-decoration: line-through;"; 
                     } else if (apakahHariIni) {
-                        bgKartu = "#fef3c7"; teksKartu = "#92400e"; borderKartu = "#f59e0b"; ikon = "🟠"; // Oranye (PRIORITAS HARI INI)
+                        bgKartu = "#fef3c7"; teksKartu = "#92400e"; borderKartu = "#f59e0b"; ikon = "🟠"; 
                     }
 
-                    // Render Kartu Pasien
                     htmlKartu += `
                         <div class="kartu-pasien-kalender" 
                             onclick="klikKartuPasienKalender('${p.noRM}', '${p.namaPasien}', '${p.idAntrean}')"
                             style="background: ${bgKartu}; color: ${teksKartu}; border-left: 3px solid ${borderKartu}; ${dicoret}"
-                            title="Klik untuk lihat detail pemeriksaan ${p.namaPasien}">
+                            title="Klik untuk lihat detail ${p.namaPasien}">
                             <strong>${ikon} ${p.jam || ''}</strong> - ${p.namaPasien}<br>
                             <small style="opacity: 0.85;">${p.tujuan || 'Konsultasi'}</small>
                         </div>
@@ -8315,6 +8329,7 @@
             kotakHari.innerHTML = htmlKartu;
             gridBody.appendChild(kotakHari);
         }
+        console.log(`🎉 [DEBUG 7] Render selesai! Total ${totalKartuTerpasang} kartu pasien berhasil dipasang ke dalam kotak kalender.`);
     }
 
     // -------------------------------------------------------------------------
