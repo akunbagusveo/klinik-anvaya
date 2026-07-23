@@ -2579,7 +2579,9 @@
         // (Tambahkan variabel array global lain jika ada di sistem antrean/pasien Anda)
     }
 
-    // --- REGISTRATION FORM LOGIC ---
+    // =========================================================================
+    // UPGRADE FUNGSI PENGATUR TIPE PASIEN (FIXED: AUTO-GENERATE NO RM)
+    // =========================================================================
     function aturTipePasien(tipe) {
         const boxLama = document.getElementById('boxPasienLama');
         
@@ -2589,12 +2591,12 @@
         if (tipe === 'lama') {
             boxLama.style.display = 'block';
             
-            // 🔥 Langsung otomatis buka Jendela Modal saat staf klik radio Pasien Lama!
+            // Langsung otomatis buka Jendela Modal saat staf klik radio Pasien Lama!
             bukaModalCariPasien(); 
         } else {
             boxLama.style.display = 'none';
             
-            // Jika Pasien Baru: Kosongkan seluruh form & buka kunci readonly
+            // 1. Jika Pasien Baru: Kosongkan seluruh form & buka kunci readonly
             daftarInput.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2604,8 +2606,14 @@
                 }
             });
             
-            // Reset radio gender ke default
+            // 2. Reset radio gender ke default
             if (document.getElementById('rbLaki')) document.getElementById('rbLaki').checked = true;
+
+            // =====================================================================
+            // 🔥 SOLUSI KUNCI: Panggil fungsi generator No. RM milik sistem Anda!
+            // =====================================================================
+            ambilNoRMOtomatis(); 
+            // =====================================================================
         }
     }
 
@@ -2625,77 +2633,6 @@
         return "";
     }
 
-    function eksekusiAutoFill(kataKunci) {
-        if (!kataKunci) return;
-        const keywordBersih = kataKunci.trim().toLowerCase();
-        
-        // 1. 🔥 UPGRADE TOTAL: Pemetaan Kolom 100% Dinamis Menggunakan Menggunakan Konsep Kata Kunci (.includes)
-        const headerMaster = cachePasienLama[0].map(h => h.toString().toLowerCase().trim());
-        
-        const idxNoRM      = headerMaster.findIndex(h => h.includes("rm"));
-        const idxNama      = headerMaster.findIndex(h => h.includes("nama"));
-        const idxTempat    = headerMaster.findIndex(h => h.includes("tempat"));
-        const idxTgl       = headerMaster.findIndex(h => h.includes("tanggal"));
-        const idxGender    = headerMaster.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
-        const idxWA        = headerMaster.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp"));
-        const idxKerja     = headerMaster.findIndex(h => h.includes("pekerjaan") || h.includes("pendidikan"));
-        const idxEmail     = headerMaster.findIndex(h => h.includes("email"));
-        const idxAlamat    = headerMaster.findIndex(h => h.includes("alamat"));
-        const idxKTP       = headerMaster.findIndex(h => h.includes("ktp") || h.includes("nik"));
-        const idxKecamatan = headerMaster.findIndex(h => h.includes("kecamatan") || h.includes("wilayah"));
-        const idxKota      = headerMaster.findIndex(h => h.includes("kota")); // 🔥 Pasti Menemukan "Kota Domisili"
-
-        // 2. Cari data baris pasien di dalam cache (Mulai dari indeks 1 melewati header)
-        const dataPasien = cachePasienLama.slice(1).find(row => {
-            const noRM = row[idxNoRM !== -1 ? idxNoRM : 0] ? String(row[idxNoRM !== -1 ? idxNoRM : 0]).toLowerCase() : "";
-            const nama = row[idxNama !== -1 ? idxNama : 1] ? String(row[idxNama !== -1 ? idxNama : 1]).toLowerCase() : "";
-            return noRM === keywordBersih || nama === keywordBersih;
-        });
-        
-        if (dataPasien) {
-            document.getElementById('txtNoRM').value = dataPasien[idxNoRM !== -1 ? idxNoRM : 0] || "";    
-            document.getElementById('nama').value = dataPasien[idxNama !== -1 ? idxNama : 1] || ""; 
-            document.getElementById('tempatLahir').value = dataPasien[idxTempat !== -1 ? idxTempat : 2] || ""; 
-            
-            if (idxTgl !== -1 && dataPasien[idxTgl]) {
-                document.getElementById('tanggalLahir').value = formatTanggalUntukInput(dataPasien[idxTgl]);
-            }
-            
-            var targetGenderIdx = idxGender !== -1 ? idxGender : 4;
-            if (dataPasien[targetGenderIdx]) {
-                let genderBersih = String(dataPasien[targetGenderIdx]).trim().toLowerCase();
-                const semuaRadio = document.querySelectorAll('input[name="gender"]');
-                semuaRadio.forEach(radio => {
-                    let val = radio.value.toLowerCase().trim();
-                    if (val === genderBersih || genderBersih.includes(val) || val.includes(genderBersih)) {
-                        radio.checked = true;
-                    }
-                });
-            }
-            
-            document.getElementById('whatsapp').value = dataPasien[idxWA !== -1 ? idxWA : 5] || "";
-            document.getElementById('pekerjaan').value = dataPasien[idxKerja !== -1 ? idxKerja : 6] || "";
-            document.getElementById('email').value = dataPasien[idxEmail !== -1 ? idxEmail : 7] || "";
-            
-            if (idxAlamat !== -1 && dataPasien[idxAlamat] && document.getElementById('alamat')) {
-                document.getElementById('alamat').value = dataPasien[idxAlamat];
-            }
-            if (idxKTP !== -1 && dataPasien[idxKTP]) {
-                document.getElementById('txtKTP').value = dataPasien[idxKTP];
-            }
-            
-            // 🔥 SUNTIKAN DINAMIS MUTLAK: Mengisi input wilayah tanpa takut eror indeks lagi
-            if (idxKecamatan !== -1 && document.getElementById('kecamatan')) {
-                document.getElementById('kecamatan').value = dataPasien[idxKecamatan] || ""; 
-            }
-            if (idxKota !== -1 && document.getElementById('kota')) {
-                document.getElementById('kota').value = dataPasien[idxKota] || ""; 
-            }
-            
-            aturStatusProteksiForm(true); 
-            alert("Data medis pasien '" + dataPasien[idxNama !== -1 ? idxNama : 1] + "' berhasil dimuat!");
-        }
-    }
 
     function ambilNoRMOtomatis() {
         fetch(WEB_APP_URL, {
@@ -2709,47 +2646,6 @@
             }
         })
         .catch(err => console.error("Gagal men-generate No. RM:", err));
-    }
-
-    let debounceTimer;
-    function handlePencarianPasien(keyword) {
-        const datalist = document.getElementById('listPasienLama');
-        if (!datalist) return;
-
-        if (!keyword || keyword.trim().length < 3) {
-            datalist.innerHTML = '<option value="Ketik minimal 3 karakter untuk mencari...">';
-            return;
-        }
-
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            datalist.innerHTML = '<option value="Sedang mencari di database klinik...">';
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'searchPasienLama', keyword: keyword })
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.result === 'success') {
-                    cachePasienLama = res.data; 
-                    datalist.innerHTML = '';
-
-                    if (!cachePasienLama || cachePasienLama.length === 0) {
-                        datalist.innerHTML = '<option value="Pasien tidak ditemukan di database">';
-                        return;
-                    }
-
-                    cachePasienLama.forEach(pasien => {
-                        datalist.innerHTML += `<option value="${pasien[1]}">Nomor RM: ${pasien[0]}</option>`;
-                    });
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                datalist.innerHTML = '<option value="Gagal memuat: Masalah koneksi internet">';
-            });
-        }, 400);
     }
 
     function aturStatusProteksiForm(status) {
