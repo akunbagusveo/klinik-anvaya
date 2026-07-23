@@ -597,6 +597,7 @@
         <span class="sidebar-category">OPERASIONAL</span>
         <!-- PENTING: ID tombol tetap sama agar mesin RBAC / God Mode tetap bekerja -->
         <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">🏠 Beranda Utama</button>
+        <button id="tabDokterBtn" class="tab-link" onclick="switchTab('dokter')" style="font-weight: bold; color: #60a5fa;">📅 Kalender Praktik</button>
         <button id="tabPendaftaranBtn" class="tab-link" onclick="switchTab('pendaftaran')">📝 Form Pendaftaran</button>
         <button id="tabAntreanBtn" class="tab-link" onclick="switchTab('antrean')">👥 Antrian Pasien</button>
         <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">🗂️ Riwayat Medis</button>
@@ -4430,29 +4431,7 @@
     }
 
     function switchTab(tabId) {
-
-        if (window.innerWidth <= 768) {
-            document.getElementById('appSidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('show');
-        }
-
-        // === 1. MATIKAN SEMUA LAMPU MENU ===
-        // Ambil semua tombol menu yang ada di dalam sidebar
-        const semuaTombolMenu = document.querySelectorAll('.sidebar-menu .tab-link');
-        semuaTombolMenu.forEach(tombol => {
-            tombol.classList.remove('active'); // Hapus warna hijaunya
-        });
-
-        // === 2. NYALAKAN LAMPU MENU YANG DIPILIH SAJA ===
-        // Karena parameter tabId bentuknya 'pendaftaran', dan ID tombolnya 'tabPendaftaranBtn',
-        // kita ubah huruf pertamanya jadi kapital agar cocok (pendaftaran -> Pendaftaran)
-        const idTombolAktif = 'tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn';
-        const tombolAktif = document.getElementById(idTombolAktif);
-        if (tombolAktif) {
-            tombolAktif.classList.add('active'); // Beri warna hijau ke tombol ini saja
-        }
-        
-        // === 3. AUTO-TUTUP SIDEBAR DI HP (Jika belum ditambahkan sebelumnya) ===
+        // 1. AUTO-TUTUP SIDEBAR DI HP
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById('appSidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -4460,51 +4439,52 @@
             if (overlay) overlay.classList.remove('show');
         }
 
-        // 1. Sembunyikan semua konten tab & bersihkan class active pada halaman
+        // 2. MATIKAN SEMUA LAMPU MENU SIDEBAR & TAB ATAS
+        document.querySelectorAll('.sidebar-menu .tab-link, .nav-tabs .tab-link').forEach(tombol => {
+            tombol.classList.remove('active');
+        });
+
+        // 3. SEMBUNYIKAN SEMUA KONTEN TAB
         document.querySelectorAll('.tab-content').forEach(el => {
             el.classList.remove('active');
             el.style.display = 'none';
         });
         
-        // Bersihkan class active dari semua tombol navigasi menu atas
-        document.querySelectorAll('.nav-tabs .tab-link').forEach(el => {
-            el.classList.remove('active');
-        });
-        
-        // 2. Tampilkan konten tab yang dituju secara presisi
+        // 4. TAMPILKAN KONTEN TAB YANG DITUJU SECARA PRESISI
         const targetTab = document.getElementById(tabId);
         if (targetTab) {
             targetTab.classList.add('active');
             targetTab.style.display = 'block';
         }
         
-        // 3. 🔥 FIX DINAMIS UTAMA: Otomatis mendeteksi dan menyalakan tombol active menu atas
-        // Pola nama id tombol Anda: 'tab' + huruf kapital diawal tabId + 'Btn' (Contoh: tabKasirBtn, tabRiwayatMedisBtn)
-        const namaIdTombol = 'tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn';
-        const tombolMenuTerkait = document.getElementById(namaIdTombol);
-        if (tombolMenuTerkait) {
-            tombolMenuTerkait.classList.add('active');
+        // 5. 🔥 NYALAKAN LAMPU TOMBOL YANG DIPILIH (Otomatis deteksi ID: tabDokterBtn, tabKasirBtn, dst)
+        const idTombolAktif = 'tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn';
+        const tombolAktif = document.getElementById(idTombolAktif);
+        if (tombolAktif) {
+            tombolAktif.classList.add('active');
         }
 
+        // =========================================================================
+        // ⚡ PEMANGGILAN FITUR & RESET KONDISI TAMPILAN
+        // =========================================================================
         if (tabId === 'formPendaftaran' || tabId === 'pendaftaran') {
-            if(typeof resetFormKePosisiNetral === "function") {
-            resetFormKePosisiNetral();
-        }
+            if (typeof resetFormKePosisiNetral === "function") {
+                resetFormKePosisiNetral();
+            }
         }
 
+        // 🔥 PEMICU UTAMA KALENDER PRAKTIK DOKTER:
         if (tabId === 'dokter' || tabId === 'kalenderDokter') {
             if (typeof muatKalenderDokter === "function") {
                 muatKalenderDokter();
             }
         }
 
-        // 4. Jalankan fungsi spesifik (Triggers) tiap tab secara aman jika eksis
         if (tabId === 'beranda' && typeof muatDashboardStatistik === "function") {
             muatDashboardStatistik();
         }
         
         if ((tabId === 'antrean' || tabId === 'pasien') && typeof muatAntreanHariIni === "function") {
-            // Berikan perlindungan fallback tombol active jika tabId ber-alias nama 'pasien'
             const btnAntrean = document.getElementById('tabAntreanBtn');
             if (btnAntrean) btnAntrean.classList.add('active');
             muatAntreanHariIni(1);
@@ -4522,25 +4502,24 @@
             muatDataUser();
         }
 
-        // 🔥 PENGINTEGRASIAN PEMICU TAB KASIR BARU
         if (tabId === 'kasir' && typeof muatAntreanKasir === "function") {
             muatAntreanKasir();
         }
 
         // =========================================================================
-        // 🛡️ SATPAM HAK AKSES: CEGAT AKSES KE WORKLIST KONTROL
+        // 🛡️ SATPAM HAK AKSES: CEGAT AKSES KE WORKLIST KONTROL UNTUK DOKTER
         // =========================================================================
         if (tabId === 'pengingatKontrol') {
             const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
             const roleAktif   = sessionData ? (sessionData.role || "").toLowerCase().trim() : "";
             
-            // Jika yang mencoba membuka adalah dokter, tolak mentah-mentah!
             if (roleAktif === "dokter" || roleAktif === "rol-03" || roleAktif.includes("dr.")) {
                 alert("⚠️ AKSES DITOLAK: Menu Worklist Kontrol dikhususkan untuk Staf Pendaftaran / Perawat guna manajemen panggilan pasien.");
-                return; // Batalkan perpindahan halaman!
+                // Kembalikan ke beranda jika ditolak
+                switchTab('beranda');
+                return; 
             }
         }
-        // =========================================================================
     }
 
     // Fungsi pembantu untuk membaca file komputer dan mengubahnya ke teks Base64
@@ -4653,12 +4632,14 @@
     function aplikasikanHakAkses(perms) {
         if (!perms) return;
 
-        // 🔥 1. DETEKSI STATUS SUPER ADMIN (GOD MODE)
+        // 🔥 1. DETEKSI STATUS SUPER ADMIN (GOD MODE) & ROLE USER
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const namaRole = sessionData && sessionData.role ? String(sessionData.role).toLowerCase() : "";
+        const namaRole = sessionData && sessionData.role ? String(sessionData.role).toLowerCase().trim() : "";
         
         // Mode Dewa HANYA untuk Owner atau ROL-01
         const isSuperAdmin = namaRole === "owner" || namaRole === "rol-01";
+        // Deteksi otomatis apakah yang login adalah Dokter
+        const isDokter = namaRole.includes("dokter") || namaRole.includes("dr") || namaRole === "rol-03";
         
         // 🔥 2. MESIN SUPER-PENCARI DENGAN BYPASS
         const cekIzin = (kataKunci) => {
@@ -4676,7 +4657,6 @@
 
         const setMenuDisplay = (id, kataKunci) => {
             const el = document.getElementById(id);
-            // Catatan: Saya ubah jadi 'block' agar tombol Sidebar tampil penuh dan rapi
             if (el) el.style.display = cekIzin(kataKunci) ? 'block' : 'none'; 
         };
         
@@ -4685,7 +4665,7 @@
             if (el) el.style.display = cekIzin(kataKunci) ? 'block' : 'none';
         };
 
-        // === 1. KONTROL AKSES TAB MENU UTAMA (100% Anti-Gagal) ===
+        // === 1. KONTROL AKSES TAB MENU UTAMA ===
         setMenuDisplay('tabPendaftaranBtn', 'pendaftaran');
         setMenuDisplay('tabRiwayatMedisBtn', 'rekammedis');
         setMenuDisplay('tabDaftarPasienBtn', 'databasepasien');
@@ -4694,10 +4674,19 @@
         setMenuDisplay('tabBackendBtn', 'pengaturan');
         setMenuDisplay('tabKasirBtn', 'kasir');
         setMenuDisplay('tabPengingatKontrolBtn', 'worklistkontrol');
-       
+    
+        // =========================================================================
+        // 🔥 FIX 100% ANTI-GAGAL: KONTROL AKSES KALENDER PRAKTIK DOKTER
+        // Tombol wajib muncul jika: Super Admin, akun ber-role Dokter, ATAU punya izin 'kalenderpraktik'
+        // =========================================================================
+        const elDokterBtn = document.getElementById('tabDokterBtn');
+        if (elDokterBtn) {
+            const punyaAksesKalender = isSuperAdmin || isDokter || cekIzin('kalenderpraktik') || cekIzin('antrian');
+            elDokterBtn.style.display = punyaAksesKalender ? 'block' : 'none';
+        }
+        // =========================================================================
 
-        // 🔥 FIX 1: AKSES GANDA UNTUK TAB ANALISIS BISNIS UTAMA (DI SIDEBAR)
-        // Tab ini wajib muncul jika user punya minimal SALAH SATU izin (Operasional ATAU Finansial)
+        // AKSES GANDA UNTUK TAB ANALISIS BISNIS UTAMA (DI SIDEBAR)
         const punyaAksesAnalisis = cekIzin('analisisbisnis') || cekIzin('kokpitfinansial');
         const elAnalisisBtn = document.getElementById('tabAnalisisBisnisBtn');
         if (elAnalisisBtn) {
@@ -4711,7 +4700,6 @@
         setCardDisplay('menuDaftarPasienCard', 'databasepasien');
 
         // === 3. KONTROL AKSES GRANULAR SUB-TAB ===
-        // A. Pengaturan Sistem
         const punyaAksesUser = cekIzin('manajemenuser');
         const elUserBtn = document.getElementById('subTabUserBtn');
         const elAksesBtn = document.getElementById('subTabAksesBtn');
@@ -4726,8 +4714,6 @@
         const elLogBtn = document.getElementById('subTabLogBtn'); 
         if (elLogBtn) elLogBtn.style.display = punyaAksesLog ? 'inline-block' : 'none';
 
-        // 🔥 B. KONTROL EKSKLUSIF SUB-TAB KOKPIT FINANSIAL (DI DALAM TAB ANALISIS BISNIS)
-        // Tombol gembok uang ini HANYA terbuka jika spesifik punya izin 'kokpitfinansial'
         const punyaAksesFinansial = cekIzin('kokpitfinansial');
         const btnSubTabFinansial = document.getElementById('btnSubTabFinansial');
         if (btnSubTabFinansial) {
