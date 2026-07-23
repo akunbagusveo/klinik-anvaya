@@ -1172,26 +1172,33 @@
             <div class="kalender-container-scroll">
                 <div class="kalender-grid-min-width">
                     
-                    <!-- Grid Header Hari (Senin - Minggu) -->
-                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: bold; background: #1e3c72; color: white; padding: 12px 5px; border-radius: 8px 8px 0 0; font-size: 14px;">
-                        <div>Senin</div><div>Selasa</div><div>Rabu</div><div>Kamis</div><div>Jumat</div><div style="color: #fcd34d;">Sabtu</div><div style="color: #fca5a5;">Minggu</div>
-                    </div>
-
-                    <!-- Grid Kotak Tanggal Kalender (Akan diisi dinamis oleh JavaScript) -->
-                    <div id="gridKalenderBody" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: #cbd5e1; border: 6px solid #cbd5e1; border-radius: 0 0 8px 8px; min-height: 600px;">
+                    <!-- ========================================================= -->
+                    <!-- 🔥 BINGKAI PEMBUNGKUS TUNGGAL (Jaminan 100% Sejajar)        -->
+                    <!-- ========================================================= -->
+                    <div style="background: #cbd5e1; border: 6px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                         
-                        <!-- Tampilan loading sementara sebelum JS bekerja -->
-                        <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold;">
-                            ⏳ Memuat jadwal kalender praktik...
+                        <!-- Grid Header Hari (Senin - Minggu) -->
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: bold; background: #1e3c72; color: white; padding: 12px 0; font-size: 14px; margin-bottom: 6px;">
+                            <div>Senin</div><div>Selasa</div><div>Rabu</div><div>Kamis</div><div>Jumat</div><div style="color: #fcd34d;">Sabtu</div><div style="color: #fca5a5;">Minggu</div>
+                        </div>
+
+                        <!-- Grid Kotak Tanggal Kalender (Akan diisi dinamis oleh JavaScript) -->
+                        <div id="gridKalenderBody" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-height: 600px; background: #cbd5e1;">
+                            
+                            <!-- Tampilan loading sementara sebelum JS bekerja -->
+                            <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold;">
+                                ⏳ Memuat jadwal kalender praktik...
+                            </div>
+
                         </div>
 
                     </div>
+                    <!-- Akhir Bingkai Pembungkus -->
 
                 </div>
             </div>
-            <!-- Akhir Integrasi Responsif -->
-
-        </div>   
+        </div>
+            <!-- Akhir Integrasi Responsif -->  
 
     <!-- Tab Pengaturan Sistem -->
     <div id="backend" class="tab-content" style="display:none;">
