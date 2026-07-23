@@ -870,7 +870,7 @@
     
             <div class="filter-group">
                 <label style="font-size: 13px; font-weight: bold;">Filter Status:</label>
-                <select id="filterStatusAntrean" onchange="muatAntreanHariIni(1)">
+                <select id="filterStatusAntrean" onchange="filterAntreanLokal()">
                     <option value="Semua">Semua Status</option>
                     <option value="Belum Diperiksa">Belum Diperiksa</option>
                     <option value="Sedang Diperiksa">Sedang Diperiksa</option>
@@ -2825,6 +2825,7 @@
     const limitDataPerHalaman = 10; // Anda bisa mengubah angka ini (misal: 10, 20, 50)
 
     // 🔥 Revisi Fungsi Muat Antrean: Memisahkan Logika Tabel vs Export
+    //let cacheAntreanPasien = []; // Menampung seluruh data antrean hari ini / periode terpilih
     function muatAntreanHariIni(targetPage = 1) {
         currentPageAntrean = targetPage; 
         
@@ -2905,6 +2906,25 @@
             console.error(err);
             document.getElementById('tabelAntreanBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal mengambil data antrean.</td></tr>`;
         });
+    }
+
+    // =========================================================
+    // ⚡ MESIN FILTER ANTREAN ZERO-LAG (0 DETIK DARI RAM)
+    // =========================================================
+    function filterAntreanLokal() {
+        let filterDropdown = document.getElementById("filterStatusAntrean");
+        let statusPilihan = filterDropdown ? filterDropdown.value : "Semua";
+
+        // 1. Cek apakah memori cache sudah terisi dari tarikan server sebelumnya
+        if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal.length > 0) {
+            // Langsung panggil fungsi render tabel bawaan sistem Anda!
+            if (typeof renderTabelAntrean === "function") {
+                renderTabelAntrean(statusPilihan);
+            }
+        } else {
+            // Jika cache kebetulan masih kosong, barulah panggil server
+            muatAntreanHariIni();
+        }
     }
 
     // 🔥 Fungsi Baru: Validasi Batas Rentang Tanggal (Maksimal 31 Hari)
