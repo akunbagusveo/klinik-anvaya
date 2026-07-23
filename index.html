@@ -2479,6 +2479,48 @@
         });
     });
 
+    // =========================================================
+    // 🧹 MESIN SAPU JAGAT: PEMBERSIH SESI & FILTER UI
+    // =========================================================
+    function bersihkanSemuaStateUI() {
+        // 1. Reset SEMUA Dropdown <select> di seluruh aplikasi ke pilihan pertama (default)
+        document.querySelectorAll('select').forEach(sel => {
+            sel.selectedIndex = 0;
+        });
+
+        // 2. Kosongkan SEMUA kotak pencarian <input> (teks, tanggal, angka, pencarian)
+        document.querySelectorAll('input[type="text"], input[type="search"], input[type="date"], input[type="number"]').forEach(inp => {
+            // Abaikan input pada form login agar tidak mengganggu layar login
+            if (!inp.closest('#loginContainer') && !inp.closest('.login-form')) {
+                inp.value = "";
+            }
+        });
+
+        // 3. Reset SEMUA Checkbox & Radio Button (kecuali di pengaturan yang bersifat statis jika ada)
+        document.querySelectorAll('.tab-content input[type="checkbox"]').forEach(chk => {
+            chk.checked = false;
+        });
+
+        // 4. Kosongkan isi tabel-tabel utama agar pengguna baru tidak melihat "kejap" data lama
+        const daftarTabelReset = [
+            { id: 'tabelPengingatBody', pesan: 'Silakan klik "Refresh Data" untuk memuat tugas... ⏳', col: 7 },
+            { id: 'tabelSemuaPasienBody', pesan: 'Memuat data pasien... ⏳', col: 6 },
+            { id: 'tabelAntrianBody', pesan: 'Memuat data antrean... ⏳', col: 8 } // Sesuaikan ID tabel antrean Anda
+        ];
+
+        daftarTabelReset.forEach(tabel => {
+            const tbody = document.getElementById(tabel.id);
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="${tabel.col}" style="text-align:center; color:#7f8c8d; padding:25px;">${tabel.pesan}</td></tr>`;
+            }
+        });
+
+        // 5. Kosongkan variabel memori sementara (Array data penampung di JavaScript)
+        if (typeof rawDataKontrol !== 'undefined') rawDataKontrol = [];
+        if (typeof fullQueue !== 'undefined') fullQueue = [];
+        // (Tambahkan variabel array global lain jika ada di sistem antrean/pasien Anda)
+    }
+
     // --- REGISTRATION FORM LOGIC ---
     function aturTipePasien(tipe) {
         const form = document.getElementById('formPasien');
@@ -4251,6 +4293,8 @@
         // 1. Bersihkan variabel peran dan hapus penyimpanan sesi lokal browser
         currentRole = ""; 
         localStorage.removeItem('anvaya_session');
+
+        bersihkanSemuaStateUI();
 
         const topNav = document.querySelector('.top-navbar');
         const sidebar = document.getElementById('appSidebar');
