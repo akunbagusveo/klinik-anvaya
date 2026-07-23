@@ -962,6 +962,7 @@
                     <option value="besok">🟡 Persiapan: Jadwal Besok (H-1)</option>
                     <option value="minggu_depan">🟢 7 Hari Kedepan</option>
                     <option value="semua">📋 Semua Jadwal (Menunggu)</option>
+                    <option value="selesai">🔵 Riwayat Kontrol Selesai</option>
                 </select>
             </div>
             
@@ -7685,7 +7686,6 @@
             return [year, month, day].join('-');
         };
 
-        // Tetapkan Target Waktu
         const hariIni = new Date();
         const strHariIni = formatYMD(hariIni);
         
@@ -7697,32 +7697,53 @@
         mingguDepan.setDate(mingguDepan.getDate() + 7);
         const strMingguDepan = formatYMD(mingguDepan);
 
-        // Proses Penyaringan (Filter)
+        // 🔥 LOGIKA FILTER DINAMIS
         let dataTerfilter = rawDataKontrol.filter(item => {
+            let isSelesai = item.status.toLowerCase() === "telah datang (selesai)";
+            
+            // 1. Jika pengguna memilih "Riwayat Kontrol Selesai", HANYA tampilkan yang sudah datang!
+            if (filter === "selesai") return isSelesai;
+            
+            // 2. Untuk filter tugas lainnya (Hari Ini, Besok, dll), SEMBUNYIKAN yang sudah datang agar antrean kerja bersih!
+            if (isSelesai) return false;
+            
             if (filter === "hari_ini") return item.tanggal === strHariIni;
             if (filter === "besok") return item.tanggal === strBesok;
             if (filter === "minggu_depan") return item.tanggal >= strHariIni && item.tanggal <= strMingguDepan;
-            return true; 
+            return true; // Jika filter "semua"
         });
 
         if (dataTerfilter.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding:30px;">🎉 Yeay! Tidak ada tugas pengingat kontrol untuk jadwal ini.</td></tr>';
+            let pesanKosong = filter === "selesai" ? 
+                '📭 Belum ada riwayat pasien kontrol yang selesai/datang.' : 
+                '🎉 Yeay! Tidak ada tugas pengingat kontrol untuk jadwal ini.';
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#7f8c8d; padding:30px;">${pesanKosong}</td></tr>`;
             return;
         }
 
         let html = "";
         dataTerfilter.forEach(item => {
-            let bgRow = item.tanggal === strHariIni ? "#fff3cd" : "transparent"; 
+            let bgRow = (item.tanggal === strHariIni && filter !== "selesai") ? "#fff3cd" : "transparent"; 
             
-            let badgeStatus = item.status === "Menunggu" ? 
-                `<span style="background:#f39c12; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">⏳ Menunggu</span>` : 
-                `<span style="background:#27ae60; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Di-WA</span>`;
+            // 🔥 VISUALISASI STATUS & TOMBOL AKSI PINTAR
+            let badgeStatus, tombolAksi;
+            
+            if (item.status.toLowerCase() === "telah datang (selesai)") {
+                // Tampilan khusus untuk pasien yang sudah datang (Tombol WA dinonaktifkan agar tidak di-spam)
+                badgeStatus = `<span style="background:#2980b9; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">🏁 Telah Datang</span>`;
+                tombolAksi = `<button disabled style="background:#bdc3c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:not-allowed;">✔️ Selesai</button>`;
+            } else if (item.status === "Menunggu") {
+                badgeStatus = `<span style="background:#f39c12; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">⏳ Menunggu</span>`;
+                let amanPesan = item.pesan.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
+                let amanNama = item.namaPasien.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                tombolAksi = `<button onclick="kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i style="font-style:normal;">📲</i> Hubungi via WA</button>`;
+            } else {
+                badgeStatus = `<span style="background:#27ae60; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Di-WA</span>`;
+                let amanPesan = item.pesan.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
+                let amanNama = item.namaPasien.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                tombolAksi = `<button onclick="kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i style="font-style:normal;">📲</i> Hubungi via WA</button>`;
+            }
 
-            // 🔥 FIX ERROR: Sanitasi (Pembersihan) karakter Enter dan Kutip agar HTML tidak patah
-            let amanPesan = item.pesan.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
-            let amanNama = item.namaPasien.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-            
-            // Mempercantik tampilan Enter di tabel menggunakan tag <br>
             let pesanTabel = item.pesan.replace(/\n/g, '<br>');
 
             html += `
@@ -7733,11 +7754,7 @@
                     <td>${item.noWA}</td>
                     <td style="color:#555;"><small>${pesanTabel}</small></td>
                     <td style="text-align:center;">${badgeStatus}</td>
-                    <td style="text-align:center;">
-                        <button onclick="kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <i style="font-style:normal;">📲</i> Hubungi via WA
-                        </button>
-                    </td>
+                    <td style="text-align:center;">${tombolAksi}</td>
                 </tr>
             `;
         });
@@ -7745,8 +7762,8 @@
         tbody.innerHTML = html;
     }
 
-    /// =========================================================
-    // EKSEKUTOR MAGIC WHATSAPP & UPDATE STATUS
+    // =========================================================
+    // EKSEKUTOR MAGIC WHATSAPP & UPDATE STATUS (REVISI FORMAT NOMOR)
     // =========================================================
     function kirimWaKontrol(noWA, namaPasien, tanggal, pesan, rowSheet) {
         if (!noWA || noWA === "-" || noWA === "") {
@@ -7754,13 +7771,15 @@
             return;
         }
 
-        // 1. Format Nomor Telepon
-        let noWaBersih = noWA.toString().replace(/\D/g, '');
+        // 1. Format Nomor Telepon Pintar (Anti-0-Hilang)
+        let noWaBersih = noWA.toString().trim().replace(/\D/g, '');
         if (noWaBersih.startsWith('0')) {
             noWaBersih = '62' + noWaBersih.substring(1);
+        } else if (noWaBersih.startsWith('8')) {
+            noWaBersih = '62' + noWaBersih;
         }
 
-        // 2. Merakit Template (Disesuaikan agar tidak dobel kata)
+        // 2. Merakit Template 
         let teksPesan = `Halo Kak ${namaPasien}, 👋\n\nIni dari *Klinik Anvaya*. Mengingatkan bahwa jadwal kontrol gigi kakak sudah dekat.\n\n${pesan}\n\nApakah kakak ingin dibantu reservasi jam kedatangannya? 😊`;
         
         // 3. Eksekusi Buka WhatsApp Web
