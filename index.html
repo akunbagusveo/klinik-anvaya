@@ -8247,8 +8247,17 @@
         });
     }
 
+    // =========================================================================
+    // 🎨 MESIN RENDER KALENDER (DENGAN OMNI-MATCHER & INSPEKTUR DATA)
+    // =========================================================================
     function renderKalenderInstan() {
         console.log("🎨 [DEBUG 6] Memulai render grid kalender ke layar...");
+        
+        // 🔥 1. INSPEKTUR DATA: Cetak 1 contoh data pasien ke Console agar kita tahu isi aslinya!
+        if (cacheDataKalender && cacheDataKalender.length > 0) {
+            console.log("🕵️ [DEBUG CONTOH DATA PASIEN KE-1 DARI SERVER]:", cacheDataKalender[0]);
+        }
+
         const gridBody = document.getElementById('gridKalenderBody');
         if (!gridBody) return;
         gridBody.innerHTML = ""; 
@@ -8269,9 +8278,13 @@
 
         let totalKartuTerpasang = 0;
 
-        // Buat kotak tanggal 1 s/d tanggal akhir
+        // Buat kotak tanggal 1 s/d tanggal akhir bulan ini
         for (let tgl = 1; tgl <= totalHariBulanIni; tgl++) {
-            const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`;
+            // Siapkan 3 variasi format tanggal sekaligus (YYYY-MM-DD, DD/MM/YYYY, dan DD-MM-YYYY)
+            const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`; // 2026-07-15
+            const tglIndo1 = `${String(tgl).padStart(2, '0')}/${String(kalenderBulanAktif + 1).padStart(2, '0')}/${kalenderTahunAktif}`; // 15/07/2026
+            const tglIndo2 = `${String(tgl).padStart(2, '0')}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${kalenderTahunAktif}`; // 15-07-2026
+            
             const apakahHariIni = (strTgl === formatHariIni);
 
             const kotakHari = document.createElement('div');
@@ -8293,16 +8306,27 @@
                 </div>
             `;
 
-            // Cari pasien di RAM yang tanggal daftarnya cocok
+            // =====================================================================
+            // 🔥 2. MESIN OMNI-MATCHER (Mencari tanggal tanpa peduli nama properti!)
+            // =====================================================================
             const pasienHariIni = cacheDataKalender.filter(p => {
-                const tglDaftarPasien = (p.tglDaftar || p.tanggal || "").toString().split('T')[0].trim();
-                return tglDaftarPasien === strTgl;
+                // Ubah seluruh data pasien menjadi teks string tunggal agar semua kolom terscan
+                const teksPasien = JSON.stringify(p);
+                return teksPasien.includes(strTgl) || teksPasien.includes(tglIndo1) || teksPasien.includes(tglIndo2);
             });
+            // =====================================================================
 
             if (pasienHariIni.length > 0) {
                 pasienHariIni.forEach(p => {
                     totalKartuTerpasang++;
-                    const statusBersih = (p.status || "").toString().toLowerCase().trim();
+                    
+                    // Ambil data nama, jam, dan tujuan secara fleksibel (dukung format Objek maupun Array)
+                    const namaPasien = p.namaPasien || p.nama || p[1] || "Pasien";
+                    const noRM = p.noRM || p[0] || "";
+                    const idAntrean = p.idAntrean || "";
+                    const jam = p.jam || p[3] || "";
+                    const tujuan = p.tujuan || p[4] || "Konsultasi";
+                    const statusBersih = (p.status || p[6] || "").toString().toLowerCase().trim();
                     
                     let bgKartu = "#e0f2fe"; let teksKartu = "#075985"; let borderKartu = "#0ea5e9"; let ikon = "🔵"; let dicoret = "";
 
@@ -8316,11 +8340,11 @@
 
                     htmlKartu += `
                         <div class="kartu-pasien-kalender" 
-                            onclick="klikKartuPasienKalender('${p.noRM}', '${p.namaPasien}', '${p.idAntrean}')"
+                            onclick="klikKartuPasienKalender('${noRM}', '${namaPasien}', '${idAntrean}')"
                             style="background: ${bgKartu}; color: ${teksKartu}; border-left: 3px solid ${borderKartu}; ${dicoret}"
-                            title="Klik untuk lihat detail ${p.namaPasien}">
-                            <strong>${ikon} ${p.jam || ''}</strong> - ${p.namaPasien}<br>
-                            <small style="opacity: 0.85;">${p.tujuan || 'Konsultasi'}</small>
+                            title="Klik untuk lihat detail ${namaPasien}">
+                            <strong>${ikon} ${jam}</strong> - ${namaPasien}<br>
+                            <small style="opacity: 0.85;">${tujuan}</small>
                         </div>
                     `;
                 });
