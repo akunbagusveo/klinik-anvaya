@@ -2580,27 +2580,23 @@
     }
 
     // =========================================================================
-    // UPGRADE FUNGSI PENGATUR TIPE PASIEN (FIXED: AUTO-GENERATE NO RM)
+    // UPGRADE FUNGSI PENGATUR TIPE PASIEN (0 DETIK AUTO-GENERATE RM)
     // =========================================================================
     function aturTipePasien(tipe) {
         const boxLama = document.getElementById('boxPasienLama');
-        
-        // Daftar seluruh ID input yang perlu dibersihkan/dikunci
         const daftarInput = ['txtNoRM', 'nama', 'txtKTP', 'tempatLahir', 'tanggalLahir', 'pekerjaan', 'whatsapp', 'email', 'alamat', 'kecamatan', 'kota'];
 
         if (tipe === 'lama') {
             boxLama.style.display = 'block';
-            
-            // Langsung otomatis buka Jendela Modal saat staf klik radio Pasien Lama!
             bukaModalCariPasien(); 
         } else {
             boxLama.style.display = 'none';
             
-            // 1. Jika Pasien Baru: Kosongkan seluruh form & buka kunci readonly
+            // 1. Kosongkan seluruh form & buka kunci readonly
             daftarInput.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    if (id !== 'txtNoRM') el.readOnly = false; // txtNoRM tetap readonly karena digenerate sistem
+                    if (id !== 'txtNoRM') el.readOnly = false; // txtNoRM tetap readonly
                     el.style.backgroundColor = "#fff";
                     el.value = "";
                 }
@@ -2610,9 +2606,9 @@
             if (document.getElementById('rbLaki')) document.getElementById('rbLaki').checked = true;
 
             // =====================================================================
-            // 🔥 SOLUSI KUNCI: Panggil fungsi generator No. RM milik sistem Anda!
+            // 🔥 SOLUSI KUNCI 0 DETIK: Panggil generator instan dari RAM lokal!
             // =====================================================================
-            ambilNoRMOtomatis(); 
+            generateNoRMInstan(); 
             // =====================================================================
         }
     }
@@ -2679,6 +2675,42 @@
             }
         })
         .catch(err => console.error("Gagal men-generate No. RM:", err));
+    }
+
+    // =========================================================================
+    // ⚡ GENERATOR NO. RM SUPER KILAT (0 DETIK / INSTAN DARI RAM LOKAL)
+    // =========================================================================
+    function generateNoRMInstan() {
+        const txtRM = document.getElementById('txtNoRM');
+        if (!txtRM) return;
+
+        // 1. Cek apakah database pasien sudah tersimpan di memori cache browser
+        if (typeof cacheMasterPasien !== 'undefined' && cacheMasterPasien.length > 0) {
+            let maxNum = 0;
+            
+            // 2. Pindai seluruh data pasien untuk mencari angka No. RM terbesar
+            cacheMasterPasien.forEach(p => {
+                let rmStr = (p.noRM || p[0] || "").toString();
+                // Ekstrak angkanya saja (Contoh: "RM-0077" akan diubah menjadi angka mutlak 77)
+                let numPart = parseInt(rmStr.replace(/[^0-9]/g, ''), 10);
+                if (!isNaN(numPart) && numPart > maxNum) {
+                    maxNum = numPart;
+                }
+            });
+
+            // 3. Tambahkan 1 untuk nomor pasien baru (77 + 1 = 78 -> "RM-0078")
+            let nextNum = maxNum + 1;
+            txtRM.value = "RM-" + String(nextNum).padStart(4, '0');
+            
+            // Beri warna latar hijau muda lembut sebagai penanda sukses instan
+            txtRM.style.backgroundColor = "#e8f8f5"; 
+        } else {
+            // 4. FALLBACK AMAN: Jika cache memori kebetulan belum siap, pinjam mesin lama dari server
+            txtRM.placeholder = "⏳ Memuat nomor baru...";
+            if (typeof ambilNoRMOtomatis === "function") {
+                ambilNoRMOtomatis();
+            }
+        }
     }
 
     function aturStatusProteksiForm(status) {
