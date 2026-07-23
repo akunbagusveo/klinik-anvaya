@@ -1129,6 +1129,7 @@
                             <th style="padding: 10px; text-align: center;">Kasir</th>
                             <th style="padding: 10px; text-align: center;">Log Aktifitas</th>
                             <th style="padding: 10px; text-align: center;">Kokpit Finansial</th>
+                            <th style="padding: 10px; text-align: center;">Worklist Kontrol</th>
                         </tr>
                     </thead>
                     <tbody id="bodyMatriksAkses">
@@ -4856,8 +4857,8 @@
 
     function muatMatriksAkses() {
         const tbody = document.getElementById('bodyMatriksAkses');
-        // colspan diubah dari 14 menjadi 16
-        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
+        // colspan diubah menjadi 19 (karena ada tambahan 1 kolom baru)
+        tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -4869,7 +4870,6 @@
                 tbody.innerHTML = "";
                 
                 res.data.forEach(role => {
-                    // 🔥 GOD MODE SUPER KETAT: Hanya berlaku untuk role bernama persis "owner" atau ID "rol-01"
                     const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01' || role.namaRole.toLowerCase() === 'owner';
                     const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
 
@@ -4887,11 +4887,13 @@
                     const chkInputRME    = (role.aksesInputRME == 1 || role.aksesInputRME === true) ? 'checked' : '';
                     const chkEditAntrean = (role.aksesEditAntrean == 1 || role.aksesEditAntrean === true) ? 'checked' : '';
                     
-                    // 🔥 TAMBAHAN BARU: Variabel pembaca data dari server
                     const chkAnalisisBisnis = (role.analisisBisnis == 1 || role.analisisBisnis === true || role.aksesAnalisisBisnis == 1) ? 'checked' : '';
                     const chkKasir          = (role.kasir == 1 || role.kasir === true || role.aksesKasir == 1) ? 'checked' : '';
-                    const chkLogAktifitas = (role.logAktifitas == 1 || role.logAktifitas === true || role.aksesLogAktifitas == 1) ? 'checked' : '';
-                    const chkKokpit = (role.kokpitFinansial == 1 || role.kokpitFinansial === true) ? 'checked' : '';
+                    const chkLogAktifitas   = (role.logAktifitas == 1 || role.logAktifitas === true || role.aksesLogAktifitas == 1) ? 'checked' : '';
+                    const chkKokpit         = (role.kokpitFinansial == 1 || role.kokpitFinansial === true) ? 'checked' : '';
+                    
+                    // 🔥 TAMBAHAN WORKLIST KONTROL: Membaca status centang dari server
+                    const chkWorklist       = (role.worklistKontrol == 1 || role.worklistKontrol === true || role.worklist == 1) ? 'checked' : '';
 
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
@@ -4908,22 +4910,23 @@
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-rme" ${chkEditRME} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-input-rme" ${chkInputRME} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-antrean" ${chkEditAntrean} ${disabledAttr}></td>
-                        
-                        <!-- 🔥 TAMBAHAN BARU: Gambar Checkbox ke Layar -->
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-analisis-bisnis" ${chkAnalisisBisnis} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kasir" ${chkKasir} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-log-aktifitas" ${chkLogAktifitas} ${disabledAttr}></td>
                         <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kokpit-finansial" ${chkKokpit} ${disabledAttr}></td>
+                        
+                        <!-- 🔥 TAMBAHAN WORKLIST KONTROL: Gambar Checkbox ke Layar -->
+                        <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-worklist-kontrol" ${chkWorklist} ${disabledAttr}></td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="16" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
             }
         })
         .catch(err => {
             console.error("Error matriks:", err);
-            tbody.innerHTML = `<tr><td colspan="16" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
         });
     }
 
@@ -4953,12 +4956,13 @@
                 editRME: row.querySelector('.chk-edit-rme').checked,
                 aksesInputRME: row.querySelector('.chk-input-rme').checked,
                 aksesEditAntrean: row.querySelector('.chk-edit-antrean').checked,
-                
-                // 🔥 TAMBAHAN BARU: Tangkap status checkbox saat tombol Simpan diklik
                 analisisBisnis: row.querySelector('.chk-analisis-bisnis').checked,
                 kasir: row.querySelector('.chk-kasir').checked,
                 logAktifitas: row.querySelector('.chk-log-aktifitas').checked,
-                kokpitFinansial: row.querySelector('.chk-kokpit-finansial').checked
+                kokpitFinansial: row.querySelector('.chk-kokpit-finansial').checked,
+                
+                // 🔥 TAMBAHAN WORKLIST KONTROL: Tangkap status centang dan masukkan ke payload
+                worklistKontrol: row.querySelector('.chk-worklist-kontrol') ? row.querySelector('.chk-worklist-kontrol').checked : false
             });
         });
 
