@@ -655,7 +655,7 @@
         <form id="formPasien">
             <div class="form-group" style="margin-bottom: 15px;">
                 <label style="font-weight: bold; display: block; margin-bottom: 5px;">Jenis Pasien:</label>
-                <label><input type="radio" name="tipePasien" value="baru" checked onclick="aturTipePasien('baru')"> Pasien Baru</label> &nbsp;&nbsp;
+                <label><input type="radio" name="tipePasien" value="baru" onclick="aturTipePasien('baru')"> Pasien Baru</label> &nbsp;&nbsp;
                 <label><input type="radio" name="tipePasien" value="lama" onclick="aturTipePasien('lama')"> Pasien Lama</label>
             </div>
 
@@ -2617,6 +2617,39 @@
         }
     }
 
+    // =========================================================================
+    // 🧹 KEMBALIKAN FORM KE POSISI NETRAL (STANDBY STATE)
+    // =========================================================================
+    function resetFormKePosisiNetral() {
+        // 1. Kosongkan cetangan kedua radio button jenis pasien
+        const radioBaru = document.querySelector('input[name="tipePasien"][value="baru"]');
+        const radioLama = document.querySelector('input[name="tipePasien"][value="lama"]');
+        if (radioBaru) radioBaru.checked = false;
+        if (radioLama) radioLama.checked = false;
+
+        // 2. Sembunyikan kotak tombol pencarian pasien lama jika sedang terbuka
+        const boxLama = document.getElementById('boxPasienLama');
+        if (boxLama) boxLama.style.display = 'none';
+
+        // 3. Ubah teks placeholder No. RM agar memberi petunjuk kepada staf
+        const txtRM = document.getElementById('txtNoRM');
+        if (txtRM) {
+            txtRM.value = "";
+            txtRM.placeholder = "👈 Pilih Jenis Pasien (Baru / Lama) terlebih dahulu";
+        }
+
+        // 4. Kosongkan seluruh kotak input form lainnya
+        const daftarInput = ['nama', 'txtKTP', 'tempatLahir', 'tanggalLahir', 'pekerjaan', 'whatsapp', 'email', 'alamat', 'kecamatan', 'kota'];
+        daftarInput.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.value = "";
+                el.readOnly = false;
+                el.style.backgroundColor = "#fff";
+            }
+        });
+    }
+
     function formatTanggalUntukInput(dateVal) {
         if (!dateVal) return "";
         let str = String(dateVal).trim();
@@ -4186,11 +4219,19 @@
     // --- FORM PENDAFTARAN PASIEN SUBMIT ---
     document.getElementById('formPasien').addEventListener('submit', function(e) {
         e.preventDefault();
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true; submitBtn.innerText = "Mengirim...";
-
-        const tipePasienAktif = document.querySelector('input[name="tipePasien"]:checked').value;
         
+        // 🔥 1. SATPAM VALIDASI: Pastikan staf sudah memilih Jenis Pasien (Baru / Lama)
+        const elTipePasien = document.querySelector('input[name="tipePasien"]:checked');
+        if (!elTipePasien) {
+            alert("⚠️ Harap pilih Jenis Pasien (Pasien Baru / Pasien Lama) terlebih dahulu!");
+            return; // Hentikan proses simpan jika belum dipilih
+        }
+        const tipePasienAktif = elTipePasien.value;
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; 
+        submitBtn.innerText = "Mengirim...";
+
         // 🔥 AMBIL DATA OPERATOR AKTIF DARI STORAGE
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Anonymous";
@@ -4220,16 +4261,27 @@
             idDokter: document.getElementById('pilihDokter').value,
             statusBayar: "Belum Lunas",
             operatorUsername: usernameAktif, // 🔥 Tambahan untuk Log
-            operatorRole: roleAktif         // 🔥 Tambahan untuk Log
+            operatorRole: roleAktif          // 🔥 Tambahan untuk Log
         };
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
         .then(response => response.json())
         .then(res => {
-            submitBtn.disabled = false; submitBtn.innerText = "Kirim & Simpan Pendaftaran";
+            submitBtn.disabled = false; 
+            submitBtn.innerText = "Kirim & Simpan Pendaftaran";
+            
             if(res.result === "success") {
-                alert("Pendaftaran berhasil disimpan ke data master klinik!");
+                alert("🎉 Pendaftaran berhasil disimpan ke data master klinik!");
                 document.getElementById('formPasien').reset();
+                
+                // =================================================================
+                // 🔥 2. EKSEKUSI NETRAL: Kembalikan form ke posisi standby (kosong & netral)
+                // =================================================================
+                if(typeof resetFormKePosisiNetral === "function") {
+                    resetFormKePosisiNetral();
+                }
+                // =================================================================
+                
                 if(typeof aturStatusProteksiForm === "function") aturStatusProteksiForm(false); 
                 muatAntreanHariIni();
             } else { 
@@ -4237,8 +4289,10 @@
             }
         })
         .catch(err => {
-            submitBtn.disabled = false; submitBtn.innerText = "Kirim & Simpan Pendaftaran";
-            alert("Terjadi gangguan koneksi internet.");
+            submitBtn.disabled = false; 
+            submitBtn.innerText = "Kirim & Simpan Pendaftaran";
+            alert("⚠️ Terjadi gangguan koneksi internet. Silakan coba lagi.");
+            console.error("Error submit pendaftaran:", err);
         });
     });
 
@@ -4342,6 +4396,12 @@
         const tombolMenuTerkait = document.getElementById(namaIdTombol);
         if (tombolMenuTerkait) {
             tombolMenuTerkait.classList.add('active');
+        }
+
+        if (tabId === 'formPendaftaran' || tabId === 'pendaftaran') {
+            if(typeof resetFormKePosisiNetral === "function") {
+            resetFormKePosisiNetral();
+        }
         }
 
         // 4. Jalankan fungsi spesifik (Triggers) tiap tab secara aman jika eksis
