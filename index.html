@@ -514,6 +514,51 @@
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
+
+        /* Pembungkus agar kalender bisa digeser horizontal di HP tanpa merusak layar */
+        .kalender-container-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
+        }
+
+        /* Batas lebar minimum agar kotak tanggal tidak pernah tergencet di layar kecil */
+        .kalender-grid-min-width {
+            min-width: 750px; 
+        }
+
+        /* Desain Kartu Pasien di dalam kotak tanggal */
+        .kartu-pasien-kalender {
+            padding: 6px 8px;
+            margin-top: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.3;
+            text-align: left;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: transform 0.1s, box-shadow 0.1s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .kartu-pasien-kalender:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            white-space: normal; /* Tampilkan seluruh teks keluhan saat kursor di atasnya */
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Adaptasi otomatis saat dibuka di HP (< 768px) */
+        @media screen and (max-width: 768px) {
+            #dokter h2 { font-size: 18px !important; }
+            #dokter .header-kalender { flex-direction: column; align-items: stretch !important; text-align: center; }
+            #labelBulanTahunKalender { margin: 10px 0 !important; display: block; }
+            .kartu-pasien-kalender { font-size: 10px; padding: 4px; white-space: normal; }
+        }
     </style>
 </head>
 <body>
@@ -1372,44 +1417,71 @@
             </div>
         </div>
 
-        <div id="dokter" class="tab-content">
-            <h2>Beranda Utama Dokter</h2>
+        <!-- ========================================================= -->
+        <!-- 📅 MENU KHUSUS: KALENDER JANJI TEMU & PRAKTIK DOKTER -->
+        <!-- ========================================================= -->
+        <!-- 2. STRUKTUR HTML KALENDER DOKTER -->
+        <div id="dokter" class="tab-content" style="display: none;">
             
-            <div id="cardJadwalDokter" style="display: none; background: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; color: #2c3e50;">📅 Jadwal Praktik Anda</h3>
-                <ul id="listJadwalDokter" style="margin: 0; padding-left: 20px; color: #34495e;">
-                    <li>Memuat jadwal praktik...</li>
-                </ul>
-            </div>
-            
-            <!-- Kokpit Statistik Ringkas (Untuk melihat ringkasan cepat saat dokter login) -->
-            <div class="stats-grid">
-                <div class="stat-card bg-total">
-                    <h4>Total Antrean Hari Ini</h4>
-                    <p id="homeStatTotal">0</p>
+            <!-- Header Kalender & Navigasi Bulan -->
+            <div class="header-kalender" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <div>
+                    <h2 style="margin: 0; color: #1e3c72; display: flex; align-items: center; gap: 8px;">
+                        📅 Kalender Praktik & Janji Temu
+                    </h2>
+                    <small style="color: #64748b;">Pantau jadwal pasien bulanan dan status pemeriksaan secara real-time</small>
                 </div>
-                <div class="stat-card bg-belum">
-                    <h4>Belum Diperiksa</h4>
-                    <p id="homeStatBelum">0</p>
-                </div>
-                <div class="stat-card bg-sedang">
-                    <h4>Sedang Diperiksa</h4>
-                    <p id="homeStatSedang">0</p>
-                </div>
-                <div class="stat-card bg-sudah">
-                    <h4>Sudah Diperiksa</h4>
-                    <p id="homeStatSudah">0</p>
+                
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <button type="button" onclick="navigasiBulanKalender(-1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
+                        ◀ Bulan Lalu
+                    </button>
+                    
+                    <button type="button" onclick="resetKeBulanIni()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; color: #475569;">
+                        📍 Hari Ini
+                    </button>
+
+                    <strong id="labelBulanTahunKalender" style="font-size: 18px; color: #0f172a; min-width: 140px; text-align: center;">
+                        Juli 2026
+                    </strong>
+
+                    <button type="button" onclick="navigasiBulanKalender(1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
+                        Bulan Depan ▶
+                    </button>
                 </div>
             </div>
 
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px; border: 1px dashed #cbd5e1;">
-                <h3 style="color: #334155; margin-top:0;">📋 Manajemen Antrean & Pemeriksaan</h3>
-                <p style="color: #64748b; font-size: 14px;">Untuk memeriksa pasien, mengisi Rekam Medis Elektronik (RME), memfilter tanggal, atau mengunduh laporan, silakan buka menu <strong>Antrian Pasien</strong>.</p>
-                <!-- Tombol pintas cepat agar dokter bisa langsung lompat ke tab antrean -->
-                <button type="button" onclick="switchTab('antrean')" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    👥 Buka Antrian Pasien Sekarang ➔
-                </button>
+            <!-- Legenda Warna Status -->
+            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; font-size: 13px; background: #f8fafc; padding: 10px 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; display: inline-block;"></i> <strong>Oranye:</strong> Jadwal Hari Ini (Belum Diperiksa)</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; display: inline-block;"></i> <strong>Hijau:</strong> Sudah Diperiksa / Selesai</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #0ea5e9; border-radius: 3px; display: inline-block;"></i> <strong>Biru:</strong> Jadwal Mendatang</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #94a3b8; border-radius: 3px; display: inline-block;"></i> <strong>Abu-abu:</strong> Batal / Tidak Datang</span>
             </div>
+
+            <!-- 🔥 INTEGRASI RESPONSIF: Pembungkus agar aman di Tablet & HP -->
+            <div class="kalender-container-scroll">
+                <div class="kalender-grid-min-width">
+                    
+                    <!-- Grid Header Hari (Senin - Minggu) -->
+                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: bold; background: #1e3c72; color: white; padding: 12px 5px; border-radius: 8px 8px 0 0; font-size: 14px;">
+                        <div>Senin</div><div>Selasa</div><div>Rabu</div><div>Kamis</div><div>Jumat</div><div style="color: #fcd34d;">Sabtu</div><div style="color: #fca5a5;">Minggu</div>
+                    </div>
+
+                    <!-- Grid Kotak Tanggal Kalender (Akan diisi dinamis oleh JavaScript) -->
+                    <div id="gridKalenderBody" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: #cbd5e1; border: 6px solid #cbd5e1; border-radius: 0 0 8px 8px; min-height: 600px;">
+                        
+                        <!-- Tampilan loading sementara sebelum JS bekerja -->
+                        <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold;">
+                            ⏳ Memuat jadwal kalender praktik...
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+            <!-- Akhir Integrasi Responsif -->
+
         </div>
     </div>
 
@@ -4418,6 +4490,12 @@
             if(typeof resetFormKePosisiNetral === "function") {
             resetFormKePosisiNetral();
         }
+        }
+
+        if (tabId === 'dokter' || tabId === 'kalenderDokter') {
+            if (typeof muatKalenderDokter === "function") {
+                muatKalenderDokter();
+            }
         }
 
         // 4. Jalankan fungsi spesifik (Triggers) tiap tab secara aman jika eksis
@@ -8083,6 +8161,196 @@
         alert(`✅ Pasien Terpilih:\nNo. RM: ${noRM}\nNama: ${nama}\n\nSilakan lengkapi Rencana Tanggal Kunjungan & Dokter!`);
         if (document.getElementById('tujuan')) {
             document.getElementById('tujuan').focus();
+        }
+    }
+
+    // =========================================================================
+    // 📅 MESIN KALENDER PRAKTIK DOKTER (FRONTEND CACHING - ZERO LAG)
+    // =========================================================================
+
+    // 1. Variabel Penampung Status Bulan & Tahun Kalender
+    let kalenderBulanAktif = new Date().getMonth(); // 0 = Januari, 6 = Juli, dst.
+    let kalenderTahunAktif = new Date().getFullYear();
+    let cacheDataKalender = []; // Memori RAM untuk menyimpan antrean 1 bulan penuh
+
+    const namaBulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+    // -------------------------------------------------------------------------
+    // 2. FUNGSI PENJEMPUT DATA BULANAN DARI SERVER (Dipanggil 1x saat ganti bulan)
+    // -------------------------------------------------------------------------
+    function muatKalenderDokter() {
+        const gridBody = document.getElementById('gridKalenderBody');
+        const labelBulan = document.getElementById('labelBulanTahunKalender');
+        if (!gridBody) return;
+
+        // Update label judul bulan (Contoh: "Juli 2026")
+        if (labelBulan) {
+            labelBulan.innerText = `${namaBulanIndo[kalenderBulanAktif]} ${kalenderTahunAktif}`;
+        }
+
+        // Tampilkan loading animasi saat sinkronisasi pertama kali
+        gridBody.innerHTML = `
+            <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold; border-radius: 6px;">
+                ⏳ Mengsinkronkan jadwal bulan ${namaBulanIndo[kalenderBulanAktif]} dari server...
+            </div>
+        `;
+
+        // Hitung tanggal 1 dan tanggal terakhir di bulan yang sedang aktif
+        const tglMulai = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-01`;
+        const hariTerakhir = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
+        const tglSelesai = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(hariTerakhir).padStart(2, '0')}`;
+
+        // Ambil data sesi pengguna (Dokter)
+        const sesiAktif = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+
+        const payload = {
+            action: "getTodayQueue", // Kita manfaatkan rute getTodayQueue dengan rentang tanggal 1 bulan
+            startDate: tglMulai,
+            endDate: tglSelesai,
+            role: sesiAktif.role || "",
+            idDokter: sesiAktif.idUser || "",
+            username: sesiAktif.username || "",
+            statusFilter: "Semua", // Wajib ambil SEMUA status agar warna kalender komplit
+            page: 1,
+            limit: 500 // Kapasitas besar untuk menampung pasien sebulan
+        };
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(response => response.json())
+        .then(data => {
+            if (data.result === "success") {
+                // 🔥 SIMPAN DATA SEBULAN KE RAM BROWSER
+                cacheDataKalender = data.queue || [];
+                // 🔥 LANGSUNG RENDER KALENDER DALAM 0 MILIDETIK
+                renderKalenderInstan();
+            } else {
+                gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">❌ Gagal memuat jadwal kalender: ${data.message}</div>`;
+            }
+        })
+        .catch(err => {
+            gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">⚠️ Terjadi gangguan koneksi internet saat memuat kalender.</div>`;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. MESIN RENDER GRID & KARTU PASIEN 0 DETIK (Sepenuhnya dari RAM)
+    // -------------------------------------------------------------------------
+    function renderKalenderInstan() {
+        const gridBody = document.getElementById('gridKalenderBody');
+        if (!gridBody) return;
+        gridBody.innerHTML = ""; // Bersihkan grid
+
+        const hariIni = new Date();
+        const formatHariIni = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
+
+        // Tentukan hari pertama bulan ini (0 = Minggu, 1 = Senin, ... 6 = Sabtu)
+        let hariPertama = new Date(kalenderTahunAktif, kalenderBulanAktif, 1).getDay();
+        // Konversi agar Senin menjadi kolom ke-0, dan Minggu menjadi kolom ke-6
+        let indexKolomMulai = (hariPertama === 0) ? 6 : hariPertama - 1;
+
+        const totalHariBulanIni = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
+
+        // A. Buat kotak kosong untuk hari sebelum tanggal 1 (jika bulan tidak dimulai hari Senin)
+        for (let i = 0; i < indexKolomMulai; i++) {
+            const kotakKosong = document.createElement('div');
+            kotakKosong.style.cssText = "background: #f1f5f9; min-height: 100px; border-radius: 4px; opacity: 0.5;";
+            gridBody.appendChild(kotakKosong);
+        }
+
+        // B. Loop untuk membuat kotak tanggal dari tanggal 1 sampai tanggal terakhir
+        for (let tgl = 1; tgl <= totalHariBulanIni; tgl++) {
+            const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`;
+            const apakahHariIni = (strTgl === formatHariIni);
+
+            // Buat elemen kotak tanggal
+            const kotakHari = document.createElement('div');
+            kotakHari.style.cssText = `
+                background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; 
+                min-height: 110px; 
+                padding: 6px; 
+                border-radius: 4px; 
+                border: ${apakahHariIni ? '2px solid #f59e0b' : '1px solid #e2e8f0'};
+                display: flex; 
+                flex-direction: column;
+            `;
+
+            // Header Angka Tanggal di pojok kotak
+            let htmlKartu = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px;">
+                    <span style="font-weight: bold; font-size: 13px; color: ${apakahHariIni ? '#d97706' : '#334155'};">
+                        ${apakahHariIni ? '📍 ' : ''}${tgl}
+                    </span>
+                </div>
+            `;
+
+            // C. Cari pasien di memori cache yang jadwalnya cocok dengan tanggal kotak ini
+            const pasienHariIni = cacheDataKalender.filter(p => (p.tglDaftar || "").toString().trim() === strTgl);
+
+            if (pasienHariIni.length > 0) {
+                pasienHariIni.forEach(p => {
+                    const statusBersih = (p.status || "").toString().toLowerCase().trim();
+                    
+                    // Tentukan Warna Kartu Pasien berdasarkan aturan psikologi medis
+                    let bgKartu = "#e0f2fe"; let teksKartu = "#075985"; let borderKartu = "#0ea5e9"; let ikon = "🔵"; let dicoret = "";
+
+                    if (statusBersih.includes("sudah") || statusBersih.includes("selesai")) {
+                        bgKartu = "#d1fae5"; teksKartu = "#065f46"; borderKartu = "#10b981"; ikon = "🟢"; // Hijau (Selesai)
+                    } else if (statusBersih.includes("batal") || statusBersih.includes("absen") || statusBersih.includes("tidak datang")) {
+                        bgKartu = "#f1f5f9"; teksKartu = "#64748b"; borderKartu = "#cbd5e1"; ikon = "🔘"; dicoret = "text-decoration: line-through;"; // Abu (Batal/Absen)
+                    } else if (apakahHariIni) {
+                        bgKartu = "#fef3c7"; teksKartu = "#92400e"; borderKartu = "#f59e0b"; ikon = "🟠"; // Oranye (PRIORITAS HARI INI)
+                    }
+
+                    // Render Kartu Pasien
+                    htmlKartu += `
+                        <div class="kartu-pasien-kalender" 
+                            onclick="klikKartuPasienKalender('${p.noRM}', '${p.namaPasien}', '${p.idAntrean}')"
+                            style="background: ${bgKartu}; color: ${teksKartu}; border-left: 3px solid ${borderKartu}; ${dicoret}"
+                            title="Klik untuk lihat detail pemeriksaan ${p.namaPasien}">
+                            <strong>${ikon} ${p.jam || ''}</strong> - ${p.namaPasien}<br>
+                            <small style="opacity: 0.85;">${p.tujuan || 'Konsultasi'}</small>
+                        </div>
+                    `;
+                });
+            }
+
+            kotakHari.innerHTML = htmlKartu;
+            gridBody.appendChild(kotakHari);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. KONTROL NAVIGASI BULAN (◀ Bulan Lalu / Bulan Depan ▶ / 📍 Hari Ini)
+    // -------------------------------------------------------------------------
+    function navigasiBulanKalender(step) {
+        kalenderBulanAktif += step;
+        if (kalenderBulanAktif < 0) {
+            kalenderBulanAktif = 11;
+            kalenderTahunAktif--;
+        } else if (kalenderBulanAktif > 11) {
+            kalenderBulanAktif = 0;
+            kalenderTahunAktif++;
+        }
+        muatKalenderDokter(); // Sinkronisasi data bulan baru
+    }
+
+    function resetKeBulanIni() {
+        const hariIni = new Date();
+        kalenderBulanAktif = hariIni.getMonth();
+        kalenderTahunAktif = hariIni.getFullYear();
+        muatKalenderDokter();
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. AKSI KLIK KARTU PASIEN DI KALENDER (Pintas ke Pemeriksaan)
+    // -------------------------------------------------------------------------
+    function klikKartuPasienKalender(noRM, namaPasien, idAntrean) {
+        const konfirmasi = confirm(`📋 Kelola Pasien dari Kalender:\n\nNama: ${namaPasien}\nNo. RM: ${noRM}\n\nApakah Anda ingin membuka tabel antrean & pemeriksaan pasien ini sekarang?`);
+        if (konfirmasi) {
+            // Alihkan ke tab antrean agar dokter bisa langsung klik tombol "🩺 Periksa" / "👁️ Lihat RME"
+            if (typeof switchTab === "function") {
+                switchTab('antrean');
+            }
         }
     }
 
