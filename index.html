@@ -1126,6 +1126,73 @@
         </div>
     </div>
 
+        <!-- ========================================================= -->
+        <!-- 📅 MENU KHUSUS: KALENDER JANJI TEMU & PRAKTIK DOKTER -->
+        <!-- ========================================================= -->
+        <!-- 2. STRUKTUR HTML KALENDER DOKTER -->
+        <div id="dokter" class="tab-content" style="display: none;">
+            
+            <!-- Header Kalender & Navigasi Bulan -->
+            <div class="header-kalender" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <div>
+                    <h2 style="margin: 0; color: #1e3c72; display: flex; align-items: center; gap: 8px;">
+                        📅 Kalender Praktik & Janji Temu
+                    </h2>
+                    <small style="color: #64748b;">Pantau jadwal pasien bulanan dan status pemeriksaan secara real-time</small>
+                </div>
+                
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <button type="button" onclick="navigasiBulanKalender(-1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
+                        ◀ Bulan Lalu
+                    </button>
+                    
+                    <button type="button" onclick="resetKeBulanIni()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; color: #475569;">
+                        📍 Hari Ini
+                    </button>
+
+                    <strong id="labelBulanTahunKalender" style="font-size: 18px; color: #0f172a; min-width: 140px; text-align: center;">
+                        Juli 2026
+                    </strong>
+
+                    <button type="button" onclick="navigasiBulanKalender(1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
+                        Bulan Depan ▶
+                    </button>
+                </div>
+            </div>
+
+            <!-- Legenda Warna Status -->
+            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; font-size: 13px; background: #f8fafc; padding: 10px 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; display: inline-block;"></i> <strong>Oranye:</strong> Jadwal Hari Ini (Belum Diperiksa)</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; display: inline-block;"></i> <strong>Hijau:</strong> Sudah Diperiksa / Selesai</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #0ea5e9; border-radius: 3px; display: inline-block;"></i> <strong>Biru:</strong> Jadwal Mendatang</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #94a3b8; border-radius: 3px; display: inline-block;"></i> <strong>Abu-abu:</strong> Batal / Tidak Datang</span>
+            </div>
+
+            <!-- 🔥 INTEGRASI RESPONSIF: Pembungkus agar aman di Tablet & HP -->
+            <div class="kalender-container-scroll">
+                <div class="kalender-grid-min-width">
+                    
+                    <!-- Grid Header Hari (Senin - Minggu) -->
+                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: bold; background: #1e3c72; color: white; padding: 12px 5px; border-radius: 8px 8px 0 0; font-size: 14px;">
+                        <div>Senin</div><div>Selasa</div><div>Rabu</div><div>Kamis</div><div>Jumat</div><div style="color: #fcd34d;">Sabtu</div><div style="color: #fca5a5;">Minggu</div>
+                    </div>
+
+                    <!-- Grid Kotak Tanggal Kalender (Akan diisi dinamis oleh JavaScript) -->
+                    <div id="gridKalenderBody" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: #cbd5e1; border: 6px solid #cbd5e1; border-radius: 0 0 8px 8px; min-height: 600px;">
+                        
+                        <!-- Tampilan loading sementara sebelum JS bekerja -->
+                        <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold;">
+                            ⏳ Memuat jadwal kalender praktik...
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+            <!-- Akhir Integrasi Responsif -->
+
+        </div>   
+
     <!-- Tab Pengaturan Sistem -->
     <div id="backend" class="tab-content" style="display:none;">
         <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px;">Pengaturan Sistem</h2>
@@ -1416,73 +1483,6 @@
                         </div>
                 </div>
             </div>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- 📅 MENU KHUSUS: KALENDER JANJI TEMU & PRAKTIK DOKTER -->
-        <!-- ========================================================= -->
-        <!-- 2. STRUKTUR HTML KALENDER DOKTER -->
-        <div id="dokter" class="tab-content" style="display: none;">
-            
-            <!-- Header Kalender & Navigasi Bulan -->
-            <div class="header-kalender" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-                <div>
-                    <h2 style="margin: 0; color: #1e3c72; display: flex; align-items: center; gap: 8px;">
-                        📅 Kalender Praktik & Janji Temu
-                    </h2>
-                    <small style="color: #64748b;">Pantau jadwal pasien bulanan dan status pemeriksaan secara real-time</small>
-                </div>
-                
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <button type="button" onclick="navigasiBulanKalender(-1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
-                        ◀ Bulan Lalu
-                    </button>
-                    
-                    <button type="button" onclick="resetKeBulanIni()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; color: #475569;">
-                        📍 Hari Ini
-                    </button>
-
-                    <strong id="labelBulanTahunKalender" style="font-size: 18px; color: #0f172a; min-width: 140px; text-align: center;">
-                        Juli 2026
-                    </strong>
-
-                    <button type="button" onclick="navigasiBulanKalender(1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
-                        Bulan Depan ▶
-                    </button>
-                </div>
-            </div>
-
-            <!-- Legenda Warna Status -->
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; font-size: 13px; background: #f8fafc; padding: 10px 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; display: inline-block;"></i> <strong>Oranye:</strong> Jadwal Hari Ini (Belum Diperiksa)</span>
-                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; display: inline-block;"></i> <strong>Hijau:</strong> Sudah Diperiksa / Selesai</span>
-                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #0ea5e9; border-radius: 3px; display: inline-block;"></i> <strong>Biru:</strong> Jadwal Mendatang</span>
-                <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 12px; height: 12px; background: #94a3b8; border-radius: 3px; display: inline-block;"></i> <strong>Abu-abu:</strong> Batal / Tidak Datang</span>
-            </div>
-
-            <!-- 🔥 INTEGRASI RESPONSIF: Pembungkus agar aman di Tablet & HP -->
-            <div class="kalender-container-scroll">
-                <div class="kalender-grid-min-width">
-                    
-                    <!-- Grid Header Hari (Senin - Minggu) -->
-                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: bold; background: #1e3c72; color: white; padding: 12px 5px; border-radius: 8px 8px 0 0; font-size: 14px;">
-                        <div>Senin</div><div>Selasa</div><div>Rabu</div><div>Kamis</div><div>Jumat</div><div style="color: #fcd34d;">Sabtu</div><div style="color: #fca5a5;">Minggu</div>
-                    </div>
-
-                    <!-- Grid Kotak Tanggal Kalender (Akan diisi dinamis oleh JavaScript) -->
-                    <div id="gridKalenderBody" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: #cbd5e1; border: 6px solid #cbd5e1; border-radius: 0 0 8px 8px; min-height: 600px;">
-                        
-                        <!-- Tampilan loading sementara sebelum JS bekerja -->
-                        <div style="grid-column: span 7; background: white; display: flex; justify-content: center; align-items: center; padding: 50px; color: #64748b; font-weight: bold;">
-                            ⏳ Memuat jadwal kalender praktik...
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-            <!-- Akhir Integrasi Responsif -->
-
         </div>
     </div>
 
