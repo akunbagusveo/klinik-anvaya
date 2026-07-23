@@ -961,7 +961,7 @@
                     <option value="hari_ini">🔴 Mendesak: Jadwal Hari Ini (H-0)</option>
                     <option value="besok">🟡 Persiapan: Jadwal Besok (H-1)</option>
                     <option value="minggu_depan">🟢 7 Hari Kedepan</option>
-                    <option value="semua">📋 Semua Jadwal (Menunggu)</option>
+                    <option value="semua">📋 Semua Jadwal (Menunggu & Belum Datang)</option>
                     <option value="selesai">🔵 Riwayat Kontrol Selesai</option>
                 </select>
             </div>
@@ -4362,6 +4362,21 @@
         if (tabId === 'kasir' && typeof muatAntreanKasir === "function") {
             muatAntreanKasir();
         }
+
+        // =========================================================================
+        // 🛡️ SATPAM HAK AKSES: CEGAT AKSES KE WORKLIST KONTROL
+        // =========================================================================
+        if (tabId === 'pengingatKontrol') {
+            const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+            const roleAktif   = sessionData ? (sessionData.role || "").toLowerCase().trim() : "";
+            
+            // Jika yang mencoba membuka adalah dokter, tolak mentah-mentah!
+            if (roleAktif === "dokter" || roleAktif === "rol-03" || roleAktif.includes("dr.")) {
+                alert("⚠️ AKSES DITOLAK: Menu Worklist Kontrol dikhususkan untuk Staf Pendaftaran / Perawat guna manajemen panggilan pasien.");
+                return; // Batalkan perpindahan halaman!
+            }
+        }
+        // =========================================================================
     }
 
     // Fungsi pembantu untuk membaca file komputer dan mengubahnya ke teks Base64
@@ -4514,6 +4529,8 @@
         setMenuDisplay('tabKamusDikteBtn', 'kamusdikte');
         setMenuDisplay('tabBackendBtn', 'pengaturan');
         setMenuDisplay('tabKasirBtn', 'kasir');
+        setMenuDisplay('tabPengingatKontrolBtn', 'worklistkontrol');
+       
 
         // 🔥 FIX 1: AKSES GANDA UNTUK TAB ANALISIS BISNIS UTAMA (DI SIDEBAR)
         // Tab ini wajib muncul jika user punya minimal SALAH SATU izin (Operasional ATAU Finansial)
