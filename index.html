@@ -1521,6 +1521,56 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- ========================================================= -->
+                <!-- 🎂 KOTAK TARGET CAMPAIGN ULANG TAHUN (DIGITAL MARKETING) -->
+                <!-- ========================================================= -->
+                <div id="boxCampaignUlangTahun" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 30px; margin-bottom: 20px;">
+                    
+                    <!-- Header Kotak & Tombol Aksi -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; color: #1e3c72; display: flex; align-items: center; gap: 8px; font-size: 16px;">
+                                🎂 Target Campaign: Pasien Ulang Tahun Bulan Ini (<span id="lblBulanUlangTahun" style="color: #0ea5e9; font-weight: bold;">Bulan Ini</span>)
+                            </h3>
+                            <small style="color: #64748b;">Gunakan data ini oleh Digital Marketing untuk pengiriman WhatsApp Gift / Voucher Retensi</small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btnRefreshUlangTahun" onclick="muatDataUlangTahun()" style="background: #0ea5e9; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
+                                🔄 Refresh Data
+                            </button>
+                            <button id="btnEksporUlangTahun" onclick="eksporUlangTahunCSV()" style="background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
+                                📥 Download CSV (For Broadcast)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Daftar Pasien Ulang Tahun -->
+                    <div style="overflow-x: auto;">
+                        <table border="1" width="100%" style="text-align: left; border-collapse: collapse; font-size: 13px; min-width: 700px;">
+                            <thead style="background-color: #f8fafc; color: #334155;">
+                                <tr>
+                                    <th style="padding: 10px; border: 1px solid #cbd5e1; width: 15%;">No. RM</th>
+                                    <th style="padding: 10px; border: 1px solid #cbd5e1; width: 25%;">Nama Pasien</th>
+                                    <th style="padding: 10px; border: 1px solid #cbd5e1; width: 15%;">Tgl Lahir</th>
+                                    <th style="padding: 10px; border: 1px solid #cbd5e1; width: 10%;">Umur</th>
+                                    <th style="padding: 10px; border: 1px solid #cbd5e1; width: 20%;">No. WhatsApp</th>
+                                    <th style="padding: 10px; border: 1px solid #cbd5e1; width: 15%; text-align: center;">Aksi Marketing</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyTabelUlangTahun">
+                                <tr>
+                                    <td colspan="6" style="text-align:center; padding: 30px; color: #64748b; font-weight: bold;">
+                                        ⏳ Klik tombol "Refresh Data" di atas untuk memuat daftar pasien ulang tahun...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+                <!-- Akhir Kotak Target Campaign Ulang Tahun -->
         
                 <!-- Tabel Zonasi -->
                 <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
