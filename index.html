@@ -8729,7 +8729,7 @@
     }
 
     /**
-     * 3. FUNGSI EKSPOR CSV: Mengunduh data di tabel menjadi file .CSV untuk tools broadcast
+     * 3. FUNGSI EKSPOR CSV (VERSI AMAN TIPE DATA INT & STRING)
      */
     function eksporUlangTahunCSV() {
         if (!window.cacheDataUlangTahun || window.cacheDataUlangTahun.length === 0) {
@@ -8741,18 +8741,18 @@
         const bulanSekarang = namaBulanIndo[new Date().getMonth() + 1] || "Bulan_Ini";
         const tahunSekarang = new Date().getFullYear();
 
-        // Susun Header Kolom CSV (Standar yang mudah dibaca oleh WABlas, Fonnte, & Excel)
+        // Susun Header Kolom CSV
         let csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "No RM,Nama Pasien,Tanggal Lahir,Umur,No WhatsApp\r\n";
 
-        // Loop data dan ubah ke baris CSV (Gunakan kutip ganda agar aman terhadap tanda koma di dalam nama/alamat)
+        // 🔥 FIX UTAMA: Bungkus dengan String(...) agar angka seperti umur '36' tidak crash saat di-.replace()
         window.cacheDataUlangTahun.forEach(p => {
-            const rm = `"${(p.noRM || '').replace(/"/g, '""')}"`;
-            const nama = `"${(p.namaPasien || '').replace(/"/g, '""')}"`;
-            const tgl = `"${(p.tanggalLahirTampil || '').replace(/"/g, '""')}"`;
-            const umur = `"${(p.umur || '').replace(/"/g, '""')}"`;
+            const rm = `"${String(p.noRM || '').replace(/"/g, '""')}"`;
+            const nama = `"${String(p.namaPasien || '').replace(/"/g, '""')}"`;
+            const tgl = `"${String(p.tanggalLahirTampil || '').replace(/"/g, '""')}"`;
+            const umur = `"${String(p.umur || '').replace(/"/g, '""')}"`;
             
-            // Format angka telepon dengan tanda kutip agar angka 0 atau 62 di depan tidak hilang saat dibuka di Excel
+            // Format angka telepon dengan tanda kutip agar angka 0 atau 62 tidak hilang di Excel
             let wa = p.noWA && p.noWA !== "-" ? String(p.noWA).replace(/[^0-9]/g, '') : "";
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
             const waCsv = `"${wa}"`;
