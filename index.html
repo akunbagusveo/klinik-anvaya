@@ -3547,36 +3547,83 @@
         }
     }
 
+    // =========================================================================
+    // 🔍 MESIN PENCARI PASIEN GLOBAL (SINKRON DENGAN ACTION: getDaftarPasien)
+    // =========================================================================
     function cariPasienGlobal() {
-        const keyword = document.getElementById('txtCariRiwayatGlobal').value.trim();
-        if (!keyword || keyword.length < 2) {
-            alert("Silakan ketik minimal 2 huruf nama atau No RM pasien yang ingin dicari.");
+        const elInput = document.getElementById('txtCariRiwayatGlobal');
+        if (!elInput) return;
+
+        // Bersihkan kata kunci dan ubah ke huruf kecil semua
+        const keyword = elInput.value.trim().toLowerCase();
+        
+        if (!keyword || keyword.length < 1) {
+            alert("Silakan ketik minimal 1 atau 2 huruf nama atau No RM pasien yang ingin dicari.");
             return;
         }
 
-        document.getElementById('boxDaftarPasienGlobal').style.display = 'block';
+        const boxDaftar = document.getElementById('boxDaftarPasienGlobal');
+        if (boxDaftar) boxDaftar.style.display = 'block';
+        
         const tbody = document.getElementById('tabelDaftarPasienBody');
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Mencari pasien... ⏳</td></tr>';
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; font-weight: bold; color: #0369a1;">⏳ Mengambil data dari Master Pasien...</td></tr>';
+        }
 
+        // 🔥 PANGGIL RUTE BARU DI SERVER: "getDaftarPasien"
         fetch(WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "searchPasienLama", keyword: keyword })
+            body: JSON.stringify({ action: "getDaftarPasien" })
         })
         .then(res => res.json())
         .then(res => {
-            if (res.result === "success" && res.data.length > 0) {
-                cacheRiwayatGlobal = res.data; 
-                currentRiwayatPage = 1;        
-                tampilkanRiwayatGlobal();     
+            if (res.result === "success" && res.data && res.data.length > 0) {
+                
+                // =================================================================
+                // 🔥 OMNI-FILTER: Saring data pasien berdasarkan kata kunci
+                // =================================================================
+                const hasilFilter = res.data.filter(p => {
+                    // Gabungkan No RM, Nama, No WA, dan KTP menjadi satu deret teks untuk discan
+                    const teksPasien = `${p.noRM || ''} ${p.namaPasien || ''} ${p.noWA || ''} ${p.noKTP || ''}`.toLowerCase();
+                    return teksPasien.includes(keyword);
+                });
+
+                if (hasilFilter.length > 0) {
+                    console.log(`✔️ [PENCARIAN SUKSES] Ditemukan ${hasilFilter.length} pasien untuk keyword "${keyword}".`);
+                    
+                    // Simpan hasil filter ke cache sistem dan render ke tabel
+                    cacheRiwayatGlobal = hasilFilter; 
+                    currentRiwayatPage = 1;        
+                    
+                    if (typeof tampilkanRiwayatGlobal === "function") {
+                        tampilkanRiwayatGlobal();     
+                    }
+                } else {
+                    cacheRiwayatGlobal = [];
+                    if (typeof tampilkanRiwayatGlobal === "function") tampilkanRiwayatGlobal();
+                    
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding: 30px; background: #fef2f2; color: #991b1b; border-radius: 6px;">
+                                    ❌ Pasien dengan kata kunci <strong>"${elInput.value}"</strong> tidak ditemukan di Master Pasien.<br>
+                                    <small style="color:#7f1d1d; font-weight:normal; margin-top:5px; display:block;">
+                                        💡 Tips: Coba ketik angkanya saja (misal: <strong>0003</strong>) atau potongan nama (misal: <strong>ayam</strong>).
+                                    </small>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
             } else {
                 cacheRiwayatGlobal = [];
-                tampilkanRiwayatGlobal();
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">❌ Pasien tidak ditemukan.</td></tr>';
+                if (typeof tampilkanRiwayatGlobal === "function") tampilkanRiwayatGlobal();
+                if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c; padding: 20px;">❌ Data Master Pasien di server kosong.</td></tr>';
             }
         })
         .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">Gagal memuat data. Periksa koneksi internet.</td></tr>';
-            console.error(err);
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c; padding: 20px;">⚠️ Gagal terhubung ke server. Periksa koneksi internet Anda.</td></tr>';
+            console.error("Error cariPasienGlobal:", err);
         });
     }
 
