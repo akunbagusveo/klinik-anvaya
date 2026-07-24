@@ -3437,45 +3437,41 @@
     const riwayatPageSize = 5; 
     let totalRiwayatPages = 1;
 
+    // =========================================================================
+    // 🔍 RENDER TABEL RIWAYAT GLOBAL (DUAL-MODE: OBJEK & ARRAY SUPPORTED)
+    // =========================================================================
     function tampilkanRiwayatGlobal() {
         const tbody = document.getElementById('tabelDaftarPasienBody');
+        if (!tbody) return;
         tbody.innerHTML = "";
         
         if (!cacheRiwayatGlobal || cacheRiwayatGlobal.length === 0) {
             document.getElementById('lblTotalDataMasterRiwayat').innerText = "0";
             document.getElementById('lblTotalDataTampilRiwayat').innerText = "0";
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold; padding: 20px;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
             return;
         }
 
-        // =========================================================================
-        // 🔥 EXTRAKSI HEADER 100% DINAMIS & AMAN DARI CRASH (SABUK PENGAMAN MUTLAK)
-        // =========================================================================
         let headerMaster = [];
         let dataPasienMurni = cacheRiwayatGlobal;
 
-        // Cek apakah baris pertama di dalam hasil cari adalah baris judul/header
+        // Cek apakah baris pertama adalah array header (untuk format lama)
         if (cacheRiwayatGlobal.length > 0 && Array.isArray(cacheRiwayatGlobal[0])) {
             const cekBarisPertama = cacheRiwayatGlobal[0].map(h => h.toString().toLowerCase().trim());
             if (cekBarisPertama.includes("no rm") || cekBarisPertama.includes("nama pasien")) {
                 headerMaster = cekBarisPertama;
-                dataPasienMurni = cacheRiwayatGlobal.slice(1); // Potong baris ke-0 agar judul tidak ikut terhitung sebagai pasien
+                dataPasienMurni = cacheRiwayatGlobal.slice(1); 
             }
         }
 
-        // Jalur alternatif jika cache Riwayat kosong, coba intip cache Pasien Lama
-        if (headerMaster.length === 0 && typeof cachePasienLama !== "undefined" && cachePasienLama && cachePasienLama.length > 0) {
+        if (headerMaster.length === 0 && typeof cachePasienLama !== "undefined" && cachePasienLama && cachePasienLama.length > 0 && Array.isArray(cachePasienLama[0])) {
             headerMaster = cachePasienLama[0].map(h => h.toString().toLowerCase().trim());
         }
 
-        // Jalur terakhir (Fallback Teraman) jika seluruh memori browser kosong agar sistem TIDAK BLANK / CRASH
         if (headerMaster.length === 0) {
             headerMaster = ["no rm", "nama pasien", "tempat lahir", "tanggal lahir", "gender", "whatsapp", "pekerjaan", "email", "alamat lengkap", "ktp", "status"];
         }
 
-        // =========================================================================
-        // PENGATURAN HALAMAN PAGINASI (Berbasis Data Murni Tanpa Baris Header)
-        // =========================================================================
         const totalData = dataPasienMurni.length;
         totalRiwayatPages = Math.ceil(totalData / riwayatPageSize) || 1;
         
@@ -3490,27 +3486,33 @@
         document.getElementById('lblTotalDataTampilRiwayat').innerText = dataHalaman.length;
         document.getElementById('lblHalamanRiwayat').innerText = `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`;
         
-        document.getElementById('btnPrevRiwayat').disabled = (currentRiwayatPage === 1);
-        document.getElementById('btnNextRiwayat').disabled = (currentRiwayatPage === totalRiwayatPages);
+        const btnPrev = document.getElementById('btnPrevRiwayat');
+        const btnNext = document.getElementById('btnNextRiwayat');
+        if (btnPrev) btnPrev.disabled = (currentRiwayatPage === 1);
+        if (btnNext) btnNext.disabled = (currentRiwayatPage === totalRiwayatPages);
 
         if (dataHalaman.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c; font-weight:bold; padding: 20px;">❌ Pasien tidak ditemukan dalam database.</td></tr>';
             return;
         }
 
-        // PELACAKAN INDEKS MATRIKS SECARA OTOMATIS
         const idxNoRM   = headerMaster.indexOf("no rm") !== -1 ? headerMaster.indexOf("no rm") : 0;
         const idxNama   = headerMaster.indexOf("nama pasien") !== -1 ? headerMaster.indexOf("nama pasien") : 1;
         const idxGender = headerMaster.findIndex(h => h.includes("gender") || h.includes("kelamin") || h.includes("l/p"));
         const idxWA     = headerMaster.findIndex(h => h.includes("whatsapp") || h.includes("wa") || h.includes("hp"));
-        const idxAlamat = headerMaster.indexOf("alamat lengkap") !== -1 ? headerMaster.indexOf("alamat lengkap") : 8;
+        const idxAlamat = headerMaster.indexOf("alamat lengkap") !== -1 ? headerMaster.indexOf("alamat lengkap") : (headerMaster.indexOf("alamat") !== -1 ? headerMaster.indexOf("alamat") : 8);
         const idxStatus = headerMaster.indexOf("status") !== -1 ? headerMaster.indexOf("status") : 10;
 
-        // MENGGAMBAR BARIS TABEL
+        // =========================================================================
+        // 🔥 DUAL-MODE READER: Membaca Objek JSON maupun Array dengan Aman
+        // =========================================================================
         dataHalaman.forEach(p => {
-            const noRM = p[idxNoRM] || "-";
-            const namaPasien = p[idxNama] || "-";
-            const statusAkun = p[idxStatus !== -1 ? idxStatus : 10] ? p[idxStatus !== -1 ? idxStatus : 10].toString().trim().toLowerCase() : "aktif";
+            const noRM       = p.noRM || p[idxNoRM] || p[0] || "-";
+            const namaPasien = p.namaPasien || p.nama || p[idxNama] || p[1] || "-";
+            const gender     = p.gender || p[idxGender !== -1 ? idxGender : 4] || "-";
+            const noWA       = p.noWA || p.whatsapp || p.phone || p[idxWA !== -1 ? idxWA : 5] || "-";
+            const alamat     = p.alamat || p.alamatLengkap || p[idxAlamat !== -1 ? idxAlamat : 8] || "-";
+            const statusAkun = (p.status || p[idxStatus !== -1 ? idxStatus : 10] || "aktif").toString().trim().toLowerCase();
             
             let namaTampil = `<strong>${namaPasien}</strong>`;
             if (statusAkun === "nonaktif") {
@@ -3519,12 +3521,12 @@
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-weight:bold; color:#2c3e50;">${noRM}</td>
-                <td>${namaTampil}</td>
-                <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p[idxGender !== -1 ? idxGender : 4] || '-'}</span></td> 
-                <td>${p[idxWA !== -1 ? idxWA : 5] || '-'}</td> 
-                <td>${p[idxAlamat !== -1 ? idxAlamat : 8] || '-'}</td> 
-                <td>
+                <td style="font-weight:bold; color:#2c3e50; padding: 10px;">${noRM}</td>
+                <td style="padding: 10px;">${namaTampil}</td>
+                <td style="padding: 10px;"><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${gender}</span></td> 
+                <td style="padding: 10px;">${noWA}</td> 
+                <td style="padding: 10px;">${alamat}</td> 
+                <td style="padding: 10px; text-align: center;">
                     <button class="btn-action btn-rme" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaModalRiwayatFull('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', 'view')">👁️ Lihat RME</button>
                 </td>
             `;
@@ -3632,30 +3634,30 @@
     // ==========================================
     // 🔥 UPGRADE: Tambahkan parameter tanggalDaftarLangsung di akhir
     function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "", rowNumberTarget = "") {
-        // Cari berbasis No RM DAN Row Number (Sangat Akurat)
+        // 🔥 SANITASI MUTLAK: Pastikan noRM tidak kosong atau bernilai "-"
+        const cleanNoRM = String(noRM || "").trim();
+        if (!cleanNoRM || cleanNoRM === "-" || cleanNoRM === "undefined") {
+            alert("⚠️ Nomor Rekam Medis pasien tidak valid (" + cleanNoRM + "). Tidak dapat memuat profil RME.");
+            return;
+        }
+
         let dataPasienObj = null;
-        
-        // Pastikan variabel dataAntreanGlobal eksis sebelum mencari
         if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal !== null) {
             if (rowNumberTarget !== "") {
-                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM && String(p.rowNumber) === String(rowNumberTarget));
+                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === cleanNoRM && String(p.rowNumber) === String(rowNumberTarget));
             } else {
-                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === noRM); // Fallback jika mode view
+                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === cleanNoRM);
             }
         }
 
-        // 🔥 FIX UTAMA: Jangan blokir jika hanya mode 'view' (Berasal dari tab Database/Pencarian Pasien)
-        // Blokir HANYA JIKA dokter mau 'input' tapi pasien tidak ada di antrean hari ini.
         if (!dataPasienObj && mode === 'input') {
             alert("⚠️ Data antrean tidak ditemukan di memori!");
             return;
         }
         
-        // Tetapkan fallback (nilai pengganti) jika dataPasienObj kosong
         window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
-        
         window.isPasienLunasAktif = false;
-        if (dataPasienObj && (dataPasienObj.statusBayar === "Lunas" || dataPasienObj.statusBayar.toLowerCase() === "lunas")) {
+        if (dataPasienObj && (dataPasienObj.statusBayar === "Lunas" || (dataPasienObj.statusBayar && dataPasienObj.statusBayar.toLowerCase() === "lunas"))) {
             window.isPasienLunasAktif = true;
         }
 
@@ -3664,7 +3666,7 @@
             btnTambah.style.display = window.isPasienLunasAktif ? 'none' : 'inline-block';
         }
 
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
 
         document.getElementById('modalRiwayatFull').style.display = 'flex'; 
@@ -3676,31 +3678,22 @@
         const formSplit = document.getElementById('formModalMedisSplit');
         
         if (mode === 'view') {
-            kolomKiri.style.display = 'none'; 
+            if (kolomKiri) kolomKiri.style.display = 'none'; 
         } else {
-            kolomKiri.style.display = 'block'; 
+            if (kolomKiri) kolomKiri.style.display = 'block'; 
             if (formSplit) formSplit.style.display = 'block'; 
         }
 
-        document.getElementById('modalNoRM').value = noRM;
+        document.getElementById('modalNoRM').value = cleanNoRM;
         document.getElementById('modalNama').value = namaPasien;
-        
-        // =====================================================================
-        // 🔥 FIX UTAMA ESTAFET DATA: Simpan Row Number ke Form Tersembunyi!
-        // =====================================================================
         document.getElementById('modalRowUpdate').value = rowNumberTarget; 
         
         window.isRestoringDraft = true; 
-        document.getElementById('formModalMedisSplit').reset();
+        if (formSplit) formSplit.reset();
         
-        // =========================================================================
-        // 🔥 FIX UTAMA FASE 1: Bersihkan total cangkang baris tindakan dinamis pasien sebelumnya
-        // =========================================================================
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
-
-            // 🔥 BANNER INFO LUNAS: Beri tahu dokter bahwa uang sudah terkunci
             let infoLunas = document.getElementById('infoLunasRME');
             if (!infoLunas) {
                 infoLunas = document.createElement('div');
@@ -3713,32 +3706,23 @@
                 infoLunas.style.borderRadius = '4px';
                 infoLunas.style.fontSize = '12px';
                 infoLunas.innerHTML = '🔒 <strong>KUITANSI TELAH DICETAK (LUNAS).</strong><br>Anda dapat mengedit atau melengkapi catatan klinis pasien (Anamnesa, Diagnosa, dll), namun rincian tindakan dan tarif telah dikunci untuk menjaga integritas pembukuan kasir.';
-                
                 kontainerTindakan.parentNode.insertBefore(infoLunas, kontainerTindakan);
             }
             infoLunas.style.display = window.isPasienLunasAktif ? 'block' : 'none';
         }
 
-        
-
-        const cleanNoRM = String(noRM).trim();
         const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
         if (savedDraft && mode === 'input') { 
             try {
                 const draftObj = JSON.parse(savedDraft);
-                
-                // 1. Suntikkan nilai ke elemen input teks (Mengisi kedua kemungkinan ID agar aman)
                 const pasokNilai = (id, val) => {
                     const el = document.getElementById(id);
                     if (el) el.value = val || "";
                 };
-
                 pasokNilai('modalAnamnesa', draftObj.anamnesa);
                 pasokNilai('modalObjektif', draftObj.objektif);
                 pasokNilai('modalDiagnosa', draftObj.diagnosa);
                 pasokNilai('modalPerawatan', draftObj.perawatan);
-                
-                // 🔥 Pengisian kolom baru secara paralel ke semua variasi ID elemen
                 pasokNilai('resep', draftObj.resep);
                 pasokNilai('modalResep', draftObj.resep);
                 pasokNilai('proPerawatan', draftObj.proPerawatan);
@@ -3746,16 +3730,10 @@
                 pasokNilai('proKontrol', draftObj.proKontrol);
                 pasokNilai('modalProKontrol', draftObj.proKontrol);
 
-                // 2. Bangkitkan baris tindakan dinamis
                 if (draftObj.tindakanDinamis && Array.isArray(draftObj.tindakanDinamis) && draftObj.tindakanDinamis.length > 0) {
                     draftObj.tindakanDinamis.forEach(t => {
-                        if (typeof tambahBarisTindakan === "function") {
-                            tambahBarisTindakan(t);
-                        }
+                        if (typeof tambahBarisTindakan === "function") tambahBarisTindakan(t);
                     });
-
-                    // 🔥 SOLUSI EMAS ANTI-NaN: Paksa timpa ulang nilai harga asli dari draf setelah
-                    // seluruh event listener dropdown bawaan selesai bergejolak di latar belakang
                     setTimeout(() => {
                         const barisAktif = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
                         barisAktif.forEach((row, index) => {
@@ -3763,50 +3741,45 @@
                             if (dataDrafItem) {
                                 const inpHarga = row.querySelector('.inp-harga-tindakan');
                                 if (inpHarga) {
-                                    // Bersihkan karakter non-angka, ambil nilai murninya
                                     let hargaMurni = String(dataDrafItem.hargaDiinput).replace(/[^0-9]/g, '');
                                     if (hargaMurni) {
                                         inpHarga.value = hargaMurni;
-                                        // Pemicu agar visualisasi ribuan/rupiah bawaan ter-update kembali
                                         inpHarga.dispatchEvent(new Event('input'));
                                         inpHarga.dispatchEvent(new Event('change'));
                                     }
                                 }
                             }
                         });
-                        // Kunci ulang draf terkini secara lokal
-                        simpanDraftRME();
-                    }, 80); // Jeda aman 80 milidetik
+                        if (typeof simpanDraftRME === "function") simpanDraftRME();
+                    }, 80);
                 }
             } catch(e) {
                 console.error("Gagal merestorasi data draf RME:", e);
             }
         }
 
-        setTimeout(() => {
-            window.isRestoringDraft = false;
-        }, 200);
+        setTimeout(() => { window.isRestoringDraft = false; }, 200);
 
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
-        timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
+        if (timelineContainer) timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
 
         const bannerMedis = document.getElementById('bannerPeringatanMedis');
-        bannerMedis.style.display = 'none';
+        if (bannerMedis) bannerMedis.style.display = 'none';
 
-        // 🔥 KEMBALIKAN FUNGSI PROFIL YANG HILANG
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: noRM }) })
+        // 🔥 FETCH 1: PROFIL PASIEN (Menggunakan cleanNoRM yang sudah pasti valid)
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
             if(res.result === "success" && res.data) {
-                let umur = hitungUmur(res.data.tanggalLahir);
-                document.getElementById('lblProfilNama').innerText = res.data.nama;
-                document.getElementById('lblProfilRM').innerText = res.data.noRM;
-                document.getElementById('lblProfilUmur').innerText = `${res.data.tempatLahir}, ${res.data.tanggalLahir} (${umur} Thn)`;
-                document.getElementById('lblProfilKTP').innerText = res.data.noKTP;
-                document.getElementById('lblProfilWA').innerText = res.data.phone;
-                document.getElementById('lblProfilKerja').innerText = res.data.pekerjaan;
+                let umur = typeof hitungUmur === "function" ? hitungUmur(res.data.tanggalLahir) : "-";
+                document.getElementById('lblProfilNama').innerText = res.data.nama || namaPasien || "-";
+                document.getElementById('lblProfilRM').innerText = res.data.noRM || cleanNoRM || "-";
+                document.getElementById('lblProfilUmur').innerText = `${res.data.tempatLahir || '-'}, ${res.data.tanggalLahir || '-'} (${umur} Thn)`;
+                document.getElementById('lblProfilKTP').innerText = res.data.noKTP || "-";
+                document.getElementById('lblProfilWA').innerText = res.data.phone || "-";
+                document.getElementById('lblProfilKerja').innerText = res.data.pekerjaan || "-";
                 
-                let domisiliGabung = (res.data.kecamatan && res.data.kecamatan !== "-") ? `${res.data.kecamatan}, ${res.data.kota}` : res.data.alamat;
+                let domisiliGabung = (res.data.kecamatan && res.data.kecamatan !== "-") ? `${res.data.kecamatan}, ${res.data.kota}` : (res.data.alamat || "-");
                 document.getElementById('lblProfilDomisili').innerText = domisiliGabung;
 
                 let alergi = res.data.alergi ? res.data.alergi.trim() : "-";
@@ -3821,25 +3794,25 @@
                     document.getElementById('kontenObatRME').innerHTML = `💊 <strong>OBAT RUTIN:</strong> ${obatRutin}`;
                     bannerTampil = true;
                 }
-                if(bannerTampil) bannerMedis.style.display = 'block';
+                if(bannerTampil && bannerMedis) bannerMedis.style.display = 'block';
             }
-        });
+        })
+        .catch(err => console.error("Gagal muat profil medis:", err));
 
-        // FETCH 2: Riwayat Lama
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: noRM }) })
+        // 🔥 FETCH 2: HISTORI RIWAYAT MEDIS (Menggunakan cleanNoRM)
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
+            if (!timelineContainer) return;
             timelineContainer.innerHTML = "";
-            if (res.result === "success" && res.data.length > 0) {
+            
+            if (res.result === "success" && res.data && res.data.length > 0) {
                 const dataRiwayat = res.data.reverse(); 
-                
-                // 🔥 FIX UTAMA 1: Amankan seluruh objek data ke dalam memori global browser
                 window.currentHistoryData = dataRiwayat; 
                 
                 dataRiwayat.forEach(r => {
-                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" ...` : '';
+                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="display:inline-block; margin-top:8px; color:#2980b9; font-weight:bold;">🖼️ Lihat Lampiran Foto</a>` : '';
                     
-                    // 🔥 FIX UTAMA 2: Tombol kini sangat bersih, hanya mengirim barisSheet & status hari ini
                     let tombolEditRMEHtml = '';
                     if (perms.editRME === 1 && mode !== 'input') { 
                         tombolEditRMEHtml = `
@@ -3850,58 +3823,47 @@
                         `;
                     }
 
-                    // 🔥 LOGIKA DUAL-DATE DISPLAY UTAMA
-                    // Asumsikan r.tanggalKunjungan sudah dikirim dari backend Kode.gs (getAllRiwayatMedis)
-                    let tanggalKunjunganAsli = r.tanggalKunjungan && r.tanggalKunjungan !== "" && r.tanggalKunjungan !== "-" ? r.tanggalKunjungan : r.tanggal.split(" ")[0]; // Fallback ke tanggal lama
+                    let tanggalKunjunganAsli = r.tanggalKunjungan && r.tanggalKunjungan !== "" && r.tanggalKunjungan !== "-" ? r.tanggalKunjungan : (r.tanggal ? r.tanggal.split(" ")[0] : "-"); 
                     
                     let teksTanggalKunjungan = `<strong>🗓️ Kunjungan: ${tanggalKunjunganAsli}</strong>`;
-                    let teksWaktuInput = `<span style="font-size: 11px; color: #7f8c8d;">⏱️ Input/Edit: ${r.tanggal}</span>`;
+                    let teksWaktuInput = `<span style="font-size: 11px; color: #7f8c8d;">⏱️ Input/Edit: ${r.tanggal || '-'}</span>`;
                     
-                    // Beri badge Peringatan jika tanggal klinis beda dengan tanggal input
-                    // 🔥 PERBAIKAN LOGIKA TANGGAL: Samakan format sebelum dibandingkan
-                    let tanggalSistemCumaHari = r.tanggal.split(" ")[0]; // Ambil "17/07/2026"
+                    let tanggalSistemCumaHari = r.tanggal ? r.tanggal.split(" ")[0] : ""; 
                     let formatSistemSama = tanggalSistemCumaHari;
                     
-                    // Jika dari server bentuknya DD/MM/YYYY, kita putar jadi YYYY-MM-DD
                     if (tanggalSistemCumaHari.includes("/")) {
                         let parts = tanggalSistemCumaHari.split("/");
-                        if (parts.length === 3 && parts[2].length === 4) { // Pastikan indeks ke-2 adalah Tahun
+                        if (parts.length === 3 && parts[2].length === 4) { 
                             formatSistemSama = `${parts[2]}-${parts[1]}-${parts[0]}`; 
                         }
                     }
 
                     let infoEditan = "";
-                    // Sekarang kita membandingkan Apel vs Apel (Contoh: "2026-07-17" vs "2026-07-17")
-                    if (tanggalKunjunganAsli !== formatSistemSama) {
-                         infoEditan = `<div style="background-color: #fcf3cf; color: #d35400; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-top: 4px; display: inline-block; font-weight: 600;">
-                                          ⚠️ Koreksi / Input Susulan
-                                       </div>`;
+                    if (tanggalKunjunganAsli !== formatSistemSama && formatSistemSama !== "") {
+                        infoEditan = `<div style="background-color: #fcf3cf; color: #d35400; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-top: 4px; display: inline-block; font-weight: 600;">
+                                        ⚠️ Koreksi / Input Susulan
+                                    </div>`;
                     }
 
-                    // =========================================================================
-                    // 🔥 POSISI INDUK LANGKAH 3: Taruh kode pengurai JSON Tindakan di sini!
-                    // =========================================================================
                     let tampilanTindakanHtml = "";
                     try {
                         let arrTindakan = JSON.parse(r.perawatan);
                         if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                             arrTindakan.forEach(t => {
                                 let labelCatatan = t.catatanKlinis ? ` <span style="color:#7f8c8d; font-style:italic;">(${t.catatanKlinis})</span>` : "";
-                                
-                                // 🔥 PERBAIKAN DINAMIS: Mengambil properti lama ATAU baru secara aman agar anti-NaN
                                 let hargaAman = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
-                                
                                 tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}<br>`;
                             });
                         } else {
-                            tampilanTindakanHtml = formatKeBulletPoin(r.perawatan);
+                            tampilanTindakanHtml = typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.perawatan) : r.perawatan;
                         }
                     } catch(e) {
-                        tampilanTindakanHtml = formatKeBulletPoin(r.perawatan); // Fallback data lama
+                        tampilanTindakanHtml = typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.perawatan) : (r.perawatan || "-"); 
                     }
 
                     const card = document.createElement('div');
                     card.className = 'rme-card';
+                    card.style.cssText = "border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 15px; background-color: white;";
                     card.innerHTML = `
                         <div class="rme-card-header" style="background-color:#f9f9f9; padding:10px 15px; border-bottom:1px solid #eee; border-left:4px solid #34495e; margin-bottom:10px; display:flex; justify-content:space-between; align-items: flex-start;">
                             <div>
@@ -3913,28 +3875,27 @@
                             <div>${tombolEditRMEHtml}</div>
                         </div>
                         <div style="font-size:13px; padding:5px 15px 15px 15px;">
-                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.anamnesa)}</span></div>
-                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.objektif)}</span></div>
-                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.diagnosa)}</span></div>
-                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${tampilanTindakanHtml}</span></div>
+                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.anamnesa) : (r.anamnesa || '-')}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.objektif) : (r.objektif || '-')}</span></div>
+                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.diagnosa) : (r.diagnosa || '-')}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${tampilanTindakanHtml || '-'}</span></div>
                             
-                            <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> <br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.proPerawatan)}</span></div>
-                            <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.proKontrol)}</span></div>
+                            <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> <br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.proPerawatan) : (r.proPerawatan || '-')}</span></div>
+                            <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.proKontrol) : (r.proKontrol || '-')}</span></div>
                             
-                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${formatKeBulletPoin(r.resep)}</span></div>
+                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.resep) : (r.resep || '-')}</span></div>
                             ${linkFotoHtml}
                         </div>
                     `;
-                    card.style.border = "1px solid #e0e0e0";
-                    card.style.borderRadius = "6px";
-                    card.style.marginBottom = "15px";
-                    card.style.backgroundColor = "white";
-                    
                     timelineContainer.appendChild(card);
                 });
             } else {
-                timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#7f8c8d;">Belum ada riwayat (Pasien Baru).</p>';
+                timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#7f8c8d; font-weight:bold;">Belum ada riwayat medis yang tercatat untuk pasien ini.</p>';
             }
+        })
+        .catch(err => {
+            if (timelineContainer) timelineContainer.innerHTML = '<p style="text-align:center; padding:30px; color:#c0392b; font-weight:bold;">❌ Gagal memuat histori medis dari server.</p>';
+            console.error("Gagal muat histori medis:", err);
         });
     }
 
