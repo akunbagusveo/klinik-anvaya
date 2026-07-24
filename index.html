@@ -559,6 +559,11 @@
             #labelBulanTahunKalender { margin: 10px 0 !important; display: block; }
             .kartu-pasien-kalender { font-size: 10px; padding: 4px; white-space: normal; }
         }
+
+        @keyframes modalMuncul {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -1962,6 +1967,63 @@
                 <button onclick="tutupModalEdit()" style="padding:8px 14px; background:#7f8c8d; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batal</button>
                 <button onclick="simpanEditAntrean()" style="padding:8px 14px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Simpan</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 📋 MODAL QUICK SUMMARY PASIEN (KALENDER DOKTER) -->
+    <!-- ========================================================= -->
+    <div id="modalSummaryKalender" class="modal-popup-container" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
+        <div class="modal-popup-content" style="background-color: #ffffff; border-radius: 10px; width: 90%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalMuncul 0.2s ease-out;">
+            
+            <!-- Header Modal -->
+            <div style="background: #1e3c72; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    📋 Resume Singkat Janji Temu
+                </h3>
+                <button onclick="tutupModalKalender()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Body Modal (Isi Data Pasien) -->
+            <div style="padding: 20px; font-size: 14px; color: #334155; line-height: 1.6;">
+                <div style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px; margin-bottom: 12px;">
+                    <small style="color: #64748b; font-weight: bold; text-transform: uppercase;">Pasien</small>
+                    <div style="font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 2px;" id="modKalNamaPasien">-</div>
+                    <span style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;" id="modKalNoRM">-</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <small style="color: #64748b; font-weight: bold; display: block;">👨‍⚕️ Dokter Praktik</small>
+                        <strong style="color: #1e3c72;" id="modKalDokter">-</strong>
+                    </div>
+                    <div>
+                        <small style="color: #64748b; font-weight: bold; display: block;">⏰ Jam Janji Temu</small>
+                        <strong style="color: #d97706;" id="modKalJam">-</strong>
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
+                    <small style="color: #64748b; font-weight: bold; display: block;">📌 Keluhan / Tujuan Kunjungan:</small>
+                    <span style="font-weight: 500; color: #1e293b;" id="modKalKeluhan">-</span>
+                </div>
+
+                <div>
+                    <small style="color: #64748b; font-weight: bold; margin-right: 5px;">📊 Status Saat Ini:</small>
+                    <span id="modKalStatus" style="padding: 3px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block;">-</span>
+                </div>
+            </div>
+
+            <!-- Footer Modal (Tombol Aksi) -->
+            <div style="background: #f1f5f9; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0;">
+                <button onclick="tutupModalKalender()" style="background: #e2e8f0; color: #475569; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                    Tutup
+                </button>
+                <button id="btnModKalLihatRME" style="background: #10b981; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                    👁️ Lihat RME
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
@@ -8360,54 +8422,92 @@
     }
 
     // =========================================================================
-    // ⚡ AKSI KLIK KARTU PASIEN: QUICK SUMMARY + NAMA DOKTER (PERAWAT FRIENDLY)
+    // ⚡ MESIN POP-UP MODAL KALENDER & SMART ROUTING KE RME
     // =========================================================================
+
     function klikKartuPasienKalender(noRM, namaPasien, idAntrean) {
-        // 1. Cari data pasien lengkap dari memori RAM browser (cacheDataKalender)
+        // 1. Cari data pasien dari memori RAM (cacheDataKalender)
         const dataPasien = cacheDataKalender.find(p => (p.noRM || p[0]) === noRM && (p.idAntrean || p.rowNumber || "") == idAntrean) || {};
         
-        // 2. Ekstrak informasi penting secara fleksibel (Dukung format Objek maupun Array Sheet)
+        // 2. Ekstrak data
         const keluhan    = dataPasien.tujuan || dataPasien.keluhan || dataPasien[4] || "Konsultasi Umum";
         const jam        = dataPasien.waktu || dataPasien.jam || dataPasien[3] || "-";
-        const status     = dataPasien.status || dataPasien[6] || "Belum Diperiksa";
-        
-        // 🔥 PENGAMBILAN NAMA DOKTER (Mendeteksi properti dokter, namaDokter, atau kolom ke-5 di sheet)
+        const status     = (dataPasien.status || dataPasien[6] || "Belum Diperiksa").toString().trim();
         const namaDokter = dataPasien.dokter || dataPasien.namaDokter || dataPasien[5] || "Dokter Praktik";
 
-        // 3. Susun Tampilan Quick Summary yang Rapi & Informatif
-        const pesan = `📋 RESUME SINGKAT JANJI TEMU\n` +
-                    `============================================\n` +
-                    `👤 Pasien   : ${namaPasien} (${noRM})\n` +
-                    `👨‍⚕️ Dokter   : ${namaDokter}\n` +
-                    `⏰ Waktu    : ${jam}\n` +
-                    `📌 Keluhan  : ${keluhan}\n` +
-                    `📊 Status   : ${status}\n` +
-                    `============================================\n\n` +
-                    `Pilih tindakan Anda selanjutnya:\n` +
-                    `• Klik [OK] ➔ Buka / Input Rekam Medis (RME)\n` +
-                    `• Klik [Batal] ➔ Kembali ke Kalender`;
+        // 3. Masukkan data ke dalam elemen-elemen Modal Pop-up
+        document.getElementById('modKalNamaPasien').innerText = namaPasien;
+        document.getElementById('modKalNoRM').innerText = `NO. RM: ${noRM}`;
+        document.getElementById('modKalDokter').innerText = namaDokter;
+        document.getElementById('modKalJam').innerText = jam;
+        document.getElementById('modKalKeluhan').innerText = keluhan;
 
-        // 4. Eksekusi Navigasi Cepat (Smart Routing)
-        if (confirm(pesan)) {
-            // Alihkan langsung ke tab Riwayat Medis / RME
-            if (typeof switchTab === "function") {
-                switchTab('riwayatMedis');
-            }
-            
-            // Isi otomatis No. RM ke kolom pencarian riwayat dan langsung tampilkan datanya
-            setTimeout(() => {
-                const inputCariRM = document.getElementById('cariNoRM') || document.getElementById('inputCariRiwayat') || document.getElementById('noRM');
-                if (inputCariRM) {
-                    inputCariRM.value = noRM;
-                    // Panggil fungsi pencarian jika ada di sistem Anda
-                    if (typeof cariRiwayatMedis === "function") {
-                        cariRiwayatMedis();
-                    } else if (typeof cariPasien === "function") {
-                        cariPasien();
-                    }
-                }
-            }, 300);
+        // Atur warna badge status di dalam modal
+        const elStatus = document.getElementById('modKalStatus');
+        elStatus.innerText = status;
+        if (status.toLowerCase().includes("sudah") || status.toLowerCase().includes("selesai")) {
+            elStatus.style.cssText = "background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block;";
+        } else if (status.toLowerCase().includes("batal") || status.toLowerCase().includes("absen")) {
+            elStatus.style.cssText = "background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block;";
+        } else {
+            elStatus.style.cssText = "background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block;";
         }
+
+        // 4. Pasang fungsi pada tombol "👁️ Lihat RME"
+        const btnLihatRME = document.getElementById('btnModKalLihatRME');
+        btnLihatRME.onclick = function() {
+            bukaRMEOtomatisDariKalender(noRM, namaPasien);
+        };
+
+        // 5. Tampilkan Modal Pop-up ke layar
+        const modal = document.getElementById('modalSummaryKalender');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function tutupModalKalender() {
+        const modal = document.getElementById('modalSummaryKalender');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // 🔥 MESIN JALAN TOL KE HISTORI RME PASIEN
+    function bukaRMEOtomatisDariKalender(noRM, namaPasien) {
+        // 1. Tutup modal pop-up terlebih dahulu
+        tutupModalKalender();
+
+        // 2. Alihkan layar ke tab Riwayat Medis
+        if (typeof switchTab === "function") {
+            switchTab('riwayatMedis');
+        }
+
+        // 3. Cari dan ketikkan No. RM secara otomatis, lalu panggil histori RME-nya
+        setTimeout(() => {
+            // Cari kolom input pencarian RM di menu Riwayat Medis Anda
+            const inputCariRM = document.getElementById('cariNoRM') || 
+                                document.getElementById('inputCariRiwayat') || 
+                                document.getElementById('noRM_riwayat') || 
+                                document.querySelector('#riwayatMedis input[type="text"]');
+            
+            if (inputCariRM) {
+                inputCariRM.value = noRM;
+                
+                // Pemicu event input agar sistem menyadari ada teks yang masuk
+                inputCariRM.dispatchEvent(new Event('input', { bubbles: true }));
+                inputCariRM.dispatchEvent(new Event('change', { bubbles: true }));
+
+                console.log(`✔️ [SMART ROUTING] Memuat histori RME untuk: ${namaPasien} (${noRM})`);
+
+                // Eksekusi fungsi penarik data histori RME bawaan sistem Anda
+                if (typeof cariRiwayatMedis === "function") {
+                    cariRiwayatMedis();
+                } else if (typeof cariPasienRiwayat === "function") {
+                    cariPasienRiwayat();
+                } else if (typeof muatRiwayatMedisPasien === "function") {
+                    muatRiwayatMedisPasien(noRM);
+                }
+            } else {
+                console.warn("⚠️ Kolom input pencarian No. RM di tab Riwayat Medis tidak ditemukan.");
+            }
+        }, 300); // Jeda 300ms agar tab Riwayat Medis selesai terbuka sempurna
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
