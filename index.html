@@ -8470,7 +8470,7 @@
     }
 
     // =========================================================================
-    // 🔥 MESIN JALAN TOL KE RME (DENGAN SANITASI STRING & AUTO-KLIK TOMBOL CARI)
+    // 🔥 MESIN JALAN TOL KE RME (DISESUAIKAN DENGAN CARIPASIENGLOBAL)
     // =========================================================================
     function bukaRMEOtomatisDariKalender(noRM, namaPasien) {
         // 1. Tutup modal pop-up terlebih dahulu
@@ -8481,60 +8481,38 @@
             switchTab('riwayatMedis');
         }
 
-        // 3. Jeda 350ms agar tab Riwayat Medis selesai terbuka sempurna di layar
+        // 3. Jeda 350ms agar tab Riwayat Medis selesai terbuka sempurna
         setTimeout(() => {
-            // 🔥 SANITASI DATA: Bersihkan spasi gaib dan paksa jadi HURUF KAPITAL
+            // Bersihkan data dari spasi gaib
             const rmBersih = (noRM || "").toString().trim().toUpperCase();
+            const namaBersih = (namaPasien || "").toString().trim();
             
-            console.log(`🔍 [DEBUG RME] Mencari RM Bersih: "${rmBersih}" (Asli: "${noRM}") untuk pasien: ${namaPasien}`);
-
-            if (!rmBersih || rmBersih === "-" || rmBersih === "UNDEFINED") {
-                alert(`⚠️ Nomor Rekam Medis untuk pasien "${namaPasien}" tidak valid atau kosong di database antrean.`);
-                return;
-            }
-
-            // 4. Cari kolom input pencarian No. RM di menu Riwayat Medis
-            // (Sistem mencoba 4 variasi ID standar yang umum di aplikasi klinik)
-            const inputCariRM = document.getElementById('cariNoRM') || 
-                                document.getElementById('inputCariRiwayat') || 
-                                document.getElementById('noRM_riwayat') || 
-                                document.querySelector('#riwayatMedis input[type="text"]');
+            // 🔥 TARGETKAN KE ID INPUT ASLI MILIK ANDA: txtCariRiwayatGlobal
+            const inputGlobal = document.getElementById('txtCariRiwayatGlobal');
             
-            if (inputCariRM) {
-                // Suntikkan teks RM yang sudah bersih dari spasi gaib
-                inputCariRM.value = rmBersih;
+            if (inputGlobal) {
+                // Prioritaskan cari pakai No RM. Jika RM kosong/minus, baru cari pakai Nama Pasien
+                const kataKunci = (rmBersih && rmBersih !== "-" && rmBersih !== "UNDEFINED") ? rmBersih : namaBersih;
                 
-                // Pancing browser agar menyadari ada teks yang masuk
-                inputCariRM.dispatchEvent(new Event('input', { bubbles: true }));
-                inputCariRM.dispatchEvent(new Event('change', { bubbles: true }));
+                inputGlobal.value = kataKunci;
+                
+                // Pancing event browser
+                inputGlobal.dispatchEvent(new Event('input', { bubbles: true }));
+                inputGlobal.dispatchEvent(new Event('change', { bubbles: true }));
 
-                // =================================================================
-                // 🔥 STRATEGI EKSEKUSI PENCARIAN GANDA (100% ANTI-GAGAL)
-                // =================================================================
-                
-                // Cara A: Cari dan KLIK secara fisik tombol "Cari" di tab Riwayat Medis
-                const tombolCari = document.querySelector('#riwayatMedis button[onclick*="cari"]') || 
-                                document.querySelector('#riwayatMedis button[onclick*="Cari"]') ||
-                                document.getElementById('btnCariRiwayat');
-                
-                if (tombolCari) {
-                    console.log("✔️ [DEBUG RME] Tombol cari fisik ditemukan, melakukan klik otomatis...");
-                    tombolCari.click(); // Klik tombolnya secara otomatis!
-                } 
-                // Cara B: Jika tombol fisik tidak ketemu, langsung panggil fungsinya
-                else if (typeof cariRiwayatMedis === "function") {
-                    console.log("✔️ [DEBUG RME] Memanggil fungsi cariRiwayatMedis()...");
-                    cariRiwayatMedis();
-                } else if (typeof cariPasienRiwayat === "function") {
-                    cariPasienRiwayat();
-                } else if (typeof muatRiwayatMedisPasien === "function") {
-                    muatRiwayatMedisPasien(rmBersih);
+                console.log(`🚀 [SMART ROUTING] Mengirim keyword "${kataKunci}" ke cariPasienGlobal()...`);
+
+                // 🔥 PANGGIL FUNGSI ASLI MILIK ANDA: cariPasienGlobal()
+                if (typeof cariPasienGlobal === "function") {
+                    cariPasienGlobal();
                 } else {
-                    alert("⚠️ Sistem berhasil mengisi No. RM: " + rmBersih + ", silakan klik tombol CARI secara manual.");
+                    // Alternatif fisik jika fungsi terblokir scope: klik tombol carinya langsung
+                    const btnCari = document.querySelector('#riwayatMedis button[onclick*="cariPasienGlobal"]') || 
+                                    document.querySelector('button[onclick*="cariPasienGlobal"]');
+                    if (btnCari) btnCari.click();
                 }
-                
             } else {
-                alert("❌ ERROR: Kolom input teks pencarian di menu Riwayat Medis tidak ditemukan oleh sistem.");
+                alert("❌ ERROR: Input dengan ID 'txtCariRiwayatGlobal' tidak ditemukan di layar ini.");
             }
         }, 350); 
     }
