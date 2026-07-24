@@ -8170,30 +8170,17 @@
     // =========================================================================
 
     function muatKalenderDokter() {
-        console.log("🚀 [DEBUG 1] Tombol Kalender diklik! Menjalankan muatKalenderDokter()...");
-        
         const gridBody = document.getElementById('gridKalenderBody');
         const labelBulan = document.getElementById('labelBulanTahunKalender');
-        
-        // 🔥 SATPAM PELACAK HTML: Jika ID tidak ditemukan, langsung beri peringatan keras!
-        if (!gridBody) {
-            alert("❌ ERROR HTML: Elemen dengan id 'gridKalenderBody' tidak ditemukan di index.html!\n\nPastikan struktur HTML Kalender sudah Anda paste ke dalam <div id=\"dokter\">.");
-            console.error("❌ [DEBUG ERROR] gridKalenderBody bernilai NULL!");
-            return;
-        }
+        if (!gridBody) return;
 
-        console.log("✔️ [DEBUG 2] Elemen HTML gridKalenderBody ditemukan!");
-
-        // Update label judul bulan
         if (labelBulan) {
             labelBulan.innerText = `${namaBulanIndo[kalenderBulanAktif]} ${kalenderTahunAktif}`;
         }
 
-        // Tampilkan loading di layar
         gridBody.innerHTML = `
             <div style="grid-column: span 7; background: #e0f2fe; color: #0369a1; padding: 40px; text-align: center; font-weight: bold; border-radius: 6px; border: 1px dashed #0284c7;">
-                ⏳ Mengsinkronkan jadwal bulan ${namaBulanIndo[kalenderBulanAktif]} ${kalenderTahunAktif} dari server...<br>
-                <small style="color:#64748b; font-weight:normal;">Silakan cek tab Console (F12) untuk melihat proses data.</small>
+                ⏳ Mengsinkronkan jadwal bulan ${namaBulanIndo[kalenderBulanAktif]} ${kalenderTahunAktif} dari server...
             </div>
         `;
 
@@ -8216,26 +8203,19 @@
             limit: 500 
         };
 
-        console.log("📤 [DEBUG 3] Mengirim permintaan ke server Apps Script dengan payload:", payload);
-
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(data => {
-            console.log("📥 [DEBUG 4] Respon dari server berhasil diterima:", data);
-            
             if (data && (data.result === "success" || data.status === "success")) {
                 cacheDataKalender = data.queue || data.data || [];
-                console.log(`✔️ [DEBUG 5] Total data antrean bulan ini yang tersimpan di RAM: ${cacheDataKalender.length} pasien.`);
-                
                 renderKalenderInstan();
             } else {
                 gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">❌ Gagal dari server: ${data.message || "Format respon tidak dikenali."}</div>`;
-                console.error("❌ [DEBUG ERROR] Respon server bukan success:", data);
             }
         })
         .catch(err => {
-            console.error("❌ [DEBUG ERROR] Gagal koneksi fetch:", err);
-            gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">⚠️ Terjadi gangguan jaringan/script saat menghubungi server. Detail: ${err.message}</div>`;
+            console.error("Gagal koneksi kalender:", err);
+            gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">⚠️ Terjadi gangguan jaringan saat memuat jadwal kalender.</div>`;
         });
     }
 
@@ -8243,12 +8223,10 @@
     // 🎨 MESIN RENDER KALENDER (GAYA GOOGLE SHEET - 100% PRESISI & ANTI-POTONG)
     // =========================================================================
     function renderKalenderInstan() {
-        console.log("🎨 [DEBUG 6] Memulai render grid kalender ke layar...");
-        
         const gridBody = document.getElementById('gridKalenderBody');
         if (!gridBody) return;
 
-        // 1. Paksa buka tab pembungkus jika tersembunyi
+        // Paksa buka tab pembungkus agar tidak tersembunyi
         const tabPembungkus = gridBody.closest('.tab-content');
         if (tabPembungkus) {
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
@@ -8256,11 +8234,9 @@
             tabPembungkus.classList.add('active');
         }
 
-        gridBody.innerHTML = ""; // Bersihkan seluruh isi sel grid
+        gridBody.innerHTML = ""; 
 
-        // =====================================================================
-        // 🔥 2. CETAK HEADER HARI ALA GOOGLE SHEET (Baris Ke-1 Grid)
-        // =====================================================================
+        // 1. Cetak Header Hari ala Spreadsheet
         const namaHari = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
         namaHari.forEach((hari, idx) => {
             const selHeader = document.createElement('div');
@@ -8271,13 +8247,12 @@
                 padding: 12px 5px; 
                 text-align: center; 
                 font-size: 14px; 
-                ${idx === 5 ? 'color: #fcd34d;' : ''} /* Sabtu Kuning */
-                ${idx === 6 ? 'color: #fca5a5;' : ''} /* Minggu Merah */
+                ${idx === 5 ? 'color: #fcd34d;' : ''} 
+                ${idx === 6 ? 'color: #fca5a5;' : ''} 
             `;
             selHeader.innerText = hari;
             gridBody.appendChild(selHeader);
         });
-        // =====================================================================
 
         const hariIni = new Date();
         const formatHariIni = `${hariIni.getFullYear()}-${String(hariIni.getMonth() + 1).padStart(2, '0')}-${String(hariIni.getDate()).padStart(2, '0')}`;
@@ -8286,16 +8261,14 @@
         let indexKolomMulai = (hariPertama === 0) ? 6 : hariPertama - 1;
         const totalHariBulanIni = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
 
-        // 3. Buat sel kosong sebelum tanggal 1 (warna abu sangat muda ala sel mati Excel)
+        // 2. Buat sel kosong sebelum tanggal 1
         for (let i = 0; i < indexKolomMulai; i++) {
             const selKosong = document.createElement('div');
             selKosong.style.cssText = "background: #f8fafc; min-height: 110px; opacity: 0.6;";
             gridBody.appendChild(selKosong);
         }
 
-        let totalKartuTerpasang = 0;
-
-        // 4. Buat sel kotak tanggal 1 s/d tanggal akhir bulan ini
+        // 3. Buat sel kotak tanggal 1 s/d akhir bulan
         for (let tgl = 1; tgl <= totalHariBulanIni; tgl++) {
             const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`;
             const tglIndo1 = `${String(tgl).padStart(2, '0')}/${String(kalenderBulanAktif + 1).padStart(2, '0')}/${kalenderTahunAktif}`;
@@ -8303,7 +8276,6 @@
             
             const apakahHariIni = (strTgl === formatHariIni);
 
-            // Sel Tanggal (Latar putih bersih dengan garis pembatas 1px otomatis dari gap grid)
             const kotakHari = document.createElement('div');
             kotakHari.style.cssText = `
                 background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; 
@@ -8322,7 +8294,7 @@
                 </div>
             `;
 
-            // Mesin Omni-Matcher Pencari Pasien
+            // Pencarian pasien dengan mesin Omni-Matcher
             const pasienHariIni = cacheDataKalender.filter(p => {
                 const teksPasien = JSON.stringify(p);
                 return teksPasien.includes(strTgl) || teksPasien.includes(tglIndo1) || teksPasien.includes(tglIndo2);
@@ -8330,8 +8302,6 @@
 
             if (pasienHariIni.length > 0) {
                 pasienHariIni.forEach(p => {
-                    totalKartuTerpasang++;
-                    
                     const namaPasien = p.nama || p.namaPasien || p[1] || "Pasien";
                     const noRM       = p.noRM || p[0] || "";
                     const idAntrean  = p.idAntrean || p.rowNumber || "";
@@ -8365,8 +8335,6 @@
             kotakHari.innerHTML = htmlKartu;
             gridBody.appendChild(kotakHari);
         }
-        
-        console.log(`🎉 [DEBUG 7] Render bergaya Spreadsheet selesai! Total ${totalKartuTerpasang} kartu terpasang.`);
     }
 
     // -------------------------------------------------------------------------
