@@ -4524,12 +4524,15 @@
     }
 
     // --- LOGOUT & TAB SWITCHING ---
+    // =========================================================================
+    // 🛡️ FUNGSI LOGOUT DENGAN SANITASI TOTAL (SECURITY CLEARANCE)
+    // =========================================================================
     function logout() {
         // 1. Bersihkan variabel peran dan hapus penyimpanan sesi lokal browser
         currentRole = ""; 
         localStorage.removeItem('anvaya_session');
 
-        bersihkanSemuaStateUI();
+        if (typeof bersihkanSemuaStateUI === "function") bersihkanSemuaStateUI();
 
         const topNav = document.querySelector('.top-navbar');
         const sidebar = document.getElementById('appSidebar');
@@ -4540,10 +4543,8 @@
         document.querySelectorAll('form').forEach(form => form.reset());
         
         // 3. 🔥 PEMBERSIHAN VISUAL DINAMIS (YANG AMAN)
-        // Cukup sembunyikan kontainer luarnya (induk) saja. 
-        // JANGAN PERNAH menyembunyikan elemen terdalam (seperti formModalMedisSplit atau kolomInputRME) 
-        // agar tidak terjadi "bug area putih polos" saat login ulang.
-        const elemenTutup = ['sectionRME', 'mainPage', 'modalRiwayatFull'];
+        // Cukup sembunyikan kontainer luarnya (induk) saja agar tidak terjadi bug area putih polos.
+        const elemenTutup = ['sectionRME', 'mainPage', 'modalRiwayatFull', 'subTabFinansial', 'subTabOperasional'];
         
         elemenTutup.forEach(id => {
             const el = document.getElementById(id);
@@ -4551,6 +4552,32 @@
                 el.style.display = 'none';
             }
         });
+
+        // =========================================================================
+        // 🔥 3.5 SANITASI KOKPIT FINANSIAL & PILLS (LAPIS PERTAHANAN FINANSIAL)
+        // =========================================================================
+        try {
+            // Sembunyikan semua konten pill finansial
+            const elemenFinansial = ['pillGrafik', 'pillKinerja', 'pillTabel'];
+            elemenFinansial.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            
+            // KOSONGKAN SELURUH ANGKA DI DALAM TABEL FINANSIAL AGAR TIDAK JADI HANTU
+            document.querySelectorAll('#subTabFinansial tbody').forEach(tb => {
+                tb.innerHTML = '';
+            });
+            
+            // Bersihkan cache data global
+            window.cacheDataUlangTahun = [];
+            if (typeof window.dataBagiHasil !== "undefined") window.dataBagiHasil = null;
+            if (typeof window.dataOmzet !== "undefined") window.dataOmzet = null;
+            
+            console.log("✔️ [SECURITY CLEARANCE] Seluruh angka & jejak visual finansial berhasil dimusnahkan.");
+        } catch (e) {
+            console.error("Gagal melakukan sanitasi DOM finansial saat logout:", e);
+        }
 
         // 4. Kembalikan tampilan ke halaman login utama
         const loginPage = document.getElementById('loginPage');
@@ -7175,37 +7202,75 @@
         }
     }
 
-    // === FUNGSI DINAMIS UNTUK SUB-TAB ANALISIS BISNIS ===
+    // =========================================================================
+    // 🔒 NAVIGASI SUB-TAB ANALISIS BISNIS (DILENGKAPI PROTEKSI RBAC)
+    // =========================================================================
     function switchSubTabAnalisis(targetTab, btnElement) {
-        // Matikan semua tombol sub-tab
+        // 1. 🔥 VALIDASI KEAMANAN RBAC SEBELUM MEMBUKA KAMAR FINANSIAL
+        if (targetTab === 'finansial') {
+            const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+            const perms = sessionData.permissions || {};
+            const role = (sessionData.role || '').toLowerCase();
+            
+            const punyaAksesFinansial = perms.akseskokpitfinansial === 1 || 
+                                        perms.Akses_KokpitFinansial === 1 || 
+                                        perms.kokpitFinansial === 1 || 
+                                        role === 'owner' || 
+                                        role === 'super admin';
+
+            if (!punyaAksesFinansial) {
+                alert("🔒 Akses Ditolak: Anda tidak memiliki izin untuk melihat data Kokpit Finansial.");
+                return; // Hentikan eksekusi, kamar finansial tidak akan dibuka!
+            }
+        }
+
+        // 2. Matikan semua tombol sub-tab
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
-        btnElement.classList.add('active'); // Nyalakan yang diklik
+        
+        // Nyalakan tombol yang diklik (atau cari otomatis jika dipanggil lewat kode sistem)
+        if (btnElement) {
+            btnElement.classList.add('active'); 
+        } else {
+            const autoBtn = targetTab === 'finansial' ? document.getElementById('btnSubTabFinansial') : document.querySelector('.sub-tab-btn[onclick*="operasional"]');
+            if (autoBtn) autoBtn.classList.add('active');
+        }
 
-        // Sembunyikan semua kamar
-        document.getElementById('subTabOperasional').style.display = 'none';
-        document.getElementById('subTabFinansial').style.display = 'none';
+        // 3. Sembunyikan semua kamar dengan aman
+        const kamarOperasional = document.getElementById('subTabOperasional');
+        const kamarFinansial = document.getElementById('subTabFinansial');
+        
+        if (kamarOperasional) kamarOperasional.style.display = 'none';
+        if (kamarFinansial) kamarFinansial.style.display = 'none';
+        switchSubTabAnalisis('operasional');
 
-        // Tampilkan kamar yang dipilih
-        if(targetTab === 'operasional') document.getElementById('subTabOperasional').style.display = 'block';
-        if(targetTab === 'finansial') document.getElementById('subTabFinansial').style.display = 'block';
+        // 4. Tampilkan kamar yang dipilih
+        if (targetTab === 'operasional' && kamarOperasional) {
+            kamarOperasional.style.display = 'block';
+        }
+        if (targetTab === 'finansial' && kamarFinansial) {
+            kamarFinansial.style.display = 'block';
+        }
     }
 
-    // === FUNGSI DINAMIS UNTUK PILLS LAPORAN KEUANGAN ===
+    // === FUNGSI DINAMIS UNTUK PILLS LAPORAN KEUANGAN (ANTI CRASH) ===
     function switchPillFinansial(targetPill, btnElement) {
         // Matikan semua tombol pill
         document.querySelectorAll('.pill-btn').forEach(btn => btn.classList.remove('active'));
-        btnElement.classList.add('active');
+        if (btnElement) btnElement.classList.add('active');
 
         // Sembunyikan semua konten pill
         document.querySelectorAll('.pill-content').forEach(content => content.style.display = 'none');
 
         // Tampilkan konten pill yang dipilih
         let idKonten = '';
-        if(targetPill === 'grafik') idKonten = 'pillGrafik';
-        if(targetPill === 'kinerja') idKonten = 'pillKinerja';
-        if(targetPill === 'tabel') idKonten = 'pillTabel';
+        if (targetPill === 'grafik') idKonten = 'pillGrafik';
+        if (targetPill === 'kinerja') idKonten = 'pillKinerja';
+        if (targetPill === 'tabel') idKonten = 'pillTabel';
         
-        if (idKonten) document.getElementById(idKonten).style.display = 'block';
+        if (idKonten) {
+            const el = document.getElementById(idKonten);
+            if (el) el.style.display = 'block';
+        }
     }
 
     // === FUNGSI FORMAT RUPIAH ===
