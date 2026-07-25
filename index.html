@@ -4117,23 +4117,25 @@
     const ukuranHalamanPasien = 10; 
     let kataKunciPasien = "";
 
+    // =========================================================================
+    // 🔍 PENCARIAN DATABASE PASIEN (DILENGKAPI JALUR KHUSUS SUPER ADMIN)
+    // =========================================================================
     function cariDaftarPasien(resetHalaman = true) {
         if (resetHalaman) { halamanSekarangPasien = 1; }
         
         kataKunciPasien = document.getElementById('txtCariDaftar').value.trim();
-        
-        // 🔥 1. AMBIL NILAI VALUE DARI DROPDOWN FILTER STATUS PASIEN
         const statusFilterVal = document.getElementById('filterStatusPasien').value;
 
         const tbody = document.getElementById('tabelSemuaPasienBody');
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat database dari server... ⏳</td></tr>';
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; font-weight: bold; color: #0369a1;">Memuat database dari server... ⏳</td></tr>';
 
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ 
                 action: "getPasienPaginated", 
                 keyword: kataKunciPasien,
-                statusFilter: statusFilterVal, // 🔥 2. SISIPIKAN PARAMETER INI KE PAYLOAD FETCH (Jangan sampai tertinggal)
+                statusFilter: statusFilterVal, 
                 page: halamanSekarangPasien,
                 pageSize: ukuranHalamanPasien
             })
@@ -4153,26 +4155,45 @@
                 const idxAlamat = headersMuda.findIndex(h => h.includes("alamat"));
                 const idxStatus = headersMuda.indexOf("status") !== -1 ? headersMuda.indexOf("status") : 10;
 
-                const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-                const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
+                // =========================================================================
+                // 🔥 UPGRADE LOGIKA RBAC: JALUR KHUSUS OWNER & MULTI-PROPERTY CHECK
+                // =========================================================================
+                const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+                const perms = sessionData.permissions || {};
+                const role = (sessionData.role || '').toLowerCase();
+                const username = (sessionData.username || '').toLowerCase();
+
+                // Super Admin (Owner) otomatis dapat izin tanpa peduli penamaan di permissions!
+                const isSuperAdmin = role === 'owner' || role === 'super admin' || role === 'rol-01' || username === 'owner';
+
+                const punyaAksesEdit = isSuperAdmin || 
+                                    perms.akseseditpasien === 1 || 
+                                    perms.Akses_EditPasien === 1 || 
+                                    perms.editPasien === 1;
+
+                const punyaAksesHapus = isSuperAdmin || 
+                                        perms.akseshapuspasien === 1 || 
+                                        perms.Akses_HapusPasien === 1 || 
+                                        perms.hapusPasien === 1;
 
                 res.data.forEach((p, index) => {
                     const noRMPasien = p[idxRM] || "-";
                     const namaPasien = p[idxNama] || "-";
                     const statusPasienAktif = p[idxStatus] ? p[idxStatus].toString().trim().toLowerCase() : "aktif";
 
+                    // Tombol Detail selalu ada untuk semua orang
                     let tombolAksi = `<button type="button" class="btn-action btn-detail" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'detail')">🔍 Detail</button>`;
 
                     if (statusPasienAktif === "nonaktif") {
-                        if (perms.editPasien === 1) {
-                            tombolAksi += `<button type="button" class="btn-action btn-restore" style="background-color: #2ecc71; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="aktifkanPasien('${noRMPasien}', '${namaPasien}')">🔄 Aktifkan</button>`;
+                        if (punyaAksesEdit) {
+                            tombolAksi += `<button type="button" class="btn-action btn-restore" style="background-color: #2ecc71; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="aktifkanPasien('${noRMPasien}', '${namaPasien.replace(/'/g, "\\'")}')">🔄 Aktifkan</button>`;
                         }
                     } else {
-                        if (perms.editPasien === 1) {
+                        if (punyaAksesEdit) {
                             tombolAksi += `<button type="button" class="btn-action btn-edit" style="background-color: #e67e22; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="bukaAksiPasien('${noRMPasien}', 'edit')">📝 Edit</button>`;
                         }
-                        if (perms.hapusPasien === 1) {
-                            tombolAksi += `<button type="button" class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien}')">🗑️ Hapus</button>`;
+                        if (punyaAksesHapus) {
+                            tombolAksi += `<button type="button" class="btn-action btn-delete" style="background-color: #e74c3c; color:white; margin-left:5px; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size:13px; font-weight: bold;" onclick="pemicuHapusPasien('${noRMPasien}', '${namaPasien.replace(/'/g, "\\'")}')">🗑️ Hapus</button>`;
                         }
                     }
 
@@ -4180,7 +4201,7 @@
 
                     tbody.innerHTML += `<tr>
                             <td ${styleStatusRM}>${noRMPasien}</td>
-                            <td><strong>${namaPasien}</strong> ${(statusPasienAktif === 'nonaktif' ? '<span style="color:red; font-size:11px;">(Nonaktif)</span>' : '')}</td>
+                            <td><strong>${namaPasien}</strong> ${(statusPasienAktif === 'nonaktif' ? '<span style="color:red; font-size:11px; margin-left:4px;">(Nonaktif)</span>' : '')}</td>
                             <td><span style="background: #eccc68; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${idxGender !== -1 ? (p[idxGender] || "-") : "-"}</span></td>
                             <td>${idxWA !== -1 ? (p[idxWA] || "-") : "-"}</td>
                             <td>${idxAlamat !== -1 ? (p[idxAlamat] || "-") : "-"}</td>
@@ -4199,7 +4220,7 @@
                 document.getElementById('btnPrevPasien').disabled = (res.currentPage <= 1);
                 document.getElementById('btnNextPasien').disabled = (res.currentPage >= res.totalPages);
             } else {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c;">❌ Data tidak ditemukan dalam database.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#e74c3c; font-weight: bold;">❌ Data tidak ditemukan dalam database.</td></tr>';
                 document.getElementById('lblHalamanPasien').innerText = "Halaman 1 dari 1";
                 document.getElementById('lblTotalDataTampil').innerText = "0";
                 document.getElementById('lblTotalDataMaster').innerText = "0";
@@ -4209,7 +4230,7 @@
         })
         .catch(err => {
             console.error(err);
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">⚠️ Gagal terhubung dengan server database.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:red; font-weight: bold;">⚠️ Gagal terhubung dengan server database.</td></tr>';
         });
     }
 
@@ -5749,131 +5770,89 @@
     function tutupModalDetailPasien() {
         document.getElementById('modalDetailPasien').style.display = 'none';
     }
-        window.tutupModalDetailPasien = tutupModalDetailPasien;
+
+    window.tutupModalDetailPasien = tutupModalDetailPasien;
 
 
-        function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
-    
-            // 🎯 1. BONGKAR PAKSA STATUS SEMBUNYI KOLOM KIRI (SOLUSI AREA PUTIH POLOS)
-            const kolomKiri = document.getElementById('kolomInputRME'); // 🔥 Ini ID Asli Anda!
-            if (kolomKiri) {
-                kolomKiri.style.display = 'block'; // Memunculkan kembali pembungkus form
-            }
+    function pemicuKoreksiRMEDariTimeline(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
 
-            const formKiriSplit = document.getElementById('formModalMedisSplit');
-            if (formKiriSplit) {
-                formKiriSplit.style.display = 'block'; // Memastikan form di dalamnya juga muncul
-                formKiriSplit.dataset.activeNoRM = noRM;
-                formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
-                formKiriSplit.dataset.rowUpdate = barisSheet; 
-            }
+        // 🎯 1. BONGKAR PAKSA STATUS SEMBUNYI KOLOM KIRI (SOLUSI AREA PUTIH POLOS)
+        const kolomKiri = document.getElementById('kolomInputRME'); // 🔥 Ini ID Asli Anda!
+        if (kolomKiri) {
+            kolomKiri.style.display = 'block'; // Memunculkan kembali pembungkus form
+        }
 
-            // Pastikan modal riwayat utama juga ikut terbuka
-            const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
-            if (areaKontainerRME) {
-                areaKontainerRME.style.display = 'flex';
-            }
+        const formKiriSplit = document.getElementById('formModalMedisSplit');
+        if (formKiriSplit) {
+            formKiriSplit.style.display = 'block'; // Memastikan form di dalamnya juga muncul
+            formKiriSplit.dataset.activeNoRM = noRM;
+            formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
+            formKiriSplit.dataset.rowUpdate = barisSheet; 
+        }
 
-            // 🎯 2. Suntikkan Identitas & Data Teks Lama ke Form
-            const setNilaiDOM = (idUtama, idAlternatif, value) => {
-                const el1 = document.getElementById(idUtama);
-                if (el1) { el1.value = value; return; }
-                const el2 = document.getElementById(idAlternatif);
-                if (el2) el2.value = value;
-            };
+        // Pastikan modal riwayat utama juga ikut terbuka
+        const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
+        if (areaKontainerRME) {
+            areaKontainerRME.style.display = 'flex';
+        }
 
-            setNilaiDOM('modalNama', 'namaPasien', namaPasien);
-            setNilaiDOM('modalAnamnesa', 'txtAnamnesa', anamnesa === "-" ? "" : anamnesa);
-            setNilaiDOM('modalObjektif', 'txtObjektif', objektif === "-" ? "" : objektif);
-            setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
-            setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
+        // 🎯 2. Suntikkan Identitas & Data Teks Lama ke Form
+        const setNilaiDOM = (idUtama, idAlternatif, value) => {
+            const el1 = document.getElementById(idUtama);
+            if (el1) { el1.value = value; return; }
+            const el2 = document.getElementById(idAlternatif);
+            if (el2) el2.value = value;
+        };
 
-            // 🎯 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis
-            const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
-            if (kontainerTindakan) {
-                kontainerTindakan.innerHTML = ""; 
-                try {
-                    let arrTindakan = JSON.parse(perawatan);
-                    if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                        arrTindakan.forEach(t => {
-                            if (typeof tambahBarisTindakan === "function") {
-                                tambahBarisTindakan({
-                                    namaTindakan: t.namaTindakan,
-                                    hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
-                                    catatanKlinis: t.catatanKlinis || ""
-                                });
-                            }
-                        });
-                    }
-                } catch(e) {
-                    if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
-                        tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: perawatan });
-                    }
+        setNilaiDOM('modalNama', 'namaPasien', namaPasien);
+        setNilaiDOM('modalAnamnesa', 'txtAnamnesa', anamnesa === "-" ? "" : anamnesa);
+        setNilaiDOM('modalObjektif', 'txtObjektif', objektif === "-" ? "" : objektif);
+        setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
+        setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
+
+        // 🎯 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis
+        const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+        if (kontainerTindakan) {
+            kontainerTindakan.innerHTML = ""; 
+            try {
+                let arrTindakan = JSON.parse(perawatan);
+                if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                    arrTindakan.forEach(t => {
+                        if (typeof tambahBarisTindakan === "function") {
+                            tambahBarisTindakan({
+                                namaTindakan: t.namaTindakan,
+                                hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                                catatanKlinis: t.catatanKlinis || ""
+                            });
+                        }
+                    });
                 }
-            }
-
-            // 🎯 4. Perbarui Teks Tombol Simpan
-            const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
-            if (btnSubmit) {
-                btnSubmit.disabled = false;
-                btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis";
-                btnSubmit.style.background = "#e67e22";
-            }
-            
-            // Munculkan tombol batal edit jika ada
-            const btnBatal = document.getElementById('btnBatalEdit');
-            if (btnBatal) {
-                btnBatal.style.display = 'block';
-            }
-
-            if (typeof switchTabRME === "function") {
-                switchTabRME('form');
+            } catch(e) {
+                if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
+                    tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: perawatan });
+                }
             }
         }
 
-    // 🔥 FUNGSI BARU: Khusus untuk memuat dokter di Form Pendaftaran Pasien Baru
-    // function muatDokterPendaftaran() {
-    //     const tanggal = document.getElementById('tglKunjungan').value;
-    //     const jam = document.getElementById('waktuKunjungan').value;
-    //     const selectDokter = document.getElementById('pilihDokter');
+        // 🎯 4. Perbarui Teks Tombol Simpan
+        const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = "🔄 Proses Perubahan Rekam Medis";
+            btnSubmit.style.background = "#e67e22";
+        }
+        
+        // Munculkan tombol batal edit jika ada
+        const btnBatal = document.getElementById('btnBatalEdit');
+        if (btnBatal) {
+            btnBatal.style.display = 'block';
+        }
 
-    //     // Jika tanggal belum diisi, biarkan dropdown dokter terkunci
-    //     if (!tanggal) {
-    //         selectDokter.innerHTML = '<option value="">-- Pilih Tanggal Kunjungan Terlebih Dahulu --</option>';
-    //         selectDokter.disabled = true;
-    //         return;
-    //     }
+        if (typeof switchTabRME === "function") {
+            switchTabRME('form');
+        }
+    }
 
-    //     selectDokter.innerHTML = '<option value="">-- Memuat Dokter... --</option>';
-    //     selectDokter.disabled = true;
-
-    //     const payload = { 
-    //         action: "getAvailableDokter", 
-    //         tanggal: tanggal, 
-    //         jam: jam 
-    //     };
-
-    //     // Tembak data ke backend Apps Script via Fetch API
-    //     fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
-    //     .then(response => response.json())
-    //     .then(res => {
-    //         if (res.result === "success" && res.data.length > 0) {
-    //             // Buka kunci dropdown
-    //             selectDokter.disabled = false;
-    //             // Isi dropdown dengan NAMA dokter sebagai value (sesuai database Anda)
-    //             selectDokter.innerHTML = '<option value="">-- Pilih Dokter --</option>' + 
-    //                 res.data.map(doc => `<option value="${doc.nama}">${doc.nama}</option>`).join('');
-    //         } else {
-    //             selectDokter.innerHTML = '<option value="">❌ Tidak ada dokter bertugas</option>';
-    //             selectDokter.disabled = true;
-    //         }
-    //     })
-    //     .catch(err => {
-    //         console.error("Error pendaftaran baru:", err);
-    //         selectDokter.innerHTML = '<option value="">❌ Gagal memuat data dokter</option>';
-    //         selectDokter.disabled = true;
-    //     });
-    // }
 
     // 🔥 1. DAFTARKAN VARIABEL HALAMAN DI AREA GLOBAL SCRIPT (Paling Atas)
     // 🔥 Variabel kontrol halaman di scope global
