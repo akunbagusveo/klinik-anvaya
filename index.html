@@ -2610,71 +2610,75 @@
         });
     });
 
-    // --- AUTHENTICATION ---
+    // =========================================================================
+    // 🔥 AUTENTIKASI LOGIN DINAMIS (MENANGKAP NAMA ROLE DARI GOOGLE SHEETS)
+    // =========================================================================
     document.getElementById('formLogin').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btnLogin');
-        btn.disabled = true; 
-        btn.innerText = "Memverifikasi...";
+            e.preventDefault();
+            const btn = document.getElementById('btnLogin');
+            btn.disabled = true; 
+            btn.innerText = "Memverifikasi...";
 
-        const payload = {
-            action: "login",
-            username: document.getElementById('loginUser').value,
-            password: document.getElementById('loginPass').value
-        };
+            const payload = {
+                action: "login",
+                username: document.getElementById('loginUser').value,
+                password: document.getElementById('loginPass').value
+            };
 
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
-        .then(response => {
-            if (!response.ok) throw new Error("Status Respon API: " + response.status);
-            return response.json();
-        })
-        .then(data => {
-            btn.disabled = false; 
-            btn.innerText = "Masuk";
+            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(response => {
+                if (!response.ok) throw new Error("Status Respon API: " + response.status);
+                return response.json();
+            })
+            .then(data => {
+                btn.disabled = false; 
+                btn.innerText = "Masuk";
 
-            if (data && data.result === "success") {
-                currentRole = data.role;
-                
-                const dataSesi = { 
-                    idUser: data.idUser, 
-                    username: data.username, 
-                    role: data.role,
-                    permissions: data.permissions 
-                };
-                localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
+                if (data && data.result === "success") {
+                    currentRole = data.role;
+                    
+                    // 🔥 UPGRADE DINAMIS: Tangkap "namaRole" dari server dan simpan ke localStorage
+                    // Jika server tidak mengirim namaRole, baru gunakan fallback ke data.role
+                    const dataSesi = { 
+                        idUser: data.idUser, 
+                        username: data.username, 
+                        role: data.role,
+                        namaRole: data.namaRole || data.role, // <-- INI KUNCI AGAR SISTEM 100% DINAMIS!
+                        permissions: data.permissions 
+                    };
+                    localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
 
-                const topNav = document.querySelector('.top-navbar');
-                const sidebar = document.getElementById('appSidebar');
-                if (topNav) topNav.style.display = 'flex'; 
-                if (sidebar) sidebar.style.display = 'block';
-                
-                try {
-                    bukaAplikasi(data.role, data.username);
-                } catch (errUI) {
-                    console.error("Terjadi masalah visual pada dashboard:", errUI);
+                    const topNav = document.querySelector('.top-navbar');
+                    const sidebar = document.getElementById('appSidebar');
+                    if (topNav) topNav.style.display = 'flex'; 
+                    if (sidebar) sidebar.style.display = 'block';
+                    
+                    try {
+                        bukaAplikasi(data.role, data.username);
+                    } catch (errUI) {
+                        console.error("Terjadi masalah visual pada dashboard:", errUI);
+                    }
+                    
+                    try {
+                        aplikasikanHakAkses(data.permissions);
+                    } catch (errAkses) {
+                        console.error("Gagal mengaplikasikan hak akses menu:", errAkses);
+                    }
+
+                } else { 
+                    let pesanEror = data.message || data.error || data.pesan;
+                    if (!pesanEror) {
+                        pesanEror = "Format dari server tidak sesuai: " + JSON.stringify(data);
+                    }
+                    alert("⚠️ Gagal Masuk: " + pesanEror); 
                 }
-                
-                try {
-                    aplikasikanHakAkses(data.permissions);
-                } catch (errAkses) {
-                    console.error("Gagal mengaplikasikan hak akses menu:", errAkses);
-                }
-
-            } else { 
-                // 🔥 SENSOR PENDETEKSI EROR (Akan melacak data.message, data.error, atau membongkar isi JSON utuh)
-                let pesanEror = data.message || data.error || data.pesan;
-                if (!pesanEror) {
-                    pesanEror = "Format dari server tidak sesuai: " + JSON.stringify(data);
-                }
-                alert("⚠️ Gagal Masuk: " + pesanEror); 
-            }
-        })
-        .catch(err => {
-            btn.disabled = false; 
-            btn.innerText = "Masuk";
-            console.error("Koneksi gagal atau terjadi bug sistem:", err);
-            alert("⚠️ Sistem Gagal Terhubung. Detail Error: " + err.message);
-        });
+            })
+            .catch(err => {
+                btn.disabled = false; 
+                btn.innerText = "Masuk";
+                console.error("Koneksi gagal atau terjadi bug sistem:", err);
+                alert("⚠️ Sistem Gagal Terhubung. Detail Error: " + err.message);
+            });
     });
 
     // =========================================================
