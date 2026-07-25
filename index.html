@@ -7203,10 +7203,12 @@
     }
 
     // =========================================================================
-    // 🔒 NAVIGASI SUB-TAB ANALISIS BISNIS (DILENGKAPI PROTEKSI RBAC)
+    // 🔒 NAVIGASI SUB-TAB ANALISIS BISNIS (ANTI-REKURSI & AUTO-REDIRECT)
     // =========================================================================
     function switchSubTabAnalisis(targetTab, btnElement) {
-        // 1. 🔥 VALIDASI KEAMANAN RBAC SEBELUM MEMBUKA KAMAR FINANSIAL
+        // 1. 🔥 TENTUKAN TUJUAN YANG AMAN (AUTO-REDIRECT DALAM 1 KALI JALAN)
+        let tabAman = targetTab;
+
         if (targetTab === 'finansial') {
             const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
             const perms = sessionData.permissions || {};
@@ -7219,35 +7221,37 @@
                                         role === 'super admin';
 
             if (!punyaAksesFinansial) {
-                alert("🔒 Akses Ditolak: Anda tidak memiliki izin untuk melihat data Kokpit Finansial.");
-                return; // Hentikan eksekusi, kamar finansial tidak akan dibuka!
+                console.warn("🔒 [RBAC] Akses Kokpit Finansial ditolak. Mengalihkan otomatis ke Operasional...");
+                tabAman = 'operasional'; // Belokkan tujuan ke Operasional tanpa rekursi/looping!
             }
         }
 
-        // 2. Matikan semua tombol sub-tab
+        // 2. Matikan semua highlight tombol sub-tab
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
         
-        // Nyalakan tombol yang diklik (atau cari otomatis jika dipanggil lewat kode sistem)
-        if (btnElement) {
+        // 3. Nyalakan highlight pada tombol yang sesuai dengan tabAman
+        if (btnElement && tabAman === targetTab) {
             btnElement.classList.add('active'); 
         } else {
-            const autoBtn = targetTab === 'finansial' ? document.getElementById('btnSubTabFinansial') : document.querySelector('.sub-tab-btn[onclick*="operasional"]');
+            // Cari tombol secara otomatis jika dialihkan atau dipanggil oleh sistem
+            const autoBtn = tabAman === 'finansial' 
+                ? document.getElementById('btnSubTabFinansial') 
+                : (document.querySelector('.sub-tab-btn[onclick*="operasional"]') || document.getElementById('btnSubTabDemografi'));
             if (autoBtn) autoBtn.classList.add('active');
         }
 
-        // 3. Sembunyikan semua kamar dengan aman
+        // 4. Sembunyikan semua kamar terlebih dahulu
         const kamarOperasional = document.getElementById('subTabOperasional');
         const kamarFinansial = document.getElementById('subTabFinansial');
         
         if (kamarOperasional) kamarOperasional.style.display = 'none';
         if (kamarFinansial) kamarFinansial.style.display = 'none';
-        switchSubTabAnalisis('operasional');
 
-        // 4. Tampilkan kamar yang dipilih
-        if (targetTab === 'operasional' && kamarOperasional) {
+        // 5. Tampilkan HANYA kamar yang aman
+        if (tabAman === 'operasional' && kamarOperasional) {
             kamarOperasional.style.display = 'block';
         }
-        if (targetTab === 'finansial' && kamarFinansial) {
+        if (tabAman === 'finansial' && kamarFinansial) {
             kamarFinansial.style.display = 'block';
         }
     }
