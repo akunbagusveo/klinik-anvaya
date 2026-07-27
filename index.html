@@ -564,6 +564,19 @@
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
+
+        /* Animasi berkedip lembut untuk mengingatkan dokter */
+        @keyframes pulse-warning {
+            0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); transform: scale(1); }
+        }
+
+        .btn-consent-wajib {
+            animation: pulse-warning 2s infinite !important;
+            background-color: #d35400 !important;
+            border: 2px solid #f39c12 !important;
+        }
     </style>
 </head>
 <body>
@@ -1926,6 +1939,10 @@
                             <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;" onclick="tambahBarisTindakan()">
                                 ➕ Tambah Item Tindakan
                             </button>
+
+                            <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 10px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(230, 126, 34, 0.3);" onclick="triggerInformedConsentDariRME()">
+                                ✍️ Buat Informed Consent
+                            </button>
                         </div>
                         <div class="form-group">
                             <label>💊 Resep Obat <button type="button" class="btn-mic" onclick="mulaiDikte('modalResep')">🎙️</button></label>
@@ -2090,6 +2107,67 @@
 
         </div>
     </div>
+
+    <!-- ========================================================================= -->
+    <!-- 📋 MODAL POP-UP INFORMED CONSENT & SIGNATURE PAD -->
+    <!-- ========================================================================= -->
+    <div id="modalInformedConsent" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #fff; width: 90%; max-width: 650px; max-height: 90vh; overflow-y: auto; border-radius: 8px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative;">
+            
+            <!-- Header Modal -->
+            <div style="border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; color: #2c3e50;">📋 Persetujuan Tindakan Medis (Informed Consent)</h3>
+                <button onclick="tutupModalConsent()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: #888;">&times;</button>
+            </div>
+
+            <!-- Ringkasan Pasien & Tindakan -->
+            <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 14px;">
+                <p style="margin: 4px 0;"><strong>No. RM:</strong> <span id="lblConsentRM">-</span> | <strong>Nama Pasien:</strong> <span id="lblConsentNama">-</span></p>
+                <p style="margin: 4px 0; color: #d35400;"><strong>Tindakan Medis:</strong> <strong id="lblConsentTindakan">-</strong></p>
+            </div>
+
+            <!-- Daftar Risiko Tindakan (Bisa Disesuaikan Dokter) -->
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 8px; color: #333;">⚠️ Informasi & Risiko Tindakan (Centang yang dijelaskan):</label>
+                <div id="containerRisikoConsent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; background: #fff; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+                    <label><input type="checkbox" class="chk-risiko" value="Nyeri pasca tindakan" checked> Nyeri pasca tindakan</label>
+                    <label><input type="checkbox" class="chk-risiko" value="Pendarahan ringan" checked> Pendarahan ringan</label>
+                    <label><input type="checkbox" class="chk-risiko" value="Pembengkakan / Edema" checked> Pembengkakan / Edema</label>
+                    <label><input type="checkbox" class="chk-risiko" value="Infeksi sekunder" checked> Infeksi sekunder</label>
+                    <label><input type="checkbox" class="chk-risiko" value="Reaksi alergi obat/anestesi"> Reaksi alergi obat/anestesi</label>
+                    <label><input type="checkbox" class="chk-risiko" value="Perlu tindakan lanjutan"> Perlu tindakan lanjutan</label>
+                </div>
+            </div>
+
+            <!-- Pernyataan Hukum & Checkbox Audit Trail -->
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 15px; font-size: 13px; line-height: 1.5;">
+                <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 10px; font-weight: bold; color: #5c3c00;">
+                    <input type="checkbox" id="chkSayaSetuju" style="margin-top: 3px; transform: scale(1.2);">
+                    <span>Saya yang bertanda tangan di bawah ini menyatakan telah menerima penjelasan, membaca, dan memahami sepenuhnya diagnosis, tujuan, serta risiko tindakan kedokteran gigi di atas.</span>
+                </label>
+            </div>
+
+            <!-- Area Canvas Tanda Tangan Digital -->
+            <div style="margin-bottom: 15px; text-align: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <label style="font-weight: bold; font-size: 14px;">✍️ Tanda Tangan Pasien / Wali:</label>
+                    <button type="button" onclick="bersihkanTTD()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🗑️ Ulangi / Hapus</button>
+                </div>
+                <div style="border: 2px dashed #007bff; border-radius: 6px; background: #fafafa; display: inline-block; width: 100%;">
+                    <canvas id="canvasTTD" width="550" height="180" style="width: 100%; height: 180px; cursor: crosshair; touch-action: none;"></canvas>
+                </div>
+                <small style="color: #666; font-size: 11px;">*Gunakan mouse (PC) atau jari/stylus (Tablet/HP) untuk bertanda tangan di dalam kotak.</small>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 15px;">
+                <button type="button" onclick="tutupModalConsent()" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Batal</button>
+                <button type="button" id="btnSimpanConsent" onclick="kirimDataConsent()" style="background: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Simpan Persetujuan</button>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtKbuvQhrLcVRaoo33z6MmV6oMRBK_ZGTkPFyNH5xNgAxG1j3H5GJAFuGW9WzzvKhS/exec"; 
@@ -2106,6 +2184,8 @@
     let dataKamusArray = []; // Array untuk menyimpan data siap render
     // Variabel Global Penampung Master Tindakan
     window.masterTindakanGlobal = [];
+    // 🔥 PENANDA GLOBAL INFORMED CONSENT
+    window.consentSudahDisimpanHariIni = false;
 
     // 2. Fungsi untuk menarik data kamus saat halaman web dibuka
     function muatKamusDikte() {
@@ -4378,7 +4458,44 @@
 
 
    
+    // =========================================================================
+    // 🛡️ JARING PENGAMAN (LANGKAH 3): VALIDASI INFORMED CONSENT
+    // =========================================================================
+    function validasiSebelumSimpanRME() {
+        const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
+        let adaTindakanBerisiko = false;
+        let namaTindakanBerisiko = [];
 
+        barisTindakan.forEach(row => {
+            const selNama = row.querySelector('.sel-nama-tindakan');
+            
+            // Cek apakah baris ini atau pilihan tindakannya bertanda wajib consent
+            // (Mendeteksi atribut data-butuh-consent="1" pada elemen row, input/select, atau option yang dipilih)
+            const isWajib = row.getAttribute('data-butuh-consent') == "1" || 
+                            (selNama && selNama.getAttribute('data-butuh-consent') == "1") ||
+                            (selNama && selNama.options && selNama.options[selNama.selectedIndex]?.getAttribute('data-butuh-consent') == "1") ||
+                            row.querySelector('.badge-consent'); // Atau jika sudah ada badge merah Wajib Consent
+
+            if (isWajib) {
+                adaTindakanBerisiko = true;
+                const nama = selNama ? selNama.value.trim() : "Tindakan Medis Berisiko";
+                if (nama) namaTindakanBerisiko.push(nama);
+            }
+        });
+
+        // 🔥 JIKA ADA TINDAKAN BERISIKO & CONSENT BELUM DISIMPAN HARI INI -> TAHAN PROSES!
+        if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
+            alert(`⚠️ TINDAKAN MEDIS BERISIKO TERDETEKSI!\n\nTindakan: "${namaTindakanBerisiko.join(', ')}"\n\nSesuai SOP Medico-Legal Klinik Anvaya, Anda wajib membuat Informed Consent dan meminta tanda tangan pasien/wali terlebih dahulu sebelum menutup rekam medis ini.`);
+            
+            // Panggil trigger buka modal consent secara otomatis!
+            if (typeof triggerInformedConsentDariRME === "function") {
+                triggerInformedConsentDariRME();
+            }
+            return false; // Batalkan proses simpan RME!
+        }
+
+        return true; // Lanjut simpan RME jika aman / tidak butuh consent
+    }
 
     // 🔥 MENGGUNAKAN ID BARU AGAR TIDAK BENTROK DENGAN FORM LAMA
     // =========================================================================
@@ -4392,6 +4509,14 @@
         formAktifRme.addEventListener('submit', async function(e) { 
             e.preventDefault(); 
             
+            // =========================================================================
+            // 🔥 SISIPAN LANGKAH 3: CEK INFORMED CONSENT SEBELUM PROSES LANJUT
+            // =========================================================================
+            if (typeof validasiSebelumSimpanRME === "function" && !validasiSebelumSimpanRME()) {
+                return; // ⛔ Hentikan eksekusi di sini! Modal consent akan terbuka otomatis.
+            }
+            // =========================================================================
+
             const submitBtn = e.target.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true; 
@@ -4410,7 +4535,6 @@
                 dataFileModal = await bacaFileKeBase64(idInputFile);
             }
 
-            // 🔥 FIX TYPO UTAMA DI SINI: Mengubah 'elemen1' menjadi 'el1' agar tidak error
             const dapatkanNilaiDOM = (idUtama, idAlternatif) => {
                 const el1 = document.getElementById(idUtama);
                 if (el1) return el1.value;
@@ -4471,6 +4595,10 @@
                 
                 if(res.result === "success") {
                     alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
+                    
+                    // 🔥 SISIPAN PENTING: Reset status consent agar saat pasien berikutnya
+                    // diperiksa, sistem kembali meminta persetujuan baru!
+                    window.consentSudahDisimpanHariIni = false;
                     
                     const currentRM = data.noRM;
                     if(currentRM) {
@@ -9017,6 +9145,243 @@
         document.body.removeChild(link);
 
         console.log("✔️ [EKSPOR CSV] Berhasil mengunduh data campaign ulang tahun.");
+    }
+
+    // =========================================================================
+    // 🎨 ENGINE SIGNATURE PAD & INFORMED CONSENT
+    // =========================================================================
+    let isDrawing = false;
+    let canvas, ctx;
+
+    // 1. Inisialisasi Canvas saat halaman siap
+    function initSignaturePad() {
+        canvas = document.getElementById('canvasTTD');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // Event untuk Mouse (PC)
+        canvas.addEventListener('mousedown', mulaiGambar);
+        canvas.addEventListener('mousemove', gambar);
+        canvas.addEventListener('mouseup', stopGambar);
+        canvas.addEventListener('mouseout', stopGambar);
+
+        // Event untuk Layar Sentuh (Tablet/HP)
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+    }
+
+    function getPosisiCanvas(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+
+    function mulaiGambar(e) {
+        isDrawing = true;
+        const pos = getPosisiCanvas(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    function gambar(e) {
+        if (!isDrawing) return;
+        const pos = getPosisiCanvas(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    }
+
+    function stopGambar() {
+        isDrawing = false;
+    }
+
+    function bersihkanTTD() {
+        if (ctx && canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    // 2. Kontrol Buka & Tutup Modal
+    function bukaModalConsent(noRM, namaPasien, tindakan) {
+        document.getElementById('lblConsentRM').innerText = noRM || "-";
+        document.getElementById('lblConsentNama').innerText = namaPasien || "-";
+        document.getElementById('lblConsentTindakan').innerText = tindakan || "-";
+        
+        document.getElementById('chkSayaSetuju').checked = false;
+        bersihkanTTD();
+        
+        const modal = document.getElementById('modalInformedConsent');
+        if (modal) modal.style.display = 'flex';
+        
+        // Inisialisasi canvas setelah modal tampil agar ukuran dimensinya akurat
+        setTimeout(initSignaturePad, 200);
+    }
+
+    function tutupModalConsent() {
+        const modal = document.getElementById('modalInformedConsent');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // 3. Validasi & Kirim ke Backend
+    function kirimDataConsent() {
+        const chkSetuju = document.getElementById('chkSayaSetuju');
+        if (!chkSetuju || !chkSetuju.checked) {
+            alert("⚠️ Wajib mencentang kotak pernyataan persetujuan terlebih dahulu!");
+            return;
+        }
+
+        // Periksa apakah canvas kosong (belum ada coretan)
+        const blankCanvas = document.createElement('canvas');
+        blankCanvas.width = canvas.width;
+        blankCanvas.height = canvas.height;
+        if (canvas.toDataURL() === blankCanvas.toDataURL()) {
+            alert("⚠️ Pasien atau wali wajib menorehkan tanda tangan pada area kotak yang disediakan!");
+            return;
+        }
+
+        // Ambil risiko yang dicentang
+        const risikoTerpilih = [];
+        document.querySelectorAll('.chk-risiko:checked').forEach(el => {
+            risikoTerpilih.push(el.value);
+        });
+
+        const btn = document.getElementById('btnSimpanConsent');
+        btn.disabled = true;
+        btn.innerText = "⏳ Mengirim & Menyimpan...";
+
+        const payload = {
+            action: "simpanConsent",
+            noRM: document.getElementById('lblConsentRM').innerText,
+            namaPasien: document.getElementById('lblConsentNama').innerText,
+            tindakan: document.getElementById('lblConsentTindakan').innerText,
+            risikoTerpilih: risikoTerpilih,
+            statusTTD: "Digital",
+            ttdBase64: canvas.toDataURL("image/png")
+        };
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerText = "💾 Simpan Persetujuan";
+            if (res.result === "success") {
+                alert("✅ Informed Consent berhasil disimpan & diarsip ke Google Drive!");
+                window.consentSudahDisimpanHariIni = true;
+            
+            // 🔥 2. Perbarui tampilan tombol menjadi hijau sukses
+                periksaKebutuhanConsentUI();
+                tutupModalConsent();
+                // Opsional: jalankan fungsi lanjut simpan RME jika modal dipanggil di tengah input RME
+            } else {
+                alert("❌ Gagal menyimpan consent: " + res.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerText = "💾 Simpan Persetujuan";
+            console.error("Error consent:", err);
+            alert("⚠️ Terjadi kesalahan koneksi sistem saat mengirim data.");
+        });
+    }
+
+    // =========================================================================
+    // 🚀 TRIGGER OTOMATIS INFORMED CONSENT DARI FORM INPUT RME
+    // =========================================================================
+    function triggerInformedConsentDariRME() {
+        // 1. Ambil No. RM dan Nama Pasien dari input hidden yang sudah ada di form RME
+        const noRM = document.getElementById('modalNoRM').value || "-";
+        const namaPasien = document.getElementById('modalNama').value || "-";
+
+        // 2. Kumpulkan seluruh tindakan yang sedang dipilih/diketik oleh dokter
+        const kontainer = document.getElementById('kontainerTindakanDinamis');
+        let daftarTindakan = [];
+
+        if (kontainer) {
+            // Cari semua elemen input, select, atau textarea di dalam kontainer tindakan
+            const inputTindakan = kontainer.querySelectorAll('input[type="text"], select, textarea');
+            inputTindakan.forEach(el => {
+                if (el.value && el.value.trim() !== "") {
+                    daftarTindakan.push(el.value.trim());
+                }
+            });
+        }
+
+        // Jika belum ada tindakan yang dipilih, beri peringatan santun atau gunakan teks default
+        let teksTindakan = daftarTindakan.join(", ");
+        if (daftarTindakan.length === 0) {
+            teksTindakan = prompt("⚠️ Belum ada tindakan yang dipilih di form. Silakan ketik nama tindakan medis untuk persetujuan ini:", "Odontektomi / Tindakan Bedah Minor");
+            if (!teksTindakan) return; // Batal jika dokter menutup prompt
+        }
+
+        // 3. Buka Modal Informed Consent dengan data yang sudah matang!
+        bukaModalConsent(noRM, namaPasien, teksTindakan);
+    }
+
+    // Contoh sisipan pada fungsi saat tindakan dipilih/ditambahkan ke kontainer:
+    function periksaKebutuhanConsentUI() {
+        let adaTindakanBerisiko = false;
+
+        // 1. Periksa setiap elemen tindakan di dalam kontainer #kontainerTindakanDinamis
+        // (Asumsikan saat dropdown tindakan dipilih, Anda menyisipkan atribut data-butuh-consent="1" pada elemennya)
+        const kontainer = document.getElementById('kontainerTindakanDinamis');
+        if (kontainer) {
+            kontainer.querySelectorAll('[data-butuh-consent="1"], .tindakan-wajib-consent').forEach(el => {
+                adaTindakanBerisiko = true;
+                // Tambahkan badge peringatan di samping teks tindakan jika belum ada
+                if (!el.querySelector('.badge-consent')) {
+                    el.insertAdjacentHTML('beforeend', ' <span class="badge-consent" style="background:#e74c3c; color:white; font-size:11px; padding:2px 6px; border-radius:10px; font-weight:bold;">⚠️ Wajib Consent</span>');
+                }
+            });
+        }
+
+        // 2. Berikan efek nyala berkedip pada tombol Buat Consent
+        const btnConsent = document.getElementById('btnBuatConsent');
+        if (btnConsent) {
+            if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
+                btnConsent.classList.add('btn-consent-wajib');
+                btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
+            } else if (window.consentSudahDisimpanHariIni) {
+                btnConsent.classList.remove('btn-consent-wajib');
+                btnConsent.style.backgroundColor = "#27ae60";
+                btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
+            } else {
+                btnConsent.classList.remove('btn-consent-wajib');
+                btnConsent.innerHTML = "✍️ Buat Informed Consent";
+            }
+        }
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
