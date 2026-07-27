@@ -4464,15 +4464,15 @@
 
    
     // =========================================================================
-    // 🛡️ JARING PENGAMAN BULLETPROOF: VALIDASI INFORMED CONSENT SEBELUM SIMPAN RME
+    // 🛡️ JARING PENGAMAN (LANGKAH 3): VALIDASI INFORMED CONSENT SEBELUM SIMPAN RME
     // =========================================================================
     function validasiSebelumSimpanRME() {
         const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
 
-        // Ambil data master tindakan yang sedang aktif di memori aplikasi
-        const masterData = window.masterTindakanGlobal || window.dataMasterTindakan || [];
+        // Ambil data master tindakan yang sudah dimuat dari server
+        const masterData = window.masterTindakanGlobal || [];
 
         barisTindakan.forEach(row => {
             const selNama = row.querySelector('.sel-nama-tindakan');
@@ -4480,20 +4480,20 @@
 
             const namaTerpilih = selNama.value.trim().toLowerCase();
 
-            // 1. Cek dari atribut DOM HTML (jika ada badge atau data-butuh-consent)
+            // 1. Cek dari atribut DOM HTML (jika ada badge atau atribut data)
             let isWajib = row.getAttribute('data-butuh-consent') == "1" || 
                         (selNama.getAttribute('data-butuh-consent') == "1") ||
                         row.querySelector('.badge-consent');
 
-            // 2. 🔥 PENGECEKAN GANDA (DEEP MATCH): Cocokkan langsung ke database MasterTindakan!
+            // 2. 🔥 DEEP MATCH DARI DATABASE SERVER: Cocokkan nama tindakan dengan masterData
             if (!isWajib && masterData.length > 0) {
                 const itemMaster = masterData.find(item => {
-                    const namaMaster = (item.namaTindakan || item.tindakan || item.nama || "").trim().toLowerCase();
+                    const namaMaster = (item.nama || item.namaTindakan || "").trim().toLowerCase();
                     return namaMaster === namaTerpilih;
                 });
 
-                // Cek apakah di master data bernilai 1 / true pada kolom Butuh_Consent (atau variasi namanya)
-                if (itemMaster && (itemMaster.butuhConsent == 1 || itemMaster.Butuh_Consent == 1 || itemMaster.butuhConsent === true)) {
+                // Cek apakah properti butuhConsent bernilai 1 / true (yang dikirim dari Kode.gs baru)
+                if (itemMaster && (itemMaster.butuhConsent == 1 || itemMaster.butuhConsent === true)) {
                     isWajib = true;
                 }
             }
@@ -4504,7 +4504,7 @@
             }
         });
 
-        // 🔥 JIKA ADA TINDAKAN BERISIKO & CONSENT BELUM DISIMPAN HARI INI -> TAHAN DAN BUKA MODAL!
+        // 🔥 JIKA ADA TINDAKAN BERISIKO & CONSENT BELUM DISIMPAN HARI INI -> TAHAN PROSES!
         if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
             alert(`⚠️ TINDAKAN MEDIS BERISIKO TERDETEKSI!\n\nTindakan: "${namaTindakanBerisiko.join(', ')}"\n\nSesuai SOP Medico-Legal Klinik Anvaya, Anda wajib membuat Informed Consent dan meminta tanda tangan pasien/wali terlebih dahulu sebelum menutup rekam medis ini.`);
             
