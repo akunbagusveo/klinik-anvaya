@@ -1977,18 +1977,18 @@
                             <div id="kontainerTindakanDinamis" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
                                 </div>
                         
-                            <!-- 🔥 UPGRADE: Kontainer Tombol Sejajar (Side-by-Side) -->
-                            <div class="kontainer-tombol-aksi-tindakan">
-                                <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 0 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; gap: 6px;" onclick="tambahBarisTindakan()">
+                           <!-- 🔥 UPGRADE DINAMIS: Kontainer Tombol Sejajar (Side-by-Side Horizontal) -->
+                           <div class="kontainer-tombol-aksi-tindakan" style="display: flex; flex-direction: row; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dcdde1;">
+                                <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 0 18px; height: 40px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="tambahBarisTindakan()">
                                     ➕ Tambah Item Tindakan
                                 </button>
 
-                                <!-- Tombol Informed Consent berdampingan langsung di sebelahnya -->
-                                <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 0 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; gap: 6px;" onclick="triggerInformedConsentDariRME()">
+                                <!-- Tombol Informed Consent berdampingan sejajar di sebelahnya dengan tinggi sama -->
+                                <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 0 18px; height: 40px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="triggerInformedConsentDariRME()">
                                     ✍️ Buat Informed Consent
                                 </button>
                             </div>
-                            
+
                         </div>
                         <div class="form-group">
                             <label>💊 Resep Obat <button type="button" class="btn-mic" onclick="mulaiDikte('modalResep')">🎙️</button></label>
@@ -6833,33 +6833,34 @@
             opsiKategoriHtml += `<option value="${kat}">${kat.toUpperCase()}</option>`;
         });
 
-        // 2. Susun Layout HTML dengan Input Group Harga yang Rapi (Anti-Offside)
+        // 2. Susun Layout HTML dengan Alignment Top (flex-start) Anti-Geser
         rowWrapper.innerHTML = `
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
                 <div style="flex: 1.2; min-width: 180px;">
-                    <select class="sel-kategori-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7;" onchange="filterTindakanPerKategori('${rowId}', this.value)" required>
+                    <select class="sel-kategori-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="filterTindakanPerKategori('${rowId}', this.value)" required>
                         ${opsiKategoriHtml}
                     </select>
                 </div>
                 
-                <div style="flex: 2; min-width: 200px;">
-                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa;" onchange="pilihTindakanDinamis('${rowId}', this.value)" disabled required>
+                <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-start;">
+                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="pilihTindakanDinamis('${rowId}', this.value)" disabled required>
                         <option value="">-- Pilih Tindakan Medis --</option>
                     </select>
+                    <!-- Label ⚠️ Wajib Consent akan diinjeksikan secara otomatis & rapi di bawah kotak ini -->
                 </div>
                 
-                <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa;" class="box-harga-container">
+                <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa; height: 38px; box-sizing: border-box;" class="box-harga-container">
                     <span style="color: #7f8c8d; font-weight: bold; font-size: 13px; margin-right: 5px;">Rp</span>
-                    <input type="text" class="inp-harga-tindakan" placeholder="0" style="border: none; outline: none; width: 100%; padding: 8px 4px; border-radius: 0 4px 4px 0; background: transparent;" disabled required>
+                    <input type="text" class="inp-harga-tindakan" placeholder="0" style="border: none; outline: none; width: 100%; padding: 8px 4px; border-radius: 0 4px 4px 0; background: transparent; height: 36px;" disabled required>
                 </div>
                 
                 <div style="flex: 2; min-width: 200px; display: flex; gap: 5px; align-items: center;">
-                    <input type="text" class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan)..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7;">
-                    <button type="button" class="btn-mic" style="padding: 6px 10px;" onclick="mulaiDikteInputDinamis('${rowId}')">🎙️</button>
+                    <input type="text" class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan)..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px; box-sizing: border-box;">
+                    <button type="button" class="btn-mic" style="padding: 0 10px; height: 38px; display: inline-flex; align-items: center;" onclick="mulaiDikteInputDinamis('${rowId}')">🎙️</button>
                 </div>
                 
                 <div>
-                    <button type="button" style="background-color:#e74c3c; color:white; border:none; padding:8px 12px; cursor:pointer; border-radius:4px; font-weight:bold;" onclick="hapusBarisTindakan('${rowId}')">🗑️</button>
+                    <button type="button" style="background-color:#e74c3c; color:white; border:none; padding:0 12px; height:38px; cursor:pointer; border-radius:4px; font-weight:bold; display:inline-flex; align-items:center;" onclick="hapusBarisTindakan('${rowId}')">🗑️</button>
                 </div>
             </div>
             
