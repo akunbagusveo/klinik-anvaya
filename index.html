@@ -3867,6 +3867,9 @@
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
         
+        // 🔥 SISIPAN SOLUSI DINAMIS: Reset tombol consent saat buka pasien baru
+        if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
+        
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
@@ -4211,6 +4214,8 @@
         // 1. Kosongkan isian dan memori form untuk keamanan
         document.getElementById('formModalMedisSplit').reset();
         document.getElementById('modalRowUpdate').value = "";
+
+        if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
         
         // 2. Sembunyikan tombol batal dan kembalikan teks tombol simpan
         document.getElementById('btnBatalEdit').style.display = 'none';
@@ -4598,7 +4603,7 @@
                     
                     // 🔥 SISIPAN PENTING: Reset status consent agar saat pasien berikutnya
                     // diperiksa, sistem kembali meminta persetujuan baru!
-                    window.consentSudahDisimpanHariIni = false;
+                    if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
                     
                     const currentRM = data.noRM;
                     if(currentRM) {
@@ -9382,6 +9387,28 @@
                 btnConsent.innerHTML = "✍️ Buat Informed Consent";
             }
         }
+    }
+
+    // =========================================================================
+    // 🔄 ENGINE RESET DINAMIS STATUS & TOMBOL INFORMED CONSENT
+    // =========================================================================
+    function resetStatusConsentUI() {
+        // 1. Kembalikan memori global ke status awal (belum ada consent)
+        window.consentSudahDisimpanHariIni = false;
+
+        // 2. Cari tombol pemanggil consent dan kembalikan ke tampilan default
+        const btnConsent = document.getElementById('btnBuatConsent');
+        if (btnConsent) {
+            btnConsent.classList.remove('btn-consent-wajib');
+            btnConsent.style.backgroundColor = "#e67e22"; // Warna oranye default
+            btnConsent.innerHTML = "✍️ Buat Informed Consent";
+            btnConsent.disabled = false;
+        }
+
+        // 3. Bersihkan seluruh badge peringatan di dalam daftar tindakan jika ada
+        document.querySelectorAll('.badge-consent').forEach(el => el.remove());
+        
+        console.log("🔄 [Consent UI] Status dan tombol Informed Consent telah di-reset ke default.");
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
