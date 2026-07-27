@@ -577,6 +577,47 @@
             background-color: #d35400 !important;
             border: 2px solid #f39c12 !important;
         }
+
+        /* =========================================================================
+        🎨 FIX TATA LETAK INFORMED CONSENT & BADGE
+        ========================================================================= */
+
+        /* 1. Mencegah badge menggeser/merusak tinggi dropdown tindakan */
+        .badge-consent {
+            display: inline-flex !important;
+            align-items: center;
+            vertical-align: middle !important;
+            background-color: #e74c3c;
+            color: white;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+            line-height: 1.2;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        /* 2. Memastikan tombol berdampingan dengan ukuran dan tinggi sejajar */
+        .kontainer-tombol-aksi-tindakan {
+            display: flex !important;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap; /* Otomatis turun ke bawah hanya jika layar tablet/HP sangat sempit */
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #dcdde1;
+        }
+
+        .kontainer-tombol-aksi-tindakan button {
+            margin: 0 !important; /* Hilangkan margin bawaan yang membuat tombol tidak rata */
+            height: 40px;         /* Samakan tinggi kedua tombol */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
     </style>
 </head>
 <body>
@@ -1936,13 +1977,18 @@
                             <div id="kontainerTindakanDinamis" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
                                 </div>
                         
-                            <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;" onclick="tambahBarisTindakan()">
-                                ➕ Tambah Item Tindakan
-                            </button>
+                            <!-- 🔥 UPGRADE: Kontainer Tombol Sejajar (Side-by-Side) -->
+                            <div class="kontainer-tombol-aksi-tindakan">
+                                <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 0 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; gap: 6px;" onclick="tambahBarisTindakan()">
+                                    ➕ Tambah Item Tindakan
+                                </button>
 
-                            <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 10px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(230, 126, 34, 0.3);" onclick="triggerInformedConsentDariRME()">
-                                ✍️ Buat Informed Consent
-                            </button>
+                                <!-- Tombol Informed Consent berdampingan langsung di sebelahnya -->
+                                <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 0 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; gap: 6px;" onclick="triggerInformedConsentDariRME()">
+                                    ✍️ Buat Informed Consent
+                                </button>
+                            </div>
+                            
                         </div>
                         <div class="form-group">
                             <label>💊 Resep Obat <button type="button" class="btn-mic" onclick="mulaiDikte('modalResep')">🎙️</button></label>
