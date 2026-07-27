@@ -4464,39 +4464,59 @@
 
    
     // =========================================================================
-    // 🛡️ JARING PENGAMAN (LANGKAH 3): VALIDASI INFORMED CONSENT
+    // 🛡️ JARING PENGAMAN BULLETPROOF: VALIDASI INFORMED CONSENT SEBELUM SIMPAN RME
     // =========================================================================
     function validasiSebelumSimpanRME() {
         const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
 
+        // Ambil data master tindakan yang sedang aktif di memori aplikasi
+        const masterData = window.masterTindakanGlobal || window.dataMasterTindakan || [];
+
         barisTindakan.forEach(row => {
             const selNama = row.querySelector('.sel-nama-tindakan');
-            
-            // Cek apakah baris ini atau pilihan tindakannya bertanda wajib consent
-            // (Mendeteksi atribut data-butuh-consent="1" pada elemen row, input/select, atau option yang dipilih)
-            const isWajib = row.getAttribute('data-butuh-consent') == "1" || 
-                            (selNama && selNama.getAttribute('data-butuh-consent') == "1") ||
-                            (selNama && selNama.options && selNama.options[selNama.selectedIndex]?.getAttribute('data-butuh-consent') == "1") ||
-                            row.querySelector('.badge-consent'); // Atau jika sudah ada badge merah Wajib Consent
+            if (!selNama || !selNama.value) return;
+
+            const namaTerpilih = selNama.value.trim().toLowerCase();
+
+            // 1. Cek dari atribut DOM HTML (jika ada badge atau data-butuh-consent)
+            let isWajib = row.getAttribute('data-butuh-consent') == "1" || 
+                        (selNama.getAttribute('data-butuh-consent') == "1") ||
+                        row.querySelector('.badge-consent');
+
+            // 2. 🔥 PENGECEKAN GANDA (DEEP MATCH): Cocokkan langsung ke database MasterTindakan!
+            if (!isWajib && masterData.length > 0) {
+                const itemMaster = masterData.find(item => {
+                    const namaMaster = (item.namaTindakan || item.tindakan || item.nama || "").trim().toLowerCase();
+                    return namaMaster === namaTerpilih;
+                });
+
+                // Cek apakah di master data bernilai 1 / true pada kolom Butuh_Consent (atau variasi namanya)
+                if (itemMaster && (itemMaster.butuhConsent == 1 || itemMaster.Butuh_Consent == 1 || itemMaster.butuhConsent === true)) {
+                    isWajib = true;
+                }
+            }
 
             if (isWajib) {
                 adaTindakanBerisiko = true;
-                const nama = selNama ? selNama.value.trim() : "Tindakan Medis Berisiko";
-                if (nama) namaTindakanBerisiko.push(nama);
+                namaTindakanBerisiko.push(selNama.value.trim());
             }
         });
 
-        // 🔥 JIKA ADA TINDAKAN BERISIKO & CONSENT BELUM DISIMPAN HARI INI -> TAHAN PROSES!
+        // 🔥 JIKA ADA TINDAKAN BERISIKO & CONSENT BELUM DISIMPAN HARI INI -> TAHAN DAN BUKA MODAL!
         if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
             alert(`⚠️ TINDAKAN MEDIS BERISIKO TERDETEKSI!\n\nTindakan: "${namaTindakanBerisiko.join(', ')}"\n\nSesuai SOP Medico-Legal Klinik Anvaya, Anda wajib membuat Informed Consent dan meminta tanda tangan pasien/wali terlebih dahulu sebelum menutup rekam medis ini.`);
             
-            // Panggil trigger buka modal consent secara otomatis!
+            // Panggil trigger buka modal consent secara otomatis
             if (typeof triggerInformedConsentDariRME === "function") {
                 triggerInformedConsentDariRME();
+            } else if (typeof bukaModalConsent === "function") {
+                const noRM = document.getElementById('modalNoRM')?.value || "-";
+                const nama = document.getElementById('modalNama')?.value || "-";
+                bukaModalConsent(noRM, nama, namaTindakanBerisiko.join(', '));
             }
-            return false; // Batalkan proses simpan RME!
+            return false; // ⛔ Batalkan proses simpan RME mutlak!
         }
 
         return true; // Lanjut simpan RME jika aman / tidak butuh consent
@@ -6732,7 +6752,7 @@
         .then(res => {
             if (res.result === "success") {
                 window.masterTindakanGlobal = res.data;
-                //console.log("🚀 Master Tindakan Berhasil Dimuat:", window.masterTindakanGlobal.length, "item.");
+                console.log("🚀 Master Tindakan Berhasil Dimuat:", window.masterTindakanGlobal.length, "item.");
             } else {
                 console.error("❌ Gagal memuat master tindakan:", res.message);
             }
