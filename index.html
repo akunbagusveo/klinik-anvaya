@@ -2209,6 +2209,10 @@
             <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 15px;">
                 <button type="button" onclick="tutupModalConsent()" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Batal</button>
                 <button type="button" id="btnSimpanConsent" onclick="kirimDataConsent()" style="background: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Simpan Persetujuan</button>
+                <!-- 🔥 TOMBOL CETAK PDF (Muncul saat consent sudah tersimpan/mode pratinjau) -->
+                <button type="button" id="btnCetakConsentPDF" onclick="cetakInformedConsentPDF()" style="display: none; background-color: #2980b9; color: white; border: none; padding: 10px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                    🖨️ Cetak / Unduh PDF Resmi
+                </button>
             </div>
 
         </div>
@@ -9375,38 +9379,69 @@
         const modal = document.getElementById('modalInformedConsent');
         const btnSimpan = document.getElementById('btnSimpanConsent');
         const chkSetuju = document.getElementById('chkSayaSetuju');
-        
-        // 🔥 LOGIKA DINAMIS: Cek apakah Consent pada sesi pasien ini SUDAH TERSIMPAN sebelumnya?
+
         if (window.consentSudahDisimpanHariIni === true) {
             // 🟢 MODE PRATINJAU / REVISI:
-            // 1. JANGAN hapus kanvas TTD & JANGAN kosongkan centang pernyataan!
-            console.log("🔒 [Consent UI] Membuka modal dalam mode Pratinjau/Revisi. TTD dipertahankan.");
+            console.log("🔒 [Consent UI] Membuka modal dalam mode Pratinjau/Revisi.");
             
-            // 2. Ubah tampilan tombol simpan agar dokter paham ini adalah proses revisi/update
             if (btnSimpan) {
-                btnSimpan.style.backgroundColor = "#e67e22"; // Warna oranye revisi
+                btnSimpan.style.backgroundColor = "#e67e22"; 
                 btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
             }
-            
-            // 3. Pastikan centang pernyataan tetap aktif (jika sebelumnya terlepas)
             if (chkSetuju) chkSetuju.checked = true;
+            
+            // 🔥 TAMBAHAN DINAMIS: Tampilkan tombol Cetak PDF resmi!
+            const btnCetak = document.getElementById('btnCetakConsentPDF');
+            if (btnCetak) btnCetak.style.display = "inline-block";
             
         } else {
             // 🟠 MODE INPUT BARU:
-            // 1. Bersihkan kanvas TTD dari coretan pasien sebelumnya
             if (typeof bersihkanTTD === "function") bersihkanTTD();
-            
-            // 2. Kosongkan centang pernyataan hukum
             if (chkSetuju) chkSetuju.checked = false;
             
-            // 3. Kembalikan tombol ke tampilan standar
             if (btnSimpan) {
-                btnSimpan.style.backgroundColor = "#28a745"; // Warna hijau standar
+                btnSimpan.style.backgroundColor = "#28a745"; 
                 btnSimpan.innerHTML = "💾 Simpan Persetujuan";
             }
             
+            // 🔥 TAMBAHAN DINAMIS: Sembunyikan tombol cetak saat input consent baru
+            const btnCetak = document.getElementById('btnCetakConsentPDF');
+            if (btnCetak) btnCetak.style.display = "none";
+            
             console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
         }
+        
+        // // 🔥 LOGIKA DINAMIS: Cek apakah Consent pada sesi pasien ini SUDAH TERSIMPAN sebelumnya?
+        // if (window.consentSudahDisimpanHariIni === true) {
+        //     // 🟢 MODE PRATINJAU / REVISI:
+        //     // 1. JANGAN hapus kanvas TTD & JANGAN kosongkan centang pernyataan!
+        //     console.log("🔒 [Consent UI] Membuka modal dalam mode Pratinjau/Revisi. TTD dipertahankan.");
+            
+        //     // 2. Ubah tampilan tombol simpan agar dokter paham ini adalah proses revisi/update
+        //     if (btnSimpan) {
+        //         btnSimpan.style.backgroundColor = "#e67e22"; // Warna oranye revisi
+        //         btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
+        //     }
+            
+        //     // 3. Pastikan centang pernyataan tetap aktif (jika sebelumnya terlepas)
+        //     if (chkSetuju) chkSetuju.checked = true;
+            
+        // } else {
+        //     // 🟠 MODE INPUT BARU:
+        //     // 1. Bersihkan kanvas TTD dari coretan pasien sebelumnya
+        //     if (typeof bersihkanTTD === "function") bersihkanTTD();
+            
+        //     // 2. Kosongkan centang pernyataan hukum
+        //     if (chkSetuju) chkSetuju.checked = false;
+            
+        //     // 3. Kembalikan tombol ke tampilan standar
+        //     if (btnSimpan) {
+        //         btnSimpan.style.backgroundColor = "#28a745"; // Warna hijau standar
+        //         btnSimpan.innerHTML = "💾 Simpan Persetujuan";
+        //     }
+            
+        //     console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
+        // }
         
         // Tampilkan modal ke layar
         if (modal) modal.style.display = 'flex';
@@ -9423,6 +9458,9 @@
     }
 
     // 3. Validasi & Kirim ke Backend
+    // =========================================================================
+    // 📤 KIRIM DATA INFORMED CONSENT KE SERVER (100% BUG-FREE & DINAMIS)
+    // =========================================================================
     function kirimDataConsent() {
         const chkSetuju = document.getElementById('chkSayaSetuju');
         if (!chkSetuju || !chkSetuju.checked) {
@@ -9439,15 +9477,17 @@
             return;
         }
 
-        // Ambil risiko yang dicentang
+        // Ambil risiko yang dicentang secara dinamis
         const risikoTerpilih = [];
         document.querySelectorAll('.chk-risiko:checked').forEach(el => {
             risikoTerpilih.push(el.value);
         });
 
         const btn = document.getElementById('btnSimpanConsent');
-        btn.disabled = true;
-        btn.innerText = "⏳ Mengirim & Menyimpan...";
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "⏳ Mengirim & Menyimpan...";
+        }
 
         const payload = {
             action: "simpanConsent",
@@ -9465,23 +9505,35 @@
         })
         .then(res => res.json())
         .then(res => {
-            btn.disabled = false;
-            btn.innerText = "💾 Simpan Persetujuan";
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "💾 Simpan Persetujuan";
+            }
+            
             if (res.result === "success") {
                 alert("✅ Informed Consent berhasil disimpan & diarsip ke Google Drive!");
+                
+                // 🔥 FIX: Menggunakan payload.noRM dan membaca semua kemungkinan nama properti URL dari server
+                window.urlFotoConsentAktif = res.urlFoto || res.urlBukti || res.linkFoto || "";
+                if (payload.noRM && payload.noRM !== "-") {
+                    localStorage.setItem('ttd_consent_' + payload.noRM, window.urlFotoConsentAktif);
+                }
+                
                 window.consentSudahDisimpanHariIni = true;
             
-            // 🔥 2. Perbarui tampilan tombol menjadi hijau sukses
-                periksaKebutuhanConsentUI();
-                tutupModalConsent();
-                // Opsional: jalankan fungsi lanjut simpan RME jika modal dipanggil di tengah input RME
+                // Perbarui tampilan tombol utama RME menjadi hijau sukses
+                if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+                if (typeof tutupModalConsent === "function") tutupModalConsent();
+                
             } else {
-                alert("❌ Gagal menyimpan consent: " + res.message);
+                alert("❌ Gagal menyimpan consent: " + (res.message || "Terjadi kesalahan server."));
             }
         })
         .catch(err => {
-            btn.disabled = false;
-            btn.innerText = "💾 Simpan Persetujuan";
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "💾 Simpan Persetujuan";
+            }
             console.error("Error consent:", err);
             alert("⚠️ Terjadi kesalahan koneksi sistem saat mengirim data.");
         });
@@ -9613,6 +9665,94 @@
         document.querySelectorAll('.badge-consent').forEach(el => el.remove());
         
         console.log("🔄 [Consent UI] Status dan tombol Informed Consent telah di-reset ke default.");
+    }
+
+    // =========================================================================
+    // 🖨️ EKSEKUTOR CETAK INFORMED CONSENT KE PDF (FRONTEND TO BACKEND)
+    // =========================================================================
+    function cetakInformedConsentPDF() {
+        const btnCetak = document.getElementById('btnCetakConsentPDF');
+        const teksAsli = btnCetak ? btnCetak.innerHTML : "🖨️ Cetak / Unduh PDF Resmi";
+        
+        if (btnCetak) {
+            btnCetak.disabled = true;
+            btnCetak.innerHTML = "⏳ Membuat Dokumen PDF... (Mohon Tunggu)";
+            btnCetak.style.backgroundColor = "#7f8c8d";
+        }
+
+        // 1. Kumpulkan data identitas dari memori aktif / layar DOM
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+        const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
+        const namaPasien = document.getElementById('lblConsentNama')?.innerText || document.getElementById('modalNama')?.value || "-";
+        const tindakan = document.getElementById('lblConsentTindakan')?.innerText || "-";
+        const diagnosa = document.getElementById('modalDiagnosa')?.value || "Sesuai rekam medis aktif";
+        
+        // Cari data detail pasokan dari tabel antrean global jika ada
+        let detailPasien = null;
+        if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal !== null) {
+            detailPasien = dataAntreanGlobal.find(p => p.noRM === noRM);
+        }
+
+        // 2. Kumpulkan daftar risiko yang dicentang di modal
+        let daftarRisiko = [];
+        document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked').forEach(chk => {
+            let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
+            if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) {
+                daftarRisiko.push(label);
+            }
+        });
+
+        // 3. Ambil URL Tanda Tangan dari memori lokal (tersimpan saat submit consent)
+        const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
+
+        const payload = {
+            action: "cetakConsentPDF",
+            noRM: noRM,
+            namaPasien: namaPasien,
+            umur: detailPasien && typeof hitungUmur === "function" ? `${hitungUmur(detailPasien.tanggalLahir)} Thn` : "-",
+            jenisKelamin: detailPasien?.jenisKelamin || "-",
+            alamat: detailPasien?.alamat || "-",
+            namaDokter: sessionData.username || "Dr. Aldila",
+            diagnosa: diagnosa,
+            tindakan: tindakan,
+            tujuan: "Penyembuhan & perbaikan fungsi klinis kedokteran gigi",
+            risiko: daftarRisiko,
+            namaPenandatangan: namaPasien,
+            linkFoto: urlFotoTTD
+        };
+
+        console.log("📤 [PDF Generator] Mengirim permintaan cetak ke server...", payload);
+
+        // 4. Kirim ke Google Apps Script
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (btnCetak) {
+                btnCetak.disabled = false;
+                btnCetak.innerHTML = teksAsli;
+                btnCetak.style.backgroundColor = "#2980b9";
+            }
+
+            if (res.result === "success" && res.pdfUrl) {
+                alert("✅ Dokumen PDF Resmi berhasil dicetak!\n\nDokumen akan dibuka secara otomatis di tab baru.");
+                // Buka PDF di tab baru browser
+                window.open(res.pdfUrl, '_blank');
+            } else {
+                alert("❌ Gagal membuat PDF: " + (res.message || "Terjadi kesalahan di server."));
+            }
+        })
+        .catch(err => {
+            if (btnCetak) {
+                btnCetak.disabled = false;
+                btnCetak.innerHTML = teksAsli;
+                btnCetak.style.backgroundColor = "#2980b9";
+            }
+            alert("⚠️ Gangguan koneksi saat menghubungi mesin cetak server.");
+            console.error("Error PDF Print:", err);
+        });
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
