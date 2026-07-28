@@ -9698,7 +9698,7 @@
     }
 
     // =========================================================================
-    // 🛡️ PENGATUR TOMBOL CONSENT (UNIVERSAL SELECTOR & MEMORY LOCK)
+    // 🛡️ PENGATUR TOMBOL CONSENT (UNIVERSAL + AUTO-LIGHT LABEL & GLOW EFFECT)
     // =========================================================================
     function periksaKebutuhanConsentUI() {
         const btnConsent = document.getElementById('btnBuatConsent');
@@ -9708,11 +9708,10 @@
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
 
-        // 🔥 2. GEMBOK MEMORI: Cek apakah pasien ini sudah punya Consent sah di localStorage
+        // 🔥 2. GEMBOK MEMORI: Cek apakah pasien sudah punya Consent sah di localStorage
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM) || window.urlFotoConsentAktif;
         const savedRisiko = localStorage.getItem('risiko_consent_' + cleanNoRM);
         
-        // Jika sudah ada persetujuan yang tersimpan untuk pasien ini, kunci hijau!
         if ((savedTTD && savedTTD !== "-" && savedTTD !== "undefined") || (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null)) {
             console.log("🟢 [Consent UI] Pasien " + cleanNoRM + " sudah memiliki Consent sah. Tombol dikunci Hijau!");
             window.consentSudahDisimpanHariIni = true;
@@ -9721,21 +9720,28 @@
             btnConsent.style.backgroundColor = "#27ae60"; // Hijau Sukses
             btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             btnConsent.style.display = "inline-flex";
+            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)"; // Reset glow
+            btnConsent.style.border = "none";
             return; 
         }
 
-        // --- 3. DETEKSI UNIVERSAL (TANPA TERGANTUNG NAMA CLASS): ---
+        // --- 3. SCANNER UNIVERSAL & PEMULIH LABEL PERINGATAN ---
         window.consentSudahDisimpanHariIni = false;
         let butuhConsent = false;
 
-        // Cari SELURUH elemen <select> atau <input> di dalam daftar tindakan medis
+        // Sembunyikan terlebih dahulu semua label/badge peringatan di semua baris
+        document.querySelectorAll('#kontainerTindakanDinamis .badge-wajib-consent, #kontainerTindakanDinamis [class*="badge"], #kontainerTindakanDinamis [class*="wajib"]').forEach(b => {
+            b.style.display = "none";
+        });
+
+        // Cari seluruh input atau dropdown tindakan medis
         const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis select, #kontainerTindakanDinamis input[type="text"], #kontainerTindakanDinamis input[type="hidden"]');
         
         semuaInputTindakan.forEach(el => {
             if (el && el.value) {
                 const teks = String(el.value).toLowerCase();
                 
-                // Daftar kata kunci tindakan kedokteran gigi yang berisiko:
+                // Daftar kata kunci tindakan medis berisiko:
                 if (teks.includes("odontektomi") || 
                     teks.includes("exo") || 
                     teks.includes("cabut") || 
@@ -9750,19 +9756,40 @@
                     teks.includes("graft")) {
                     
                     butuhConsent = true;
+
+                    // 🔥 NYALAKAN KEMBALI LABEL/BADGE DI BARIS TINDAKAN TERSEBUT:
+                    // Cari elemen pembungkus baris terdekat (div/tr/li)
+                    const baris = el.closest('.baris-tindakan-item') || el.closest('div[style*="flex"]') || el.parentElement.parentElement || el.parentElement;
+                    if (baris) {
+                        const badge = baris.querySelector('.badge-wajib-consent, [class*="badge"], [class*="wajib"], span[style*="color"]');
+                        if (badge) {
+                            badge.style.display = "inline-block"; // Munculkan labelnya!
+                            badge.style.visibility = "visible";
+                            badge.style.opacity = "1";
+                        }
+                    }
                 }
             }
         });
 
-        // 4. Ubah warna tombol sesuai hasil analisis tindakan
+        // 4. Atur warna dan efek "Menyala" pada tombol utama
         if (butuhConsent) {
             btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan Wajib
             btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
             btnConsent.style.display = "inline-flex";
+            
+            // 🔥 EFEK MENYALA (GLOWING BOX-SHADOW & BORDER TEGAS):
+            btnConsent.style.boxShadow = "0 0 12px rgba(230, 126, 34, 0.85)";
+            btnConsent.style.border = "2px solid #f39c12";
+            btnConsent.style.fontWeight = "bold";
         } else {
             btnConsent.style.backgroundColor = "#7f8c8d"; // Abu-abu Opsional
             btnConsent.innerHTML = "✍️ Buat Informed Consent";
             btnConsent.style.display = "inline-flex";
+            
+            // Reset efek menyala
+            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+            btnConsent.style.border = "none";
         }
     }
 
