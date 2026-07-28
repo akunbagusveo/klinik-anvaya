@@ -2216,6 +2216,18 @@
                     <button type="button" onclick="bersihkanTTD()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🗑️ Ulangi / Hapus</button>
                 </div>
                 <div style="border: 2px dashed #007bff; border-radius: 6px; background: #fafafa; display: inline-block; width: 100%;">
+                    <!-- 🔥 BANNER PRATINJAU TTD (Muncul otomatis saat melihat mode pratinjau/revisi) -->
+                    <div id="bannerPratinjauTTD" style="display: none; margin-bottom: 12px; padding: 12px; background-color: #e8f4f8; border: 1px dashed #2980b9; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 12px; font-weight: bold; color: #2c3e50; margin-bottom: 8px;">
+                            🔒 Tanda Tangan Digital yang Telah Tersimpan & Sah:
+                        </div>
+                        <div style="background-color: white; display: inline-block; padding: 5px 15px; border-radius: 4px; border: 1px solid #bdc3c7; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <img id="imgPratinjauTTD" src="" alt="Bukti TTD Pasien" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                        </div>
+                        <div style="font-size: 11px; color: #7f8c8d; margin-top: 6px;">
+                            *Jika ingin merevisi atau mengganti, cukup tekan tombol <b>"Ulangi / Hapus"</b> dan gambar ulang di kanvas bawah.
+                        </div>
+                    </div>
                     <canvas id="canvasTTD" width="550" height="180" style="width: 100%; height: 180px; cursor: crosshair; touch-action: none;"></canvas>
                 </div>
                 <small style="color: #666; font-size: 11px;">*Gunakan mouse (PC) atau jari/stylus (Tablet/HP) untuk bertanda tangan di dalam kotak.</small>
@@ -9408,6 +9420,9 @@
         if (ctx && canvas) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
+
+        const bannerTTD = document.getElementById('bannerPratinjauTTD');
+        if (bannerTTD) bannerTTD.style.display = "none";
     }
 
     // 2. Kontrol Buka & Tutup Modal
@@ -9422,6 +9437,8 @@
         const modal = document.getElementById('modalInformedConsent');
         const btnSimpan = document.getElementById('btnSimpanConsent');
         const chkSetuju = document.getElementById('chkSayaSetuju');
+        const bannerTTD = document.getElementById('bannerPratinjauTTD');
+        const imgTTD = document.getElementById('imgPratinjauTTD');
 
         if (window.consentSudahDisimpanHariIni === true) {
             // 🟢 MODE PRATINJAU / REVISI:
@@ -9436,6 +9453,15 @@
             // 🔥 TAMBAHAN DINAMIS: Tampilkan tombol Cetak PDF resmi!
             const btnCetak = document.getElementById('btnCetakConsentPDF');
             if (btnCetak) btnCetak.style.display = "inline-block";
+
+            const noRM = document.getElementById('lblConsentRM')?.innerText || "-";
+            const urlFoto = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "";
+            if (bannerTTD && imgTTD && urlFoto && urlFoto !== "-" && urlFoto !== "undefined") {
+                imgTTD.src = urlFoto;
+                bannerTTD.style.display = "block";
+            } else if (bannerTTD) {
+                bannerTTD.style.display = "none";
+            }
             
         } else {
             // 🟠 MODE INPUT BARU:
@@ -9458,8 +9484,10 @@
                 inpKustom.style.display = 'none';
                 inpKustom.value = '';
             }
+            if (bannerTTD) bannerTTD.style.display = "none";
+            if (imgTTD) imgTTD.src = "";
             
-            console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
+            //console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
 
         }
         
