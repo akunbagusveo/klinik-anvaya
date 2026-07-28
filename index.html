@@ -9436,15 +9436,20 @@
         });
     }
 
-    // 2. Kontrol Buka & Tutup Modal
     // =========================================================================
-    // ✍️ PEMBUKA MODAL INFORMED CONSENT (100% DINAMIS, ANTI-BUG & LEGAL COMPLIANT)
+    // ✍️ PEMBUKA MODAL INFORMED CONSENT (WITH SMART RM & AUTO-LINK CONVERTER)
     // =========================================================================
     function bukaModalConsent(noRM, namaPasien, tindakan) {
-        const cleanNoRM = String(noRM || "-").trim();
+        // 🔥 1. SMART RM FALLBACK: Jika parameter noRM kosong, tarik langsung dari DOM layar!
+        let rawRM = noRM;
+        if (!rawRM || rawRM === "-" || rawRM === "undefined") {
+            rawRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
+        }
+        const cleanNoRM = String(rawRM).trim();
+
         document.getElementById('lblConsentRM').innerText = cleanNoRM;
-        document.getElementById('lblConsentNama').innerText = namaPasien || "-";
-        document.getElementById('lblConsentTindakan').innerText = tindakan || "-";
+        document.getElementById('lblConsentNama').innerText = namaPasien || document.getElementById('modalNama')?.value || "-";
+        document.getElementById('lblConsentTindakan').innerText = tindakan || document.getElementById('lblConsentTindakan')?.innerText || "-";
         
         const modal = document.getElementById('modalInformedConsent');
         const btnSimpan = document.getElementById('btnSimpanConsent');
@@ -9455,76 +9460,89 @@
 
         if (window.consentSudahDisimpanHariIni === true) {
             // =========================================================================
-            // 🟢 MODE PRATINJAU / REVISI (PULIHKAN DATA & KUNCI TOTAL / READ-ONLY)
+            // 🟢 MODE PRATINJAU / REVISI (TAMPILKAN FOTO TTD & KUNCI DATA)
             // =========================================================================
-            console.log("🔒 [Consent UI] Membuka modal dalam mode Pratinjau/Revisi (Terkunci).");
+            console.log("🔒 [Consent UI] Membuka modal Pratinjau untuk RM: " + cleanNoRM);
             
             if (btnSimpan) {
-                btnSimpan.style.backgroundColor = "#e67e22"; // Warna Oranye
+                btnSimpan.style.backgroundColor = "#e67e22"; // Oranye Revisi
                 btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
             }
             
-            // 1. Pulihkan centangan risiko dari memori DAN KUNCI (Disable) agar aman secara hukum
+            // 1. Pulihkan dan Kunci Checkbox Komplikasi
             const savedRisiko = JSON.parse(localStorage.getItem('risiko_consent_' + cleanNoRM) || '[]');
             document.querySelectorAll('#modalInformedConsent input[type="checkbox"]').forEach(chk => {
                 let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
                 if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) {
                     chk.checked = savedRisiko.includes(label) || savedRisiko.includes(chk.value);
-                    chk.disabled = true; // 🔥 KUNCI CHECKBOX
+                    chk.disabled = true; // Read-Only
                 }
             });
 
-            // 2. Kunci dan centang kotak pernyataan persetujuan
             if (chkSetuju) {
                 chkSetuju.checked = true;
-                chkSetuju.disabled = true; // 🔥 KUNCI PERNYATAAN
+                chkSetuju.disabled = true; // Read-Only
             }
             
-            // 3. Tampilkan dan atur status warna Tombol Cetak PDF dari Cache Memori
+            // 2. Atur Tombol Cetak PDF
             if (btnCetak) {
                 btnCetak.style.display = "inline-block";
                 const savedPdf = window.pdfConsentAktif || localStorage.getItem('pdf_url_consent_' + cleanNoRM);
                 if (savedPdf && savedPdf !== "-" && savedPdf !== "undefined") {
                     btnCetak.innerHTML = "📄 Buka Ulang PDF Resmi";
-                    btnCetak.style.backgroundColor = "#27ae60"; // Hijau (PDF sudah ada)
+                    btnCetak.style.backgroundColor = "#27ae60";
                 } else {
                     btnCetak.innerHTML = "🖨️ Cetak / Unduh PDF Resmi";
-                    btnCetak.style.backgroundColor = "#2980b9"; // Biru (Belum pernah cetak)
+                    btnCetak.style.backgroundColor = "#2980b9";
                 }
             }
 
-            // 4. Tampilkan Banner Foto TTD dari memori
-            const urlFoto = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + cleanNoRM) || "";
-            if (bannerTTD && imgTTD && urlFoto && urlFoto !== "-" && urlFoto !== "undefined") {
-                imgTTD.src = urlFoto;
-                bannerTTD.style.display = "block";
-            } else if (bannerTTD) {
-                bannerTTD.style.display = "none";
+            // 🔥 3. AUTO-CONVERTER & TAMPILKAN FOTO TANDA TANGAN DINAMIS
+            let urlFoto = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + cleanNoRM) || "";
+            
+            if (urlFoto && urlFoto !== "-" && urlFoto !== "undefined") {
+                // Jika yang tersimpan adalah link Drive biasa (/file/d/ID/view atau id=ID), ubah ke Direct Link!
+                let fileId = "";
+                const match = urlFoto.match(/id=([a-zA-Z0-9_-]+)/) || urlFoto.match(/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    fileId = match[1];
+                } else if (urlFoto.indexOf("http") === -1 && urlFoto.length > 20) {
+                    fileId = urlFoto;
+                }
+
+                // Jika berhasil menemukan ID, paksa gunakan format direct streaming Google Content
+                if (fileId !== "") {
+                    urlFoto = "https://lh3.googleusercontent.com/d/" + fileId;
+                }
+
+                console.log("📸 [Consent UI] Memuat foto TTD ke layar dari URL:", urlFoto);
+                if (imgTTD) imgTTD.src = urlFoto;
+                if (bannerTTD) bannerTTD.style.display = "block";
+            } else {
+                console.warn("⚠️ [Consent UI] Status Consent TRUE, namun URL foto TTD tidak ditemukan di memori untuk RM:", cleanNoRM);
+                if (bannerTTD) bannerTTD.style.display = "none";
             }
             
         } else {
             // =========================================================================
-            // 🟠 MODE INPUT BARU (KOSONGKAN & AKTIFKAN SEMUA ELEMEN)
+            // 🟠 MODE INPUT BARU (KOSONGKAN SEMUA ELEMEN)
             // =========================================================================
-            console.log("✍️ [Consent UI] Membuka modal untuk input baru (Checkbox kosong & aktif).");
+            console.log("✍️ [Consent UI] Membuka modal untuk input baru.");
             
             if (typeof bersihkanTTD === "function") bersihkanTTD();
             
             if (btnSimpan) {
-                btnSimpan.style.backgroundColor = "#28a745"; // Warna Hijau
+                btnSimpan.style.backgroundColor = "#28a745"; // Hijau Simpan
                 btnSimpan.innerHTML = "💾 Simpan Persetujuan";
             }
             
-            // 1. Kosongkan dan AKTIFKAN KEMBALI (Enable) semua checkbox komplikasi & pernyataan
             document.querySelectorAll('#modalInformedConsent input[type="checkbox"]').forEach(chk => {
-                chk.checked = false; // 🔥 KOSONG
-                chk.disabled = false; // 🔥 AKTIF AGAR BISA DIPILIH
+                chk.checked = false;
+                chk.disabled = false;
             });
 
-            // 2. Sembunyikan tombol cetak saat input baru
             if (btnCetak) btnCetak.style.display = "none";
             
-            // 3. Reset dropdown tujuan tindakan ke default (opsi ke-1)
             const selTujuan = document.getElementById('selTujuanConsent');
             const inpKustom = document.getElementById('inpTujuanKustomConsent');
             if (selTujuan) selTujuan.selectedIndex = 0;
@@ -9533,15 +9551,12 @@
                 inpKustom.value = '';
             }
             
-            // 4. Sembunyikan banner pratinjau
             if (bannerTTD) bannerTTD.style.display = "none";
             if (imgTTD) imgTTD.src = "";
         }
         
-        // Tampilkan modal ke layar
         if (modal) modal.style.display = 'flex';
         
-        // Inisialisasi sensor sentuhan canvas
         setTimeout(() => {
             if (typeof initSignaturePad === "function") initSignaturePad();
         }, 200);
