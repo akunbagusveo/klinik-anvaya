@@ -6818,8 +6818,12 @@
             // 🔥 FIX DUAL ID: Amankan penyimpanan data terlepas dari apapun nama ID elemennya
             resep: ambilNilaiDualId('resep', 'modalResep'),
             proPerawatan: ambilNilaiDualId('proPerawatan', 'modalProPerawatan'),
-            proKontrol: ambilNilaiDualId('proKontrol', 'modalProKontrol')
+            proKontrol: ambilNilaiDualId('proKontrol', 'modalProKontrol'),
+            
+            // 🔥 SATU-SATUNYA PENAMBAHAN DINAMIS: Simpan juga bukti TTD dari memori agar ikut ter-restore!
+            savedTTD: localStorage.getItem('ttd_consent_' + noRM) || ""
         };
+        
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
     }
 
@@ -6988,6 +6992,12 @@
         // Picu penyimpanan draft sesaat setelah baris baru ditambahkan ke layar
         simpanDraftRME();
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+
+        // 🔥 TAMBAHAN DINAMIS: Setiap kali baris tindakan ditambah/diubah, otomatis simpan ke Draf!
+        setTimeout(() => {
+            if (typeof simpanDraftRME === "function") simpanDraftRME();
+            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+        }, 150);
     }
 
     // 🔥 FUNGSI: Menghapus Baris Tindakan Tertentu
@@ -9623,33 +9633,33 @@
             if (res.result === "success") {
                 alert("✅ Informed Consent berhasil disimpan & diarsip ke Google Drive!");
                 
-                // 🔥 FIX: Menggunakan payload.noRM dan membaca semua kemungkinan nama properti URL dari server
-                window.urlFotoConsentAktif = res.urlFoto || res.urlBukti || res.linkFoto || "";
-                
-                if (payload.noRM && payload.noRM !== "-") {
-                    localStorage.setItem('risiko_consent_' + payload.noRM, JSON.stringify(risikoTerpilih));
-                }
-
-                else if (payload.noRM && payload.noRM !== "-") {
-                    localStorage.setItem('ttd_consent_' + payload.noRM, window.urlFotoConsentAktif);
-                }
-                // Simpan Tujuan Tindakan terpilih ke memori agar terbawa saat cetak PDF
-                window.tujuanConsentAktif = getTujuanConsentAktif();
-                if (payload.noRM && payload.noRM !== "-") {
-                    localStorage.setItem('tujuan_consent_' + payload.noRM, window.tujuanConsentAktif);
-                }
-
-                window.pdfConsentAktif = "";
-                if (payload.noRM && payload.noRM !== "-") {
-                    localStorage.removeItem('pdf_url_consent_' + payload.noRM);
+                // 🔥 1. KUNCI MEMORI PERMANEN (TTD & RISIKO):
+                const cleanRM = String(payload.noRM || "-").trim();
+                if (cleanRM && cleanRM !== "-") {
+                    // Simpan URL Direct dari server atau link foto
+                    const urlSah = res.urlFoto || res.linkFoto || res.urlBukti || window.urlFotoConsentAktif;
+                    localStorage.setItem('ttd_consent_' + cleanRM, urlSah);
+                    localStorage.setItem('risiko_consent_' + cleanRM, JSON.stringify(risikoTerpilih));
+                    if (window.tujuanConsentAktif) {
+                        localStorage.setItem('tujuan_consent_' + cleanRM, window.tujuanConsentAktif);
+                    }
                 }
                 
                 window.consentSudahDisimpanHariIni = true;
-            
-                // Perbarui tampilan tombol utama RME menjadi hijau sukses
+                if (res.urlFoto || res.linkFoto) window.urlFotoConsentAktif = res.urlFoto || res.linkFoto;
+
+                // 🔥 2. AUTO-SAVE DRAF RME SECARA SERENTAK:
+                // Paksa simpan seluruh form (termasuk tindakan) agar tidak hilang saat di-refresh!
+                if (typeof simpanDraftRME === "function") {
+                    console.log("💾 [Auto-Save] Menyimpan draf RME setelah Consent dibuat...");
+                    simpanDraftRME();
+                }
+
+                // 🔥 3. LANGSUNG UBAH TOMBOL DI FORM RME JADI HIJAU:
                 if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
-                if (typeof tutupModalConsent === "function") tutupModalConsent();
-                
+
+                // Tutup modal consent
+                document.getElementById('modalInformedConsent').style.display = 'none';
             } else {
                 alert("❌ Gagal menyimpan consent: " + (res.message || "Terjadi kesalahan server."));
             }
