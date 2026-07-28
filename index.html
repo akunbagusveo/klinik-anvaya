@@ -3994,14 +3994,20 @@
             infoLunas.style.display = window.isPasienLunasAktif ? 'block' : 'none';
         }
 
+        // =========================================================================
+        // 💾 RESTORASI DRAF RME (100% DINAMIS + CONSENT MEMORY BINDING)
+        // =========================================================================
         const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
         if (savedDraft && mode === 'input') { 
             try {
                 const draftObj = JSON.parse(savedDraft);
+                
+                // Helper pembaca dan pengisi nilai dinamis anti-error
                 const pasokNilai = (id, val) => {
                     const el = document.getElementById(id);
                     if (el) el.value = val || "";
                 };
+                
                 pasokNilai('modalAnamnesa', draftObj.anamnesa);
                 pasokNilai('modalObjektif', draftObj.objektif);
                 pasokNilai('modalDiagnosa', draftObj.diagnosa);
@@ -4013,17 +4019,29 @@
                 pasokNilai('proKontrol', draftObj.proKontrol);
                 pasokNilai('modalProKontrol', draftObj.proKontrol);
 
+                // 🔥 1. PEMULIH MEMORI CONSENT DARI DRAF (KUNCI TOMBOL TETAP HIJAU!):
+                if (draftObj.savedTTD && draftObj.savedTTD !== "-" && draftObj.savedTTD !== "") {
+                    console.log("🟢 [Draft Restore] Memulihkan bukti Consent dari draf untuk RM: " + cleanNoRM);
+                    localStorage.setItem('ttd_consent_' + cleanNoRM, draftObj.savedTTD);
+                    window.consentSudahDisimpanHariIni = true;
+                    window.urlFotoConsentAktif = draftObj.savedTTD;
+                }
+
+                // 🔥 2. PEMULIH TINDAKAN DINAMIS (HARGA + CATATAN KLINIS):
                 if (draftObj.tindakanDinamis && Array.isArray(draftObj.tindakanDinamis) && draftObj.tindakanDinamis.length > 0) {
                     draftObj.tindakanDinamis.forEach(t => {
                         if (typeof tambahBarisTindakan === "function") tambahBarisTindakan(t);
                     });
+                    
+                    // Jeda dinaikkan dari 80ms ke 150ms agar DOM browser tidak kewalahan merender baris
                     setTimeout(() => {
                         const barisAktif = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
                         barisAktif.forEach((row, index) => {
                             const dataDrafItem = draftObj.tindakanDinamis[index];
                             if (dataDrafItem) {
+                                // Restore Harga & Picu Kalkulator Total
                                 const inpHarga = row.querySelector('.inp-harga-tindakan');
-                                if (inpHarga) {
+                                if (inpHarga && dataDrafItem.hargaDiinput) {
                                     let hargaMurni = String(dataDrafItem.hargaDiinput).replace(/[^0-9]/g, '');
                                     if (hargaMurni) {
                                         inpHarga.value = hargaMurni;
@@ -4031,16 +4049,27 @@
                                         inpHarga.dispatchEvent(new Event('change'));
                                     }
                                 }
+                                // 🔥 Restore Catatan Klinis Tindakan (Yang sebelumnya terlewat)
+                                const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+                                if (inpCatatan && dataDrafItem.catatanKlinis) {
+                                    inpCatatan.value = dataDrafItem.catatanKlinis;
+                                }
                             }
                         });
+                        
+                        // Simpan ulang status dan kunci tombol consent setelah semua baris selesai dimuat
                         if (typeof simpanDraftRME === "function") simpanDraftRME();
                         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
-                    }, 80);
+                    }, 150);
+                } else {
+                    // Jika tidak ada tindakan di draf, tetap jalankan pemeriksaan tombol
+                    if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
                 }
             } catch(e) {
                 console.error("Gagal merestorasi data draf RME:", e);
             }
         }
+        // =========================================================================
 
         setTimeout(() => { window.isRestoringDraft = false; }, 200);
 
