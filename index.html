@@ -3933,8 +3933,34 @@
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
         
-        // 🔥 SISIPAN SOLUSI DINAMIS: Reset tombol consent saat buka pasien baru
+        // =========================================================================
+        // 🔥 SENSOR RESTORASI CONSENT (ANTI-HILANG SAAT HARD REFRESH)
+        // =========================================================================
         if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
+        window.consentSudahDisimpanHariIni = false;
+        window.urlFotoConsentAktif = "";
+        window.tujuanConsentAktif = "";
+
+        // Geledah memori lokal: Apakah pasien ini sudah punya consent yang tersimpan?
+        const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
+        const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM);
+
+        if (savedTTD && savedTTD !== "-" && savedTTD !== "undefined") {
+            console.log("🟢 [Consent Restore] Menemukan arsip consent untuk RM: " + cleanNoRM + ". Memulihkan status hijau...");
+            
+            // 1. Pulihkan status memori global
+            window.consentSudahDisimpanHariIni = true;
+            window.urlFotoConsentAktif = savedTTD;
+            if (savedTujuan) window.tujuanConsentAktif = savedTujuan;
+
+            // 2. Ubah tombol utama di form RME langsung menjadi Hijau Sukses
+            const btnConsent = document.getElementById('btnBuatConsent');
+            if (btnConsent) {
+                btnConsent.style.backgroundColor = "#27ae60"; // Warna hijau
+                btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
+            }
+        }
+        // =========================================================================
         
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
