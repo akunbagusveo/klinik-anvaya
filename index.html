@@ -2172,6 +2172,22 @@
                 <p style="margin: 4px 0; color: #d35400;"><strong>Tindakan Medis:</strong> <strong id="lblConsentTindakan">-</strong></p>
             </div>
 
+            <!-- 🔥 OPSI A: Dropdown Tujuan Tindakan Medis (Gold Standard) -->
+            <div style="margin-top: 10px; margin-bottom: 15px; background-color: #fcf3cf; padding: 10px 12px; border-radius: 4px; border: 1px solid #f1c40f;">
+                <label style="display: block; font-weight: bold; color: #7f8c8d; font-size: 12px; margin-bottom: 5px;">
+                    🎯 Tujuan Tindakan / Rencana Klinis:
+                </label>
+                <select id="selTujuanConsent" onchange="toggleTujuanKustomConsent(this.value)" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 13px; background-color: white; font-weight: 500;">
+                    <option value="Eliminasi fokus infeksi, abses, dan rasa sakit (Kuratif)">1. Eliminasi fokus infeksi, abses, dan rasa sakit (Kuratif)</option>
+                    <option value="Perbaikan fungsi pengunyahan (Mastikasi) & bicara (Fonetik)">2. Perbaikan fungsi pengunyahan (Mastikasi) & bicara (Fonetik)</option>
+                    <option value="Persiapan & penunjang perawatan Ortodonti / Kawat Gigi">3. Persiapan & penunjang perawatan Ortodonti / Kawat Gigi</option>
+                    <option value="Perbaikan estetika jaringan keras/lunak rongga mulut">4. Perbaikan estetika jaringan keras/lunak rongga mulut</option>
+                    <option value="KUSTOM">5. Lain-lain / Ketik Sendiri (Kustom)...</option>
+                </select>
+                <!-- Kotak input teks akan muncul otomatis hanya jika opsi 'KUSTOM' dipilih -->
+                <input type="text" id="inpTujuanKustomConsent" placeholder="Ketik tujuan klinis khusus di sini..." style="display: none; width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #3498db; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+            </div>
+
             <!-- Daftar Risiko Tindakan (Bisa Disesuaikan Dokter) -->
             <div style="margin-bottom: 15px;">
                 <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 8px; color: #333;">⚠️ Informasi & Risiko Tindakan (Centang yang dijelaskan):</label>
@@ -9408,41 +9424,18 @@
             // 🔥 TAMBAHAN DINAMIS: Sembunyikan tombol cetak saat input consent baru
             const btnCetak = document.getElementById('btnCetakConsentPDF');
             if (btnCetak) btnCetak.style.display = "none";
+            // Kosongkan dan reset dropdown tujuan ke default (opsi ke-1)
+            const selTujuan = document.getElementById('selTujuanConsent');
+            const inpKustom = document.getElementById('inpTujuanKustomConsent');
+            if (selTujuan) selTujuan.selectedIndex = 0;
+            if (inpKustom) {
+                inpKustom.style.display = 'none';
+                inpKustom.value = '';
+            }
             
             console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
+
         }
-        
-        // // 🔥 LOGIKA DINAMIS: Cek apakah Consent pada sesi pasien ini SUDAH TERSIMPAN sebelumnya?
-        // if (window.consentSudahDisimpanHariIni === true) {
-        //     // 🟢 MODE PRATINJAU / REVISI:
-        //     // 1. JANGAN hapus kanvas TTD & JANGAN kosongkan centang pernyataan!
-        //     console.log("🔒 [Consent UI] Membuka modal dalam mode Pratinjau/Revisi. TTD dipertahankan.");
-            
-        //     // 2. Ubah tampilan tombol simpan agar dokter paham ini adalah proses revisi/update
-        //     if (btnSimpan) {
-        //         btnSimpan.style.backgroundColor = "#e67e22"; // Warna oranye revisi
-        //         btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
-        //     }
-            
-        //     // 3. Pastikan centang pernyataan tetap aktif (jika sebelumnya terlepas)
-        //     if (chkSetuju) chkSetuju.checked = true;
-            
-        // } else {
-        //     // 🟠 MODE INPUT BARU:
-        //     // 1. Bersihkan kanvas TTD dari coretan pasien sebelumnya
-        //     if (typeof bersihkanTTD === "function") bersihkanTTD();
-            
-        //     // 2. Kosongkan centang pernyataan hukum
-        //     if (chkSetuju) chkSetuju.checked = false;
-            
-        //     // 3. Kembalikan tombol ke tampilan standar
-        //     if (btnSimpan) {
-        //         btnSimpan.style.backgroundColor = "#28a745"; // Warna hijau standar
-        //         btnSimpan.innerHTML = "💾 Simpan Persetujuan";
-        //     }
-            
-        //     console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
-        // }
         
         // Tampilkan modal ke layar
         if (modal) modal.style.display = 'flex';
@@ -9518,6 +9511,11 @@
                 window.urlFotoConsentAktif = res.urlFoto || res.urlBukti || res.linkFoto || "";
                 if (payload.noRM && payload.noRM !== "-") {
                     localStorage.setItem('ttd_consent_' + payload.noRM, window.urlFotoConsentAktif);
+                }
+                // Simpan Tujuan Tindakan terpilih ke memori agar terbawa saat cetak PDF
+                window.tujuanConsentAktif = getTujuanConsentAktif();
+                if (payload.noRM && payload.noRM !== "-") {
+                    localStorage.setItem('tujuan_consent_' + payload.noRM, window.tujuanConsentAktif);
                 }
                 
                 window.consentSudahDisimpanHariIni = true;
@@ -9726,6 +9724,9 @@
 
         // 3. Ambil URL Tanda Tangan
         const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
+        const tujuanTindakan = typeof getTujuanConsentAktif === "function" 
+                           ? getTujuanConsentAktif() 
+                           : (window.tujuanConsentAktif || localStorage.getItem('tujuan_consent_' + noRM) || "Penyembuhan & perbaikan fungsi klinis gigi");
 
         const payload = {
             action: "cetakConsentPDF",
@@ -9737,7 +9738,7 @@
             namaDokter: sessionData.username || "Dr. Aldila",
             diagnosa: diagnosa,
             tindakan: tindakan,
-            tujuan: "Penyembuhan & perbaikan fungsi klinis kedokteran gigi",
+            tujuan: tujuanTindakan,
             risiko: daftarRisiko,
             namaPenandatangan: namaPasien,
             linkFoto: urlFotoTTD
@@ -9773,6 +9774,33 @@
             alert("⚠️ Gangguan koneksi saat menghubungi mesin cetak server.");
             console.error("Error PDF Print:", err);
         });
+    }
+
+    // =========================================================================
+    // 🎯 HELPER TUJUAN TINDAKAN INFORMED CONSENT
+    // =========================================================================
+    function toggleTujuanKustomConsent(value) {
+        const inpKustom = document.getElementById('inpTujuanKustomConsent');
+        if (inpKustom) {
+            if (value === "KUSTOM") {
+                inpKustom.style.display = 'block';
+                inpKustom.focus();
+            } else {
+                inpKustom.style.display = 'none';
+                inpKustom.value = "";
+            }
+        }
+    }
+
+    function getTujuanConsentAktif() {
+        const sel = document.getElementById('selTujuanConsent');
+        const inpKustom = document.getElementById('inpTujuanKustomConsent');
+        if (!sel) return "Penyembuhan & perbaikan fungsi klinis kedokteran gigi";
+        
+        if (sel.value === "KUSTOM" && inpKustom && inpKustom.value.trim() !== "") {
+            return inpKustom.value.trim();
+        }
+        return sel.value !== "KUSTOM" ? sel.value : "Penyembuhan & perbaikan fungsi klinis kedokteran gigi";
     }
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
