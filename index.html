@@ -9364,19 +9364,57 @@
     }
 
     // 2. Kontrol Buka & Tutup Modal
+    // =========================================================================
+    // 📋 BUKA MODAL CONSENT DINAMIS (ANTI-KEBOCORAN / ANTI-HAPUS DATA)
+    // =========================================================================
     function bukaModalConsent(noRM, namaPasien, tindakan) {
         document.getElementById('lblConsentRM').innerText = noRM || "-";
         document.getElementById('lblConsentNama').innerText = namaPasien || "-";
         document.getElementById('lblConsentTindakan').innerText = tindakan || "-";
         
-        document.getElementById('chkSayaSetuju').checked = false;
-        bersihkanTTD();
-        
         const modal = document.getElementById('modalInformedConsent');
+        const btnSimpan = document.getElementById('btnSimpanConsent');
+        const chkSetuju = document.getElementById('chkSayaSetuju');
+        
+        // 🔥 LOGIKA DINAMIS: Cek apakah Consent pada sesi pasien ini SUDAH TERSIMPAN sebelumnya?
+        if (window.consentSudahDisimpanHariIni === true) {
+            // 🟢 MODE PRATINJAU / REVISI:
+            // 1. JANGAN hapus kanvas TTD & JANGAN kosongkan centang pernyataan!
+            console.log("🔒 [Consent UI] Membuka modal dalam mode Pratinjau/Revisi. TTD dipertahankan.");
+            
+            // 2. Ubah tampilan tombol simpan agar dokter paham ini adalah proses revisi/update
+            if (btnSimpan) {
+                btnSimpan.style.backgroundColor = "#e67e22"; // Warna oranye revisi
+                btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
+            }
+            
+            // 3. Pastikan centang pernyataan tetap aktif (jika sebelumnya terlepas)
+            if (chkSetuju) chkSetuju.checked = true;
+            
+        } else {
+            // 🟠 MODE INPUT BARU:
+            // 1. Bersihkan kanvas TTD dari coretan pasien sebelumnya
+            if (typeof bersihkanTTD === "function") bersihkanTTD();
+            
+            // 2. Kosongkan centang pernyataan hukum
+            if (chkSetuju) chkSetuju.checked = false;
+            
+            // 3. Kembalikan tombol ke tampilan standar
+            if (btnSimpan) {
+                btnSimpan.style.backgroundColor = "#28a745"; // Warna hijau standar
+                btnSimpan.innerHTML = "💾 Simpan Persetujuan";
+            }
+            
+            console.log("✍️ [Consent UI] Membuka modal untuk input persetujuan baru.");
+        }
+        
+        // Tampilkan modal ke layar
         if (modal) modal.style.display = 'flex';
         
-        // Inisialisasi canvas setelah modal tampil agar ukuran dimensinya akurat
-        setTimeout(initSignaturePad, 200);
+        // Inisialisasi sensor sentuhan canvas (aman, tidak akan menghapus gambar yang sudah ada)
+        setTimeout(() => {
+            if (typeof initSignaturePad === "function") initSignaturePad();
+        }, 200);
     }
 
     function tutupModalConsent() {
