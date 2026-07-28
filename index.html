@@ -9677,68 +9677,73 @@
         bukaModalConsent(noRM, namaPasien, teksTindakan);
     }
 
-    // Contoh sisipan pada fungsi saat tindakan dipilih/ditambahkan ke kontainer:
     // =========================================================================
-    // 🎨 ENGINE VISUAL OTOMATIS: PENANDA LABEL "WAJIB CONSENT" (REAL-TIME)
+    // 🛡️ PENGATUR TOMBOL CONSENT DI FORM RME (BENTENG MEMORI ANTI-RESET)
     // =========================================================================
     function periksaKebutuhanConsentUI() {
-        const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
-        const masterData = window.masterTindakanGlobal || [];
-        let adaTindakanBerisiko = false;
+        const btnConsent = document.getElementById('btnBuatConsent');
+        if (!btnConsent) return;
 
-        barisTindakan.forEach(row => {
-            const selNama = row.querySelector('.sel-nama-tindakan');
-            if (!selNama) return;
+        // 1. Ambil No. RM Pasien yang sedang aktif di form RME
+        const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
+        const cleanNoRM = String(noRM).trim();
 
-            const namaTerpilih = selNama.value ? selNama.value.trim().toLowerCase() : "";
-            let isWajib = false;
+        // 🔥 2. BENTENG PERTAHANAN: Cek apakah pasien ini SUDAH PUNYA consent di memori browser?
+        const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
+        
+        if (savedTTD && savedTTD !== "-" && savedTTD !== "undefined") {
+            console.log("🟢 [Consent UI] Pasien " + cleanNoRM + " sudah memiliki Consent sah. Mengunci tombol menjadi Hijau!");
+            
+            // Paksa memori global tetap TRUE agar tidak direset oleh fungsi edit!
+            window.consentSudahDisimpanHariIni = true;
+            window.urlFotoConsentAktif = savedTTD;
+            
+            // Ubah tampilan tombol utama RME menjadi Hijau Sukses
+            btnConsent.style.backgroundColor = "#27ae60"; 
+            btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
+            btnConsent.style.display = "inline-flex";
+            return; // 🔥 HENTIKAN FUNGSI DI SINI! Jangan biarkan sistem merubahnya jadi oranye!
+        }
 
-            // Cocokkan tindakan yang dipilih dengan database master di memori
-            if (namaTerpilih !== "" && masterData.length > 0) {
-                const itemMaster = masterData.find(item => {
-                    const namaMaster = (item.nama || item.namaTindakan || "").trim().toLowerCase();
-                    return namaMaster === namaTerpilih;
-                });
+        // --- JIKA BELUM ADA CONSENT DI MEMORI, BARU CEK APAKAH TINDAKAN BERISIKO ---
+        window.consentSudahDisimpanHariIni = false;
+        let butuhConsent = false;
 
-                if (itemMaster && (itemMaster.butuhConsent == 1 || itemMaster.butuhConsent === true)) {
-                    isWajib = true;
-                }
-            }
-
-            // 1. Kelola kemunculan Label / Badge Merah di baris tindakan tersebut
-            let badge = row.querySelector('.badge-consent');
-            if (isWajib) {
-                adaTindakanBerisiko = true;
-                row.setAttribute('data-butuh-consent', '1'); // Pasang atribut penanda untuk sistem validasi simpan
+        // Cek seluruh baris tindakan yang ada di form input
+        document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item').forEach(baris => {
+            const selTindakan = baris.querySelector('.sel-tindakan-medis');
+            const badge = baris.querySelector('.badge-wajib-consent');
+            
+            if (selTindakan && selTindakan.value) {
+                const namaTindakan = selTindakan.value.toLowerCase();
                 
-                // Jika label belum ada di layar, buat dan tampalkan!
-                if (!badge) {
-                    const badgeHtml = `<span class="badge-consent" style="background-color: #e74c3c; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: bold; margin-left: 8px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">⚠️ Wajib Consent</span>`;
-                    // Sisipkan di samping dropdown atau di header baris item
-                    selNama.parentNode.insertAdjacentHTML('beforeend', badgeHtml);
+                // Logika deteksi tindakan berisiko (Odontektomi, Exo, Implan, dll)
+                if (namaTindakan.includes("odontektomi") || 
+                    namaTindakan.includes("exo") || 
+                    namaTindakan.includes("cabut") || 
+                    namaTindakan.includes("implan") || 
+                    namaTindakan.includes("bedah") || 
+                    namaTindakan.includes("insisi") || 
+                    namaTindakan.includes("gingivectomi") || 
+                    namaTindakan.includes("frenektomi")) {
+                    
+                    butuhConsent = true;
+                    if (badge) badge.style.display = "inline-block";
+                } else {
+                    if (badge) badge.style.display = "none";
                 }
-            } else {
-                row.removeAttribute('data-butuh-consent');
-                if (badge) badge.remove(); // Hapus label jika dokter mengganti ke tindakan biasa
             }
         });
 
-        // 2. Kelola tampilan Tombol Utama "Buat Informed Consent"
-        const btnConsent = document.getElementById('btnBuatConsent');
-        if (btnConsent) {
-            if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
-                btnConsent.classList.add('btn-consent-wajib');
-                btnConsent.style.backgroundColor = "#d35400";
-                btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
-            } else if (window.consentSudahDisimpanHariIni) {
-                btnConsent.classList.remove('btn-consent-wajib');
-                btnConsent.style.backgroundColor = "#27ae60";
-                btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
-            } else {
-                btnConsent.classList.remove('btn-consent-wajib');
-                btnConsent.style.backgroundColor = "#e67e22";
-                btnConsent.innerHTML = "✍️ Buat Informed Consent";
-            }
+        // Atur tampilan tombol jika memang belum pernah buat consent
+        if (butuhConsent) {
+            btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan
+            btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
+            btnConsent.style.display = "inline-flex";
+        } else {
+            btnConsent.style.backgroundColor = "#7f8c8d"; // Abu-abu Opsional
+            btnConsent.innerHTML = "✍️ Buat Informed Consent";
+            btnConsent.style.display = "inline-flex";
         }
     }
 
