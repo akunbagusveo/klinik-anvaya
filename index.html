@@ -4001,6 +4001,7 @@
         .then(res => res.json())
         .then(res => {
             if(res.result === "success" && res.data) {
+                window.pasienRMEAktif = res.data;
                 let umur = typeof hitungUmur === "function" ? hitungUmur(res.data.tanggalLahir) : "-";
                 document.getElementById('lblProfilNama').innerText = res.data.nama || namaPasien || "-";
                 document.getElementById('lblProfilRM').innerText = res.data.noRM || cleanNoRM || "-";
@@ -9668,7 +9669,7 @@
     }
 
     // =========================================================================
-    // 🖨️ EKSEKUTOR CETAK INFORMED CONSENT KE PDF (FRONTEND TO BACKEND)
+    // 🖨️ EKSEKUTOR CETAK INFORMED CONSENT KE PDF (100% DINAMIS & ANTI-KOSONG)
     // =========================================================================
     function cetakInformedConsentPDF() {
         const btnCetak = document.getElementById('btnCetakConsentPDF');
@@ -9680,20 +9681,41 @@
             btnCetak.style.backgroundColor = "#7f8c8d";
         }
 
-        // 1. Kumpulkan data identitas dari memori aktif / layar DOM
+        // 1. Kumpulkan data dari 3 Lapisan Memori (Pasien Aktif -> Antrean -> DOM Layar)
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
         const namaPasien = document.getElementById('lblConsentNama')?.innerText || document.getElementById('modalNama')?.value || "-";
         const tindakan = document.getElementById('lblConsentTindakan')?.innerText || "-";
         const diagnosa = document.getElementById('modalDiagnosa')?.value || "Sesuai rekam medis aktif";
         
-        // Cari data detail pasokan dari tabel antrean global jika ada
-        let detailPasien = null;
+        // Tarik objek data pasien dari sensor yang kita pasang di Langkah 1
+        const pAktif = window.pasienRMEAktif || {};
+        let detailAntrean = null;
         if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal !== null) {
-            detailPasien = dataAntreanGlobal.find(p => p.noRM === noRM);
+            detailAntrean = dataAntreanGlobal.find(p => p.noRM === noRM);
         }
 
-        // 2. Kumpulkan daftar risiko yang dicentang di modal
+        // 🔥 LOGIKA EXTRAKSI DEMOGRAFI CERDAS:
+        // A. Umur / Tanggal Lahir:
+        let umurTeks = "-";
+        if (pAktif.tanggalLahir && typeof hitungUmur === "function") {
+            umurTeks = `${hitungUmur(pAktif.tanggalLahir)} Thn (${pAktif.tanggalLahir})`;
+        } else if (detailAntrean && detailAntrean.tanggalLahir && typeof hitungUmur === "function") {
+            umurTeks = `${hitungUmur(detailAntrean.tanggalLahir)} Thn`;
+        } else {
+            // Ekstrak dari teks di layar DOM: "Medan, 2001-02-07 (25 Thn)" -> ambil "(25 Thn)"
+            const domUmur = document.getElementById('lblProfilUmur')?.innerText || "";
+            const match = domUmur.match(/\((.*?)\)/);
+            umurTeks = match ? match[1] : (domUmur !== "-" ? domUmur : "-");
+        }
+
+        // B. Jenis Kelamin:
+        let jenisKelamin = pAktif.jenisKelamin || detailAntrean?.jenisKelamin || "-";
+        
+        // C. Alamat / Domisili:
+        let alamat = pAktif.alamat || document.getElementById('lblProfilDomisili')?.innerText || detailAntrean?.alamat || "-";
+
+        // 2. Kumpulkan daftar risiko yang dicentang
         let daftarRisiko = [];
         document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked').forEach(chk => {
             let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
@@ -9702,16 +9724,16 @@
             }
         });
 
-        // 3. Ambil URL Tanda Tangan dari memori lokal (tersimpan saat submit consent)
+        // 3. Ambil URL Tanda Tangan
         const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
 
         const payload = {
             action: "cetakConsentPDF",
             noRM: noRM,
             namaPasien: namaPasien,
-            umur: detailPasien && typeof hitungUmur === "function" ? `${hitungUmur(detailPasien.tanggalLahir)} Thn` : "-",
-            jenisKelamin: detailPasien?.jenisKelamin || "-",
-            alamat: detailPasien?.alamat || "-",
+            umur: umurTeks,
+            jenisKelamin: jenisKelamin,
+            alamat: alamat,
             namaDokter: sessionData.username || "Dr. Aldila",
             diagnosa: diagnosa,
             tindakan: tindakan,
@@ -9721,9 +9743,8 @@
             linkFoto: urlFotoTTD
         };
 
-        console.log("📤 [PDF Generator] Mengirim permintaan cetak ke server...", payload);
+        console.log("📤 [PDF Generator] Mengirim payload lengkap ke server:", payload);
 
-        // 4. Kirim ke Google Apps Script
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify(payload)
@@ -9738,7 +9759,6 @@
 
             if (res.result === "success" && res.pdfUrl) {
                 alert("✅ Dokumen PDF Resmi berhasil dicetak!\n\nDokumen akan dibuka secara otomatis di tab baru.");
-                // Buka PDF di tab baru browser
                 window.open(res.pdfUrl, '_blank');
             } else {
                 alert("❌ Gagal membuat PDF: " + (res.message || "Terjadi kesalahan di server."));
