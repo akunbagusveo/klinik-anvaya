@@ -9698,7 +9698,7 @@
     }
 
     // =========================================================================
-    // 🛡️ PENGATUR TOMBOL CONSENT DI FORM RME (GEMBOK MEMORI GANDA)
+    // 🛡️ PENGATUR TOMBOL CONSENT (UNIVERSAL SELECTOR & MEMORY LOCK)
     // =========================================================================
     function periksaKebutuhanConsentUI() {
         const btnConsent = document.getElementById('btnBuatConsent');
@@ -9708,52 +9708,55 @@
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
 
-        // 🔥 2. GEMBOK MEMORI: Cek apakah ada bukti TTD di variabel global ATAU localStorage
-        const savedTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + cleanNoRM);
+        // 🔥 2. GEMBOK MEMORI: Cek apakah pasien ini sudah punya Consent sah di localStorage
+        const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM) || window.urlFotoConsentAktif;
         const savedRisiko = localStorage.getItem('risiko_consent_' + cleanNoRM);
         
-        // Jika ada gambar TTD atau ada riwayat risiko yang tersimpan untuk RM ini, KUNCI HIJAU!
+        // Jika sudah ada persetujuan yang tersimpan untuk pasien ini, kunci hijau!
         if ((savedTTD && savedTTD !== "-" && savedTTD !== "undefined") || (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null)) {
-            console.log("🟢 [Consent UI] Pasien " + cleanNoRM + " terdeteksi sudah memiliki Consent sah. Kunci Hijau!");
-            
+            console.log("🟢 [Consent UI] Pasien " + cleanNoRM + " sudah memiliki Consent sah. Tombol dikunci Hijau!");
             window.consentSudahDisimpanHariIni = true;
             if (savedTTD) window.urlFotoConsentAktif = savedTTD;
             
             btnConsent.style.backgroundColor = "#27ae60"; // Hijau Sukses
             btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             btnConsent.style.display = "inline-flex";
-            return; // 🔥 BERHENTI DI SINI! Abaikan pengecekan tindakan di bawah!
+            return; 
         }
 
-        // --- JIKA BENAR-BENAR BELUM ADA CONSENT, BARU CEK TINDAKAN BERISIKO ---
+        // --- 3. DETEKSI UNIVERSAL (TANPA TERGANTUNG NAMA CLASS): ---
         window.consentSudahDisimpanHariIni = false;
         let butuhConsent = false;
 
-        document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item').forEach(baris => {
-            const selTindakan = baris.querySelector('.sel-tindakan-medis');
-            const badge = baris.querySelector('.badge-wajib-consent');
-            
-            if (selTindakan && selTindakan.value) {
-                const namaTindakan = selTindakan.value.toLowerCase();
-                if (namaTindakan.includes("odontektomi") || 
-                    namaTindakan.includes("exo") || 
-                    namaTindakan.includes("cabut") || 
-                    namaTindakan.includes("implan") || 
-                    namaTindakan.includes("bedah") || 
-                    namaTindakan.includes("insisi") || 
-                    namaTindakan.includes("gingivectomi") || 
-                    namaTindakan.includes("frenektomi")) {
+        // Cari SELURUH elemen <select> atau <input> di dalam daftar tindakan medis
+        const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis select, #kontainerTindakanDinamis input[type="text"], #kontainerTindakanDinamis input[type="hidden"]');
+        
+        semuaInputTindakan.forEach(el => {
+            if (el && el.value) {
+                const teks = String(el.value).toLowerCase();
+                
+                // Daftar kata kunci tindakan kedokteran gigi yang berisiko:
+                if (teks.includes("odontektomi") || 
+                    teks.includes("exo") || 
+                    teks.includes("cabut") || 
+                    teks.includes("implan") || 
+                    teks.includes("bedah") || 
+                    teks.includes("insisi") || 
+                    teks.includes("gingiv") || 
+                    teks.includes("frenektomi") ||
+                    teks.includes("alveol") ||
+                    teks.includes("operkul") ||
+                    teks.includes("kista") ||
+                    teks.includes("graft")) {
                     
                     butuhConsent = true;
-                    if (badge) badge.style.display = "inline-block";
-                } else {
-                    if (badge) badge.style.display = "none";
                 }
             }
         });
 
+        // 4. Ubah warna tombol sesuai hasil analisis tindakan
         if (butuhConsent) {
-            btnConsent.style.backgroundColor = "#e67e22"; // Oranye Wajib
+            btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan Wajib
             btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
             btnConsent.style.display = "inline-flex";
         } else {
