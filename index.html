@@ -6976,7 +6976,12 @@
         const elemenCatatan = rowWrapper.querySelector('.inp-catatan-tindakan');
 
         if (elemenKategori) elemenKategori.addEventListener('change', simpanDraftRME);
-        if (elemenTindakan) elemenTindakan.addEventListener('change', simpanDraftRME);
+        if (elemenTindakan) {
+            elemenTindakan.addEventListener('change', () => {
+                simpanDraftRME();
+                if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            });
+        }
         if (elemenHarga) {
             elemenHarga.addEventListener('input', simpanDraftRME);
             elemenHarga.addEventListener('change', simpanDraftRME);
@@ -7101,113 +7106,76 @@
     }
 
     // =========================================================================
-    // 🎨 PILIH TINDAKAN DENGAN TOMBOL BALIK CEPAT (MANUAL TOGGLE)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (WITH AUTO DATA-ATTRIBUTE & BADGE CONSENT)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
         if (!row) return;
 
         const inpHarga = row.querySelector('.inp-harga-tindakan');
-        const boxHarga = row.querySelector('.box-harga-container');
-        const divInfo = row.querySelector('.info-tindakan-detail');
-        const lblKategori = row.querySelector('.lbl-kategori');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
+        const infoDetail = row.querySelector('.info-tindakan-detail');
+        const selTindakan = row.querySelector('.sel-nama-tindakan');
 
         if (!namaTindakan) {
-            divInfo.style.display = 'none';
-            inpHarga.value = "";
-            inpHarga.disabled = true;
-            boxHarga.style.backgroundColor = "#f5f6fa";
-            return;
-        }
-
-        // Aktifkan area input harga
-        inpHarga.disabled = false;
-        boxHarga.style.backgroundColor = "white";
-
-        // Opsi Tindakan Kustom bebas biaya
-        if (namaTindakan === "KUSTOM") {
-            divInfo.style.display = 'block';
-            lblKategori.innerText = "KUSTOM";
-            lblKeterangan.innerText = "Bebas menentukan nama tindakan dan nominal harga baru.";
-            
-            inpHarga.readOnly = false;
-            inpHarga.value = "";
-            
-            // Pasang format ribuan dinamis pada text input kustom
-            inpHarga.oninput = function() {
-                let angkaBersih = this.value.replace(/[^0-9]/g, '');
-                this.value = angkaBersih ? Number(angkaBersih).toLocaleString('en-US') : '';
-                this.setCustomValidity("");
-                this.style.border = "none";
-            };
-            
-            const selTindakan = row.querySelector('.sel-nama-tindakan');
-            let cellTindakan = selTindakan ? selTindakan.parentElement : null;
-            if (cellTindakan && cellTindakan.classList.contains('wrapper-kustom-input')) {
-                cellTindakan = cellTindakan.parentElement;
-            }
-
-            const kategoriSekarang = row.querySelector('.sel-kategori-tindakan')?.value || "";
-            
-            // 🔥 SOLUSI DINAMIS: Ubah menjadi input teks disertai tombol kembali ke daftar standar ("🔙 Daftar")
-            if (cellTindakan) {
-                cellTindakan.innerHTML = `
-                    <div class="wrapper-kustom-input" style="display: flex; gap: 5px; width: 100%; align-items: center;">
-                        <input type="text" class="sel-nama-tindakan" placeholder="Ketik Tindakan Baru..." style="flex: 1; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px; box-sizing: border-box;" required>
-                        <button type="button" onclick="filterTindakanPerKategori('${rowId}', '${kategoriSekarang}')" title="Kembali ke Daftar Standar" style="background: #6c757d; color: white; border: none; padding: 0 10px; border-radius: 4px; cursor: pointer; font-size: 12px; height: 38px; white-space: nowrap; font-weight: bold; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">
-                            🔙 Daftar
-                        </button>
-                    </div>
-                `;
-                
-                // Pasang event listener draft pada input baru dan langsung fokuskan kursor
-                const inputBaru = cellTindakan.querySelector('.sel-nama-tindakan');
-                if (inputBaru) {
-                    if (typeof simpanDraftRME === "function") inputBaru.addEventListener('input', simpanDraftRME);
-                    inputBaru.focus();
-                }
-            }
-            
+            if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
+            if (infoDetail) infoDetail.style.display = 'none';
+            // Sembunyikan badge consent jika dibatalkan
+            const badgeLama = row.querySelector('.badge-wajib-consent');
+            if (badgeLama) badgeLama.style.display = 'none';
             if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
             return;
         }
 
-        const match = window.masterTindakanGlobal.find(t => t.nama === namaTindakan);
+        // 🔥 1. CARI DATA DI MASTER TINDAKAN GLOBAL:
+        const match = (window.masterTindakanGlobal || []).find(t => {
+            const n1 = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim().toLowerCase();
+            return n1 === String(namaTindakan).trim().toLowerCase();
+        });
+
         if (match) {
-            divInfo.style.display = 'block';
-            lblKategori.innerText = match.kategori.toUpperCase();
-            
-            if (match.hargaDasar === match.hargaMaksimal) {
-                lblKeterangan.innerText = `Tarif Tetap: Rp ${match.hargaDasar.toLocaleString('id-ID')}`;
-                inpHarga.value = match.hargaDasar.toLocaleString('en-US');
-                inpHarga.readOnly = true;
-                boxHarga.style.backgroundColor = "#f5f6fa";
-                inpHarga.setCustomValidity("");
-            } else {
-                lblKeterangan.innerText = `Batas Tarif: Rp ${match.hargaDasar.toLocaleString('id-ID')} s/d Rp ${match.hargaMaksimal.toLocaleString('id-ID')} (${match.keterangan})`;
-                inpHarga.value = match.hargaDasar.toLocaleString('en-US');
-                inpHarga.readOnly = false;
+            // Isi harga & keterangan
+            if (inpHarga) {
+                inpHarga.disabled = false;
+                inpHarga.value = Number(match.harga || match.Harga || 0).toLocaleString('en-US');
+                inpHarga.dispatchEvent(new Event('input'));
+                inpHarga.dispatchEvent(new Event('change'));
+            }
+            if (lblKeterangan) lblKeterangan.innerText = match.keterangan || "";
+            if (infoDetail) infoDetail.style.display = 'block';
 
-                // Logika Format Koma Realtime + Pengecekan Rentang Nilai
-                inpHarga.oninput = function() {
-                    let angkaBersih = this.value.replace(/[^0-9]/g, '');
-                    let nominalAngka = Number(angkaBersih);
+            // 🔥 2. CEK KOLOM Butuh_Consent DARI DATABASE (100% PRESISI):
+            const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || match.butuh_consent || match[3] || 0;
+            const isWajibConsent = (String(butuhConsentVal) === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
 
-                    // Format visual di kotak teks memakai koma en-US (700,000)
-                    this.value = angkaBersih ? nominalAngka.toLocaleString('en-US') : '';
+            // Tanamkan atribut ke <select> agar terbaca instan oleh scanner
+            if (selTindakan) {
+                selTindakan.setAttribute('data-butuh-consent', isWajibConsent ? "1" : "0");
+            }
 
-                    if (nominalAngka < match.hargaDasar || nominalAngka > match.hargaMaksimal) {
-                        boxHarga.style.border = "2px solid #e74c3c";
-                        this.setCustomValidity(`Harga harus di antara Rp ${match.hargaDasar.toLocaleString('id-ID')} - Rp ${match.hargaMaksimal.toLocaleString('id-ID')}`);
-                    } else {
-                        boxHarga.style.border = "1px solid #bdc3c7";
-                        this.setCustomValidity("");
+            // 🔥 3. MUNCULKAN LABEL/BADGE PERINGATAN DI BAWAH DROPDOWN TINDAKAN:
+            let badge = row.querySelector('.badge-wajib-consent');
+            if (isWajibConsent) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'badge-wajib-consent';
+                    badge.style = "display: inline-block; background-color: #e67e22; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-top: 4px; align-self: flex-start;";
+                    badge.innerHTML = "⚠️ Wajib Informed Consent";
+                    
+                    // Letakkan badge di bawah <select> tindakan
+                    if (selTindakan && selTindakan.parentElement) {
+                        selTindakan.parentElement.appendChild(badge);
                     }
-                };
+                } else {
+                    badge.style.display = "inline-block";
+                }
+            } else if (badge) {
+                badge.style.display = "none";
             }
         }
-        
+
+        // 🔥 4. LANGSUNG EVALUASI DAN NYALAKAN TOMBOL CONSENT DI FORM RME:
+        if (typeof simpanDraftRME === "function") simpanDraftRME();
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
     }
 
