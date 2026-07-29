@@ -6885,7 +6885,7 @@
 
     
     // =========================================================================
-    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER (100% LENGKAP)
+    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER (FIX CURRENCY)
     // =========================================================================
     function muatMasterTindakan() {
         fetch(WEB_APP_URL, {
@@ -6895,16 +6895,20 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success" && Array.isArray(res.data)) {
-                // 🔥 NORMALISASI DINAMIS: Mappping seluruh variasi nama kolom dari Google Sheets
-                window.masterTindakanGlobal = res.data.map(item => ({
-                    ...item,
-                    kategori: String(item.kategori || item.Kategori || "").trim(),
-                    nama: String(item.nama || item["Nama Tindakan"] || item.Nama_Tindakan || item.namaTindakan || "").trim(),
-                    // Amankan pembacaan Harga Dasar (mendukung spasi maupun underscore)
-                    harga: Number(item.harga || item["Harga Dasar"] || item.Harga_Dasar || item.Harga || item[3] || 0),
-                    keterangan: String(item.keterangan || item.Keterangan || item[5] || "").trim(),
-                    Butuh_Consent: (String(item.Butuh_Consent || item["Butuh_Consent"] || item.butuhConsent || "0").trim() === "1" || item.Butuh_Consent === 1 || item.butuhConsent === 1) ? 1 : 0
-                }));
+                window.masterTindakanGlobal = res.data.map(item => {
+                    // 🔥 MESIN PEMBERSIH ANGKA: Hapus titik/koma agar JS tidak bingung!
+                    const mentahHarga = item.harga || item["Harga Dasar"] || item.Harga_Dasar || item.Harga || item[3] || 0;
+                    const hargaBersih = Number(String(mentahHarga).replace(/[^0-9]/g, '')) || 0;
+
+                    return {
+                        ...item,
+                        kategori: String(item.kategori || item.Kategori || "").trim(),
+                        nama: String(item.nama || item["Nama Tindakan"] || item.Nama_Tindakan || item.namaTindakan || "").trim(),
+                        harga: hargaBersih, // Simpan sebagai angka murni
+                        keterangan: String(item.keterangan || item.Keterangan || item[5] || "").trim(),
+                        Butuh_Consent: (String(item.Butuh_Consent || item["Butuh_Consent"] || item.butuhConsent || "0").trim() === "1" || item.Butuh_Consent === 1 || item.butuhConsent === 1) ? 1 : 0
+                    };
+                });
                 console.log("🚀 Master Tindakan Berhasil Dimuat & Dinormalisasi:", window.masterTindakanGlobal.length, "item.");
             } else {
                 console.error("❌ Gagal memuat master tindakan:", res.message);
@@ -7135,7 +7139,7 @@
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (FIX HARGA, KETERANGAN & BADGE CONSENT)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (FIX HARGA STRIPPER, KETERANGAN & BADGE)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
@@ -7157,7 +7161,7 @@
             return;
         }
 
-        // 1. CARI DATA DI MASTER TINDAKAN GLOBAL DENGAN TRIM GANDA:
+        // 1. CARI DATA DI MASTER TINDAKAN GLOBAL:
         const match = (window.masterTindakanGlobal || []).find(t => {
             const n1 = String(t.nama || t["Nama Tindakan"] || t.Nama_Tindakan || "").trim().toLowerCase();
             return n1 === cleanNamaPilihan.toLowerCase();
@@ -7166,10 +7170,12 @@
         let isWajibConsent = false;
 
         if (match) {
-            // 🔥 FIX HARGA & KETERANGAN: Baca dari properti yang sudah dinormalisasi
+            // 🔥 FIX HARGA DENGAN PEMBERSIH ANGKA GANDA
             if (inpHarga) {
                 inpHarga.disabled = false;
-                const nominalHarga = Number(match.harga || match["Harga Dasar"] || match.Harga_Dasar || 0);
+                const mentahHarga = match.harga || match["Harga Dasar"] || match.Harga_Dasar || 0;
+                const nominalHarga = Number(String(mentahHarga).replace(/[^0-9]/g, '')) || 0;
+                
                 inpHarga.value = nominalHarga > 0 ? nominalHarga.toLocaleString('en-US') : "";
                 inpHarga.dispatchEvent(new Event('input'));
                 inpHarga.dispatchEvent(new Event('change'));
@@ -7183,7 +7189,7 @@
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
         }
 
-        // 2. BACKUP SCANNER: Cek juga langsung dari atribut data-butuh-consent tag <option> yang aktif
+        // 2. BACKUP SCANNER: Cek dari atribut data-butuh-consent
         if (!isWajibConsent && selTindakan && selTindakan.selectedIndex >= 0) {
             const optAktif = selTindakan.options[selTindakan.selectedIndex];
             if (optAktif && optAktif.getAttribute('data-butuh-consent') === "1") {
@@ -7191,7 +7197,7 @@
             }
         }
 
-        // 3. MUNCULKAN ATAU SEMBUNYIKAN BADGE DI BAWAH DROPDOWN TINDAKAN:
+        // 3. MUNCULKAN ATAU SEMBUNYIKAN BADGE:
         let badge = row.querySelector('.badge-wajib-consent');
         if (isWajibConsent) {
             if (!badge) {
@@ -7210,7 +7216,7 @@
             badge.style.display = "none";
         }
 
-        // 4. PICU KALKULASI TOMBOL CONSENT SECARA LANGSUNG:
+        // 4. PICU KALKULASI TOMBOL CONSENT:
         if (typeof simpanDraftRME === "function") simpanDraftRME();
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
     }
