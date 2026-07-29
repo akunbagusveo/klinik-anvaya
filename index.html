@@ -4351,27 +4351,42 @@
 
     // 🔥 FUNGSI BARU: Mengamankan form jika dokter membatalkan proses edit
     function batalEditRME() {
-        // 1. Kosongkan isian dan memori form untuk keamanan
-        document.getElementById('formModalMedisSplit').reset();
-        document.getElementById('modalRowUpdate').value = "";
+        // 🔥 1. OBAT BIUS (SABUK PENGAMAN TAMBAHAN): 
+        // Tidurkan fungsi Auto-Save (simpanDraftRME) selama proses pembersihan berlangsung!
+        window.isRestoringDraft = true; 
+
+        // 2. Kosongkan isian dan memori form untuk keamanan
+        const formSplit = document.getElementById('formModalMedisSplit');
+        if (formSplit) formSplit.reset();
+        
+        const rowUpdate = document.getElementById('modalRowUpdate');
+        if (rowUpdate) rowUpdate.value = "";
 
         if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
         
-        // 2. Sembunyikan tombol batal dan kembalikan teks tombol simpan
-        document.getElementById('btnBatalEdit').style.display = 'none';
-        document.getElementById('btnSimpanRME').innerHTML = "💾 Simpan & Selesaikan Kunjungan";
+        // 3. Sembunyikan tombol batal dan kembalikan teks tombol simpan
+        const btnBatal = document.getElementById('btnBatalEdit');
+        if (btnBatal) btnBatal.style.display = 'none';
         
-        // 3. 🔥 PERUBAHAN UTAMA: Sembunyikan (tutup) kolom input kiri sepenuhnya
-        document.getElementById('kolomInputRME').style.display = 'none';
+        const btnSimpan = document.getElementById('btnSimpanRME');
+        if (btnSimpan) btnSimpan.innerHTML = "💾 Simpan & Selesaikan Kunjungan";
         
-        // Tidak perlu lagi menggunakan alert() yang menginterupsi layar, 
-        // karena hilangnya form sudah menjadi indikator visual yang jelas.
+        // 4. Sembunyikan (tutup) kolom input kiri sepenuhnya
+        const kolomInput = document.getElementById('kolomInputRME');
+        if (kolomInput) kolomInput.style.display = 'none';
 
+        // 5. Sapu bersih baris tindakan
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
         }
         
+        // 🔥 6. BANGUNKAN KEMBALI AUTO-SAVE: 
+        // Beri jeda 200ms agar browser selesai merender form kosong, baru aktifkan lagi.
+        setTimeout(() => { 
+            window.isRestoringDraft = false; 
+        }, 200);
+
         alert("Mode edit dibatalkan. Formulir telah dibersihkan.");
     }
 
@@ -6801,8 +6816,9 @@
         });
     });
 
-    // 🌟 FITUR BARU: Auto-Save Draft Sementara ke Browser
-    // 🔥 FIX UTAMA 2: Integrasikan baris dinamis ke dalam Brankas Draf Lokal
+    // =========================================================================
+    // 💾 PENYIMPAN DRAF RME (DENGAN SABUK PENGAMAN ANTI-RACE CONDITION)
+    // =========================================================================
     function simpanDraftRME() {
         const modalRME = document.getElementById('modalRiwayatFull');
         // 1. Jangan simpan jika modal sedang disembunyikan (Mencegah sistem menimpa draf dengan form kosong)
@@ -6810,12 +6826,14 @@
         
         // 2. Jangan simpan jika sistem sedang dalam proses memuat/merestorasi data
         if (window.isRestoringDraft) return;
+        
         const elNoRM = document.getElementById('modalNoRM');
         if (!elNoRM) return;
         const noRM = elNoRM.value ? elNoRM.value.trim() : (elNoRM.innerText ? elNoRM.innerText.trim() : "");
-        if (!noRM) return;
+        // 🔥 SABUK PENGAMAN 1: Jangan pernah menyimpan draf jika RM kosong!
+        if (!noRM || noRM === "-" || noRM === "undefined") return;
 
-        // Fungsi pembaca nilai aman yang mendukung dual-ID (dengan atau tanpa awalan 'modal')
+        // Fungsi pembaca nilai aman yang mendukung dual-ID
         const ambilNilaiDualId = (idUtama, idAlternatif) => {
             const el1 = document.getElementById(idUtama);
             if (el1) return el1.value;
@@ -6830,7 +6848,8 @@
             const selNama = row.querySelector('.sel-nama-tindakan');
             const inpHarga = row.querySelector('.inp-harga-tindakan');
             const inpCatatan = row.querySelector('.inp-catatan-tindakan');
-            if (selNama && selNama.value) {
+            // Pastikan nama tindakan benar-benar ada (bukan string kosong atau "-- Pilih --")
+            if (selNama && selNama.value && selNama.value.trim() !== "") {
                 listTindakanDraft.push({
                     namaTindakan: selNama.value,
                     hargaDiinput: inpHarga ? inpHarga.value : "0",
@@ -6839,21 +6858,33 @@
             }
         });
 
+        const anamnesa = ambilNilaiDualId('modalAnamnesa', 'anamnesa');
+        const objektif = ambilNilaiDualId('modalObjektif', 'objektif');
+        const diagnosa = ambilNilaiDualId('modalDiagnosa', 'diagnosa');
+        const resep = ambilNilaiDualId('resep', 'modalResep');
+
+        // 🔥 SABUK PENGAMAN 2: Jangan menimpa memori jika seluruh form benar-benar KOSONG!
+        // (Ini terjadi saat fungsi reset/bersihkan form dipanggil dan secara tidak sengaja memicu onchange)
+        if (listTindakanDraft.length === 0 && anamnesa === "" && objektif === "" && diagnosa === "" && resep === "") {
+            console.warn("⚠️ [Draft Protector] Form RME terdeteksi kosong melompong. Penyimpanan draf dibatalkan agar tidak menimpa draf sebelumnya yang sudah berisi data.");
+            return;
+        }
+
         const draft = {
-            anamnesa: ambilNilaiDualId('modalAnamnesa', 'anamnesa'),
-            objektif: ambilNilaiDualId('modalObjektif', 'objektif'),
-            diagnosa: ambilNilaiDualId('modalDiagnosa', 'diagnosa'),
+            anamnesa: anamnesa,
+            objektif: objektif,
+            diagnosa: diagnosa,
             tindakanDinamis: listTindakanDraft, 
-            // 🔥 FIX DUAL ID: Amankan penyimpanan data terlepas dari apapun nama ID elemennya
-            resep: ambilNilaiDualId('resep', 'modalResep'),
+            resep: resep,
             proPerawatan: ambilNilaiDualId('proPerawatan', 'modalProPerawatan'),
             proKontrol: ambilNilaiDualId('proKontrol', 'modalProKontrol'),
             
-            // 🔥 SATU-SATUNYA PENAMBAHAN DINAMIS: Simpan juga bukti TTD dari memori agar ikut ter-restore!
+            // Simpan juga bukti TTD dari memori agar ikut ter-restore
             savedTTD: localStorage.getItem('ttd_consent_' + noRM) || ""
         };
         
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
+        console.log("💾 [Auto-Save] Draf RME berhasil disimpan untuk RM:", noRM);
     }
 
     // 🔥 FUNGSI PINTAR: Mengubah Paragraf/Kalimat Menjadi Bullet Poin Dinamis
