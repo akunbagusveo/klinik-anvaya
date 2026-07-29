@@ -6885,7 +6885,7 @@
 
     
     // =========================================================================
-    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER
+    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER (100% LENGKAP)
     // =========================================================================
     function muatMasterTindakan() {
         fetch(WEB_APP_URL, {
@@ -6895,12 +6895,15 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success" && Array.isArray(res.data)) {
-                // 🔥 NORMALISASI DINAMIS: Bersihkan semua spasi ganda dan petakan nilai Butuh_Consent dengan jelas
+                // 🔥 NORMALISASI DINAMIS: Mappping seluruh variasi nama kolom dari Google Sheets
                 window.masterTindakanGlobal = res.data.map(item => ({
                     ...item,
                     kategori: String(item.kategori || item.Kategori || "").trim(),
-                    nama: String(item.nama || item.Nama_Tindakan || item.namaTindakan || "").trim(),
-                    Butuh_Consent: (String(item.Butuh_Consent || item.butuhConsent || item.butuh_consent || "0").trim() === "1" || item.Butuh_Consent === 1 || item.butuhConsent === 1) ? 1 : 0
+                    nama: String(item.nama || item["Nama Tindakan"] || item.Nama_Tindakan || item.namaTindakan || "").trim(),
+                    // Amankan pembacaan Harga Dasar (mendukung spasi maupun underscore)
+                    harga: Number(item.harga || item["Harga Dasar"] || item.Harga_Dasar || item.Harga || item[3] || 0),
+                    keterangan: String(item.keterangan || item.Keterangan || item[5] || "").trim(),
+                    Butuh_Consent: (String(item.Butuh_Consent || item["Butuh_Consent"] || item.butuhConsent || "0").trim() === "1" || item.Butuh_Consent === 1 || item.butuhConsent === 1) ? 1 : 0
                 }));
                 console.log("🚀 Master Tindakan Berhasil Dimuat & Dinormalisasi:", window.masterTindakanGlobal.length, "item.");
             } else {
@@ -7132,7 +7135,7 @@
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (ANTI-WHITESPACE & REAL-TIME CONSENT TRIGGER)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (FIX HARGA, KETERANGAN & BADGE CONSENT)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
@@ -7156,21 +7159,25 @@
 
         // 1. CARI DATA DI MASTER TINDAKAN GLOBAL DENGAN TRIM GANDA:
         const match = (window.masterTindakanGlobal || []).find(t => {
-            const n1 = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim().toLowerCase();
+            const n1 = String(t.nama || t["Nama Tindakan"] || t.Nama_Tindakan || "").trim().toLowerCase();
             return n1 === cleanNamaPilihan.toLowerCase();
         });
 
         let isWajibConsent = false;
 
         if (match) {
+            // 🔥 FIX HARGA & KETERANGAN: Baca dari properti yang sudah dinormalisasi
             if (inpHarga) {
                 inpHarga.disabled = false;
-                inpHarga.value = Number(match.harga || match.Harga || 0).toLocaleString('en-US');
+                const nominalHarga = Number(match.harga || match["Harga Dasar"] || match.Harga_Dasar || 0);
+                inpHarga.value = nominalHarga > 0 ? nominalHarga.toLocaleString('en-US') : "";
                 inpHarga.dispatchEvent(new Event('input'));
                 inpHarga.dispatchEvent(new Event('change'));
             }
-            if (lblKeterangan) lblKeterangan.innerText = match.keterangan || "";
-            if (infoDetail) infoDetail.style.display = 'block';
+            
+            const teksKet = String(match.keterangan || match.Keterangan || "").trim();
+            if (lblKeterangan) lblKeterangan.innerText = teksKet;
+            if (infoDetail) infoDetail.style.display = teksKet ? 'block' : 'none';
 
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || match.butuh_consent || match[3] || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
@@ -9776,7 +9783,7 @@
     }
 
     // =========================================================================
-    // 🛡️ PENGATUR TOMBOL CONSENT (3-LAYER SCANNER: MASTER TINDAKAN + KEYWORD)
+    // 🛡️ PENGATUR TOMBOL CONSENT (HANYA MEMINDAI NAMA TINDAKAN, BUKAN KATEGORI)
     // =========================================================================
     function periksaKebutuhanConsentUI() {
         const btnConsent = document.getElementById('btnBuatConsent');
@@ -9786,12 +9793,11 @@
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
 
-        // 🔥 2. GEMBOK MEMORI: Cek apakah pasien sudah punya Consent sah di localStorage
+        // 2. GEMBOK MEMORI: Cek apakah pasien sudah punya Consent sah di localStorage
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM) || window.urlFotoConsentAktif;
         const savedRisiko = localStorage.getItem('risiko_consent_' + cleanNoRM);
         
         if ((savedTTD && savedTTD !== "-" && savedTTD !== "undefined") || (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null)) {
-            console.log("🟢 [Consent UI] Pasien " + cleanNoRM + " sudah memiliki Consent sah. Tombol dikunci Hijau!");
             window.consentSudahDisimpanHariIni = true;
             if (savedTTD) window.urlFotoConsentAktif = savedTTD;
             
@@ -9803,92 +9809,58 @@
             return; 
         }
 
-        // --- 3. PEMINDAI 3 LAPIS (DATABASE ATTRIBUTE + GLOBAL MEMORY + KEYWORDS) ---
+        // --- 3. PEMINDAI AKURAT (HANYA CEK DROPDOWN TINDAKAN & INPUT TEKS) ---
         window.consentSudahDisimpanHariIni = false;
         let butuhConsent = false;
 
-        // Sembunyikan terlebih dahulu semua badge peringatan
-        document.querySelectorAll('#kontainerTindakanDinamis .badge-wajib-consent, #kontainerTindakanDinamis [class*="badge"], #kontainerTindakanDinamis [class*="wajib"]').forEach(b => {
-            b.style.display = "none";
-        });
-
-        const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis select, #kontainerTindakanDinamis input[type="text"], #kontainerTindakanDinamis input[type="hidden"]');
+        // 🔥 PENTING: Hanya cari '.sel-nama-tindakan' atau input teks kustom, ABAIKAN '.sel-kategori-tindakan'!
+        const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis .sel-nama-tindakan, #kontainerTindakanDinamis input[type="text"]');
         
         semuaInputTindakan.forEach(el => {
+            // Jangan proses jika itu adalah textbox harga atau catatan klinis
+            if (el.classList.contains('inp-harga-tindakan') || el.classList.contains('inp-catatan-tindakan')) return;
+
             if (el && el.value) {
                 const teks = String(el.value).trim().toLowerCase();
                 let isBerisiko = false;
 
-                // 🔥 LAPIS 1: CEK ATRIBUT TAG <OPTION> YANG DIPILIH (Jika dropdown <select>)
+                // LAPIS 1: CEK ATRIBUT TAG <OPTION> YANG DIPILIH
                 if (el.tagName.toLowerCase() === 'select' && el.selectedIndex >= 0) {
                     const opt = el.options[el.selectedIndex];
-                    const attrConsent = opt.getAttribute('data-butuh-consent') || 
-                                        opt.getAttribute('data-consent') || 
-                                        opt.getAttribute('data-wajib-consent') || 
-                                        opt.getAttribute('data-butuh') || 
-                                        (opt.dataset ? opt.dataset.butuhConsent : "");
-                                        
-                    if (attrConsent === "1" || String(attrConsent).toLowerCase() === "true" || String(attrConsent).toLowerCase() === "yes") {
+                    if (opt && opt.getAttribute('data-butuh-consent') === "1") {
                         isBerisiko = true;
                     }
                 }
 
-                // 🔥 LAPIS 2: CEK OTOMATIS KE ARRAY MASTER TINDAKAN DI MEMORI GLOBAL BROWSER
+                // LAPIS 2: CEK KE ARRAY MASTER TINDAKAN DI MEMORI GLOBAL BROWSER
                 if (!isBerisiko) {
-                    // Cari di berbagai nama variabel global yang umum digunakan untuk menyimpan MasterTindakan
-                    const masterArray = window.dataMasterTindakan || window.masterTindakanList || window.dataTindakanGlobal || window.masterTindakan;
-                    if (masterArray && Array.isArray(masterArray)) {
-                        const foundItem = masterArray.find(item => {
-                            const namaItem = String(item.namaTindakan || item.Nama_Tindakan || item.nama || item[1] || item[0]).trim().toLowerCase();
-                            return namaItem === teks;
-                        });
+                    const masterArray = window.masterTindakanGlobal || [];
+                    const foundItem = masterArray.find(item => {
+                        const namaItem = String(item.nama || item["Nama Tindakan"] || "").trim().toLowerCase();
+                        return namaItem === teks;
+                    });
 
-                        if (foundItem) {
-                            // Cek kolom Butuh_Consent (Bisa berformat objek properti atau indeks array kolom)
-                            const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || foundItem.butuh_consent || foundItem[3] || foundItem[4] || foundItem[2];
-                            if (String(valConsent) === "1" || valConsent === 1 || valConsent === true || String(valConsent).toLowerCase() === "true") {
-                                isBerisiko = true;
-                            }
+                    if (foundItem) {
+                        const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || foundItem[6] || 0;
+                        if (String(valConsent) === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true") {
+                            isBerisiko = true;
                         }
                     }
                 }
 
-                // 🔥 LAPIS 3: SAFETY NET (KATA KUNCI MEDIS BERISIKO)
+                // LAPIS 3: SAFETY NET (KEYWORD MEDIS BERISIKO PADA NAMA TINDAKAN)
                 if (!isBerisiko) {
-                    if (teks.includes("odontektomi") || 
-                        teks.includes("exo") || 
-                        teks.includes("cabut") || 
-                        teks.includes("implan") || 
-                        teks.includes("bedah") || 
-                        teks.includes("insisi") || 
-                        teks.includes("gingiv") || 
-                        teks.includes("frenektomi") ||
-                        teks.includes("alveol") ||
-                        teks.includes("operkul") ||
-                        teks.includes("kista") ||
-                        teks.includes("graft") ||
-                        teks.includes("endodonti") ||
-                        teks.includes("pulpektomi") ||
-                        teks.includes("apikektomi")) {
-                        
+                    if (teks.includes("odontektomi") || teks.includes("exo") || teks.includes("cabut") || 
+                        teks.includes("implan") || teks.includes("bedah") || teks.includes("insisi") || 
+                        teks.includes("gingiv") || teks.includes("frenektomi") || teks.includes("alveol") || 
+                        teks.includes("operkul") || teks.includes("kista") || teks.includes("graft") || 
+                        teks.includes("sinus") || teks.includes("valplas") || teks.includes("crown")) {
                         isBerisiko = true;
                     }
                 }
 
-                // Jika salah satu dari 3 lapis di atas mendeteksi tindakan berisiko:
                 if (isBerisiko) {
                     butuhConsent = true;
-
-                    // Nyalakan label/badge peringatan di baris tindakan tersebut
-                    const baris = el.closest('.baris-tindakan-item') || el.closest('div[style*="flex"]') || el.parentElement.parentElement || el.parentElement;
-                    if (baris) {
-                        const badge = baris.querySelector('.badge-wajib-consent, [class*="badge"], [class*="wajib"], span[style*="color"]');
-                        if (badge) {
-                            badge.style.display = "inline-block";
-                            badge.style.visibility = "visible";
-                            badge.style.opacity = "1";
-                        }
-                    }
                 }
             }
         });
