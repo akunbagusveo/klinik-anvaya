@@ -9473,6 +9473,12 @@
         document.querySelectorAll('#modalInformedConsent input[type="checkbox"]').forEach(chk => {
             chk.disabled = false;
         });
+
+        // 🔥 TAMBAHAN DINAMIS: Buka kunci dropdown tujuan tindakan saat direvisi!
+        const selTujuan = document.getElementById('selTujuanConsent');
+        const inpKustom = document.getElementById('inpTujuanKustomConsent');
+        if (selTujuan) selTujuan.disabled = false;
+        if (inpKustom) inpKustom.disabled = false;
     }
 
     // =========================================================================
@@ -9517,6 +9523,35 @@
                     chk.disabled = true; // Read-Only
                 }
             });
+
+            // 🔥 TAMBAHAN DINAMIS: Pulihkan & Kunci Dropdown Tujuan Tindakan ke Nomor yang Sah!
+            const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM) || window.tujuanConsentAktif;
+            const selTujuan = document.getElementById('selTujuanConsent');
+            const inpKustom = document.getElementById('inpTujuanKustomConsent');
+            
+            if (selTujuan && savedTujuan && savedTujuan !== "-" && savedTujuan !== "undefined") {
+                // Cek apakah tujuan yang tersimpan cocok dengan salah satu opsi dropdown standar (Nomor 1 s/d 4)
+                let opsiCocok = false;
+                for (let i = 0; i < selTujuan.options.length; i++) {
+                    if (selTujuan.options[i].value === savedTujuan || selTujuan.options[i].text === savedTujuan) {
+                        selTujuan.selectedIndex = i;
+                        opsiCocok = true;
+                        break;
+                    }
+                }
+                // Jika tidak cocok dengan nomor 1-4, berarti itu adalah tujuan Kustom (Nomor 5)!
+                if (!opsiCocok) {
+                    selTujuan.selectedIndex = selTujuan.options.length - 1; // Pilih opsi "Lain-lain / Kustom"
+                    if (inpKustom) {
+                        inpKustom.style.display = 'block';
+                        inpKustom.value = savedTujuan;
+                        inpKustom.disabled = true; // Kunci input kustom
+                    }
+                } else if (inpKustom) {
+                    inpKustom.style.display = 'none';
+                }
+                selTujuan.disabled = true; // 🔥 KUNCI TOTAL (Read-Only) agar aman secara hukum medis!
+            }
 
             if (chkSetuju) {
                 chkSetuju.checked = true;
@@ -9669,6 +9704,13 @@
                     const urlSah = res.urlFoto || res.linkFoto || res.urlBukti || window.urlFotoConsentAktif;
                     localStorage.setItem('ttd_consent_' + cleanRM, urlSah);
                     localStorage.setItem('risiko_consent_' + cleanRM, JSON.stringify(risikoTerpilih));
+                    const selTujuan = document.getElementById('selTujuanConsent');
+                    const inpKustom = document.getElementById('inpTujuanKustomConsent');
+                    let nilaiTujuanSah = payload.tujuan || (selTujuan ? selTujuan.value : "");
+                    if (selTujuan && selTujuan.value.includes("Lain-lain") && inpKustom && inpKustom.value) {
+                        nilaiTujuanSah = inpKustom.value;
+                    }
+                    localStorage.setItem('tujuan_consent_' + cleanRM, nilaiTujuanSah);
                     if (window.tujuanConsentAktif) {
                         localStorage.setItem('tujuan_consent_' + cleanRM, window.tujuanConsentAktif);
                     }
