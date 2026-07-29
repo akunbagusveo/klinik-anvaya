@@ -6885,7 +6885,7 @@
 
     
     // =========================================================================
-    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER (FIX CURRENCY)
+    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER (100% MATCH BACKEND)
     // =========================================================================
     function muatMasterTindakan() {
         fetch(WEB_APP_URL, {
@@ -6896,17 +6896,14 @@
         .then(res => {
             if (res.result === "success" && Array.isArray(res.data)) {
                 window.masterTindakanGlobal = res.data.map(item => {
-                    // 🔥 MESIN PEMBERSIH ANGKA: Hapus titik/koma agar JS tidak bingung!
-                    const mentahHarga = item.harga || item["Harga Dasar"] || item.Harga_Dasar || item.Harga || item[3] || 0;
-                    const hargaBersih = Number(String(mentahHarga).replace(/[^0-9]/g, '')) || 0;
-
+                    // 🔥 TARIK LANGSUNG KUNCI ASLI DARI KODE.GS: hargaDasar & butuhConsent
                     return {
                         ...item,
-                        kategori: String(item.kategori || item.Kategori || "").trim(),
-                        nama: String(item.nama || item["Nama Tindakan"] || item.Nama_Tindakan || item.namaTindakan || "").trim(),
-                        harga: hargaBersih, // Simpan sebagai angka murni
-                        keterangan: String(item.keterangan || item.Keterangan || item[5] || "").trim(),
-                        Butuh_Consent: (String(item.Butuh_Consent || item["Butuh_Consent"] || item.butuhConsent || "0").trim() === "1" || item.Butuh_Consent === 1 || item.butuhConsent === 1) ? 1 : 0
+                        kategori: String(item.kategori || "").trim(),
+                        nama: String(item.nama || "").trim(),
+                        harga: Number(item.hargaDasar || 0), // Backend mengirim properti bernama 'hargaDasar'
+                        keterangan: String(item.keterangan || "").trim(),
+                        Butuh_Consent: (item.butuhConsent === 1 || String(item.butuhConsent) === "1") ? 1 : 0
                     };
                 });
                 console.log("🚀 Master Tindakan Berhasil Dimuat & Dinormalisasi:", window.masterTindakanGlobal.length, "item.");
@@ -7139,7 +7136,7 @@
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (FIX HARGA STRIPPER, KETERANGAN & BADGE)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (RINGAN & MATCHING DENGAN BACKEND)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
@@ -7163,29 +7160,30 @@
 
         // 1. CARI DATA DI MASTER TINDAKAN GLOBAL:
         const match = (window.masterTindakanGlobal || []).find(t => {
-            const n1 = String(t.nama || t["Nama Tindakan"] || t.Nama_Tindakan || "").trim().toLowerCase();
+            const n1 = String(t.nama || "").trim().toLowerCase();
             return n1 === cleanNamaPilihan.toLowerCase();
         });
 
         let isWajibConsent = false;
 
         if (match) {
-            // 🔥 FIX HARGA DENGAN PEMBERSIH ANGKA GANDA
+            // 🔥 ISI HARGA (Angka sudah murni dari server!)
             if (inpHarga) {
                 inpHarga.disabled = false;
-                const mentahHarga = match.harga || match["Harga Dasar"] || match.Harga_Dasar || 0;
-                const nominalHarga = Number(String(mentahHarga).replace(/[^0-9]/g, '')) || 0;
-                
+                // Ambil dari match.harga (karena di muatMasterTindakan kita simpan sbg harga) ATAU match.hargaDasar langsung
+                const nominalHarga = Number(match.harga || match.hargaDasar || 0); 
                 inpHarga.value = nominalHarga > 0 ? nominalHarga.toLocaleString('en-US') : "";
                 inpHarga.dispatchEvent(new Event('input'));
                 inpHarga.dispatchEvent(new Event('change'));
             }
             
-            const teksKet = String(match.keterangan || match.Keterangan || "").trim();
+            // 🔥 ISI KETERANGAN
+            const teksKet = String(match.keterangan || "").trim();
             if (lblKeterangan) lblKeterangan.innerText = teksKet;
             if (infoDetail) infoDetail.style.display = teksKet ? 'block' : 'none';
 
-            const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || match.butuh_consent || match[3] || 0;
+            // 🔥 CEK STATUS CONSENT
+            const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
         }
 
