@@ -9779,7 +9779,7 @@
     }
 
     // =========================================================================
-    // 🛡️ PENGATUR TOMBOL CONSENT (UNIVERSAL + AUTO-LIGHT LABEL & GLOW EFFECT)
+    // 🛡️ PENGATUR TOMBOL CONSENT (3-LAYER SCANNER: MASTER TINDAKAN + KEYWORD)
     // =========================================================================
     function periksaKebutuhanConsentUI() {
         const btnConsent = document.getElementById('btnBuatConsent');
@@ -9801,50 +9801,93 @@
             btnConsent.style.backgroundColor = "#27ae60"; // Hijau Sukses
             btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             btnConsent.style.display = "inline-flex";
-            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)"; // Reset glow
+            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
             btnConsent.style.border = "none";
             return; 
         }
 
-        // --- 3. SCANNER UNIVERSAL & PEMULIH LABEL PERINGATAN ---
+        // --- 3. PEMINDAI 3 LAPIS (DATABASE ATTRIBUTE + GLOBAL MEMORY + KEYWORDS) ---
         window.consentSudahDisimpanHariIni = false;
         let butuhConsent = false;
 
-        // Sembunyikan terlebih dahulu semua label/badge peringatan di semua baris
+        // Sembunyikan terlebih dahulu semua badge peringatan
         document.querySelectorAll('#kontainerTindakanDinamis .badge-wajib-consent, #kontainerTindakanDinamis [class*="badge"], #kontainerTindakanDinamis [class*="wajib"]').forEach(b => {
             b.style.display = "none";
         });
 
-        // Cari seluruh input atau dropdown tindakan medis
         const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis select, #kontainerTindakanDinamis input[type="text"], #kontainerTindakanDinamis input[type="hidden"]');
         
         semuaInputTindakan.forEach(el => {
             if (el && el.value) {
-                const teks = String(el.value).toLowerCase();
-                
-                // Daftar kata kunci tindakan medis berisiko:
-                if (teks.includes("odontektomi") || 
-                    teks.includes("exo") || 
-                    teks.includes("cabut") || 
-                    teks.includes("implan") || 
-                    teks.includes("bedah") || 
-                    teks.includes("insisi") || 
-                    teks.includes("gingiv") || 
-                    teks.includes("frenektomi") ||
-                    teks.includes("alveol") ||
-                    teks.includes("operkul") ||
-                    teks.includes("kista") ||
-                    teks.includes("graft")) {
-                    
+                const teks = String(el.value).trim().toLowerCase();
+                let isBerisiko = false;
+
+                // 🔥 LAPIS 1: CEK ATRIBUT TAG <OPTION> YANG DIPILIH (Jika dropdown <select>)
+                if (el.tagName.toLowerCase() === 'select' && el.selectedIndex >= 0) {
+                    const opt = el.options[el.selectedIndex];
+                    const attrConsent = opt.getAttribute('data-butuh-consent') || 
+                                        opt.getAttribute('data-consent') || 
+                                        opt.getAttribute('data-wajib-consent') || 
+                                        opt.getAttribute('data-butuh') || 
+                                        (opt.dataset ? opt.dataset.butuhConsent : "");
+                                        
+                    if (attrConsent === "1" || String(attrConsent).toLowerCase() === "true" || String(attrConsent).toLowerCase() === "yes") {
+                        isBerisiko = true;
+                    }
+                }
+
+                // 🔥 LAPIS 2: CEK OTOMATIS KE ARRAY MASTER TINDAKAN DI MEMORI GLOBAL BROWSER
+                if (!isBerisiko) {
+                    // Cari di berbagai nama variabel global yang umum digunakan untuk menyimpan MasterTindakan
+                    const masterArray = window.dataMasterTindakan || window.masterTindakanList || window.dataTindakanGlobal || window.masterTindakan;
+                    if (masterArray && Array.isArray(masterArray)) {
+                        const foundItem = masterArray.find(item => {
+                            const namaItem = String(item.namaTindakan || item.Nama_Tindakan || item.nama || item[1] || item[0]).trim().toLowerCase();
+                            return namaItem === teks;
+                        });
+
+                        if (foundItem) {
+                            // Cek kolom Butuh_Consent (Bisa berformat objek properti atau indeks array kolom)
+                            const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || foundItem.butuh_consent || foundItem[3] || foundItem[4] || foundItem[2];
+                            if (String(valConsent) === "1" || valConsent === 1 || valConsent === true || String(valConsent).toLowerCase() === "true") {
+                                isBerisiko = true;
+                            }
+                        }
+                    }
+                }
+
+                // 🔥 LAPIS 3: SAFETY NET (KATA KUNCI MEDIS BERISIKO)
+                if (!isBerisiko) {
+                    if (teks.includes("odontektomi") || 
+                        teks.includes("exo") || 
+                        teks.includes("cabut") || 
+                        teks.includes("implan") || 
+                        teks.includes("bedah") || 
+                        teks.includes("insisi") || 
+                        teks.includes("gingiv") || 
+                        teks.includes("frenektomi") ||
+                        teks.includes("alveol") ||
+                        teks.includes("operkul") ||
+                        teks.includes("kista") ||
+                        teks.includes("graft") ||
+                        teks.includes("endodonti") ||
+                        teks.includes("pulpektomi") ||
+                        teks.includes("apikektomi")) {
+                        
+                        isBerisiko = true;
+                    }
+                }
+
+                // Jika salah satu dari 3 lapis di atas mendeteksi tindakan berisiko:
+                if (isBerisiko) {
                     butuhConsent = true;
 
-                    // 🔥 NYALAKAN KEMBALI LABEL/BADGE DI BARIS TINDAKAN TERSEBUT:
-                    // Cari elemen pembungkus baris terdekat (div/tr/li)
+                    // Nyalakan label/badge peringatan di baris tindakan tersebut
                     const baris = el.closest('.baris-tindakan-item') || el.closest('div[style*="flex"]') || el.parentElement.parentElement || el.parentElement;
                     if (baris) {
                         const badge = baris.querySelector('.badge-wajib-consent, [class*="badge"], [class*="wajib"], span[style*="color"]');
                         if (badge) {
-                            badge.style.display = "inline-block"; // Munculkan labelnya!
+                            badge.style.display = "inline-block";
                             badge.style.visibility = "visible";
                             badge.style.opacity = "1";
                         }
@@ -9853,13 +9896,11 @@
             }
         });
 
-        // 4. Atur warna dan efek "Menyala" pada tombol utama
+        // 4. Eksekusi visual tombol utama
         if (butuhConsent) {
-            btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan Wajib
+            btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan
             btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
             btnConsent.style.display = "inline-flex";
-            
-            // 🔥 EFEK MENYALA (GLOWING BOX-SHADOW & BORDER TEGAS):
             btnConsent.style.boxShadow = "0 0 12px rgba(230, 126, 34, 0.85)";
             btnConsent.style.border = "2px solid #f39c12";
             btnConsent.style.fontWeight = "bold";
@@ -9867,8 +9908,6 @@
             btnConsent.style.backgroundColor = "#7f8c8d"; // Abu-abu Opsional
             btnConsent.innerHTML = "✍️ Buat Informed Consent";
             btnConsent.style.display = "inline-flex";
-            
-            // Reset efek menyala
             btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
             btnConsent.style.border = "none";
         }
