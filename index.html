@@ -6884,9 +6884,9 @@
     }
 
     
-    // Panggil fungsi ini di dalam window.onload atau fungsi inisialisasi awal aplikasi Anda
-    // Contoh: 
-    // window.addEventListener('DOMContentLoaded', (event) => { muatMasterTindakan(); });
+    // =========================================================================
+    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER
+    // =========================================================================
     function muatMasterTindakan() {
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -6894,9 +6894,15 @@
         })
         .then(res => res.json())
         .then(res => {
-            if (res.result === "success") {
-                window.masterTindakanGlobal = res.data;
-                console.log("🚀 Master Tindakan Berhasil Dimuat:", window.masterTindakanGlobal.length, "item.");
+            if (res.result === "success" && Array.isArray(res.data)) {
+                // 🔥 NORMALISASI DINAMIS: Bersihkan semua spasi ganda dan petakan nilai Butuh_Consent dengan jelas
+                window.masterTindakanGlobal = res.data.map(item => ({
+                    ...item,
+                    kategori: String(item.kategori || item.Kategori || "").trim(),
+                    nama: String(item.nama || item.Nama_Tindakan || item.namaTindakan || "").trim(),
+                    Butuh_Consent: (String(item.Butuh_Consent || item.butuhConsent || item.butuh_consent || "0").trim() === "1" || item.Butuh_Consent === 1 || item.butuhConsent === 1) ? 1 : 0
+                }));
+                console.log("🚀 Master Tindakan Berhasil Dimuat & Dinormalisasi:", window.masterTindakanGlobal.length, "item.");
             } else {
                 console.error("❌ Gagal memuat master tindakan:", res.message);
             }
@@ -7041,7 +7047,7 @@
     }
 
     // =========================================================================
-    // 🔄 FILTER TINDAKAN DENGAN FITUR AUTO-REVERT (ANTI-MENGUNCI)
+    // 🎯 FILTER TINDAKAN PER KATEGORI (WITH AUTO-TRIM & DATA-CONSENT INJECTION)
     // =========================================================================
     function filterTindakanPerKategori(rowId, kategoriTerpilih) {
         const row = document.getElementById(rowId);
@@ -7054,8 +7060,7 @@
 
         if (!selTindakan) return;
 
-        // 🔥 FIX DINAMIS (AUTO-REVERT): Jika selTindakan saat ini berupa INPUT TEKS (karena sebelumnya pilih KUSTOM),
-        // sistem otomatis membangun ulang elemen tersebut menjadi SELECT dropdown standar!
+        // 🔥 FIX DINAMIS (AUTO-REVERT): Kembalikan input teks Kustom menjadi SELECT dropdown standar
         if (selTindakan.tagName.toLowerCase() === 'input') {
             let cellTindakan = selTindakan.parentElement;
             if (cellTindakan && cellTindakan.classList.contains('wrapper-kustom-input')) {
@@ -7069,20 +7074,30 @@
                     </select>
                 `;
                 selTindakan = row.querySelector('.sel-nama-tindakan');
-                if (selTindakan && typeof simpanDraftRME === "function") {
-                    selTindakan.addEventListener('change', simpanDraftRME);
+                if (selTindakan) {
+                    selTindakan.addEventListener('change', () => {
+                        if (typeof simpanDraftRME === "function") simpanDraftRME();
+                        if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+                    });
                 }
             }
         }
 
-        // Reset status bawahan jika kategori dikosongkan
-        selTindakan.innerHTML = `<option value="">-- Pilih Tindakan Medis --</option>`;
-        inpHarga.value = "";
-        inpHarga.disabled = true;
-        boxHarga.style.backgroundColor = "#f5f6fa";
-        divInfo.style.display = "none";
+        // 🔥 FIX DINAMIS: Sembunyikan badge consent saat kategori baru dipilih
+        const badgeConsent = row.querySelector('.badge-wajib-consent');
+        if (badgeConsent) badgeConsent.style.display = "none";
 
-        if (!kategoriTerpilih) {
+        // Reset status bawahan jika kategori dikosongkan
+        selTindakan.innerHTML = `<option value="" data-butuh-consent="0">-- Pilih Tindakan Medis --</option>`;
+        if (inpHarga) {
+            inpHarga.value = "";
+            inpHarga.disabled = true;
+        }
+        if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa";
+        if (divInfo) divInfo.style.display = "none";
+
+        const cleanKategoriTerpilih = String(kategoriTerpilih || "").trim().toLowerCase();
+        if (!cleanKategoriTerpilih) {
             selTindakan.disabled = true;
             selTindakan.style.backgroundColor = "#f5f6fa";
             if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
@@ -7093,20 +7108,31 @@
         selTindakan.disabled = false;
         selTindakan.style.backgroundColor = "white";
 
-        // Suntikkan opsi tindakan yang memiliki kategori yang sesuai
-        window.masterTindakanGlobal.forEach(t => {
-            if (t.kategori && t.kategori.trim() === kategoriTerpilih) {
-                selTindakan.innerHTML += `<option value="${t.nama}">${t.nama}</option>`;
+        // 🔥 SUNTIKKAN OPSI TINDAKAN + ATRIBUT data-butuh-consent SECARA DINAMIS & ANTI-WHITESPACE
+        const masterList = window.masterTindakanGlobal || [];
+        masterList.forEach(t => {
+            const katMaster = String(t.kategori || t.Kategori || "").trim().toLowerCase();
+            
+            if (katMaster === cleanKategoriTerpilih) {
+                const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
+                
+                // Cek nilai Butuh_Consent dari database
+                const valConsent = t.Butuh_Consent || t.butuhConsent || t.butuh_consent || t[3] || 0;
+                const isWajib = (String(valConsent).trim() === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true");
+                
+                // Tanamkan atribut data-butuh-consent pada setiap tag <option>
+                selTindakan.innerHTML += `<option value="${namaBersih}" data-butuh-consent="${isWajib ? '1' : '0'}">${namaBersih}</option>`;
             }
         });
-        selTindakan.innerHTML += `<option value="KUSTOM">Lain-lain / Tindakan Kustom</option>`;
+
+        selTindakan.innerHTML += `<option value="KUSTOM" data-butuh-consent="0">Lain-lain / Tindakan Kustom</option>`;
         
         // Periksa ulang label consent agar antarmuka selalu akurat
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (WITH AUTO DATA-ATTRIBUTE & BADGE CONSENT)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (ANTI-WHITESPACE & REAL-TIME CONSENT TRIGGER)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
@@ -7117,24 +7143,26 @@
         const infoDetail = row.querySelector('.info-tindakan-detail');
         const selTindakan = row.querySelector('.sel-nama-tindakan');
 
-        if (!namaTindakan) {
+        const cleanNamaPilihan = String(namaTindakan || "").trim();
+
+        if (!cleanNamaPilihan) {
             if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
             if (infoDetail) infoDetail.style.display = 'none';
-            // Sembunyikan badge consent jika dibatalkan
             const badgeLama = row.querySelector('.badge-wajib-consent');
             if (badgeLama) badgeLama.style.display = 'none';
             if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
             return;
         }
 
-        // 🔥 1. CARI DATA DI MASTER TINDAKAN GLOBAL:
+        // 1. CARI DATA DI MASTER TINDAKAN GLOBAL DENGAN TRIM GANDA:
         const match = (window.masterTindakanGlobal || []).find(t => {
             const n1 = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim().toLowerCase();
-            return n1 === String(namaTindakan).trim().toLowerCase();
+            return n1 === cleanNamaPilihan.toLowerCase();
         });
 
+        let isWajibConsent = false;
+
         if (match) {
-            // Isi harga & keterangan
             if (inpHarga) {
                 inpHarga.disabled = false;
                 inpHarga.value = Number(match.harga || match.Harga || 0).toLocaleString('en-US');
@@ -7144,37 +7172,38 @@
             if (lblKeterangan) lblKeterangan.innerText = match.keterangan || "";
             if (infoDetail) infoDetail.style.display = 'block';
 
-            // 🔥 2. CEK KOLOM Butuh_Consent DARI DATABASE (100% PRESISI):
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || match.butuh_consent || match[3] || 0;
-            const isWajibConsent = (String(butuhConsentVal) === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
+            isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
+        }
 
-            // Tanamkan atribut ke <select> agar terbaca instan oleh scanner
-            if (selTindakan) {
-                selTindakan.setAttribute('data-butuh-consent', isWajibConsent ? "1" : "0");
-            }
-
-            // 🔥 3. MUNCULKAN LABEL/BADGE PERINGATAN DI BAWAH DROPDOWN TINDAKAN:
-            let badge = row.querySelector('.badge-wajib-consent');
-            if (isWajibConsent) {
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'badge-wajib-consent';
-                    badge.style = "display: inline-block; background-color: #e67e22; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-top: 4px; align-self: flex-start;";
-                    badge.innerHTML = "⚠️ Wajib Informed Consent";
-                    
-                    // Letakkan badge di bawah <select> tindakan
-                    if (selTindakan && selTindakan.parentElement) {
-                        selTindakan.parentElement.appendChild(badge);
-                    }
-                } else {
-                    badge.style.display = "inline-block";
-                }
-            } else if (badge) {
-                badge.style.display = "none";
+        // 2. BACKUP SCANNER: Cek juga langsung dari atribut data-butuh-consent tag <option> yang aktif
+        if (!isWajibConsent && selTindakan && selTindakan.selectedIndex >= 0) {
+            const optAktif = selTindakan.options[selTindakan.selectedIndex];
+            if (optAktif && optAktif.getAttribute('data-butuh-consent') === "1") {
+                isWajibConsent = true;
             }
         }
 
-        // 🔥 4. LANGSUNG EVALUASI DAN NYALAKAN TOMBOL CONSENT DI FORM RME:
+        // 3. MUNCULKAN ATAU SEMBUNYIKAN BADGE DI BAWAH DROPDOWN TINDAKAN:
+        let badge = row.querySelector('.badge-wajib-consent');
+        if (isWajibConsent) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge-wajib-consent';
+                badge.style = "display: inline-block; background-color: #e67e22; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-top: 4px; align-self: flex-start;";
+                badge.innerHTML = "⚠️ Wajib Informed Consent";
+                
+                if (selTindakan && selTindakan.parentElement) {
+                    selTindakan.parentElement.appendChild(badge);
+                }
+            } else {
+                badge.style.display = "inline-block";
+            }
+        } else if (badge) {
+            badge.style.display = "none";
+        }
+
+        // 4. PICU KALKULASI TOMBOL CONSENT SECARA LANGSUNG:
         if (typeof simpanDraftRME === "function") simpanDraftRME();
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
     }
