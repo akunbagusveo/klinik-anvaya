@@ -9490,10 +9490,10 @@
     }
 
     // =========================================================================
-    // ✍️ PEMBUKA MODAL INFORMED CONSENT (WITH SMART RM & AUTO-LINK CONVERTER)
+    // ✍️ PEMBUKA MODAL INFORMED CONSENT (WITH SMART ACTION EXTRACTOR)
     // =========================================================================
     function bukaModalConsent(noRM, namaPasien, tindakan) {
-        // 🔥 1. SMART RM FALLBACK: Jika parameter noRM kosong, tarik langsung dari DOM layar!
+        // 1. SMART RM FALLBACK
         let rawRM = noRM;
         if (!rawRM || rawRM === "-" || rawRM === "undefined") {
             rawRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
@@ -9502,8 +9502,31 @@
 
         document.getElementById('lblConsentRM').innerText = cleanNoRM;
         document.getElementById('lblConsentNama').innerText = namaPasien || document.getElementById('modalNama')?.value || "-";
-        document.getElementById('lblConsentTindakan').innerText = tindakan || document.getElementById('lblConsentTindakan')?.innerText || "-";
         
+        // 🔥 2. SMART ACTION EXTRACTOR: Ambil HANYA Nama Tindakan dengan rapi!
+        let daftarTindakanBersih = [];
+        const elemenTindakan = document.querySelectorAll('#kontainerTindakanDinamis .sel-nama-tindakan, #kontainerTindakanDinamis input[type="text"]');
+        
+        elemenTindakan.forEach(el => {
+            // Abaikan textbox harga dan catatan klinis
+            if (el.classList.contains('inp-harga-tindakan') || el.classList.contains('inp-catatan-tindakan') || el.classList.contains('sel-kategori-tindakan')) return;
+            
+            let nama = String(el.value).trim();
+            // Pastikan nilainya ada, dan abaikan tulisan "KUSTOM"
+            if (nama && nama !== "KUSTOM" && nama !== "") {
+                daftarTindakanBersih.push(nama);
+            }
+        });
+        
+        // Hapus duplikat (jika dokter menginput 2 gigi untuk tindakan yang sama) & gabungkan dengan koma
+        let teksTindakanFinal = [...new Set(daftarTindakanBersih)].join(", ");
+        
+        // Jika form kosong, gunakan parameter fallback lama
+        if (!teksTindakanFinal) teksTindakanFinal = tindakan || document.getElementById('lblConsentTindakan')?.innerText || "-";
+        
+        document.getElementById('lblConsentTindakan').innerText = teksTindakanFinal;
+
+        // --- SISA KODE KE BAWAH TETAP SAMA SEPERTI SEBELUMNYA ---
         const modal = document.getElementById('modalInformedConsent');
         const btnSimpan = document.getElementById('btnSimpanConsent');
         const chkSetuju = document.getElementById('chkSayaSetuju');
@@ -9512,33 +9535,26 @@
         const btnCetak = document.getElementById('btnCetakConsentPDF');
 
         if (window.consentSudahDisimpanHariIni === true) {
-            // =========================================================================
-            // 🟢 MODE PRATINJAU / REVISI (TAMPILKAN FOTO TTD & KUNCI DATA)
-            // =========================================================================
-            console.log("🔒 [Consent UI] Membuka modal Pratinjau untuk RM: " + cleanNoRM);
-            
+            // MODE PRATINJAU
             if (btnSimpan) {
-                btnSimpan.style.backgroundColor = "#e67e22"; // Oranye Revisi
+                btnSimpan.style.backgroundColor = "#e67e22";
                 btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
             }
             
-            // 1. Pulihkan dan Kunci Checkbox Komplikasi
             const savedRisiko = JSON.parse(localStorage.getItem('risiko_consent_' + cleanNoRM) || '[]');
             document.querySelectorAll('#modalInformedConsent input[type="checkbox"]').forEach(chk => {
                 let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
                 if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) {
                     chk.checked = savedRisiko.includes(label) || savedRisiko.includes(chk.value);
-                    chk.disabled = true; // Read-Only
+                    chk.disabled = true;
                 }
             });
 
-            // 🔥 TAMBAHAN DINAMIS: Pulihkan & Kunci Dropdown Tujuan Tindakan ke Nomor yang Sah!
             const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM) || window.tujuanConsentAktif;
             const selTujuan = document.getElementById('selTujuanConsent');
             const inpKustom = document.getElementById('inpTujuanKustomConsent');
             
             if (selTujuan && savedTujuan && savedTujuan !== "-" && savedTujuan !== "undefined") {
-                // Cek apakah tujuan yang tersimpan cocok dengan salah satu opsi dropdown standar (Nomor 1 s/d 4)
                 let opsiCocok = false;
                 for (let i = 0; i < selTujuan.options.length; i++) {
                     if (selTujuan.options[i].value === savedTujuan || selTujuan.options[i].text === savedTujuan) {
@@ -9547,26 +9563,24 @@
                         break;
                     }
                 }
-                // Jika tidak cocok dengan nomor 1-4, berarti itu adalah tujuan Kustom (Nomor 5)!
                 if (!opsiCocok) {
-                    selTujuan.selectedIndex = selTujuan.options.length - 1; // Pilih opsi "Lain-lain / Kustom"
+                    selTujuan.selectedIndex = selTujuan.options.length - 1;
                     if (inpKustom) {
                         inpKustom.style.display = 'block';
                         inpKustom.value = savedTujuan;
-                        inpKustom.disabled = true; // Kunci input kustom
+                        inpKustom.disabled = true;
                     }
                 } else if (inpKustom) {
                     inpKustom.style.display = 'none';
                 }
-                selTujuan.disabled = true; // 🔥 KUNCI TOTAL (Read-Only) agar aman secara hukum medis!
+                selTujuan.disabled = true;
             }
 
             if (chkSetuju) {
                 chkSetuju.checked = true;
-                chkSetuju.disabled = true; // Read-Only
+                chkSetuju.disabled = true;
             }
             
-            // 2. Atur Tombol Cetak PDF
             if (btnCetak) {
                 btnCetak.style.display = "inline-block";
                 const savedPdf = window.pdfConsentAktif || localStorage.getItem('pdf_url_consent_' + cleanNoRM);
@@ -9579,11 +9593,8 @@
                 }
             }
 
-            // 🔥 3. AUTO-CONVERTER & TAMPILKAN FOTO TANDA TANGAN DINAMIS
             let urlFoto = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + cleanNoRM) || "";
-            
             if (urlFoto && urlFoto !== "-" && urlFoto !== "undefined") {
-                // Jika yang tersimpan adalah link Drive biasa (/file/d/ID/view atau id=ID), ubah ke Direct Link!
                 let fileId = "";
                 const match = urlFoto.match(/id=([a-zA-Z0-9_-]+)/) || urlFoto.match(/d\/([a-zA-Z0-9_-]+)/);
                 if (match && match[1]) {
@@ -9591,30 +9602,21 @@
                 } else if (urlFoto.indexOf("http") === -1 && urlFoto.length > 20) {
                     fileId = urlFoto;
                 }
-
-                // Jika berhasil menemukan ID, paksa gunakan format direct streaming Google Content
                 if (fileId !== "") {
                     urlFoto = "https://lh3.googleusercontent.com/d/" + fileId;
                 }
-
-                console.log("📸 [Consent UI] Memuat foto TTD ke layar dari URL:", urlFoto);
                 if (imgTTD) imgTTD.src = urlFoto;
                 if (bannerTTD) bannerTTD.style.display = "block";
             } else {
-                console.warn("⚠️ [Consent UI] Status Consent TRUE, namun URL foto TTD tidak ditemukan di memori untuk RM:", cleanNoRM);
                 if (bannerTTD) bannerTTD.style.display = "none";
             }
             
         } else {
-            // =========================================================================
-            // 🟠 MODE INPUT BARU (KOSONGKAN SEMUA ELEMEN)
-            // =========================================================================
-            console.log("✍️ [Consent UI] Membuka modal untuk input baru.");
-            
+            // MODE INPUT BARU
             if (typeof bersihkanTTD === "function") bersihkanTTD();
             
             if (btnSimpan) {
-                btnSimpan.style.backgroundColor = "#28a745"; // Hijau Simpan
+                btnSimpan.style.backgroundColor = "#28a745";
                 btnSimpan.innerHTML = "💾 Simpan Persetujuan";
             }
             
@@ -9627,10 +9629,14 @@
             
             const selTujuan = document.getElementById('selTujuanConsent');
             const inpKustom = document.getElementById('inpTujuanKustomConsent');
-            if (selTujuan) selTujuan.selectedIndex = 0;
+            if (selTujuan) {
+                selTujuan.selectedIndex = 0;
+                selTujuan.disabled = false;
+            }
             if (inpKustom) {
                 inpKustom.style.display = 'none';
                 inpKustom.value = '';
+                inpKustom.disabled = false;
             }
             
             if (bannerTTD) bannerTTD.style.display = "none";
