@@ -7180,21 +7180,41 @@
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (KUSTOM, RANGE HARGA, & CONSENT BERSATU)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (FIX WARNA BG & AUTO-FORMAT KOMA HARGA)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
         if (!row) return;
 
         const inpHarga = row.querySelector('.inp-harga-tindakan');
+        const boxHarga = row.querySelector('.box-harga-container'); // 🔥 Ambil kotak pembungkus harga
         const lblKeterangan = row.querySelector('.lbl-keterangan');
         const infoDetail = row.querySelector('.info-tindakan-detail');
         let selTindakan = row.querySelector('.sel-nama-tindakan');
 
         const cleanNamaPilihan = String(namaTindakan || "").trim();
 
+        // =====================================================================
+        // 🛠️ MESIN KETIK PINTAR (AUTO-FORMAT KOMA SAAT DOKTER MENGETIK HARGA)
+        // =====================================================================
+        const pasangAutoFormatHarga = () => {
+            if (!inpHarga) return;
+            inpHarga.oninput = function() {
+                // Bersihkan semua karakter selain angka
+                let valMurni = this.value.replace(/[^0-9]/g, '');
+                if (valMurni) {
+                    // Ubah menjadi format angka dengan koma (en-US)
+                    this.value = Number(valMurni).toLocaleString('en-US');
+                } else {
+                    this.value = "";
+                }
+                if (typeof simpanDraftRME === "function") simpanDraftRME();
+            };
+        };
+
         if (!cleanNamaPilihan) {
             if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
+            if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; // Kembalikan ke abu-abu
             if (infoDetail) infoDetail.style.display = 'none';
             const badgeLama = row.querySelector('.badge-wajib-consent');
             if (badgeLama) badgeLama.style.display = 'none';
@@ -7206,7 +7226,6 @@
         // 🔥 SKENARIO 1: JIKA DOKTER MEMILIH "TINDAKAN KUSTOM"
         // =====================================================================
         if (cleanNamaPilihan.toUpperCase() === "KUSTOM") {
-            // 1. Ubah Select menjadi Input text agar dokter bisa mengetik
             if (selTindakan && selTindakan.tagName.toLowerCase() === 'select') {
                 const parentCell = selTindakan.parentElement;
                 parentCell.innerHTML = `
@@ -7220,15 +7239,15 @@
                 }, 50);
             }
             
-            // 2. Bebaskan kolom harga agar bisa diinput manual & kosongkan nilainya
             if (inpHarga) {
                 inpHarga.disabled = false;
                 inpHarga.readOnly = false;
                 inpHarga.value = "";
                 inpHarga.placeholder = "Ketik harga manual...";
+                if (boxHarga) boxHarga.style.backgroundColor = "white"; // 🔥 PUTIHKAN BACKGROUND
+                pasangAutoFormatHarga(); // 🔥 PASANG MESIN KOMA
             }
             
-            // 3. Sembunyikan keterangan dan evaluasi ulang consent
             if (infoDetail) infoDetail.style.display = 'none';
             const badgeLama = row.querySelector('.badge-wajib-consent');
             if (badgeLama) badgeLama.style.display = 'none';
@@ -7239,7 +7258,7 @@
         }
 
         // =====================================================================
-        // 🔥 SKENARIO 2: JIKA DOKTER MEMILIH TINDAKAN NORMAL DARI DATABASE
+        // 🔥 SKENARIO 2: JIKA DOKTER MEMILIH TINDAKAN DARI DATABASE
         // =====================================================================
         const match = (window.masterTindakanGlobal || []).find(t => {
             const n1 = String(t.nama || "").trim().toLowerCase();
@@ -7249,39 +7268,39 @@
         let isWajibConsent = false;
 
         if (match) {
-            // Cek harga dasar dan maksimal
             const hargaDasar = Number(match.harga || 0);
             const hargaMaksimal = Number(match.hargaMaksimal || 0);
             
             if (inpHarga) {
                 inpHarga.value = hargaDasar > 0 ? hargaDasar.toLocaleString('en-US') : "";
                 
-                // 🔥 LOGIKA RANGE HARGA: Jika harga maksimal berbeda dari harga dasar -> Buka Kunci!
+                // 🔥 JIKA HARGA RANGE (BISA DIEDIT)
                 if (hargaMaksimal > 0 && hargaMaksimal !== hargaDasar) {
                     inpHarga.disabled = false;
                     inpHarga.readOnly = false;
-                    inpHarga.placeholder = `Range: Rp ${hargaDasar.toLocaleString('id-ID')} - ${hargaMaksimal.toLocaleString('id-ID')}`;
+                    inpHarga.placeholder = `Range: Rp ${hargaDasar.toLocaleString('en-US')} - ${hargaMaksimal.toLocaleString('en-US')}`;
+                    if (boxHarga) boxHarga.style.backgroundColor = "white"; // 🔥 PUTIHKAN BACKGROUND
+                    pasangAutoFormatHarga(); // 🔥 PASANG MESIN KOMA
                 } else {
-                    // Jika harga tetap (Fixed) -> Kunci (Read-Only)
+                    // 🔒 JIKA HARGA FIXED (TERKUNCI)
                     inpHarga.disabled = true; 
                     inpHarga.placeholder = "0";
+                    if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; // 🔥 ABU-ABUKAN BACKGROUND
+                    inpHarga.oninput = null; // Matikan mesin koma
                 }
 
                 inpHarga.dispatchEvent(new Event('input'));
                 inpHarga.dispatchEvent(new Event('change'));
             }
             
-            // Isi Keterangan
             const teksKet = String(match.keterangan || "").trim();
             if (lblKeterangan) lblKeterangan.innerText = teksKet;
             if (infoDetail) infoDetail.style.display = teksKet ? 'block' : 'none';
 
-            // Cek Consent dari DB
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
         }
 
-        // BACKUP SCANNER: Cek dari atribut data-butuh-consent
         selTindakan = row.querySelector('.sel-nama-tindakan');
         if (!isWajibConsent && selTindakan && selTindakan.tagName.toLowerCase() === 'select' && selTindakan.selectedIndex >= 0) {
             const optAktif = selTindakan.options[selTindakan.selectedIndex];
@@ -7290,7 +7309,6 @@
             }
         }
 
-        // MUNCULKAN ATAU SEMBUNYIKAN BADGE:
         let badge = row.querySelector('.badge-wajib-consent');
         if (isWajibConsent) {
             if (!badge) {
@@ -7309,7 +7327,6 @@
             badge.style.display = "none";
         }
 
-        // PICU KALKULASI TOMBOL CONSENT:
         if (typeof simpanDraftRME === "function") simpanDraftRME();
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
     }
