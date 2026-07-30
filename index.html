@@ -9889,7 +9889,7 @@
 
     // 3. Validasi & Kirim ke Backend
     // =========================================================================
-    // 📤 KIRIM DATA INFORMED CONSENT KE SERVER (100% BUG-FREE & DINAMIS)
+    // 💾 PENYIMPAN TTD CONSENT (100% DINAMIS + PEMANTIK PDF OTOMATIS)
     // =========================================================================
     function kirimDataConsent() {
         const chkSetuju = document.getElementById('chkSayaSetuju');
@@ -9898,16 +9898,21 @@
             return;
         }
 
-        // Periksa apakah canvas kosong (belum ada coretan)
+        // 🔥 FIX DINAMIS: Ambil elemen kanvas secara presisi dan aman
+        const canvasTTD = document.getElementById('signature-pad') || window.canvas || document.querySelector('canvas');
+        if (!canvasTTD) {
+            alert("⚠️ Elemen kanvas tanda tangan tidak ditemukan di halaman!");
+            return;
+        }
+
         const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = canvas.width;
-        blankCanvas.height = canvas.height;
-        if (canvas.toDataURL() === blankCanvas.toDataURL()) {
+        blankCanvas.width = canvasTTD.width;
+        blankCanvas.height = canvasTTD.height;
+        if (canvasTTD.toDataURL() === blankCanvas.toDataURL()) {
             alert("⚠️ Pasien atau wali wajib menorehkan tanda tangan pada area kotak yang disediakan!");
             return;
         }
 
-        // Ambil risiko yang dicentang secara dinamis
         const risikoTerpilih = [];
         document.querySelectorAll('.chk-risiko:checked').forEach(el => {
             risikoTerpilih.push(el.value);
@@ -9919,14 +9924,15 @@
             btn.innerText = "⏳ Mengirim & Menyimpan...";
         }
 
+        // 🔥 FIX DINAMIS: Pengambilan teks UI yang lebih aman
         const payload = {
             action: "simpanConsent",
-            noRM: document.getElementById('lblConsentRM').innerText,
-            namaPasien: document.getElementById('lblConsentNama').innerText,
-            tindakan: document.getElementById('lblConsentTindakan').innerText,
+            noRM: document.getElementById('lblConsentRM')?.innerText || "-",
+            namaPasien: document.getElementById('lblConsentNama')?.innerText || "-",
+            tindakan: document.getElementById('lblConsentTindakan')?.innerText || "-",
             risikoTerpilih: risikoTerpilih,
             statusTTD: "Digital",
-            ttdBase64: canvas.toDataURL("image/png")
+            ttdBase64: canvasTTD.toDataURL("image/png")
         };
 
         fetch(WEB_APP_URL, {
@@ -9943,13 +9949,12 @@
             if (res.result === "success") {
                 alert("✅ Informed Consent berhasil disimpan & diarsip ke Google Drive!");
                 
-                // 🔥 1. KUNCI MEMORI PERMANEN (TTD & RISIKO):
                 const cleanRM = String(payload.noRM || "-").trim();
                 if (cleanRM && cleanRM !== "-") {
-                    // Simpan URL Direct dari server atau link foto
                     const urlSah = res.urlFoto || res.linkFoto || res.urlBukti || window.urlFotoConsentAktif;
                     localStorage.setItem('ttd_consent_' + cleanRM, urlSah);
                     localStorage.setItem('risiko_consent_' + cleanRM, JSON.stringify(risikoTerpilih));
+                    
                     const selTujuan = document.getElementById('selTujuanConsent');
                     const inpKustom = document.getElementById('inpTujuanKustomConsent');
                     let nilaiTujuanSah = payload.tujuan || (selTujuan ? selTujuan.value : "");
@@ -9965,18 +9970,21 @@
                 window.consentSudahDisimpanHariIni = true;
                 if (res.urlFoto || res.linkFoto) window.urlFotoConsentAktif = res.urlFoto || res.linkFoto;
 
-                // 🔥 2. AUTO-SAVE DRAF RME SECARA SERENTAK:
-                // Paksa simpan seluruh form (termasuk tindakan) agar tidak hilang saat di-refresh!
                 if (typeof simpanDraftRME === "function") {
                     console.log("💾 [Auto-Save] Menyimpan draf RME setelah Consent dibuat...");
                     simpanDraftRME();
                 }
 
-                // 🔥 3. LANGSUNG UBAH TOMBOL DI FORM RME JADI HIJAU:
                 if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
 
-                // Tutup modal consent
-                document.getElementById('modalInformedConsent').style.display = 'none';
+                // 🔥 FITUR KASIR (SILENT MODE): Picu pembuatan PDF diam-diam di latar belakang!
+                if (typeof cetakInformedConsentPDF === "function") {
+                    console.log("🚀 [Auto-PDF] Mengirim perintah pembuatan PDF diam-diam ke server...");
+                    cetakInformedConsentPDF(true); 
+                }
+
+                const modalConsent = document.getElementById('modalInformedConsent');
+                if(modalConsent) modalConsent.style.display = 'none';
             } else {
                 alert("❌ Gagal menyimpan consent: " + (res.message || "Terjadi kesalahan server."));
             }
@@ -10162,25 +10170,27 @@
     }
 
     // =========================================================================
-    // 🖨️ EKSEKUTOR CETAK INFORMED CONSENT (SMART CACHE: HEMAT DRIVE STORAGE)
+    // 🖨️ PENCETAK PDF CONSENT (100% DINAMIS + DUKUNGAN SILENT MODE)
     // =========================================================================
-    function cetakInformedConsentPDF() {
+    function cetakInformedConsentPDF(isSilent = false) {
         const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
         
-        // 🔥 1. CEK CACHE MEMORI: Apakah PDF untuk pasien ini SUDAH PERNAH DICETAK hari ini?
+        // 1. CEK CACHE MEMORI
         const existingPdfUrl = window.pdfConsentAktif || localStorage.getItem('pdf_url_consent_' + noRM);
         if (existingPdfUrl && existingPdfUrl !== "-" && existingPdfUrl !== "undefined") {
-            console.log("♻️ [Smart Print] PDF sudah ada di memori. Membuka ulang tanpa membuat file baru di Drive...");
-            alert("♻️ Membuka kembali dokumen PDF resmi yang telah dicetak sebelumnya...");
-            window.open(existingPdfUrl, '_blank');
-            return; // Hentikan fungsi di sini agar TIDAK membuat file sampah di Drive!
+            if (!isSilent) {
+                console.log("♻️ [Smart Print] PDF sudah ada di memori.");
+                alert("♻️ Membuka kembali dokumen PDF resmi yang telah dicetak sebelumnya...");
+                window.open(existingPdfUrl, '_blank');
+            }
+            return; 
         }
 
-        // --- JIKA BELUM PERNAH DICETAK, LANJUTKAN PROSES GENERATE KE SERVER ---
         const btnCetak = document.getElementById('btnCetakConsentPDF');
         const teksAsli = btnCetak ? btnCetak.innerHTML : "🖨️ Cetak / Unduh PDF Resmi";
         
-        if (btnCetak) {
+        // Hanya ubah UI tombol jika diklik manual oleh dokter (!isSilent)
+        if (btnCetak && !isSilent) {
             btnCetak.disabled = true;
             btnCetak.innerHTML = "⏳ Membuat Dokumen PDF... (Mohon Tunggu)";
             btnCetak.style.backgroundColor = "#7f8c8d";
@@ -10189,8 +10199,11 @@
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const namaPasien = document.getElementById('lblConsentNama')?.innerText || document.getElementById('modalNama')?.value || "-";
         const tindakan = document.getElementById('lblConsentTindakan')?.innerText || "-";
-        const diagnosa = document.getElementById('modalDiagnosa')?.value || "Sesuai rekam medis aktif";
         
+        // 🔥 FIX DINAMIS: Ambil nama dokter dan diagnosa secara cerdas, hapus teks kaku
+        const diagnosa = document.getElementById('modalDiagnosa')?.value || document.getElementById('inputDiagnosaAktif')?.value || "Sesuai rekam medis aktif";
+        const namaDokterDinamis = sessionData.username || document.getElementById('selDokter')?.value || document.getElementById('lblNamaDokter')?.innerText || "Dokter Klinik Anvaya";
+
         const pAktif = window.pasienRMEAktif || {};
         let detailAntrean = null;
         if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal !== null) {
@@ -10220,7 +10233,14 @@
         });
 
         const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
-        const tujuanTindakan = typeof getTujuanConsentAktif === "function" ? getTujuanConsentAktif() : (window.tujuanConsentAktif || localStorage.getItem('tujuan_consent_' + noRM) || "Penyembuhan & perbaikan fungsi klinis kedokteran gigi");
+        
+        // 🔥 FIX DINAMIS: Pengambilan tujuan tindakan yang aman
+        let tujuanTindakan = "-";
+        if (typeof getTujuanConsentAktif === "function") {
+            tujuanTindakan = getTujuanConsentAktif();
+        } else {
+            tujuanTindakan = window.tujuanConsentAktif || localStorage.getItem('tujuan_consent_' + noRM) || document.getElementById('selTujuanConsent')?.value || "Penyembuhan klinis";
+        }
 
         const payload = {
             action: "cetakConsentPDF",
@@ -10229,7 +10249,7 @@
             umur: umurTeks,
             jenisKelamin: jenisKelamin,
             alamat: alamat,
-            namaDokter: sessionData.username || "Dr. Aldila",
+            namaDokter: namaDokterDinamis,
             diagnosa: diagnosa,
             tindakan: tindakan,
             tujuan: tujuanTindakan,
@@ -10246,29 +10266,32 @@
         .then(res => {
             if (btnCetak) {
                 btnCetak.disabled = false;
-                // 🔥 UBAH TAMPILAN TOMBOL SETELAH SUKSES CETAK
                 btnCetak.innerHTML = "📄 Buka Ulang PDF Resmi";
-                btnCetak.style.backgroundColor = "#27ae60"; // Berubah hijau penanda sudah ada PDF
+                btnCetak.style.backgroundColor = "#27ae60"; 
             }
 
             if (res.result === "success" && res.pdfUrl) {
-                // 🔥 2. SIMPAN URL KE CACHE MEMORI (Agar klik berikutnya gratis & kilat!)
                 window.pdfConsentAktif = res.pdfUrl;
                 if (noRM !== "-") localStorage.setItem('pdf_url_consent_' + noRM, res.pdfUrl);
 
-                alert("✅ Dokumen PDF Resmi berhasil dibuat!\n\nDokumen akan dibuka secara otomatis di tab baru.");
-                window.open(res.pdfUrl, '_blank');
+                // Pop-up dan Tab Baru HANYA muncul jika dokter klik manual
+                if (!isSilent) {
+                    alert("✅ Dokumen PDF Resmi berhasil dibuat!\n\nDokumen akan dibuka secara otomatis di tab baru.");
+                    window.open(res.pdfUrl, '_blank');
+                } else {
+                    console.log("🤫 [Background PDF] Dokumen PDF Consent dirakit diam-diam untuk Kasir.");
+                }
             } else {
-                alert("❌ Gagal membuat PDF: " + (res.message || "Terjadi kesalahan di server."));
+                if (!isSilent) alert("❌ Gagal membuat PDF: " + (res.message || "Terjadi kesalahan di server."));
             }
         })
         .catch(err => {
-            if (btnCetak) {
+            if (btnCetak && !isSilent) {
                 btnCetak.disabled = false;
                 btnCetak.innerHTML = teksAsli;
                 btnCetak.style.backgroundColor = "#2980b9";
             }
-            alert("⚠️ Gangguan koneksi saat menghubungi mesin cetak server.");
+            if (!isSilent) alert("⚠️ Gangguan koneksi saat menghubungi mesin cetak server.");
         });
     }
 
