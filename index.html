@@ -9889,7 +9889,7 @@
 
     // 3. Validasi & Kirim ke Backend
     // =========================================================================
-    // 💾 PENYIMPAN TTD CONSENT (100% DINAMIS + PEMANTIK PDF OTOMATIS)
+    // 💾 PENYIMPAN TTD CONSENT (FIX ID KANVAS & MENDUKUNG MODE REVISI)
     // =========================================================================
     function kirimDataConsent() {
         const chkSetuju = document.getElementById('chkSayaSetuju');
@@ -9898,19 +9898,35 @@
             return;
         }
 
-        // 🔥 FIX DINAMIS: Ambil elemen kanvas secara presisi dan aman
-        const canvasTTD = document.getElementById('signature-pad') || window.canvas || document.querySelector('canvas');
-        if (!canvasTTD) {
+        // 🔥 1. PERBAIKAN FATAL: Membidik ID kanvas yang TEPAT ('canvasTTD')
+        const canvasTepat = document.getElementById('canvasTTD');
+        if (!canvasTepat) {
             alert("⚠️ Elemen kanvas tanda tangan tidak ditemukan di halaman!");
             return;
         }
 
+        // 🔥 2. LOGIKA CERDAS: Pengecekan Kanvas vs Mode Pratinjau (Revisi)
         const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = canvasTTD.width;
-        blankCanvas.height = canvasTTD.height;
-        if (canvasTTD.toDataURL() === blankCanvas.toDataURL()) {
-            alert("⚠️ Pasien atau wali wajib menorehkan tanda tangan pada area kotak yang disediakan!");
-            return;
+        blankCanvas.width = canvasTepat.width;
+        blankCanvas.height = canvasTepat.height;
+        const isCanvasKosong = (canvasTepat.toDataURL() === blankCanvas.toDataURL());
+        
+        let ttdBase64Data = "";
+        const bannerTTD = document.getElementById('bannerPratinjauTTD');
+
+        if (isCanvasKosong) {
+            // Jika kanvas kosong, cek apakah ini "Mode Revisi" (Banner TTD Lama Tampil)
+            if (bannerTTD && bannerTTD.style.display === "block" && window.urlFotoConsentAktif) {
+                // Aman! Pasien tidak perlu TTD ulang, pakai URL TTD yang lama
+                ttdBase64Data = window.urlFotoConsentAktif; 
+            } else {
+                // Jika ini Consent Baru dan Kanvas benar-benar Kosong, blokir!
+                alert("⚠️ Pasien atau wali wajib menorehkan tanda tangan pada area kotak yang disediakan!");
+                return;
+            }
+        } else {
+            // Jika ada coretan baru, ambil coretan tersebut
+            ttdBase64Data = canvasTepat.toDataURL("image/png");
         }
 
         const risikoTerpilih = [];
@@ -9924,7 +9940,6 @@
             btn.innerText = "⏳ Mengirim & Menyimpan...";
         }
 
-        // 🔥 FIX DINAMIS: Pengambilan teks UI yang lebih aman
         const payload = {
             action: "simpanConsent",
             noRM: document.getElementById('lblConsentRM')?.innerText || "-",
@@ -9932,7 +9947,7 @@
             tindakan: document.getElementById('lblConsentTindakan')?.innerText || "-",
             risikoTerpilih: risikoTerpilih,
             statusTTD: "Digital",
-            ttdBase64: canvasTTD.toDataURL("image/png")
+            ttdBase64: ttdBase64Data // Data TTD sudah di-handle cerdas di atas
         };
 
         fetch(WEB_APP_URL, {
