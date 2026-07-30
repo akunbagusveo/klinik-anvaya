@@ -7480,11 +7480,14 @@
                     htmlTindakanRingkas = p.tindakanRaw || "-";
                 }
 
-                // 🎨 RENDER TOMBOL DINAMIS
+                // 🎨 RENDER TOMBOL DINAMIS (KINI MENANGKAP URL DARI SERVER)
                 let btnCetakConsentHtml = "";
-                if (butuhConsent) {
+                const serverPdf = p.pdfConsentUrl || ""; // Tangkap URL dari backend
+                
+                // Tombol muncul jika scanner mendeteksi wajib consent, ATAU server sudah punya file PDF-nya
+                if (butuhConsent || serverPdf !== "") {
                     btnCetakConsentHtml = `
-                        <button onclick="cetakConsentKasir('${p.noRM}')" 
+                        <button onclick="cetakConsentKasir('${p.noRM}', '${serverPdf}')" 
                                 style="background-color: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Cetak Dokumen Informed Consent Pasien">
                             🖨️ Cetak Consent
                         </button>
@@ -7530,23 +7533,27 @@
     }
 
     // =========================================================================
-    // 🖨️ AKSI TOMBOL CETAK CONSENT DARI KASIR
+    // 🖨️ AKSI TOMBOL CETAK CONSENT DARI KASIR (FIX CROSS-DEVICE)
     // =========================================================================
-    function cetakConsentKasir(noRM) {
+    function cetakConsentKasir(noRM, serverPdfUrl = "") {
         const cleanNoRM = String(noRM).trim();
         
-        // Cari link PDF resmi (atau gambar TTD sebagai fallback)
+        // 🔥 1. PRIORITAS UTAMA: Gunakan URL resmi dari Database Server (Aman lintas komputer)
+        if (serverPdfUrl && serverPdfUrl.startsWith('http')) {
+            window.open(serverPdfUrl, '_blank');
+            return;
+        }
+
+        // 2. FALLBACK LOKAL (Jika jaringan server delay)
         const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM);
         const savedTtd = localStorage.getItem('ttd_consent_' + cleanNoRM);
         
         if (savedPdf && savedPdf.startsWith('http')) {
-            // Buka PDF resmi di tab baru agar langsung bisa di Ctrl+P oleh kasir
             window.open(savedPdf, '_blank');
         } else if (savedTtd && savedTtd.startsWith('http')) {
-            // Fallback: Jika PDF gagal di-generate tapi gambar TTD ada, tampilkan gambarnya
             window.open(savedTtd, '_blank');
         } else {
-            alert("⚠️ Link PDF Consent belum ditemukan di perangkat kasir ini.\n\nJika Dokter menginput menggunakan komputer/tablet yang berbeda, silakan minta dokter menekan tombol 'Cetak/Unduh PDF Resmi' di komputernya satu kali agar link terkirim.");
+            alert("⚠️ Dokumen PDF masih dalam proses pembuatan di server, atau dokter belum menekan tombol 'Simpan Persetujuan'.\n\nSilakan klik tombol '🔄 Segarkan Antrean' dalam beberapa detik, lalu coba cetak kembali.");
         }
     }
 
