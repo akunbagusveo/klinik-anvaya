@@ -9832,7 +9832,7 @@
     }
 
     // =========================================================================
-    // 🛡️ PENGATUR TOMBOL CONSENT (HANYA MEMINDAI NAMA TINDAKAN, BUKAN KATEGORI)
+    // 🛡️ PENGATUR TOMBOL CONSENT (DENGAN FITUR SMART-DISABLE & LOCKING)
     // =========================================================================
     function periksaKebutuhanConsentUI() {
         const btnConsent = document.getElementById('btnBuatConsent');
@@ -9850,6 +9850,11 @@
             window.consentSudahDisimpanHariIni = true;
             if (savedTTD) window.urlFotoConsentAktif = savedTTD;
             
+            // 🔥 PASTIKAN TOMBOL AKTIF BIKA SUDAH ADA TANDA TANGAN (Agar PDF bisa dilihat/dicetak)
+            btnConsent.disabled = false;
+            btnConsent.style.cursor = "pointer";
+            btnConsent.style.opacity = "1";
+            
             btnConsent.style.backgroundColor = "#27ae60"; // Hijau Sukses
             btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             btnConsent.style.display = "inline-flex";
@@ -9862,42 +9867,35 @@
         window.consentSudahDisimpanHariIni = false;
         let butuhConsent = false;
 
-        // 🔥 PENTING: Hanya cari '.sel-nama-tindakan' atau input teks kustom, ABAIKAN '.sel-kategori-tindakan'!
         const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis .sel-nama-tindakan, #kontainerTindakanDinamis input[type="text"]');
         
         semuaInputTindakan.forEach(el => {
-            // Jangan proses jika itu adalah textbox harga atau catatan klinis
             if (el.classList.contains('inp-harga-tindakan') || el.classList.contains('inp-catatan-tindakan')) return;
 
             if (el && el.value) {
                 const teks = String(el.value).trim().toLowerCase();
                 let isBerisiko = false;
 
-                // LAPIS 1: CEK ATRIBUT TAG <OPTION> YANG DIPILIH
+                // LAPIS 1: Atribut
                 if (el.tagName.toLowerCase() === 'select' && el.selectedIndex >= 0) {
                     const opt = el.options[el.selectedIndex];
-                    if (opt && opt.getAttribute('data-butuh-consent') === "1") {
-                        isBerisiko = true;
-                    }
+                    if (opt && opt.getAttribute('data-butuh-consent') === "1") isBerisiko = true;
                 }
 
-                // LAPIS 2: CEK KE ARRAY MASTER TINDAKAN DI MEMORI GLOBAL BROWSER
+                // LAPIS 2: Array Memori
                 if (!isBerisiko) {
                     const masterArray = window.masterTindakanGlobal || [];
                     const foundItem = masterArray.find(item => {
                         const namaItem = String(item.nama || item["Nama Tindakan"] || "").trim().toLowerCase();
                         return namaItem === teks;
                     });
-
                     if (foundItem) {
                         const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || foundItem[6] || 0;
-                        if (String(valConsent) === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true") {
-                            isBerisiko = true;
-                        }
+                        if (String(valConsent) === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true") isBerisiko = true;
                     }
                 }
 
-                // LAPIS 3: SAFETY NET (KEYWORD MEDIS BERISIKO PADA NAMA TINDAKAN)
+                // LAPIS 3: Keyword
                 if (!isBerisiko) {
                     if (teks.includes("odontektomi") || teks.includes("exo") || teks.includes("cabut") || 
                         teks.includes("implan") || teks.includes("bedah") || teks.includes("insisi") || 
@@ -9908,14 +9906,17 @@
                     }
                 }
 
-                if (isBerisiko) {
-                    butuhConsent = true;
-                }
+                if (isBerisiko) butuhConsent = true;
             }
         });
 
-        // 4. Eksekusi visual tombol utama
+        // --- 4. EKSEKUSI VISUAL TOMBOL UTAMA (SMART DISABLE/ENABLE) ---
         if (butuhConsent) {
+            // 🔴 MODE WAJIB: Nyalakan tombol
+            btnConsent.disabled = false;
+            btnConsent.style.cursor = "pointer";
+            btnConsent.style.opacity = "1"; // Terang benderang
+            
             btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan
             btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
             btnConsent.style.display = "inline-flex";
@@ -9923,11 +9924,17 @@
             btnConsent.style.border = "2px solid #f39c12";
             btnConsent.style.fontWeight = "bold";
         } else {
-            btnConsent.style.backgroundColor = "#7f8c8d"; // Abu-abu Opsional
+            // ⚪ MODE AMAN: Matikan tombol (Disable)
+            btnConsent.disabled = true;
+            btnConsent.style.cursor = "not-allowed"; // Ubah kursor menjadi tanda coret
+            btnConsent.style.opacity = "0.5"; // Jadikan transparan agar terlihat mati
+            
+            btnConsent.style.backgroundColor = "#95a5a6"; // Abu-abu pudar
             btnConsent.innerHTML = "✍️ Buat Informed Consent";
             btnConsent.style.display = "inline-flex";
-            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+            btnConsent.style.boxShadow = "none";
             btnConsent.style.border = "none";
+            btnConsent.style.fontWeight = "normal";
         }
     }
 
