@@ -9733,7 +9733,7 @@
     }
 
     // =========================================================================
-    // ✍️ PEMBUKA MODAL INFORMED CONSENT (WITH SMART ACTION EXTRACTOR)
+    // 🔓 PEMBUKA MODAL CONSENT (FIX STATE LEAKAGE - ISOLASI PER PASIEN)
     // =========================================================================
     function bukaModalConsent(noRM, namaPasien, tindakan) {
         // 1. SMART RM FALLBACK
@@ -9746,30 +9746,22 @@
         document.getElementById('lblConsentRM').innerText = cleanNoRM;
         document.getElementById('lblConsentNama').innerText = namaPasien || document.getElementById('modalNama')?.value || "-";
         
-        // 🔥 2. SMART ACTION EXTRACTOR: Ambil HANYA Nama Tindakan dengan rapi!
+        // 2. SMART ACTION EXTRACTOR
         let daftarTindakanBersih = [];
         const elemenTindakan = document.querySelectorAll('#kontainerTindakanDinamis .sel-nama-tindakan, #kontainerTindakanDinamis input[type="text"]');
         
         elemenTindakan.forEach(el => {
-            // Abaikan textbox harga dan catatan klinis
             if (el.classList.contains('inp-harga-tindakan') || el.classList.contains('inp-catatan-tindakan') || el.classList.contains('sel-kategori-tindakan')) return;
-            
             let nama = String(el.value).trim();
-            // Pastikan nilainya ada, dan abaikan tulisan "KUSTOM"
             if (nama && nama !== "KUSTOM" && nama !== "") {
                 daftarTindakanBersih.push(nama);
             }
         });
         
-        // Hapus duplikat (jika dokter menginput 2 gigi untuk tindakan yang sama) & gabungkan dengan koma
         let teksTindakanFinal = [...new Set(daftarTindakanBersih)].join(", ");
-        
-        // Jika form kosong, gunakan parameter fallback lama
         if (!teksTindakanFinal) teksTindakanFinal = tindakan || document.getElementById('lblConsentTindakan')?.innerText || "-";
-        
         document.getElementById('lblConsentTindakan').innerText = teksTindakanFinal;
 
-        // --- SISA KODE KE BAWAH TETAP SAMA SEPERTI SEBELUMNYA ---
         const modal = document.getElementById('modalInformedConsent');
         const btnSimpan = document.getElementById('btnSimpanConsent');
         const chkSetuju = document.getElementById('chkSayaSetuju');
@@ -9777,8 +9769,15 @@
         const imgTTD = document.getElementById('imgPratinjauTTD');
         const btnCetak = document.getElementById('btnCetakConsentPDF');
 
-        if (window.consentSudahDisimpanHariIni === true) {
-            // MODE PRATINJAU
+        // 🔥 FIX UTAMA: JANGAN gunakan window.consentSudahDisimpanHariIni!
+        // Ganti dengan cek SPESIFIK apakah pasien ini (berdasarkan RM-nya) sudah punya TTD di memori lokal.
+        const urlFotoLokalRMIni = localStorage.getItem('ttd_consent_' + cleanNoRM);
+        const isConsentPasienIniAda = (urlFotoLokalRMIni && urlFotoLokalRMIni !== "-" && urlFotoLokalRMIni !== "undefined");
+
+        if (isConsentPasienIniAda) {
+            // ==========================================
+            // MODE PRATINJAU (Khusus Pasien Ini)
+            // ==========================================
             if (btnSimpan) {
                 btnSimpan.style.backgroundColor = "#e67e22";
                 btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
@@ -9793,7 +9792,8 @@
                 }
             });
 
-            const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM) || window.tujuanConsentAktif;
+            // 🔥 FIX: Hapus fallback ke window.tujuanConsentAktif
+            const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM); 
             const selTujuan = document.getElementById('selTujuanConsent');
             const inpKustom = document.getElementById('inpTujuanKustomConsent');
             
@@ -9826,7 +9826,8 @@
             
             if (btnCetak) {
                 btnCetak.style.display = "inline-block";
-                const savedPdf = window.pdfConsentAktif || localStorage.getItem('pdf_url_consent_' + cleanNoRM);
+                // 🔥 FIX: Hapus fallback ke window.pdfConsentAktif
+                const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM);
                 if (savedPdf && savedPdf !== "-" && savedPdf !== "undefined") {
                     btnCetak.innerHTML = "📄 Buka Ulang PDF Resmi";
                     btnCetak.style.backgroundColor = "#27ae60";
@@ -9836,7 +9837,7 @@
                 }
             }
 
-            let urlFoto = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + cleanNoRM) || "";
+            let urlFoto = urlFotoLokalRMIni; // Murni dari RM pasien ini
             if (urlFoto && urlFoto !== "-" && urlFoto !== "undefined") {
                 let fileId = "";
                 const match = urlFoto.match(/id=([a-zA-Z0-9_-]+)/) || urlFoto.match(/d\/([a-zA-Z0-9_-]+)/);
@@ -9855,7 +9856,9 @@
             }
             
         } else {
-            // MODE INPUT BARU
+            // ==========================================
+            // MODE INPUT BARU (Kanvas Bersih)
+            // ==========================================
             if (typeof bersihkanTTD === "function") bersihkanTTD();
             
             if (btnSimpan) {
@@ -10201,8 +10204,8 @@
     function cetakInformedConsentPDF(isSilent = false) {
         const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
         
-        // 1. CEK CACHE MEMORI
-        const existingPdfUrl = window.pdfConsentAktif || localStorage.getItem('pdf_url_consent_' + noRM);
+        // 1. CEK CACHE MEMORI (Murni berdasarkan Nomor RM, hindari global variable leakage!)
+        const existingPdfUrl = localStorage.getItem('pdf_url_consent_' + noRM);
         if (existingPdfUrl && existingPdfUrl !== "-" && existingPdfUrl !== "undefined") {
             if (!isSilent) {
                 console.log("♻️ [Smart Print] PDF sudah ada di memori.");
