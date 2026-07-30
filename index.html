@@ -7180,14 +7180,14 @@
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (FIX WARNA BG & AUTO-FORMAT KOMA HARGA)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (FULL FITUR: CONSENT, KOMA, & RANGE ALARM)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
         if (!row) return;
 
         const inpHarga = row.querySelector('.inp-harga-tindakan');
-        const boxHarga = row.querySelector('.box-harga-container'); // 🔥 Ambil kotak pembungkus harga
+        const boxHarga = row.querySelector('.box-harga-container');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
         const infoDetail = row.querySelector('.info-tindakan-detail');
         let selTindakan = row.querySelector('.sel-nama-tindakan');
@@ -7195,26 +7195,61 @@
         const cleanNamaPilihan = String(namaTindakan || "").trim();
 
         // =====================================================================
-        // 🛠️ MESIN KETIK PINTAR (AUTO-FORMAT KOMA SAAT DOKTER MENGETIK HARGA)
+        // 🛠️ MESIN KETIK PINTAR + ALARM RANGE HARGA
         // =====================================================================
-        const pasangAutoFormatHarga = () => {
+        const pasangAutoFormatHarga = (minHarga = 0, maxHarga = 0) => {
             if (!inpHarga) return;
             inpHarga.oninput = function() {
-                // Bersihkan semua karakter selain angka
                 let valMurni = this.value.replace(/[^0-9]/g, '');
                 if (valMurni) {
-                    // Ubah menjadi format angka dengan koma (en-US)
+                    // 1. Format koma
                     this.value = Number(valMurni).toLocaleString('en-US');
+                    
+                    // 2. 🔥 VALIDASI RANGE HARGA BLOKIR SISTEM (Hanya aktif jika maxHarga > 0)
+                    if (maxHarga > 0) {
+                        const angkaInput = Number(valMurni);
+                        if (angkaInput < minHarga || angkaInput > maxHarga) {
+                            // ❌ DI LUAR RANGE: Blokir tombol simpan & warnai merah
+                            const pesanError = `Harga harus di antara Rp ${minHarga.toLocaleString('en-US')} - Rp ${maxHarga.toLocaleString('en-US')}`;
+                            this.setCustomValidity(pesanError); // HTML5 Blocker!
+                            this.style.color = "#c0392b"; // Teks Merah
+                            if (boxHarga) boxHarga.style.border = "2px solid #e74c3c"; // Kotak Merah
+                        } else {
+                            // ✅ DI DALAM RANGE: Buka blokir & normalkan warna
+                            this.setCustomValidity(''); 
+                            this.style.color = "inherit";
+                            if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
+                        }
+                    } else {
+                        // TINDAKAN KUSTOM (Bebas tanpa batas)
+                        this.setCustomValidity('');
+                        this.style.color = "inherit";
+                        if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
+                    }
                 } else {
                     this.value = "";
+                    this.setCustomValidity('');
+                    this.style.color = "inherit";
+                    if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
                 }
                 if (typeof simpanDraftRME === "function") simpanDraftRME();
             };
         };
 
+        // =====================================================================
+        // 🛑 JIKA DIKOSONGKAN (-- Pilih Tindakan --)
+        // =====================================================================
         if (!cleanNamaPilihan) {
-            if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
-            if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; // Kembalikan ke abu-abu
+            if (inpHarga) { 
+                inpHarga.value = ""; 
+                inpHarga.disabled = true; 
+                inpHarga.setCustomValidity(''); // Bersihkan error
+                inpHarga.style.color = "inherit";
+            }
+            if (boxHarga) {
+                boxHarga.style.backgroundColor = "#f5f6fa"; 
+                boxHarga.style.border = "1px solid #bdc3c7";
+            }
             if (infoDetail) infoDetail.style.display = 'none';
             const badgeLama = row.querySelector('.badge-wajib-consent');
             if (badgeLama) badgeLama.style.display = 'none';
@@ -7223,7 +7258,7 @@
         }
 
         // =====================================================================
-        // 🔥 SKENARIO 1: JIKA DOKTER MEMILIH "TINDAKAN KUSTOM"
+        // 🔥 SKENARIO 1: TINDAKAN "KUSTOM"
         // =====================================================================
         if (cleanNamaPilihan.toUpperCase() === "KUSTOM") {
             if (selTindakan && selTindakan.tagName.toLowerCase() === 'select') {
@@ -7244,8 +7279,14 @@
                 inpHarga.readOnly = false;
                 inpHarga.value = "";
                 inpHarga.placeholder = "Ketik harga manual...";
-                if (boxHarga) boxHarga.style.backgroundColor = "white"; // 🔥 PUTIHKAN BACKGROUND
-                pasangAutoFormatHarga(); // 🔥 PASANG MESIN KOMA
+                inpHarga.setCustomValidity(''); // Bebas tanpa validasi
+                inpHarga.style.color = "inherit";
+                
+                if (boxHarga) {
+                    boxHarga.style.backgroundColor = "white"; 
+                    boxHarga.style.border = "1px solid #bdc3c7";
+                }
+                pasangAutoFormatHarga(0, 0); // Kustom tidak punya min/max
             }
             
             if (infoDetail) infoDetail.style.display = 'none';
@@ -7258,7 +7299,7 @@
         }
 
         // =====================================================================
-        // 🔥 SKENARIO 2: JIKA DOKTER MEMILIH TINDAKAN DARI DATABASE
+        // 🔥 SKENARIO 2: TINDAKAN DARI DATABASE (RANGE ATAU FIXED)
         // =====================================================================
         const match = (window.masterTindakanGlobal || []).find(t => {
             const n1 = String(t.nama || "").trim().toLowerCase();
@@ -7273,20 +7314,25 @@
             
             if (inpHarga) {
                 inpHarga.value = hargaDasar > 0 ? hargaDasar.toLocaleString('en-US') : "";
+                inpHarga.setCustomValidity(''); 
+                inpHarga.style.color = "inherit";
+                if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
                 
-                // 🔥 JIKA HARGA RANGE (BISA DIEDIT)
+                // JIKA RANGE (BISA DIEDIT & DI-VALIDASI)
                 if (hargaMaksimal > 0 && hargaMaksimal !== hargaDasar) {
                     inpHarga.disabled = false;
                     inpHarga.readOnly = false;
-                    inpHarga.placeholder = `Range: Rp ${hargaDasar.toLocaleString('en-US')} - ${hargaMaksimal.toLocaleString('en-US')}`;
-                    if (boxHarga) boxHarga.style.backgroundColor = "white"; // 🔥 PUTIHKAN BACKGROUND
-                    pasangAutoFormatHarga(); // 🔥 PASANG MESIN KOMA
+                    inpHarga.placeholder = `Rp ${hargaDasar.toLocaleString('en-US')} - ${hargaMaksimal.toLocaleString('en-US')}`;
+                    if (boxHarga) boxHarga.style.backgroundColor = "white"; 
+                    
+                    // Nyalakan alarm validasi rentang harga!
+                    pasangAutoFormatHarga(hargaDasar, hargaMaksimal); 
                 } else {
-                    // 🔒 JIKA HARGA FIXED (TERKUNCI)
+                    // JIKA FIXED (TERKUNCI AMAN)
                     inpHarga.disabled = true; 
                     inpHarga.placeholder = "0";
-                    if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; // 🔥 ABU-ABUKAN BACKGROUND
-                    inpHarga.oninput = null; // Matikan mesin koma
+                    if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; 
+                    inpHarga.oninput = null; 
                 }
 
                 inpHarga.dispatchEvent(new Event('input'));
@@ -7301,6 +7347,9 @@
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
         }
 
+        // =====================================================================
+        // 🛡️ PENANGANAN BADGE CONSENT 
+        // =====================================================================
         selTindakan = row.querySelector('.sel-nama-tindakan');
         if (!isWajibConsent && selTindakan && selTindakan.tagName.toLowerCase() === 'select' && selTindakan.selectedIndex >= 0) {
             const optAktif = selTindakan.options[selTindakan.selectedIndex];
@@ -7316,10 +7365,7 @@
                 badge.className = 'badge-wajib-consent';
                 badge.style = "display: inline-block; background-color: #e67e22; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-top: 4px; align-self: flex-start;";
                 badge.innerHTML = "⚠️ Wajib Informed Consent";
-                
-                if (selTindakan && selTindakan.parentElement) {
-                    selTindakan.parentElement.appendChild(badge);
-                }
+                if (selTindakan && selTindakan.parentElement) selTindakan.parentElement.appendChild(badge);
             } else {
                 badge.style.display = "inline-block";
             }
