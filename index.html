@@ -4076,6 +4076,10 @@
             
             // 🔥 Picu siklus penunggu ini untuk pertama kalinya
             eksekusiRestorasi();
+        } else {
+            // 🔥 PERBAIKAN: Jika pasien baru / tidak ada draf, paksa scanner berjalan 
+            // agar tombol langsung dievaluasi menjadi REDUP (Disabled)!
+            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
         }
         // =========================================================================
 
