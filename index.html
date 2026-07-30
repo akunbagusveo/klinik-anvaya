@@ -7395,6 +7395,9 @@
     }
 
     // 🔥 FUNGSI UTAMA KASIR: Menarik dan Memetakan Antrean Billing Pasien
+    // =========================================================================
+    // 💰 PEMUAT ANTREAN KASIR (DENGAN SMART RADAR CETAK CONSENT)
+    // =========================================================================
     function muatAntreanKasir() {
         const tbody = document.getElementById('tbodyAntreanKasir');
         if (!tbody) return;
@@ -7407,7 +7410,7 @@
         })
         .then(res => res.json())
         .then(res => {
-            tbody.innerHTML = ""; // Bersihkan placeholder loading
+            tbody.innerHTML = ""; 
             
             if (res.result !== "success") {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">❌ Gagal memuat data: ${res.message}</td></tr>`;
@@ -7419,24 +7422,73 @@
                 return;
             }
 
-            // Simpan data kasir aktif ke memori global browser untuk kebutuhan modal billing nanti
             window.currentKasirQueueData = res.data;
 
-            // Loop dan suntikkan baris data pasien
             res.data.forEach(p => {
-                // 🔥 ALTERNATIF UI 2: ENGINE RINGKASAN BARIS TUNGGAL PINTAR
+                // 🔥 ENGINE RINGKASAN & RADAR CONSENT (Digabung agar ringan)
                 let htmlTindakanRingkas = "-";
+                let butuhConsent = false;
+                
+                // 1. Cek Cepat dari Brankas Memori Lokal (Berjaga-jaga jika dokter dan kasir pakai komputer yang sama)
+                const savedPdf = localStorage.getItem('pdf_url_consent_' + p.noRM);
+                const savedTtd = localStorage.getItem('ttd_consent_' + p.noRM);
+                if ((savedPdf && savedPdf !== "-" && savedPdf !== "undefined") || 
+                    (savedTtd && savedTtd !== "-" && savedTtd !== "undefined")) {
+                    butuhConsent = true;
+                }
+
                 try {
                     let arrTindakan = JSON.parse(p.tindakanRaw);
                     if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
+                        // UI Ringkasan Asli Anda (Aman & Tidak Dirubah)
                         if (arrTindakan.length > 1) {
                             htmlTindakanRingkas = `<strong style="color: #2c3e50;">${arrTindakan[0].namaTindakan}</strong> <span style="color: #ebd3c7; background: #fdf2e9; padding: 2px 5px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 4px;">+${arrTindakan.length - 1} lainnya</span>`;
                         } else {
                             htmlTindakanRingkas = `<span style="color: #2c3e50; font-weight: 500;">${arrTindakan[0].namaTindakan}</span>`;
                         }
+
+                        // 2. Radar Pencari Tindakan Berisiko
+                        if (!butuhConsent) {
+                            arrTindakan.forEach(t => {
+                                let teks = String(t.namaTindakan || "").trim().toLowerCase();
+                                let isBerisiko = false;
+                                
+                                // Lapis 1: Cek ke Master Tindakan
+                                const masterArray = window.masterTindakanGlobal || [];
+                                const foundItem = masterArray.find(item => String(item.nama || "").trim().toLowerCase() === teks);
+                                if (foundItem) {
+                                    const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || 0;
+                                    if (String(valConsent) === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true") isBerisiko = true;
+                                }
+                                
+                                // Lapis 2: Cek Keyword Sensitif
+                                if (!isBerisiko) {
+                                    if (teks.includes("odontektomi") || teks.includes("exo") || teks.includes("cabut") || 
+                                        teks.includes("implan") || teks.includes("bedah") || teks.includes("insisi") || 
+                                        teks.includes("gingiv") || teks.includes("frenektomi") || teks.includes("alveol") || 
+                                        teks.includes("operkul") || teks.includes("kista") || teks.includes("graft") || 
+                                        teks.includes("sinus") || teks.includes("valplas") || teks.includes("crown")) {
+                                        isBerisiko = true;
+                                    }
+                                }
+                                
+                                if (isBerisiko) butuhConsent = true; // Ketemu! Nyalakan flag tombol.
+                            });
+                        }
                     }
                 } catch (e) {
                     htmlTindakanRingkas = p.tindakanRaw || "-";
+                }
+
+                // 🎨 RENDER TOMBOL DINAMIS
+                let btnCetakConsentHtml = "";
+                if (butuhConsent) {
+                    btnCetakConsentHtml = `
+                        <button onclick="cetakConsentKasir('${p.noRM}')" 
+                                style="background-color: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Cetak Dokumen Informed Consent Pasien">
+                            🖨️ Cetak Consent
+                        </button>
+                    `;
                 }
 
                 const tr = document.createElement('tr');
@@ -7447,22 +7499,21 @@
                     <td style="padding: 12px 10px; font-weight: 600;">${p.namaPasien}</td>
                     <td style="padding: 12px 10px; color: #7f8c8d;">${p.tanggalDaftar}</td>
                     <td style="padding: 12px 10px;">🩺 Dr. ${p.namaDokter}</td>
-                    
                     <td style="padding: 12px 10px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Klik Proses Bayar untuk detail lengkap">
                         ${htmlTindakanRingkas}
                     </td>
-                    
                     <td style="padding: 12px 10px;">
                         <span style="background-color: #fce4d6; color: #c65911; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">
                             ${p.statusBayar}
                         </span>
                     </td>
                     <td style="padding: 12px 10px; text-align: center;">
+                        ${btnCetakConsentHtml}
                         <button onclick="kirimPingAsisten('${p.namaPasien}')" 
-                                style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Ingatkan dokter/asisten untuk input RME">
+                                style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Ingatkan dokter/asisten untuk input RME">
                             🔔 Ping
                         </button>
-                        <button onclick="bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran)}')" 
+                        <button onclick="bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran).replace(/"/g, '&quot;')}')" 
                                 style="background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                             💰 Proses Bayar
                         </button>
@@ -7476,6 +7527,27 @@
             console.error(err);
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">⚠️ Gangguan koneksi jaringan antrean kasir.</td></tr>`;
         });
+    }
+
+    // =========================================================================
+    // 🖨️ AKSI TOMBOL CETAK CONSENT DARI KASIR
+    // =========================================================================
+    function cetakConsentKasir(noRM) {
+        const cleanNoRM = String(noRM).trim();
+        
+        // Cari link PDF resmi (atau gambar TTD sebagai fallback)
+        const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM);
+        const savedTtd = localStorage.getItem('ttd_consent_' + cleanNoRM);
+        
+        if (savedPdf && savedPdf.startsWith('http')) {
+            // Buka PDF resmi di tab baru agar langsung bisa di Ctrl+P oleh kasir
+            window.open(savedPdf, '_blank');
+        } else if (savedTtd && savedTtd.startsWith('http')) {
+            // Fallback: Jika PDF gagal di-generate tapi gambar TTD ada, tampilkan gambarnya
+            window.open(savedTtd, '_blank');
+        } else {
+            alert("⚠️ Link PDF Consent belum ditemukan di perangkat kasir ini.\n\nJika Dokter menginput menggunakan komputer/tablet yang berbeda, silakan minta dokter menekan tombol 'Cetak/Unduh PDF Resmi' di komputernya satu kali agar link terkirim.");
+        }
     }
 
     function eksekusiFinalBilling(noRM) {
