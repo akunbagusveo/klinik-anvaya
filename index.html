@@ -6928,7 +6928,7 @@
 
     
     // =========================================================================
-    // 🚀 MEMUAT & MENORMALISASI MASTER TINDAKAN DARI SERVER (100% MATCH BACKEND)
+    // 🚀 MEMUAT MASTER TINDAKAN (FIX: MENGEMBALIKAN HARGA MAKSIMAL & RANGE)
     // =========================================================================
     function muatMasterTindakan() {
         fetch(WEB_APP_URL, {
@@ -6939,12 +6939,13 @@
         .then(res => {
             if (res.result === "success" && Array.isArray(res.data)) {
                 window.masterTindakanGlobal = res.data.map(item => {
-                    // 🔥 TARIK LANGSUNG KUNCI ASLI DARI KODE.GS: hargaDasar & butuhConsent
                     return {
                         ...item,
                         kategori: String(item.kategori || "").trim(),
                         nama: String(item.nama || "").trim(),
-                        harga: Number(item.hargaDasar || 0), // Backend mengirim properti bernama 'hargaDasar'
+                        harga: Number(item.hargaDasar || 0), 
+                        // 🔥 KEMBALIKAN HARGA MAKSIMAL DARI BACKEND
+                        hargaMaksimal: Number(item.hargaMaksimal || 0), 
                         keterangan: String(item.keterangan || "").trim(),
                         Butuh_Consent: (item.butuhConsent === 1 || String(item.butuhConsent) === "1") ? 1 : 0
                     };
@@ -7179,7 +7180,7 @@
     }
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (RINGAN & MATCHING DENGAN BACKEND)
+    // 🎯 PEMILIH TINDAKAN DINAMIS (KUSTOM, RANGE HARGA, & CONSENT BERSATU)
     // =========================================================================
     function pilihTindakanDinamis(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
@@ -7188,7 +7189,7 @@
         const inpHarga = row.querySelector('.inp-harga-tindakan');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
         const infoDetail = row.querySelector('.info-tindakan-detail');
-        const selTindakan = row.querySelector('.sel-nama-tindakan');
+        let selTindakan = row.querySelector('.sel-nama-tindakan');
 
         const cleanNamaPilihan = String(namaTindakan || "").trim();
 
@@ -7201,7 +7202,45 @@
             return;
         }
 
-        // 1. CARI DATA DI MASTER TINDAKAN GLOBAL:
+        // =====================================================================
+        // 🔥 SKENARIO 1: JIKA DOKTER MEMILIH "TINDAKAN KUSTOM"
+        // =====================================================================
+        if (cleanNamaPilihan.toUpperCase() === "KUSTOM") {
+            // 1. Ubah Select menjadi Input text agar dokter bisa mengetik
+            if (selTindakan && selTindakan.tagName.toLowerCase() === 'select') {
+                const parentCell = selTindakan.parentElement;
+                parentCell.innerHTML = `
+                    <div class="wrapper-kustom-input" style="display:flex; width:100%;">
+                        <input type="text" class="sel-nama-tindakan" placeholder="Ketik nama tindakan..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="simpanDraftRME(); periksaKebutuhanConsentUI();" required>
+                    </div>
+                `;
+                setTimeout(() => {
+                    const newInp = row.querySelector('.sel-nama-tindakan');
+                    if (newInp) newInp.focus();
+                }, 50);
+            }
+            
+            // 2. Bebaskan kolom harga agar bisa diinput manual & kosongkan nilainya
+            if (inpHarga) {
+                inpHarga.disabled = false;
+                inpHarga.readOnly = false;
+                inpHarga.value = "";
+                inpHarga.placeholder = "Ketik harga manual...";
+            }
+            
+            // 3. Sembunyikan keterangan dan evaluasi ulang consent
+            if (infoDetail) infoDetail.style.display = 'none';
+            const badgeLama = row.querySelector('.badge-wajib-consent');
+            if (badgeLama) badgeLama.style.display = 'none';
+
+            if (typeof simpanDraftRME === "function") simpanDraftRME();
+            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            return;
+        }
+
+        // =====================================================================
+        // 🔥 SKENARIO 2: JIKA DOKTER MEMILIH TINDAKAN NORMAL DARI DATABASE
+        // =====================================================================
         const match = (window.masterTindakanGlobal || []).find(t => {
             const n1 = String(t.nama || "").trim().toLowerCase();
             return n1 === cleanNamaPilihan.toLowerCase();
@@ -7210,35 +7249,48 @@
         let isWajibConsent = false;
 
         if (match) {
-            // 🔥 ISI HARGA (Angka sudah murni dari server!)
+            // Cek harga dasar dan maksimal
+            const hargaDasar = Number(match.harga || 0);
+            const hargaMaksimal = Number(match.hargaMaksimal || 0);
+            
             if (inpHarga) {
-                inpHarga.disabled = false;
-                // Ambil dari match.harga (karena di muatMasterTindakan kita simpan sbg harga) ATAU match.hargaDasar langsung
-                const nominalHarga = Number(match.harga || match.hargaDasar || 0); 
-                inpHarga.value = nominalHarga > 0 ? nominalHarga.toLocaleString('en-US') : "";
+                inpHarga.value = hargaDasar > 0 ? hargaDasar.toLocaleString('en-US') : "";
+                
+                // 🔥 LOGIKA RANGE HARGA: Jika harga maksimal berbeda dari harga dasar -> Buka Kunci!
+                if (hargaMaksimal > 0 && hargaMaksimal !== hargaDasar) {
+                    inpHarga.disabled = false;
+                    inpHarga.readOnly = false;
+                    inpHarga.placeholder = `Range: Rp ${hargaDasar.toLocaleString('id-ID')} - ${hargaMaksimal.toLocaleString('id-ID')}`;
+                } else {
+                    // Jika harga tetap (Fixed) -> Kunci (Read-Only)
+                    inpHarga.disabled = true; 
+                    inpHarga.placeholder = "0";
+                }
+
                 inpHarga.dispatchEvent(new Event('input'));
                 inpHarga.dispatchEvent(new Event('change'));
             }
             
-            // 🔥 ISI KETERANGAN
+            // Isi Keterangan
             const teksKet = String(match.keterangan || "").trim();
             if (lblKeterangan) lblKeterangan.innerText = teksKet;
             if (infoDetail) infoDetail.style.display = teksKet ? 'block' : 'none';
 
-            // 🔥 CEK STATUS CONSENT
+            // Cek Consent dari DB
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
         }
 
-        // 2. BACKUP SCANNER: Cek dari atribut data-butuh-consent
-        if (!isWajibConsent && selTindakan && selTindakan.selectedIndex >= 0) {
+        // BACKUP SCANNER: Cek dari atribut data-butuh-consent
+        selTindakan = row.querySelector('.sel-nama-tindakan');
+        if (!isWajibConsent && selTindakan && selTindakan.tagName.toLowerCase() === 'select' && selTindakan.selectedIndex >= 0) {
             const optAktif = selTindakan.options[selTindakan.selectedIndex];
             if (optAktif && optAktif.getAttribute('data-butuh-consent') === "1") {
                 isWajibConsent = true;
             }
         }
 
-        // 3. MUNCULKAN ATAU SEMBUNYIKAN BADGE:
+        // MUNCULKAN ATAU SEMBUNYIKAN BADGE:
         let badge = row.querySelector('.badge-wajib-consent');
         if (isWajibConsent) {
             if (!badge) {
@@ -7257,7 +7309,7 @@
             badge.style.display = "none";
         }
 
-        // 4. PICU KALKULASI TOMBOL CONSENT:
+        // PICU KALKULASI TOMBOL CONSENT:
         if (typeof simpanDraftRME === "function") simpanDraftRME();
         if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
     }
