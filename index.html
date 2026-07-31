@@ -1888,14 +1888,30 @@
     
             <div style="border-top: 2px solid #eee; padding-top: 15px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
                 
-                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; font-size: 14px;">
-                    <span style="color: #7f8c8d;">Total Tindakan:</span>
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; font-size: 14px;">
+                    <span style="color: #7f8c8d;">Total Tindakan Medis:</span>
                     <span style="font-weight: bold;" id="lblBillTotalTindakan">Rp 0</span>
                 </div>
     
-                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; align-items: center;">
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center;">
                     <span style="color: #7f8c8d; font-size: 14px;">Potongan Diskon (Rp):</span>
                     <input type="text" id="inpBillDiskon" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; text-align: right; font-weight: bold;">
+                </div>
+
+                <!-- 🔥 TAMBAHAN MODUL LAB & DP DINAMIS -->
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center; border-top: 1px dotted #ccc; padding-top: 8px;">
+                    <span style="color: #d35400; font-size: 14px; font-weight: bold;">Total Biaya Lab (Pihak Ke-3):</span>
+                    <input type="text" id="inpBillLab" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #f39c12; background: #fffdf7; text-align: right; font-weight: bold; color: #d35400;">
+                </div>
+
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center;">
+                    <span style="color: #2980b9; font-size: 14px; font-weight: bold;">Bayar Uang Muka (DP) Lab:</span>
+                    <input type="text" id="inpBillDPLab" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #3498db; background: #f4f9fd; text-align: right; font-weight: bold; color: #2980b9;">
+                </div>
+
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; font-size: 13px; color: #e74c3c;">
+                    <span>Sisa Piutang Lab (Belum Lunas):</span>
+                    <span id="lblBillSisaPiutang" style="font-weight: bold;">Rp 0</span>
                 </div>
     
                 <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; align-items: center;">
@@ -7671,26 +7687,24 @@
 
     
     // 🔥 FUNGSI: Membuka Jendela Kasir & Membongkar Rincian Objek JSON (ANTI-NaN)
-    function bukaModalProsesBilling(noRM, barisPendaftaranStr) { // 🔥 Terima input sebagai string
+    function bukaModalProsesBilling(noRM, barisPendaftaranStr) {
         if (!window.currentKasirQueueData) return;
-        
-        // Cari data pasien di memori kasir global (Berdasarkan No RM dan string baris yang cocok)
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaranStr);
         if (!pasien) {
             alert("⚠️ Data antrean pasien gagal dibaca dari memori.");
             return;
         }
 
-        // Set Identitas Kepala Nota
         document.getElementById('billNoRM').innerText = pasien.noRM;
         document.getElementById('billNama').innerText = pasien.namaPasien;
         document.getElementById('billDokter').innerText = pasien.namaDokter;
         document.getElementById('billTanggal').innerText = pasien.tanggalDaftar;
-        
-        // 🔥 FIX: Kirim baris pendaftaran sebagai teks JSON (Array [10, 11]) ke form sembunyi
         document.getElementById('billBarisPendaftaran').value = JSON.stringify(pasien.barisPendaftaran);
         
+        // 🔥 FIX: Kosongkan semua inputan secara dinamis saat pasien baru dibuka
         document.getElementById('inpBillDiskon').value = "";
+        document.getElementById('inpBillLab').value = "";
+        document.getElementById('inpBillDPLab').value = "";
         
         const tbody = document.getElementById('tbodyItemBilling');
         tbody.innerHTML = "";
@@ -7705,8 +7719,6 @@
                     
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
-                    
-                    // 🔥 UI BARU: Tanpa bullet (•), menggunakan styling blok nama yang lebih rapi
                     tr.innerHTML = `
                         <td style="padding: 8px; font-weight: 600; color: #34495e;">
                             ${t.namaTindakan} <br>
@@ -7733,23 +7745,32 @@
         document.getElementById('modalBillingKasir').style.display = 'none';
     }
 
-    // 🔥 FUNGSI: Perhitungan Realtime Diskon dengan Format Koma
+    // 🔥 FIX: Engine Kalkulator Realtime (Diskon + Lab + DP)
     function hitungGrandTotalBillingRealtime() {
         const inpDiskon = document.getElementById('inpBillDiskon');
-        let angkaBersih = inpDiskon.value.replace(/[^0-9]/g, '');
-        let nominalDiskon = Number(angkaBersih) || 0;
+        const inpLab = document.getElementById('inpBillLab');
+        const inpDPLab = document.getElementById('inpBillDPLab');
 
-        // Format tampilan diskon saat diketik kasir (koma ribuan)
-        inpDiskon.value = angkaBersih ? nominalDiskon.toLocaleString('en-US') : '';
+        let nominalDiskon = Number(inpDiskon.value.replace(/[^0-9]/g, '')) || 0;
+        let nominalLab = Number(inpLab.value.replace(/[^0-9]/g, '')) || 0;
+        let nominalDPLab = Number(inpDPLab.value.replace(/[^0-9]/g, '')) || 0;
 
-        // Amankan agar nilai diskon tidak melebihi total tagihan tindakan
-        if (nominalDiskon > window.totalTindakanAktifKasir) {
-            nominalDiskon = window.totalTindakanAktifKasir;
-            inpDiskon.value = nominalDiskon.toLocaleString('en-US');
-        }
+        // Amankan nilai: Diskon tak boleh lebih dari total tindakan
+        if (nominalDiskon > window.totalTindakanAktifKasir) nominalDiskon = window.totalTindakanAktifKasir;
+        // Amankan nilai: DP Lab tak boleh lebih dari Total Lab
+        if (nominalDPLab > nominalLab) nominalDPLab = nominalLab;
 
-        let grandTotal = window.totalTindakanAktifKasir - nominalDiskon;
-        document.getElementById('lblBillGrandTotal').innerText = "Rp " + grandTotal.toLocaleString('id-ID');
+        // Tampilkan format koma ke user
+        inpDiskon.value = nominalDiskon ? nominalDiskon.toLocaleString('id-ID') : '';
+        inpLab.value = nominalLab ? nominalLab.toLocaleString('id-ID') : '';
+        inpDPLab.value = nominalDPLab ? nominalDPLab.toLocaleString('id-ID') : '';
+
+        // Rumus Finansial
+        let sisaPiutang = nominalLab - nominalDPLab;
+        let grandTotalHariIni = (window.totalTindakanAktifKasir - nominalDiskon) + nominalDPLab;
+
+        document.getElementById('lblBillSisaPiutang').innerText = "Rp " + sisaPiutang.toLocaleString('id-ID');
+        document.getElementById('lblBillGrandTotal').innerText = "Rp " + grandTotalHariIni.toLocaleString('id-ID');
     }
 
     // 🔥 FUNGSI UTAMA: Mengunci Transaksi Finansial & Mengirim Data Rekap ke Sheets
@@ -7757,15 +7778,17 @@
         const barisPendaftaran = document.getElementById('billBarisPendaftaran').value;
         const noRM = document.getElementById('billNoRM').innerText;
         const namaPasien = document.getElementById('billNama').innerText;
-        const inpDiskon = document.getElementById('inpBillDiskon').value;
         const metodeBayar = document.getElementById('selBillMetode').value;
         const btnKunci = document.getElementById('btnKunciKuitansi');
         
-        // Konversi nilai diskon ber-koma ke integer murni agar aman dihitung matematika
-        const diskonMurni = Number(inpDiskon.replace(/[^0-9]/g, '')) || 0;
-        const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
+        // Ambil nilai integer murni untuk dikirim ke Backend
+        const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
+        const labMurni = Number(document.getElementById('inpBillLab').value.replace(/[^0-9]/g, '')) || 0;
+        const dpLabMurni = Number(document.getElementById('inpBillDPLab').value.replace(/[^0-9]/g, '')) || 0;
         
-        // Ambil data operator log kasir aktif dari local storage
+        const sisaPiutang = labMurni - dpLabMurni;
+        const grandTotalMurni = (window.totalTindakanAktifKasir - diskonMurni) + dpLabMurni;
+        
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Kasir";
 
@@ -7774,15 +7797,20 @@
             return;
         }
 
-        // Konfirmasi final sebelum merubah database keuangan klinik
-        if (!confirm(`Konfirmasi Pembayaran:\nPasien: ${namaPasien}\nTotal Bayar: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nApakah data kuitansi ini sudah benar?`)) {
-            return;
+        let pesanKonfirmasi = `Konfirmasi Pembayaran:\nPasien: ${namaPasien}\n`;
+        pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${(window.totalTindakanAktifKasir - diskonMurni).toLocaleString('id-ID')}\n`;
+        if (labMurni > 0) {
+            pesanKonfirmasi += `\nDP Biaya Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
+            pesanKonfirmasi += `Sisa Piutang Lab: Rp ${sisaPiutang.toLocaleString('id-ID')} (Akan ditagih saat lunas)\n`;
         }
+        pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan?`;
 
-        // Kunci tombol untuk menghindari double-click/spam data ganda
+        if (!confirm(pesanKonfirmasi)) return;
+
         btnKunci.disabled = true;
         btnKunci.innerText = "⏳ Mengunci Nota & Pembukuan...";
 
+        // 🔥 FIX: Payload Injeksi Modul Lab
         const payload = {
             action: "kunciPembayaran",
             barisPendaftaran: barisPendaftaran,
@@ -7790,6 +7818,9 @@
             namaPasien: namaPasien,
             totalTindakan: window.totalTindakanAktifKasir,
             diskon: diskonMurni,
+            biayaLab: labMurni,
+            dpLab: dpLabMurni,
+            sisaPiutang: sisaPiutang,
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             operator: usernameAktif
@@ -7801,20 +7832,13 @@
         })
         .then(res => res.json())
         .then(res => {
-            // Kembalikan status tombol kuitansi
             btnKunci.disabled = false;
             btnKunci.innerText = "🔒 Kunci & Cetak Kuitansi";
             
             if (res.result === "success") {
-                alert(`🎉 PEMBAYARAN SUKSES DIKUNCI!\n\nNomor Kuitansi Resmi:\n👉 ${res.noKuitansi}\n\nStatus antrean lunas & pembukuan kas berhasil dicatat.`);
-                
-                // Tutup pop-up modal kasir
+                alert(`🎉 PEMBAYARAN SUKSES DIKUNCI!\n\nNomor Kuitansi Resmi:\n👉 ${res.noKuitansi}`);
                 tutupModalBilling();
-                
-                // Segarkan antrean kasir secara dinamis (Pasien yang lunas akan otomatis menghilang dari daftar)
-                if (typeof muatAntreanKasir === "function") {
-                    muatAntreanKasir();
-                }
+                if (typeof muatAntreanKasir === "function") muatAntreanKasir();
             } else {
                 alert("❌ Gagal menyimpan data transaksi: " + res.message);
             }
