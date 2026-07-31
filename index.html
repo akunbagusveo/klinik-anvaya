@@ -7596,109 +7596,102 @@
         }
     }
 
+    // 🔥 FUNGSI KEDUA: Simpan Pembukuan sekaligus Generate PDF (Sudah Mendukung DP Lab)
     function eksekusiFinalBilling(noRM) {
-        // Bersihkan spasi atau karakter tak terlihat pada nomor RM
-        const cleanNoRM = noRM.trim();
+        const barisPendaftaran = document.getElementById('billBarisPendaftaran').value;
+        const namaPasien = document.getElementById('billNama').innerText;
+        const metodeBayar = document.getElementById('selBillMetode').value;
+        const btnKunciCetak = document.getElementById('btnKunciCetak');
+        
+        // 🔥 BACA DATA LAB DARI KOTAK INPUT KASIR BARU
+        const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
+        const labMurni = Number(document.getElementById('inpBillLab').value.replace(/[^0-9]/g, '')) || 0;
+        const dpLabMurni = Number(document.getElementById('inpBillDPLab').value.replace(/[^0-9]/g, '')) || 0;
+        
+        const sisaPiutang = labMurni - dpLabMurni;
+        const grandTotalMurni = (window.totalTindakanAktifKasir - diskonMurni) + dpLabMurni;
+        
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
+        const usernameAktif = sessionData ? sessionData.username : "Kasir";
 
-        // 1. Ambil data mentah lengkap pasien dari memori global antrean kasir
-        const dataPasien = window.currentKasirQueueData ? window.currentKasirQueueData.find(p => p.noRM.trim() === cleanNoRM) : null;
-        if (!dataPasien) return alert("❌ Kritis: Data antrean pasien gagal ditemukan di memori sistem.");
-
-        // 2. Ambil nilai input langsung dari nama ID HTML asli Anda
-        const elDiskon = document.getElementById('inpBillDiskon'); 
-        const elMetode = document.getElementById('selBillMetode');
-        
-        // Konversi nilai diskon dari input teks Anda
-        const diskon = elDiskon ? parseFloat(elDiskon.value.replace(/[^0-9]/g, '')) || 0 : 0;
-        
-        // Hitung total tarif bersih tindakan murni dari data RME
-        let totalTindakan = 0;
-        let arrayTindakanPecahan = [];
-        
-        try {
-            const listTindakanAsli = JSON.parse(dataPasien.tindakanRaw);
-            listTindakanAsli.forEach(t => {
-                const hargaBersih = parseFloat(t.hargaDiinput || t.hargaBersihPerItem) || 0;
-                totalTindakan += hargaBersih;
-                
-                // Susun struktur item terpecah untuk database DetailLaporanKeuangan
-                arrayTindakanPecahan.push({
-                    namaTindakan: t.namaTindakan,
-                    hargaBersihPerItem: hargaBersih,
-                    // 🔥 FIX: Gunakan nama spesifik (t.dokterPelaksana). Jika gagal, baru gunakan nama gabungan.
-                    dokterPelaksana: t.dokterPelaksana || dataPasien.namaDokter 
-                });
-            });
-        } catch (e) {
-            console.error("Gagal menyusun rincian tindakan:", e);
-            return alert("❌ Format rincian tindakan medis pasien rusak.");
+        if (!barisPendaftaran) {
+            alert("⚠️ Gagal memproses, indeks baris antrean terputus. Silakan muat ulang halaman.");
+            return;
         }
 
-        const grandTotal = totalTindakan - diskon;
+        // Ambil tindakan mentah dari memori untuk dikirim ke mesin PDF
+        const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
+        const tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
 
-        // 3. Ambil data sesi kasir yang sedang bertugas
-        const sessionUser = JSON.parse(localStorage.getItem('anvaya_session'));
-        const namaKasirAktif = sessionUser ? sessionUser.username : "Kasir Sistem";
+        // Konfirmasi Pembayaran
+        let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
+        pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${(window.totalTindakanAktifKasir - diskonMurni).toLocaleString('id-ID')}\n`;
+        
+        if (dpLabMurni > 0 || labMurni > 0) {
+            pesanKonfirmasi += `\nTitipan/DP Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
+            if (labMurni === 0 && dpLabMurni > 0) {
+                pesanKonfirmasi += `Status Lab: Harga menyusul (Deposit DP Tercatat)\n`;
+            } else {
+                pesanKonfirmasi += `Sisa Piutang Lab: Rp ${sisaPiutang.toLocaleString('id-ID')}\n`;
+            }
+        }
+        
+        pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan & Buat PDF?`;
 
-        // 4. Bungkus Payload Data Finansial (Sesuai kolom LaporanKeuangan)
-        const payloadFinansial = {
+        if (!confirm(pesanKonfirmasi)) return;
+
+        if (btnKunciCetak) {
+            btnKunciCetak.disabled = true;
+            btnKunciCetak.innerText = "⏳ Sedang Mengukir Kuitansi...";
+        }
+
+        // 🔥 PAYLOAD BARU YANG MENYERTAKAN DATA LAB
+        const payload = {
             action: "prosesFinalBilling",
-            noRM: dataPasien.noRM,
-            namaPasien: dataPasien.namaPasien,
-            email: dataPasien.email || "-",
-            noHp: dataPasien.noHp || "-",
-            totalTindakan: totalTindakan,
-            diskon: diskon,
-            grandTotal: grandTotal,
-            metodePembayaran: elMetode ? elMetode.value : "Tunai / Cash",
-            kasirOperator: namaKasirAktif,
-            tindakanRaw: JSON.stringify(arrayTindakanPecahan),
-            barisPendaftaran: dataPasien.barisPendaftaran // 🔥 TAMBAHAN UTAMA DI SINI
+            barisPendaftaran: barisPendaftaran,
+            noRM: noRM,
+            namaPasien: namaPasien,
+            tindakanRaw: tindakanRawStr, // Wajib untuk PDF
+            totalTindakan: window.totalTindakanAktifKasir,
+            diskon: diskonMurni,
+            biayaLab: labMurni,       // <-- Data yang tadi hilang
+            dpLab: dpLabMurni,        // <-- Data yang tadi hilang
+            sisaPiutang: sisaPiutang, // <-- Data yang tadi hilang
+            grandTotal: grandTotalMurni,
+            metodePembayaran: metodeBayar,
+            kasirOperator: usernameAktif
         };
 
-        // 5. Ubah visual tombol milik Anda menjadi status memuat (loading)
-        const btnBayar = document.getElementById('btnKunciKuitansi');
-        if (btnBayar) {
-            btnBayar.disabled = true;
-            btnBayar.innerText = "🔒 Mengunci Finansial & PDF... ⏳";
-        }
-
-        // 6. Tembak data ke Google Apps Script
         fetch(WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify(payloadFinansial)
+            body: JSON.stringify(payload)
         })
         .then(res => res.json())
         .then(res => {
-            if (btnBayar) {
-                btnBayar.disabled = false;
-                btnBayar.innerText = "🔒 Kunci & Cetak Kuitansi";
+            if (btnKunciCetak) {
+                btnKunciCetak.disabled = false;
+                btnKunciCetak.innerText = "🖨️ Kunci & Cetak Kuitansi PDF";
             }
-
+            
             if (res.result === "success") {
-                // 🔥 FIX: Buat pesan sukses manual karena backend tidak mengirim res.message
-                alert("✅ Kuitansi berhasil dibuat dan pembayaran telah ditutup!");
+                alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!`);
                 
-                // Buka tab kuitansi PDF otomatis untuk siap cetak
-                if (res.pdfUrl) {
-                    window.open(res.pdfUrl, '_blank');
-                }
+                // Buka PDF di tab baru
+                if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
                 
-                // Tutup modal menggunakan fungsi bawaan Anda & perbarui tabel kasir
-                tutupModalBilling(); 
+                tutupModalBilling();
                 if (typeof muatAntreanKasir === "function") muatAntreanKasir();
             } else {
-                // Untuk error, backend tetap mengirimkan res.message
-                alert("❌ Proses Gagal: " + res.message);
+                alert("❌ Gagal membuat kuitansi PDF: " + res.message);
             }
         })
         .catch(err => {
-            if (btnBayar) {
-                btnBayar.disabled = false;
-                btnBayar.innerText = "🔒 Kunci & Cetak Kuitansi";
+            console.error(err);
+            if (btnKunciCetak) {
+                btnKunciCetak.disabled = false;
+                btnKunciCetak.innerText = "🖨️ Kunci & Cetak Kuitansi PDF";
             }
-            console.error("Billing Network Error:", err);
-            alert("⚠️ Hubungan ke jaringan database terputus. Silakan coba lagi.");
+            alert("⚠️ Terjadi gangguan jaringan internet saat membuat PDF.");
         });
     }
 
