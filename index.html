@@ -7745,7 +7745,7 @@
         document.getElementById('modalBillingKasir').style.display = 'none';
     }
 
-    // 🔥 FIX: Engine Kalkulator Realtime (Diskon + Lab + DP)
+    // 🔥 FIX: Engine Kalkulator Realtime (Mendukung Titipan DP tanpa Harga Fix)
     function hitungGrandTotalBillingRealtime() {
         const inpDiskon = document.getElementById('inpBillDiskon');
         const inpLab = document.getElementById('inpBillLab');
@@ -7755,10 +7755,10 @@
         let nominalLab = Number(inpLab.value.replace(/[^0-9]/g, '')) || 0;
         let nominalDPLab = Number(inpDPLab.value.replace(/[^0-9]/g, '')) || 0;
 
-        // Amankan nilai: Diskon tak boleh lebih dari total tindakan
+        // Amankan nilai diskon agar tidak merugikan tindakan
         if (nominalDiskon > window.totalTindakanAktifKasir) nominalDiskon = window.totalTindakanAktifKasir;
-        // Amankan nilai: DP Lab tak boleh lebih dari Total Lab
-        if (nominalDPLab > nominalLab) nominalDPLab = nominalLab;
+        
+        // 🔥 GEMBOK DIBUKA: Kita bebaskan pasien bayar DP berapapun meskipun Total Lab masih 0!
 
         // Tampilkan format koma ke user
         inpDiskon.value = nominalDiskon ? nominalDiskon.toLocaleString('id-ID') : '';
@@ -7769,7 +7769,23 @@
         let sisaPiutang = nominalLab - nominalDPLab;
         let grandTotalHariIni = (window.totalTindakanAktifKasir - nominalDiskon) + nominalDPLab;
 
-        document.getElementById('lblBillSisaPiutang').innerText = "Rp " + sisaPiutang.toLocaleString('id-ID');
+        // 🎨 Visualisasi UI Cerdas untuk Kasir
+        let lblPiutangUI = document.getElementById('lblBillSisaPiutang');
+        
+        if (nominalLab === 0 && nominalDPLab > 0) {
+            // Kasus: Harga Lab Belum Turun
+            lblPiutangUI.innerText = "⏳ Menunggu Harga Pihak Ke-3";
+            lblPiutangUI.style.color = "#f39c12"; // Oranye (Pending)
+        } else if (sisaPiutang < 0) {
+            // Kasus: Kelebihan DP
+            lblPiutangUI.innerText = "Kelebihan / Deposit: Rp " + Math.abs(sisaPiutang).toLocaleString('id-ID');
+            lblPiutangUI.style.color = "#27ae60"; // Hijau (Aman)
+        } else {
+            // Kasus Normal (Ada Sisa Hutang)
+            lblPiutangUI.innerText = "Rp " + sisaPiutang.toLocaleString('id-ID');
+            lblPiutangUI.style.color = "#e74c3c"; // Merah (Hutang)
+        }
+
         document.getElementById('lblBillGrandTotal').innerText = "Rp " + grandTotalHariIni.toLocaleString('id-ID');
     }
 
@@ -7781,7 +7797,6 @@
         const metodeBayar = document.getElementById('selBillMetode').value;
         const btnKunci = document.getElementById('btnKunciKuitansi');
         
-        // Ambil nilai integer murni untuk dikirim ke Backend
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const labMurni = Number(document.getElementById('inpBillLab').value.replace(/[^0-9]/g, '')) || 0;
         const dpLabMurni = Number(document.getElementById('inpBillDPLab').value.replace(/[^0-9]/g, '')) || 0;
@@ -7797,12 +7812,19 @@
             return;
         }
 
+        // 🔥 Teks Konfirmasi Dinamis
         let pesanKonfirmasi = `Konfirmasi Pembayaran:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${(window.totalTindakanAktifKasir - diskonMurni).toLocaleString('id-ID')}\n`;
-        if (labMurni > 0) {
-            pesanKonfirmasi += `\nDP Biaya Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
-            pesanKonfirmasi += `Sisa Piutang Lab: Rp ${sisaPiutang.toLocaleString('id-ID')} (Akan ditagih saat lunas)\n`;
+        
+        if (dpLabMurni > 0 || labMurni > 0) {
+            pesanKonfirmasi += `\nTitipan/DP Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
+            if (labMurni === 0 && dpLabMurni > 0) {
+                pesanKonfirmasi += `Status Lab: Harga menyusul (Deposit DP Tercatat)\n`;
+            } else {
+                pesanKonfirmasi += `Sisa Piutang Lab: Rp ${sisaPiutang.toLocaleString('id-ID')}\n`;
+            }
         }
+        
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -7810,7 +7832,6 @@
         btnKunci.disabled = true;
         btnKunci.innerText = "⏳ Mengunci Nota & Pembukuan...";
 
-        // 🔥 FIX: Payload Injeksi Modul Lab
         const payload = {
             action: "kunciPembayaran",
             barisPendaftaran: barisPendaftaran,
@@ -7820,7 +7841,7 @@
             diskon: diskonMurni,
             biayaLab: labMurni,
             dpLab: dpLabMurni,
-            sisaPiutang: sisaPiutang,
+            sisaPiutang: sisaPiutang, // Jika harga belum fix, ini akan terkirim minus (Sbg penanda Deposit di Sheets)
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             operator: usernameAktif
