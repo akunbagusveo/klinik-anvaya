@@ -1932,10 +1932,18 @@
             <div style="display: flex; gap: 10px; margin-top: 25px; justify-content: flex-end;">
                 <button type="button" onclick="tutupModalBilling()" style="background-color: #95a5a6; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">❌ Batal</button>
                 
-                <button type="button" id="btnKunciKuitansi" 
+                <!-- Tombol 1: Simpan Saja (Cepat) -->
+                <button type="button" id="btnKunciSaja" 
                         onclick="eksekusiKunciPembayaranResmi()" 
-                        style="background-color: #27ae60; color: white; border: none; padding: 10px 25px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 14px;">
-                    🔒 Kunci & Simpan Pembukuan
+                        style="background-color: #f39c12; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    💾 Kunci Pembukuan Saja
+                </button>
+
+                <!-- Tombol 2: Simpan & Generate PDF Resmi -->
+                <button type="button" id="btnKunciCetak" 
+                        onclick="eksekusiFinalBilling(document.getElementById('billNoRM').innerText)" 
+                        style="background-color: #27ae60; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    🖨️ Kunci & Cetak Kuitansi PDF
                 </button>
             </div>
     
