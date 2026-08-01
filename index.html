@@ -7507,19 +7507,11 @@
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = "1px solid #dee2e6";
 
-                // 🔥 ENGINE DETEKSI PIUTANG LAB LALU (Tampilkan Badge)
-                let badgePiutang = "";
-                if (p.piutangPasien > 0) {
-                    badgePiutang = `<br><span style="background-color: #e74c3c; color: white; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-top: 5px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">⚠️ Tunggakan Lab: Rp ${p.piutangPasien.toLocaleString('id-ID')}</span>`;
-                } else if (p.piutangPasien < 0) {
-                    badgePiutang = `<br><span style="background-color: #27ae60; color: white; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-top: 5px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">✅ Titipan/DP Lab: Rp ${Math.abs(p.piutangPasien).toLocaleString('id-ID')}</span>`;
-                }
                 
                 tr.innerHTML = `
                     <td style="padding: 12px 10px; font-weight: bold; color: #2980b9; vertical-align: middle;">${p.noRM}</td>
                     <td style="padding: 12px 10px; font-weight: 600; vertical-align: middle; line-height: 1.4;">
                         ${p.namaPasien}
-                        ${badgePiutang} <!-- 🔥 Badge Peringatan Akan Muncul Di Sini -->
                     </td>
                     <td style="padding: 12px 10px; color: #7f8c8d; vertical-align: middle;">${p.tanggalDaftar}</td>
                     <td style="padding: 12px 10px; vertical-align: middle;">🩺 Dr. ${p.namaDokter}</td>
