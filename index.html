@@ -7670,28 +7670,14 @@
             return;
         }
 
-        // 🔥 INJEKSI MEMORI: Simpan hutang masa lalu pasien ke variabel sementara kasir
-        window.piutangPasienAktif = pasien.piutangPasien || 0;
-
         document.getElementById('billNoRM').innerText = pasien.noRM;
         document.getElementById('billNama').innerText = pasien.namaPasien;
         document.getElementById('billDokter').innerText = pasien.namaDokter;
         document.getElementById('billTanggal').innerText = pasien.tanggalDaftar;
         document.getElementById('billBarisPendaftaran').value = JSON.stringify(pasien.barisPendaftaran);
         
+        // 🔥 Hanya menyisakan reset untuk Diskon. (Perintah reset Lab sudah dibuang)
         document.getElementById('inpBillDiskon').value = "";
-        document.getElementById('inpBillLab').value = "";
-        document.getElementById('inpBillDPLab').value = "";
-        
-        // 🔥 UI CERDAS: Beri peringatan merah di kotak input jika pasien punya hutang
-        const inpDPLabUI = document.getElementById('inpBillDPLab');
-        if (window.piutangPasienAktif > 0) {
-            inpDPLabUI.style.border = "2px solid #e74c3c";
-            inpDPLabUI.placeholder = "Tagihan: " + window.piutangPasienAktif.toLocaleString('id-ID');
-        } else {
-            inpDPLabUI.style.border = "1px solid #3498db";
-            inpDPLabUI.placeholder = "0";
-        }
 
         const tbody = document.getElementById('tbodyItemBilling');
         tbody.innerHTML = "";
@@ -7725,7 +7711,7 @@
 
         document.getElementById('lblBillTotalTindakan').innerText = "Rp " + window.totalTindakanAktifKasir.toLocaleString('id-ID');
         
-        // Panggil kalkulator saat modal baru terbuka agar teks tunggakan langsung muncul
+        // Panggil kalkulator mode simpel
         hitungGrandTotalBillingRealtime();
         document.getElementById('modalBillingKasir').style.display = 'flex';
     }
