@@ -1889,7 +1889,7 @@
             <div style="border-top: 2px solid #eee; padding-top: 15px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
                 
                 <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; font-size: 14px;">
-                    <span style="color: #7f8c8d;">Total Tindakan Medis:</span>
+                    <span style="color: #7f8c8d;">Total Tindakan Medis (All-In):</span>
                     <span style="font-weight: bold;" id="lblBillTotalTindakan">Rp 0</span>
                 </div>
     
@@ -1897,24 +1897,8 @@
                     <span style="color: #7f8c8d; font-size: 14px;">Potongan Diskon (Rp):</span>
                     <input type="text" id="inpBillDiskon" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; text-align: right; font-weight: bold;">
                 </div>
-
-                <!-- 🔥 TAMBAHAN MODUL LAB & DP DINAMIS -->
-                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center; border-top: 1px dotted #ccc; padding-top: 8px;">
-                    <span style="color: #d35400; font-size: 14px; font-weight: bold;">Total Biaya Lab (Pihak Ke-3):</span>
-                    <input type="text" id="inpBillLab" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #f39c12; background: #fffdf7; text-align: right; font-weight: bold; color: #d35400;">
-                </div>
-
-                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center;">
-                    <span style="color: #2980b9; font-size: 14px; font-weight: bold;">Bayar Uang Muka (DP) Lab:</span>
-                    <input type="text" id="inpBillDPLab" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #3498db; background: #f4f9fd; text-align: right; font-weight: bold; color: #2980b9;">
-                </div>
-
-                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; font-size: 13px; color: #e74c3c;">
-                    <span>Sisa Piutang Lab (Belum Lunas):</span>
-                    <span id="lblBillSisaPiutang" style="font-weight: bold;">Rp 0</span>
-                </div>
     
-                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; align-items: center;">
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center; margin-top: 5px;">
                     <span style="color: #7f8c8d; font-size: 14px;">Metode Pembayaran:</span>
                     <select id="selBillMetode" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; font-weight: bold;">
                         <option value="Tunai / Cash">Tunai / Cash</option>
@@ -1923,8 +1907,8 @@
                     </select>
                 </div>
     
-                <div style="display: flex; width: 100%; max-width: 320px; justify-content: space-between; font-size: 16px; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 5px;">
-                    <span style="font-weight: bold; color: #2c3e50;">Grand Total Akhir:</span>
+                <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; font-size: 16px; border-top: 2px dashed #2c3e50; padding-top: 10px; margin-top: 5px;">
+                    <span style="font-weight: bold; color: #2c3e50;">Total Dibayar Hari Ini:</span>
                     <span style="font-weight: bold; color: #27ae60; font-size: 18px;" id="lblBillGrandTotal">Rp 0</span>
                 </div>
             </div>
@@ -7596,7 +7580,7 @@
         }
     }
 
-    // 🔥 FUNGSI KEDUA: Simpan Pembukuan sekaligus Generate PDF (Sudah Mendukung DP Lab)
+    // 🔥 FUNGSI KEDUA: Simpan Pembukuan sekaligus Generate PDF
     function eksekusiFinalBilling(noRM) {
         const barisPendaftaran = document.getElementById('billBarisPendaftaran').value;
         const namaPasien = document.getElementById('billNama').innerText;
@@ -7604,26 +7588,9 @@
         const btnKunciCetak = document.getElementById('btnKunciCetak');
         
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
-        const labMurni = Number(document.getElementById('inpBillLab').value.replace(/[^0-9]/g, '')) || 0;
-        const dpLabMurni = Number(document.getElementById('inpBillDPLab').value.replace(/[^0-9]/g, '')) || 0;
         
-        const sisaPiutang = labMurni - dpLabMurni;
-        const grandTotalMurni = (window.totalTindakanAktifKasir - diskonMurni) + dpLabMurni;
-        
-        // 🔥 LOGIKA LABEL KUITANSI CERDAS (Menghitung Hutang Masa Lalu)
-        const hutangMasaLalu = window.piutangPasienAktif || 0;
-        const totalHutangAkumulasi = hutangMasaLalu + sisaPiutang;
-        
-        let labelCetakLab = "Pembayaran Tindakan Lab Pihak Ketiga";
-        if (labMurni === 0 && dpLabMurni > 0) {
-            labelCetakLab = "Pelunasan / Deposit Tindakan Lab"; // Kasus: Titip DP awal buta harga
-        } else if (labMurni === dpLabMurni) {
-            labelCetakLab = "Pembayaran Lunas Tindakan Lab"; // Kasus: Langsung lunas hari ini
-        } else if (totalHutangAkumulasi <= 0) {
-            labelCetakLab = "Pelunasan Sisa Tindakan Lab"; // 🔥 Kasus: Bayar kurangnya dari deposit kemarin
-        } else {
-            labelCetakLab = "Uang Muka (DP) Tindakan Lab"; // Kasus: Benar-benar baru nyicil
-        }
+        // 🔥 Grand Total sekarang murni hanya dari tindakan dikurangi diskon
+        const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Kasir";
@@ -7636,14 +7603,9 @@
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
         const tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
 
-        // ... (Kode Konfirmasi Alert Confirm tetap sama di sini) ...
+        // 🔥 Teks Konfirmasi Dinamis (Bersih dari urusan Lab)
         let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
-        pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${(window.totalTindakanAktifKasir - diskonMurni).toLocaleString('id-ID')}\n`;
-        if (dpLabMurni > 0 || labMurni > 0) {
-            pesanKonfirmasi += `\nUang Masuk Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
-            if (labMurni === 0 && dpLabMurni > 0) pesanKonfirmasi += `Status Lab: Harga menyusul (Deposit DP Tercatat)\n`;
-            else pesanKonfirmasi += `Status Piutang Lab Akhir: Rp ${totalHutangAkumulasi.toLocaleString('id-ID')}\n`;
-        }
+        pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan & Buat PDF?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -7653,7 +7615,7 @@
             btnKunciCetak.innerText = "⏳ Sedang Mengukir Kuitansi...";
         }
 
-        // 🔥 PAYLOAD MENGIRIM LABEL KE BACKEND
+        // 🔥 Payload yang dikirim ke Google Sheets (Lab diset 0 secara default)
         const payload = {
             action: "prosesFinalBilling",
             barisPendaftaran: barisPendaftaran,
@@ -7662,10 +7624,10 @@
             tindakanRaw: tindakanRawStr,
             totalTindakan: window.totalTindakanAktifKasir,
             diskon: diskonMurni,
-            biayaLab: labMurni,
-            dpLab: dpLabMurni,
-            labelCetakLab: labelCetakLab, // <-- Kunci Rahasianya ada di sini
-            sisaPiutang: sisaPiutang, 
+            biayaLab: 0,        // <-- Diset 0
+            dpLab: 0,           // <-- Diset 0
+            labelCetakLab: "",  // <-- Kosongkan agar backend PDF tidak ikut mencetak baris Lab
+            sisaPiutang: 0,     // <-- Diset 0
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             kasirOperator: usernameAktif
@@ -7780,46 +7742,16 @@
         document.getElementById('modalBillingKasir').style.display = 'none';
     }
 
-    // 🔥 FIX: Engine Kalkulator Realtime (Mendukung Titipan DP tanpa Harga Fix)
+    // 🔥 Mode Kasir Simpel (All-In)
     function hitungGrandTotalBillingRealtime() {
         const inpDiskon = document.getElementById('inpBillDiskon');
-        const inpLab = document.getElementById('inpBillLab');
-        const inpDPLab = document.getElementById('inpBillDPLab');
-
         let nominalDiskon = Number(inpDiskon.value.replace(/[^0-9]/g, '')) || 0;
-        let nominalLab = Number(inpLab.value.replace(/[^0-9]/g, '')) || 0;
-        let nominalDPLab = Number(inpDPLab.value.replace(/[^0-9]/g, '')) || 0;
 
         if (nominalDiskon > window.totalTindakanAktifKasir) nominalDiskon = window.totalTindakanAktifKasir;
         
         inpDiskon.value = nominalDiskon ? nominalDiskon.toLocaleString('id-ID') : '';
-        inpLab.value = nominalLab ? nominalLab.toLocaleString('id-ID') : '';
-        inpDPLab.value = nominalDPLab ? nominalDPLab.toLocaleString('id-ID') : '';
 
-        // Rumus Transaksi Saat Ini (Disimpan ke Database Backend)
-        let sisaPiutangTransaksiIni = nominalLab - nominalDPLab;
-        let grandTotalHariIni = (window.totalTindakanAktifKasir - nominalDiskon) + nominalDPLab;
-
-        // 🔥 RUMUS AKUMULASI (Hanya untuk Visual Layar Kasir)
-        let hutangMasaLalu = window.piutangPasienAktif || 0;
-        let totalHutangAkumulasi = hutangMasaLalu + sisaPiutangTransaksiIni;
-
-        let lblPiutangUI = document.getElementById('lblBillSisaPiutang');
-
-        if (nominalLab === 0 && nominalDPLab > 0 && hutangMasaLalu === 0) {
-            lblPiutangUI.innerText = "⏳ Menunggu Harga Pihak Ke-3";
-            lblPiutangUI.style.color = "#f39c12";
-        } else if (totalHutangAkumulasi < 0) {
-            lblPiutangUI.innerText = "Kelebihan / Deposit: Rp " + Math.abs(totalHutangAkumulasi).toLocaleString('id-ID');
-            lblPiutangUI.style.color = "#27ae60";
-        } else if (totalHutangAkumulasi > 0) {
-            lblPiutangUI.innerText = "Rp " + totalHutangAkumulasi.toLocaleString('id-ID');
-            lblPiutangUI.style.color = "#e74c3c"; // Merah menyala
-        } else {
-            lblPiutangUI.innerText = "Rp 0 (Lunas)";
-            lblPiutangUI.style.color = "#2c3e50";
-        }
-
+        let grandTotalHariIni = window.totalTindakanAktifKasir - nominalDiskon;
         document.getElementById('lblBillGrandTotal').innerText = "Rp " + grandTotalHariIni.toLocaleString('id-ID');
     }
 
@@ -7832,11 +7764,9 @@
         const btnKunci = document.getElementById('btnKunciKuitansi');
         
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
-        const labMurni = Number(document.getElementById('inpBillLab').value.replace(/[^0-9]/g, '')) || 0;
-        const dpLabMurni = Number(document.getElementById('inpBillDPLab').value.replace(/[^0-9]/g, '')) || 0;
         
-        const sisaPiutang = labMurni - dpLabMurni;
-        const grandTotalMurni = (window.totalTindakanAktifKasir - diskonMurni) + dpLabMurni;
+        // 🔥 Grand Total sekarang murni hanya dari tindakan dikurangi diskon
+        const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Kasir";
@@ -7846,19 +7776,9 @@
             return;
         }
 
-        // 🔥 Teks Konfirmasi Dinamis
+        // 🔥 Teks Konfirmasi Dinamis (Bersih dari urusan Lab)
         let pesanKonfirmasi = `Konfirmasi Pembayaran:\nPasien: ${namaPasien}\n`;
-        pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${(window.totalTindakanAktifKasir - diskonMurni).toLocaleString('id-ID')}\n`;
-        
-        if (dpLabMurni > 0 || labMurni > 0) {
-            pesanKonfirmasi += `\nTitipan/DP Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
-            if (labMurni === 0 && dpLabMurni > 0) {
-                pesanKonfirmasi += `Status Lab: Harga menyusul (Deposit DP Tercatat)\n`;
-            } else {
-                pesanKonfirmasi += `Sisa Piutang Lab: Rp ${sisaPiutang.toLocaleString('id-ID')}\n`;
-            }
-        }
-        
+        pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -7866,6 +7786,7 @@
         btnKunci.disabled = true;
         btnKunci.innerText = "⏳ Mengunci Nota & Pembukuan...";
 
+        // 🔥 Payload yang dikirim ke Google Sheets (Lab diset 0 secara default)
         const payload = {
             action: "kunciPembayaran",
             barisPendaftaran: barisPendaftaran,
@@ -7873,9 +7794,9 @@
             namaPasien: namaPasien,
             totalTindakan: window.totalTindakanAktifKasir,
             diskon: diskonMurni,
-            biayaLab: labMurni,
-            dpLab: dpLabMurni,
-            sisaPiutang: sisaPiutang, // Jika harga belum fix, ini akan terkirim minus (Sbg penanda Deposit di Sheets)
+            biayaLab: 0,    // <-- Diset 0 agar backend tidak error
+            dpLab: 0,       // <-- Diset 0
+            sisaPiutang: 0, // <-- Diset 0
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             operator: usernameAktif
@@ -7888,7 +7809,7 @@
         .then(res => res.json())
         .then(res => {
             btnKunci.disabled = false;
-            btnKunci.innerText = "🔒 Kunci & Cetak Kuitansi";
+            btnKunci.innerText = "💾 Kunci Pembukuan Saja";
             
             if (res.result === "success") {
                 alert(`🎉 PEMBAYARAN SUKSES DIKUNCI!\n\nNomor Kuitansi Resmi:\n👉 ${res.noKuitansi}`);
@@ -7901,7 +7822,7 @@
         .catch(err => {
             console.error(err);
             btnKunci.disabled = false;
-            btnKunci.innerText = "🔒 Kunci & Cetak Kuitansi";
+            btnKunci.innerText = "💾 Kunci Pembukuan Saja";
             alert("⚠️ Terjadi gangguan jaringan internet. Silakan coba beberapa saat lagi.");
         });
     }
