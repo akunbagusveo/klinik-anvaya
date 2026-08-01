@@ -7603,13 +7603,27 @@
         const metodeBayar = document.getElementById('selBillMetode').value;
         const btnKunciCetak = document.getElementById('btnKunciCetak');
         
-        // 🔥 BACA DATA LAB DARI KOTAK INPUT KASIR BARU
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const labMurni = Number(document.getElementById('inpBillLab').value.replace(/[^0-9]/g, '')) || 0;
         const dpLabMurni = Number(document.getElementById('inpBillDPLab').value.replace(/[^0-9]/g, '')) || 0;
         
         const sisaPiutang = labMurni - dpLabMurni;
         const grandTotalMurni = (window.totalTindakanAktifKasir - diskonMurni) + dpLabMurni;
+        
+        // 🔥 LOGIKA LABEL KUITANSI CERDAS (Menghitung Hutang Masa Lalu)
+        const hutangMasaLalu = window.piutangPasienAktif || 0;
+        const totalHutangAkumulasi = hutangMasaLalu + sisaPiutang;
+        
+        let labelCetakLab = "Pembayaran Tindakan Lab Pihak Ketiga";
+        if (labMurni === 0 && dpLabMurni > 0) {
+            labelCetakLab = "Pelunasan / Deposit Tindakan Lab"; // Kasus: Titip DP awal buta harga
+        } else if (labMurni === dpLabMurni) {
+            labelCetakLab = "Pembayaran Lunas Tindakan Lab"; // Kasus: Langsung lunas hari ini
+        } else if (totalHutangAkumulasi <= 0) {
+            labelCetakLab = "Pelunasan Sisa Tindakan Lab"; // 🔥 Kasus: Bayar kurangnya dari deposit kemarin
+        } else {
+            labelCetakLab = "Uang Muka (DP) Tindakan Lab"; // Kasus: Benar-benar baru nyicil
+        }
         
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Kasir";
@@ -7619,23 +7633,17 @@
             return;
         }
 
-        // Ambil tindakan mentah dari memori untuk dikirim ke mesin PDF
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
         const tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
 
-        // Konfirmasi Pembayaran
+        // ... (Kode Konfirmasi Alert Confirm tetap sama di sini) ...
         let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${(window.totalTindakanAktifKasir - diskonMurni).toLocaleString('id-ID')}\n`;
-        
         if (dpLabMurni > 0 || labMurni > 0) {
-            pesanKonfirmasi += `\nTitipan/DP Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
-            if (labMurni === 0 && dpLabMurni > 0) {
-                pesanKonfirmasi += `Status Lab: Harga menyusul (Deposit DP Tercatat)\n`;
-            } else {
-                pesanKonfirmasi += `Sisa Piutang Lab: Rp ${sisaPiutang.toLocaleString('id-ID')}\n`;
-            }
+            pesanKonfirmasi += `\nUang Masuk Lab: Rp ${dpLabMurni.toLocaleString('id-ID')}\n`;
+            if (labMurni === 0 && dpLabMurni > 0) pesanKonfirmasi += `Status Lab: Harga menyusul (Deposit DP Tercatat)\n`;
+            else pesanKonfirmasi += `Status Piutang Lab Akhir: Rp ${totalHutangAkumulasi.toLocaleString('id-ID')}\n`;
         }
-        
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan & Buat PDF?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -7645,18 +7653,19 @@
             btnKunciCetak.innerText = "⏳ Sedang Mengukir Kuitansi...";
         }
 
-        // 🔥 PAYLOAD BARU YANG MENYERTAKAN DATA LAB
+        // 🔥 PAYLOAD MENGIRIM LABEL KE BACKEND
         const payload = {
             action: "prosesFinalBilling",
             barisPendaftaran: barisPendaftaran,
             noRM: noRM,
             namaPasien: namaPasien,
-            tindakanRaw: tindakanRawStr, // Wajib untuk PDF
+            tindakanRaw: tindakanRawStr,
             totalTindakan: window.totalTindakanAktifKasir,
             diskon: diskonMurni,
-            biayaLab: labMurni,       // <-- Data yang tadi hilang
-            dpLab: dpLabMurni,        // <-- Data yang tadi hilang
-            sisaPiutang: sisaPiutang, // <-- Data yang tadi hilang
+            biayaLab: labMurni,
+            dpLab: dpLabMurni,
+            labelCetakLab: labelCetakLab, // <-- Kunci Rahasianya ada di sini
+            sisaPiutang: sisaPiutang, 
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             kasirOperator: usernameAktif
