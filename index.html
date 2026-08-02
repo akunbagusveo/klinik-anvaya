@@ -1973,6 +1973,7 @@
             <div style="margin-bottom:15px; color:#7f8c8d; font-size:14px; background: #f8f9fa; padding: 10px; border-radius: 4px;">
                 <p style="margin:5px 0;"><strong>Pasien:</strong> <span id="lblLabPasien" style="color:#2c3e50; font-weight:bold;"></span></p>
                 <p style="margin:5px 0;"><strong>Tindakan:</strong> <span id="lblLabTindakan" style="color:#e67e22; font-weight:bold;"></span></p>
+                <p style="margin:5px 0; display:none;"><strong>Dokter:</strong> <span id="lblLabDokter"></span></p>
             </div>
             
             <form onsubmit="simpanTagihanLabDinamis(event)">
@@ -10487,7 +10488,7 @@
                     <span style="background:#fef5e7; padding:4px 8px; border-radius:4px; border:1px solid #f8c471;">${item.namaTindakan}</span>
                 </td>
                 <td style="padding:15px; text-align:center;">
-                    <button onclick="bukaModalInputLab('${item.invoice}', '${item.namaPasien}', '${item.namaTindakan}')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
+                    <button onclick="bukaModalInputLab('${item.invoice}', '${item.namaPasien}', '${item.namaTindakan}', '${item.namaDokter}')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -10499,6 +10500,7 @@
         document.getElementById('hdnLabInvoice').value = invoice;
         document.getElementById('lblLabPasien').innerText = pasien;
         document.getElementById('lblLabTindakan').innerText = tindakan;
+        document.getElementById('lblLabDokter').innerText = dokter;
         document.getElementById('inpLabHargaDinamis').value = "";
         document.getElementById('lblPotonganDokter').innerText = "Rp 0";
         document.getElementById('modalInputLab').style.display = 'flex';
@@ -10520,7 +10522,10 @@
         const invoice = document.getElementById('hdnLabInvoice').value;
         const pasien = document.getElementById('lblLabPasien').innerText;
         const tindakan = document.getElementById('lblLabTindakan').innerText;
+        const dokter = document.getElementById('lblLabDokter').innerText;
         const harga = document.getElementById('inpLabHargaDinamis').value;
+        
+        let beban = Number(harga) * 0.4; // 40%
 
         btn.disabled = true;
         btn.innerText = "⏳ Menyimpan...";
@@ -10530,7 +10535,7 @@
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
-                action: "simpanDataLab", // Menggunakan fungsi simpan yang sudah ada kemarin (Aman!)
+                action: "simpanDataLab", 
                 noKuitansi: invoice,
                 tanggalBayar: new Date().toISOString().split('T')[0],
                 hargaLab: harga,
@@ -10542,9 +10547,13 @@
             btn.disabled = false;
             btn.innerText = "💾 Simpan Lab";
             if(res.result === "success") {
-                alert("🎉 Tagihan berhasil dikunci! (Potongan 40% gaji dokter sudah diproses otomatis).");
                 document.getElementById('modalInputLab').style.display = 'none';
-                muatAntreanLab(); // 🔥 MUAT ULANG OTOMATIS: Baris yang barusan diinput akan menghilang!
+                
+                // 🔥 TRIGGER CETAK STRUK SEBELUM ANTREAN HILANG
+                cetakStrukLabInternal(invoice, pasien, tindakan, dokter, harga, beban);
+                
+                // Refresh antrean (data yang sudah diinput akan hilang)
+                muatAntreanLab(); 
             } else {
                 alert("❌ Gagal menyimpan: " + res.message);
             }
@@ -10553,6 +10562,62 @@
             btn.innerText = "💾 Simpan Lab";
             alert("⚠️ Gangguan jaringan.");
         });
+    }
+
+    // 🔥 FUNGSI BARU: GENERATOR STRUK CETAK (Tambahkan di bagian bawah)
+    function cetakStrukLabInternal(invoice, pasien, tindakan, dokter, harga, beban) {
+        const tglCetak = new Date().toLocaleString('id-ID');
+        const jendelaCetak = window.open('', '_blank', 'width=400,height=600');
+        
+        const htmlStruk = `
+            <html>
+            <head>
+                <title>Struk Tagihan Lab - ${invoice}</title>
+                <style>
+                    body { font-family: 'Courier New', Courier, monospace; font-size: 14px; padding: 20px; color: #000; }
+                    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
+                    .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                    .bold { font-weight: bold; }
+                    .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2 style="margin:0; font-size: 18px;">KLINIK ANVAYA</h2>
+                    <p style="margin:5px 0 0 0; font-size: 12px;">BUKTI INTERNAL TAGIHAN LAB</p>
+                </div>
+                
+                <div class="row"><span>No. Invoice:</span> <span>${invoice}</span></div>
+                <div class="row"><span>Waktu Cetak:</span> <span>${tglCetak}</span></div>
+                
+                <div class="divider"></div>
+                
+                <div class="row"><span>Nama Pasien:</span> <span class="bold">${pasien}</span></div>
+                <div class="row"><span>Dokter PJP:</span> <span>${dokter}</span></div>
+                <div class="row" style="margin-top: 10px;"><span>Tindakan Lab:</span></div>
+                <div class="row bold" style="margin-left: 10px;">- ${tindakan}</div>
+                
+                <div class="divider"></div>
+                
+                <div class="row"><span>Tagihan Vendor:</span> <span class="bold">Rp ${Number(harga).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="color: #555; font-size: 12px;"><span>(Potongan Gaji Dokter 40%)</span> <span>(- Rp ${beban.toLocaleString('id-ID')})</span></div>
+                
+                <div class="divider"></div>
+                
+                <div style="text-align: center; margin-top: 20px; font-size: 12px;">
+                    <p>Struk ini merupakan dokumen internal.<br>Harap lampirkan bersama form setoran.</p>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        jendelaCetak.document.write(htmlStruk);
+        jendelaCetak.document.close();
+        jendelaCetak.focus();
+        // Delay sedikit agar browser merender struknya sebelum memunculkan popup print
+        setTimeout(() => {
+            jendelaCetak.print();
+        }, 500);
     }
     
 
