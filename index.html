@@ -1953,6 +1953,7 @@
                     <tr style="background:#34495e; color:white;">
                         <th style="padding:15px; text-align:left;">No Invoice</th>
                         <th style="padding:15px; text-align:left;">Nama Pasien</th>
+                        <th style="padding:15px; text-align:left;">Dokter</th>
                         <th style="padding:15px; text-align:left;">Tindakan Lab</th>
                         <th style="padding:15px; text-align:center;">Aksi Eksekusi</th>
                     </tr>
@@ -10478,6 +10479,10 @@
             tr.innerHTML = `
                 <td style="padding:15px; font-weight:bold; color:#34495e;">${item.invoice}</td>
                 <td style="padding:15px; font-weight:bold; color:#2980b9;">${item.namaPasien}</td>
+                
+                <!-- 🔥 DATA NAMA DOKTER DIRENDER DI SINI -->
+                <td style="padding:15px; font-weight:bold; color:#8e44ad;">👨‍⚕️ ${item.namaDokter}</td>
+                
                 <td style="padding:15px; font-weight:bold; color:#e67e22;">
                     <span style="background:#fef5e7; padding:4px 8px; border-radius:4px; border:1px solid #f8c471;">${item.namaTindakan}</span>
                 </td>
