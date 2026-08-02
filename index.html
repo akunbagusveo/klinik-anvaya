@@ -668,7 +668,7 @@
         <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold; color: #32ac36;">💰 Kasir & Billing</button>
         
         <!-- 🔥 MENU BARU DITAMBAHKAN DI SINI -->
-        <button id="tabTagihanLabBtn" class="tab-link" onclick="switchTab('tagihanLab')" style="display: none; font-weight: bold; color: #e67e22;">🧪 Tagihan Eksternal / Lab</button>
+        <button id="tabTagihanLabBtn" class="tab-link" onclick="switchTab('tagihanLab'); muatAntreanLab();" style="display: none; font-weight: bold; color: #e67e22;">🧪 Tagihan Eksternal / Lab</button>
         
         <span class="sidebar-category">SISTEM KAMI</span>
         <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">📖 Kamus Dikte</button>
@@ -1938,39 +1938,60 @@
     </div>
 
     <!-- HALAMAN BARU: INPUT TAGIHAN LAB -->
-    <!-- ID disesuaikan dengan parameter switchTab('tagihanLab') -->
+    <!-- HALAMAN SMART WORKLIST LAB -->
     <div id="tagihanLab" class="tab-content" style="display:none; padding:20px;">
-        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">🧪 Input Tagihan Lab & Vendor</h2>
-        
-        <div style="background:#fff; padding:25px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); max-width:500px; margin-top:20px;">
-            <p style="color:#7f8c8d; font-size:13px; margin-bottom:20px;">* Form ini digunakan untuk mencatat tagihan dari pihak Lab. Data ini akan otomatis sinkron dengan pemotongan gaji dokter oleh Manajemen.</p>
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span>🧪 Antrean Tagihan Lab & Vendor</span>
+            <button onclick="muatAntreanLab()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; display: flex; align-items: center; gap: 5px;">
+                🔄 Refresh Antrean
+            </button>
+        </h2>
+
+        <div style="background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-top:20px; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#34495e; color:white;">
+                        <th style="padding:15px; text-align:left;">No Invoice</th>
+                        <th style="padding:15px; text-align:left;">Nama Pasien</th>
+                        <th style="padding:15px; text-align:left;">Tindakan Lab</th>
+                        <th style="padding:15px; text-align:center;">Aksi Eksekusi</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyAntreanLab">
+                    <!-- Data akan di-render dari JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP INPUT HARGA LAB -->
+    <div id="modalInputLab" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:25px; border-radius:8px; width:100%; max-width:400px; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
+            <h3 style="margin-top:0; color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:10px;">💰 Masukkan Harga Vendor</h3>
             
-            <form id="formInputLab" onsubmit="simpanTagihanLab(event)">
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold; font-size:13px;">No Kuitansi Pasien:</label>
-                    <input type="text" id="labNoKuitansi" required placeholder="Contoh: INV/2026/07/001" onblur="cariDataKuitansiLab(this.value)" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; margin-top:5px; font-weight:bold;">
-                    <small id="hintLabPasien" style="color:#2980b9; font-weight:bold; display:block; margin-top:5px;"></small>
-                </div>
+            <div style="margin-bottom:15px; color:#7f8c8d; font-size:14px; background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                <p style="margin:5px 0;"><strong>Pasien:</strong> <span id="lblLabPasien" style="color:#2c3e50; font-weight:bold;"></span></p>
+                <p style="margin:5px 0;"><strong>Tindakan:</strong> <span id="lblLabTindakan" style="color:#e67e22; font-weight:bold;"></span></p>
+            </div>
+            
+            <form onsubmit="simpanTagihanLabDinamis(event)">
+                <input type="hidden" id="hdnLabInvoice">
                 
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold; font-size:13px;">Tanggal Bayar Lab:</label>
-                    <input type="date" id="labTanggal" required style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; margin-top:5px;">
+                <div style="margin:20px 0;">
+                    <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Harga Tagihan Asli (Rp):</label>
+                    <input type="number" id="inpLabHargaDinamis" required placeholder="Contoh: 150000" oninput="hitungRealtimePotonganLab()" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:4px; font-weight:bold; font-size:16px; color:#e74c3c; box-sizing:border-box;">
+                    
+                    <!-- FITUR MELIHAT POTONGAN DOKTER SECARA REALTIME -->
+                    <div style="margin-top:8px; padding:8px; background:#fce4d6; border-radius:4px; border-left:4px solid #e74c3c;">
+                        <span style="font-size:12px; color:#c0392b; font-weight:bold;">📉 Beban Potongan Gaji Dokter: </span>
+                        <span id="lblPotonganDokter" style="font-size:14px; color:#c0392b; font-weight:bold;">Rp 0</span>
+                    </div>
                 </div>
 
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold; font-size:13px;">Perawatan Lab / Tindakan:</label>
-                    <input type="text" id="labTindakan" required placeholder="Contoh: bleaching (drg.irfan)" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; margin-top:5px;">
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="document.getElementById('modalInputLab').style.display='none'" style="flex:1; background:#95a5a6; color:white; padding:10px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batalkan</button>
+                    <button type="submit" id="btnSimpanLabDinamis" style="flex:1; background:#27ae60; color:white; padding:10px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Lab</button>
                 </div>
-
-                <div style="margin-bottom:20px;">
-                    <label style="font-weight:bold; font-size:13px;">Harga Tagihan Asli (Rp):</label>
-                    <input type="number" id="labHarga" required placeholder="Contoh: 100000" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; margin-top:5px; font-weight:bold; color:#e74c3c;">
-                </div>
-                
-                <!-- Hidden input untuk menangkap nama pasien dari server -->
-                <input type="hidden" id="labNamaPasienVal">
-                
-                <button type="submit" id="btnSimpanLab" style="background:#27ae60; color:white; width:100%; padding:12px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:14px;">💾 Simpan ke Database Lab</button>
             </form>
         </div>
     </div>
@@ -10418,55 +10439,95 @@
     }
 
     // =====================================================================
-    // 🔥 MODUL TAGIHAN LAB (JALUR B - AKSES PERAWAT)
+    // 🔥 MODUL SMART WORKLIST LAB (JALUR B - AKSES PERAWAT)
     // =====================================================================
     
-    // Fungsi 1: Auto-cari nama pasien saat No Kuitansi diketik
-    function cariDataKuitansiLab(noKwitansi) {
-        if(!noKwitansi) return;
-        const hint = document.getElementById('hintLabPasien');
-        hint.innerText = "🔍 Sedang melacak data pasien...";
-        hint.style.color = "#f39c12";
-
+    // 1. Memanggil Data Antrean dari Server
+    function muatAntreanLab() {
+        const tbody = document.getElementById('tbodyAntreanLab');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">⏳ Menyinkronkan mesin pelacak dengan Kasir...</td></tr>';
+        
         fetch(WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "cariKuitansiLab", noKuitansi: noKwitansi })
+            body: JSON.stringify({ action: "getAntreanLab" })
         }).then(res => res.json()).then(res => {
-            if(res.result === "success") {
-                hint.innerText = `✅ Ditemukan: Pasien atas nama ${res.namaPasien}`;
-                hint.style.color = "#27ae60";
-                document.getElementById('labNamaPasienVal').value = res.namaPasien;
+            if (res.result === "success") {
+                renderTabelAntreanLab(res.data);
             } else {
-                hint.innerText = `⚠️ Kuitansi tidak ditemukan di sistem.`;
-                hint.style.color = "#e74c3c";
-                document.getElementById('labNamaPasienVal').value = "";
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:red;">Gagal memuat: ${res.message}</td></tr>`;
             }
         }).catch(err => {
-            hint.innerText = "Gangguan jaringan saat mencari.";
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:red;">⚠️ Gangguan jaringan.</td></tr>';
         });
     }
 
-    // Fungsi 2: Simpan Tagihan Lab ke Server
-    function simpanTagihanLab(e) {
+    // 2. Menggambar Tabel
+    function renderTabelAntreanLab(data) {
+        const tbody = document.getElementById('tbodyAntreanLab');
+        tbody.innerHTML = "";
+        
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:#7f8c8d; font-style:italic;">🎉 Yeaay! Semua tagihan vendor lab pasien sudah beres diselesaikan!</td></tr>';
+            return;
+        }
+
+        data.forEach(item => {
+            let tr = document.createElement('tr');
+            tr.style.borderBottom = "1px solid #ecf0f1";
+            tr.innerHTML = `
+                <td style="padding:15px; font-weight:bold; color:#34495e;">${item.invoice}</td>
+                <td style="padding:15px; font-weight:bold; color:#2980b9;">${item.namaPasien}</td>
+                <td style="padding:15px; font-weight:bold; color:#e67e22;">
+                    <span style="background:#fef5e7; padding:4px 8px; border-radius:4px; border:1px solid #f8c471;">${item.namaTindakan}</span>
+                </td>
+                <td style="padding:15px; text-align:center;">
+                    <button onclick="bukaModalInputLab('${item.invoice}', '${item.namaPasien}', '${item.namaTindakan}')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 3. Membuka Pop-up & Kalkulator Beban 40%
+    function bukaModalInputLab(invoice, pasien, tindakan) {
+        document.getElementById('hdnLabInvoice').value = invoice;
+        document.getElementById('lblLabPasien').innerText = pasien;
+        document.getElementById('lblLabTindakan').innerText = tindakan;
+        document.getElementById('inpLabHargaDinamis').value = "";
+        document.getElementById('lblPotonganDokter').innerText = "Rp 0";
+        document.getElementById('modalInputLab').style.display = 'flex';
+        
+        // Auto-focus ke kotak input agar perawat bisa langsung mengetik
+        setTimeout(() => document.getElementById('inpLabHargaDinamis').focus(), 100);
+    }
+
+    function hitungRealtimePotonganLab() {
+        let harga = Number(document.getElementById('inpLabHargaDinamis').value) || 0;
+        let beban = harga * 0.4; // 40% ditanggung dokter
+        document.getElementById('lblPotonganDokter').innerText = "- Rp " + beban.toLocaleString('id-ID');
+    }
+
+    // 4. Menyimpan Final
+    function simpanTagihanLabDinamis(e) {
         e.preventDefault();
-        const btn = document.getElementById('btnSimpanLab');
-        const noKwitansi = document.getElementById('labNoKuitansi').value;
-        const pasien = document.getElementById('labNamaPasienVal').value || "Manual/Tidak Ditemukan";
-        const tindakan = document.getElementById('labTindakan').value;
-        const harga = document.getElementById('labHarga').value;
-        const tanggal = document.getElementById('labTanggal').value;
+        const btn = document.getElementById('btnSimpanLabDinamis');
+        const invoice = document.getElementById('hdnLabInvoice').value;
+        const pasien = document.getElementById('lblLabPasien').innerText;
+        const tindakan = document.getElementById('lblLabTindakan').innerText;
+        const harga = document.getElementById('inpLabHargaDinamis').value;
 
         btn.disabled = true;
-        btn.innerText = "⏳ Menyandikan Data ke Server...";
+        btn.innerText = "⏳ Menyimpan...";
 
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
 
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
-                action: "simpanDataLab",
-                noKuitansi: noKwitansi,
-                tanggalBayar: tanggal,
+                action: "simpanDataLab", // Menggunakan fungsi simpan yang sudah ada kemarin (Aman!)
+                noKuitansi: invoice,
+                tanggalBayar: new Date().toISOString().split('T')[0],
                 hargaLab: harga,
                 pasien: pasien,
                 perawatanLab: tindakan,
@@ -10474,16 +10535,23 @@
             })
         }).then(res => res.json()).then(res => {
             btn.disabled = false;
-            btn.innerText = "💾 Simpan ke Database Lab";
+            btn.innerText = "💾 Simpan Lab";
             if(res.result === "success") {
-                alert("🎉 Tagihan Lab berhasil dikunci di sistem!");
-                document.getElementById('formInputLab').reset();
-                document.getElementById('hintLabPasien').innerText = "";
+                alert("🎉 Tagihan berhasil dikunci! (Potongan 40% gaji dokter sudah diproses otomatis).");
+                document.getElementById('modalInputLab').style.display = 'none';
+                muatAntreanLab(); // 🔥 MUAT ULANG OTOMATIS: Baris yang barusan diinput akan menghilang!
             } else {
                 alert("❌ Gagal menyimpan: " + res.message);
             }
+        }).catch(err => {
+            btn.disabled = false;
+            btn.innerText = "💾 Simpan Lab";
+            alert("⚠️ Gangguan jaringan.");
         });
     }
+    
+
+
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
     document.addEventListener("DOMContentLoaded", function() {
