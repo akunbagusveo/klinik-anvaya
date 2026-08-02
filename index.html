@@ -8692,7 +8692,6 @@
 
         let doctorMap = {};
         
-        // 🔥 TAHAP 1: Kumpulkan Semua Tindakan Pasien
         dataTerfilter.forEach(item => {
             if (item.jenis !== "LAB") {
                 if (!doctorMap[item.dokterPelaksana]) {
@@ -8711,23 +8710,20 @@
                     tindakan: item.namaTindakan,
                     hargaAsli: item.hargaAsli,
                     diskonProrata: diskonProrataItem,
-                    hargaLabVendor: 0, // Akan diisi di Tahap 2
-                    feeFinal: 0 // Akan dihitung di Tahap 3
+                    hargaLabVendor: 0, 
+                    feeFinal: 0 
                 });
             }
         });
 
-        // 🔥 TAHAP 2: Susupkan Tagihan Lab ke Baris Pasien yang Tepat
         dataTerfilter.forEach(item => {
             if (item.jenis === "LAB") {
                 let doc = doctorMap[item.dokterPelaksana];
                 if (doc) {
-                    // Bersihkan awalan teks agar namanya sama persis dengan tindakan asli
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = doc.rincian.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
                     
                     if (match) {
-                        // Sistem sebelumnya menyimpan nilai 40%, kita kembalikan ke harga vendor asli (100%)
                         let hargaLabFull = item.bebanPotongan / 0.4;
                         match.hargaLabVendor += hargaLabFull;
                     }
@@ -8735,10 +8731,8 @@
             }
         });
 
-        // 🔥 TAHAP 3: Hitung Rumus Matematika Transparan & Total Keseluruhan
         Object.values(doctorMap).forEach(doc => {
             doc.rincian.forEach(r => {
-                // RUMUS: (Harga Asli - Harga Lab Vendor - Diskon) x 40%
                 let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
                 r.feeFinal = dasarBagiHasil * 0.4;
                 doc.totalBagiHasil += r.feeFinal;
@@ -8752,7 +8746,6 @@
         let totalBagiHasilPeriode = arrayDokter.reduce((sum, d) => sum + d.totalBagiHasil, 0);
         let totalDokterAktif = arrayDokter.length;
 
-        // --- MULAI RENDER UI HTML KOKPIT ---
         let htmlContent = `
             <div style="display:flex; gap:20px; margin-bottom:20px;">
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #2ecc71; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
@@ -8792,7 +8785,6 @@
                     <td style="padding:15px; text-align:center;">
                         <div style="display:flex; gap:5px; justify-content:center;">
                             <input type="number" id="inpBonus_${idx}" placeholder="+ Bonus/Insentif" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:110px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
-                            <!-- Kolom potongan ini sekarang kosong, hanya dipakai jika ada kasbon/cicilan -->
                             <input type="number" id="inpPotongan_${idx}" placeholder="- Kasbon dll" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:110px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
                         </div>
                     </td>
@@ -8804,7 +8796,7 @@
                 </tr>
             `;
 
-            // 🔥 Rincian UI Baru (Tabel Transparan di dalam Kokpit)
+            // 🔥 PERUBAHAN 1: UI Rincian Kokpit Dipecah Menjadi 7 Kolom
             htmlContent += `
                 <tr id="${rowId}" style="display:none; background-color:#f8f9fa;">
                     <td colspan="4" style="padding: 0;">
@@ -8813,24 +8805,26 @@
                             <table style="width:100%; border-collapse:collapse; font-size:12px;">
                                 <tr style="background-color: #ecf0f1; color: #2c3e50;">
                                     <th style="padding:8px; text-align:left; border:none !important;">Tanggal</th>
-                                    <th style="padding:8px; text-align:left; border:none !important;">Pasien & Tindakan</th>
+                                    <th style="padding:8px; text-align:left; border:none !important;">Pasien</th>
+                                    <th style="padding:8px; text-align:left; border:none !important;">Tindakan</th>
                                     <th style="padding:8px; text-align:right; border:none !important;">Tarif (Rp)</th>
-                                    <th style="padding:8px; text-align:right; border:none !important;">Pemotongan (Lab/Diskon)</th>
+                                    <th style="padding:8px; text-align:right; border:none !important;">Biaya Lab</th>
+                                    <th style="padding:8px; text-align:right; border:none !important;">Diskon</th>
                                     <th style="padding:8px; text-align:right; border:none !important;">Fee Bersih (40%)</th>
                                 </tr>
             `;
             d.rincian.forEach(rin => {
-                let teksPotongan = [];
-                if (rin.hargaLabVendor > 0) teksPotongan.push(`Lab: -${rin.hargaLabVendor.toLocaleString('id-ID')}`);
-                if (rin.diskonProrata > 0) teksPotongan.push(`Diskon: -${rin.diskonProrata.toLocaleString('id-ID')}`);
-                let strPotongan = teksPotongan.length > 0 ? teksPotongan.join('<br>') : '-';
+                let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
+                let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
 
                 htmlContent += `
                                 <tr style="border-bottom:1px solid #f1f2f6;">
                                     <td style="padding:8px; color:#7f8c8d;">${rin.tanggal}</td>
-                                    <td style="padding:8px; color:#2c3e50;"><strong>${rin.pasien}</strong><br><span style="color:#7f8c8d;">${rin.tindakan}</span></td>
+                                    <td style="padding:8px; color:#2c3e50; font-weight:bold;">${rin.pasien}</td>
+                                    <td style="padding:8px; color:#7f8c8d;">${rin.tindakan}</td>
                                     <td style="padding:8px; text-align:right; color:#7f8c8d;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
-                                    <td style="padding:8px; text-align:right; color:#e74c3c;">${strPotongan}</td>
+                                    <td style="padding:8px; text-align:right; color:#e74c3c;">${labTxt}</td>
+                                    <td style="padding:8px; text-align:right; color:#e74c3c;">${diskonTxt}</td>
                                     <td style="padding:8px; text-align:right; font-weight:bold; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
                                 </tr>
                 `;
@@ -8862,22 +8856,22 @@
         let pokokGaji = dataDokter.totalBagiHasil;
         let finalGaji = (pokokGaji + nominalBonus) - nominalPotongan;
         
-        // 🔥 Susun Rincian Tindakan Model Tabel Lengkap
+        // 🔥 PERUBAHAN 2: Pemisahan Baris HTML Cetakan
         let htmlRincian = '';
         dataDokter.rincian.forEach((rin, urut) => {
-            let teksPotongan = [];
-            if (rin.hargaLabVendor > 0) teksPotongan.push(`Lab: -${rin.hargaLabVendor.toLocaleString('id-ID')}`);
-            if (rin.diskonProrata > 0) teksPotongan.push(`Diskon: -${rin.diskonProrata.toLocaleString('id-ID')}`);
-            let strPotongan = teksPotongan.length > 0 ? teksPotongan.join('<br>') : '-';
+            let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
+            let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
 
             htmlRincian += `
-                <tr style="border-bottom: 1px solid #e9ecef;">
-                    <td style="padding:8px 5px; text-align:center; font-size:12px;">${urut + 1}</td>
-                    <td style="padding:8px 5px; font-size:12px;">${rin.tanggal}</td>
-                    <td style="padding:8px 5px; font-size:12px;"><strong>${rin.pasien}</strong><br><span style="color:#7f8c8d;">${rin.tindakan}</span></td>
-                    <td style="padding:8px 5px; text-align:right; font-size:12px;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
-                    <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${strPotongan}</td>
-                    <td style="padding:8px 5px; text-align:right; font-weight:bold; font-size:12px; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
+                <tr style="border-bottom: 1px dashed #e9ecef;">
+                    <td style="padding:8px 5px; text-align:center; font-size:11px;">${urut + 1}</td>
+                    <td style="padding:8px 5px; font-size:11px;">${rin.tanggal}</td>
+                    <td style="padding:8px 5px; font-size:11px; font-weight:bold;">${rin.pasien}</td>
+                    <td style="padding:8px 5px; font-size:11px;">${rin.tindakan}</td>
+                    <td style="padding:8px 5px; text-align:right; font-size:11px;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
+                    <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${labTxt}</td>
+                    <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${diskonTxt}</td>
+                    <td style="padding:8px 5px; text-align:right; font-weight:bold; font-size:11px; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
                 </tr>
             `;
         });
@@ -8895,7 +8889,7 @@
                     .header-slip { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
                     .info-header { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; }
                     .tabel-rincian { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                    .tabel-rincian th { background: #ecf0f1; padding: 10px 5px; font-size: 13px; border-bottom: 2px solid #bdc3c7; }
+                    .tabel-rincian th { background: #ecf0f1; padding: 10px 5px; font-size: 11px; border-bottom: 2px solid #bdc3c7; }
                     .box-final { border: 2px solid #2ecc71; padding: 15px; margin-top: 25px; background: #f9fffb; border-radius: 6px; }
                     .row-calc { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; }
                 </style>
@@ -8918,32 +8912,35 @@
                     </div>
                 </div>
 
-                <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 13px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
+                <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
                 
                 <table class="tabel-rincian">
                     <thead>
                         <tr>
-                            <th style="width:5%;">No</th>
-                            <th style="width:12%; text-align:left;">Tanggal</th>
-                            <th style="width:33%; text-align:left;">Pasien & Tindakan</th>
-                            <th style="width:15%; text-align:right;">Tarif (Rp)</th>
-                            <th style="width:17%; text-align:right;">Potongan Vendor Lab</th>
-                            <th style="width:18%; text-align:right;">Fee Bersih (40%)</th>
+                            <!-- 8 KOLOM BARU YANG DIATUR DENGAN LEBAR PERSENTASE (Total 100%) -->
+                            <th style="width:4%;">No</th>
+                            <th style="width:11%; text-align:left;">Tanggal</th>
+                            <th style="width:18%; text-align:left;">Pasien</th>
+                            <th style="width:23%; text-align:left;">Tindakan</th>
+                            <th style="width:11%; text-align:right;">Tarif (Rp)</th>
+                            <th style="width:10%; text-align:right;">Biaya Lab</th>
+                            <th style="width:10%; text-align:right;">Diskon</th>
+                            <th style="width:13%; text-align:right;">Fee Bersih</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${htmlRincian}
                     </tbody>
                 </table>
-                <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 15px;">
-                    Total Fee Tindakan: Rp ${pokokGaji.toLocaleString('id-ID')}
+                <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 14px;">
+                    Total Fee Bersih: Rp ${pokokGaji.toLocaleString('id-ID')}
                 </div>
 
                 <div class="box-final">
                     <div style="font-weight:bold; color:#2c3e50; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:5px;">B. KALKULASI FINAL (TAKE HOME PAY)</div>
-                    <div class="row-calc"><span>Total Fee Tindakan</span><span>Rp ${pokokGaji.toLocaleString('id-ID')}</span></div>
+                    <div class="row-calc"><span>Total Pokok Fee Bersih (Dari Tindakan)</span><span>Rp ${pokokGaji.toLocaleString('id-ID')}</span></div>
                     <div class="row-calc" style="color: #27ae60;"><span>(+) Injeksi Bonus / Insentif</span><span>Rp ${nominalBonus.toLocaleString('id-ID')}</span></div>
-                    <div class="row-calc" style="color: #e74c3c;"><span>(-) Pemotongan Lain (Kasbon/Cicilan)</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
+                    <div class="row-calc" style="color: #e74c3c;"><span>(-) Pemotongan Lain (Kasbon/Cicilan/dll)</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
                     
                     <div style="border-top:2px dashed #2ecc71; margin: 15px 0;"></div>
                     <div class="row-calc" style="font-size: 20px; font-weight:bold; color:#27ae60;">
@@ -8951,9 +8948,9 @@
                     </div>
                 </div>
                 
-                <div style="display:flex; justify-content:space-between; margin-top:50px; text-align:center;">
-                    <div style="width: 250px;"><p style="margin-bottom:60px;">Penerima (Dokter PJP),</p><p style="border-top: 1px solid #000; padding-top: 5px; font-weight: bold;">${dataDokter.nama}</p></div>
-                    <div style="width: 250px;"><p style="margin-bottom:60px;">Disetujui Oleh,</p><p style="border-top: 1px solid #000; padding-top: 5px; font-weight: bold;">Manajemen Klinik</p></div>
+                <div style="display:flex; justify-content:space-between; margin-top:40px; text-align:center;">
+                    <div style="width: 250px;"><p style="margin-bottom:60px; font-size:12px;">Penerima (Dokter PJP),</p><p style="border-top: 1px solid #000; padding-top: 5px; font-weight: bold;">${dataDokter.nama}</p></div>
+                    <div style="width: 250px;"><p style="margin-bottom:60px; font-size:12px;">Disetujui Oleh,</p><p style="border-top: 1px solid #000; padding-top: 5px; font-weight: bold;">Manajemen Klinik</p></div>
                 </div>
             </body>
             </html>
