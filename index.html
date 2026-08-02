@@ -4799,6 +4799,7 @@
             };
 
             // Loop dinamis mengumpulkan baris tindakan medis murni
+            // Loop dinamis mengumpulkan baris tindakan medis murni
             const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
             let listTindakanDipilih = [];
 
@@ -4809,10 +4810,23 @@
                 
                 if (selNama && selNama.value) {
                     let hargaMurni = Number(inpHarga.value.replace(/[^0-9]/g, '')) || 0;
+                    let namaTindakanFix = selNama.value.trim();
+                    
+                    // 🔥 KECERDASAN OTOMATIS: Cari tahu apakah tindakan ini butuh lab dari memori global
+                    let statusButuhLab = 0;
+                    if (window.masterTindakanGlobal) {
+                        let dataMasterItem = window.masterTindakanGlobal.find(t => t.nama === namaTindakanFix);
+                        if (dataMasterItem && dataMasterItem.Butuh_Lab === 1) {
+                            statusButuhLab = 1;
+                        }
+                    }
+
                     listTindakanDipilih.push({
-                        namaTindakan: selNama.value.trim(),
+                        namaTindakan: namaTindakanFix,
                         hargaBersihPerItem: hargaMurni,
-                        catatanKlinis: inpCatatan ? inpCatatan.value.trim() : ""
+                        catatanKlinis: inpCatatan ? inpCatatan.value.trim() : "",
+                        // 🔥 Label rahasia ini sekarang tertanam selamanya di database pasien!
+                        butuhLab: statusButuhLab 
                     });
                 }
             });
@@ -6983,7 +6997,7 @@
 
     
     // =========================================================================
-    // 🚀 MEMUAT MASTER TINDAKAN (FIX: MENGEMBALIKAN HARGA MAKSIMAL & RANGE)
+    // 🚀 memuat daftar tindakan ke form RME
     // =========================================================================
     function muatMasterTindakan() {
         fetch(WEB_APP_URL, {
@@ -6999,18 +7013,19 @@
                         kategori: String(item.kategori || "").trim(),
                         nama: String(item.nama || "").trim(),
                         harga: Number(item.hargaDasar || 0), 
-                        // 🔥 KEMBALIKAN HARGA MAKSIMAL DARI BACKEND
                         hargaMaksimal: Number(item.hargaMaksimal || 0), 
                         keterangan: String(item.keterangan || "").trim(),
-                        Butuh_Consent: (item.butuhConsent === 1 || String(item.butuhConsent) === "1") ? 1 : 0
+                        Butuh_Consent: (item.butuhConsent === 1 || String(item.butuhConsent) === "1") ? 1 : 0,
+                        // 🔥 TAMBAHAN: Normalisasi nilai Butuh Lab ke memori lokal
+                        Butuh_Lab: (item.butuhLab === 1 || String(item.butuhLab) === "1") ? 1 : 0
                     };
                 });
-                console.log("🚀 Master Tindakan Berhasil Dimuat & Dinormalisasi:", window.masterTindakanGlobal.length, "item.");
+                console.log("🚀 Master Tindakan Berhasil Dimuat:", window.masterTindakanGlobal.length, "item.");
             } else {
                 console.error("❌ Gagal memuat master tindakan:", res.message);
             }
         })
-        .catch(err => console.error("⚠️ Gangguan jaringan saat memuat master tindakan:", err));
+        .catch(err => console.error("⚠️ Gangguan jaringan:", err));
     }
 
 
