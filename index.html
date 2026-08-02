@@ -1978,6 +1978,7 @@
             
             <form onsubmit="simpanTagihanLabDinamis(event)">
                 <input type="hidden" id="hdnLabInvoice">
+                <input type="hidden" id="hdnLabDokter">
                 
                 <div style="margin:20px 0;">
                     <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Harga Tagihan Asli (Rp):</label>
@@ -10502,7 +10503,7 @@
         document.getElementById('hdnLabInvoice').value = invoice;
         document.getElementById('lblLabPasien').innerText = pasien;
         document.getElementById('lblLabTindakan').innerText = tindakan;
-        document.getElementById('lblLabDokter').innerText = dokter;
+        document.getElementById('hdnLabDokter').value = dokter;
         document.getElementById('inpLabHargaDinamis').value = "";
         document.getElementById('lblPotonganDokter').innerText = "Rp 0";
         document.getElementById('modalInputLab').style.display = 'flex';
@@ -10526,7 +10527,7 @@
         const invoice = document.getElementById('hdnLabInvoice').value;
         const pasien = document.getElementById('lblLabPasien').innerText;
         const tindakan = document.getElementById('lblLabTindakan').innerText;
-        const dokter = document.getElementById('lblLabDokter').innerText;
+        const dokter = document.getElementById('hdnLabDokter').value;
         
         // 🔥 HAPUS KOMA SEBELUM DIKIRIM KE DATABASE (Database harus angka murni)
         let strHarga = document.getElementById('inpLabHargaDinamis').value.replace(/[^0-9]/g, '');
