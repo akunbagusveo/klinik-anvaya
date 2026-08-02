@@ -10499,11 +10499,15 @@
     }
 
     // 3. Membuka Pop-up & Kalkulator Beban 40%
-    function bukaModalInputLab(invoice, pasien, tindakan) {
+    // 🔥 PERBAIKAN: Menambahkan parameter 'dokter' di dalam kurung
+    function bukaModalInputLab(invoice, pasien, tindakan, dokter) {
         document.getElementById('hdnLabInvoice').value = invoice;
+        
+        // Sekarang kata 'dokter' di bawah ini resmi berisi teks nama (bukan elemen HTML)
+        document.getElementById('hdnLabDokter').value = dokter; 
+        
         document.getElementById('lblLabPasien').innerText = pasien;
         document.getElementById('lblLabTindakan').innerText = tindakan;
-        document.getElementById('hdnLabDokter').value = dokter;
         document.getElementById('inpLabHargaDinamis').value = "";
         document.getElementById('lblPotonganDokter').innerText = "Rp 0";
         document.getElementById('modalInputLab').style.display = 'flex';
