@@ -8762,8 +8762,8 @@
                     <tr>
                         <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:left; border:none; width:25%;">Nama Dokter</th>
                         <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:center; border:none; width:15%;">Jml Tindakan</th>
-                        <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:center; border:none; width:30%;">Injeksi Tambahan (Manual)</th>
-                        <th style="padding:15px; background-color:#2c3e50 !important; color:#2ecc71 !important; text-align:right; border:none; width:30%;">Gaji Final (Take Home Pay)</th>
+                        <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:center; border:none; width:35%;">Injeksi Manual & Keterangan</th>
+                        <th style="padding:15px; background-color:#2c3e50 !important; color:#2ecc71 !important; text-align:right; border:none; width:25%;">Gaji Final (Take Home Pay)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -8782,12 +8782,23 @@
                         ${d.nama}
                     </td>
                     <td style="padding:15px; text-align:center; font-weight:500;">${d.jmlTindakan}</td>
+                    
+                    <!-- 🔥 PERUBAHAN UI: Penambahan Kotak Keterangan (Ket.) -->
                     <td style="padding:15px; text-align:center;">
-                        <div style="display:flex; gap:5px; justify-content:center;">
-                            <input type="number" id="inpBonus_${idx}" placeholder="+ Bonus/Insentif" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:110px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
-                            <input type="number" id="inpPotongan_${idx}" placeholder="- Kasbon dll" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:110px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
+                        <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
+                            <!-- Baris Bonus -->
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" id="inpKetBonus_${idx}" placeholder="Ket: THR, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
+                                <input type="number" id="inpBonus_${idx}" placeholder="+ Rp Bonus" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
+                            </div>
+                            <!-- Baris Potongan -->
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" id="inpKetPotongan_${idx}" placeholder="Ket: Kasbon, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
+                                <input type="number" id="inpPotongan_${idx}" placeholder="- Rp Potong" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
+                            </div>
                         </div>
                     </td>
+                    
                     <td style="padding:15px; text-align:right; font-weight:bold; color:#27ae60; background-color:#fcfdfd; font-size:15px;">
                         <span id="lblGajiFinal_${idx}">Rp ${d.totalBagiHasil.toLocaleString('id-ID')}</span>
                         <br>
@@ -8796,7 +8807,6 @@
                 </tr>
             `;
 
-            // 🔥 PENAMBAHAN KOLOM "DASAR FEE" DI LAYAR KOKPIT
             htmlContent += `
                 <tr id="${rowId}" style="display:none; background-color:#f8f9fa;">
                     <td colspan="4" style="padding: 0;">
@@ -8817,7 +8827,7 @@
             d.rincian.forEach(rin => {
                 let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
                 let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
-                let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata; // 🔥 Matematika Dasar Fee
+                let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
 
                 htmlContent += `
                                 <tr style="border-bottom:1px solid #f1f2f6;">
@@ -8851,10 +8861,18 @@
         
         let dataDokter = window.dataBagiHasilGlobal[idx];
         
+        // 🔥 MENANGKAP NILAI ANGKA & TEKS KETERANGAN DARI KOKPIT
         let elBonus = document.getElementById(`inpBonus_${idx}`);
         let elPotongan = document.getElementById(`inpPotongan_${idx}`);
+        let elKetBonus = document.getElementById(`inpKetBonus_${idx}`);
+        let elKetPotongan = document.getElementById(`inpKetPotongan_${idx}`);
+        
         let nominalBonus = elBonus ? (Number(elBonus.value) || 0) : 0;
         let nominalPotongan = elPotongan ? (Number(elPotongan.value) || 0) : 0;
+        
+        // Logika Cerdas: Gunakan teks input, jika kosong gunakan default
+        let teksBonus = (elKetBonus && elKetBonus.value.trim() !== "") ? elKetBonus.value.trim() : "Injeksi Bonus / Insentif";
+        let teksPotongan = (elKetPotongan && elKetPotongan.value.trim() !== "") ? elKetPotongan.value.trim() : "Pemotongan Lain (Kasbon/Cicilan/dll)";
         
         let pokokGaji = dataDokter.totalBagiHasil;
         let finalGaji = (pokokGaji + nominalBonus) - nominalPotongan;
@@ -8863,8 +8881,6 @@
         dataDokter.rincian.forEach((rin, urut) => {
             let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
             let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
-            
-            // 🔥 Menghitung Nilai Dasar Fee
             let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
 
             htmlRincian += `
@@ -8876,7 +8892,6 @@
                     <td style="padding:8px 5px; text-align:right; font-size:11px;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${labTxt}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${diskonTxt}</td>
-                    <!-- 🔥 Kolom Dasar Fee -->
                     <td style="padding:8px 5px; text-align:right; font-size:11px; font-weight:bold; color:#2c3e50;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
                     <td style="padding:8px 5px; text-align:right; font-weight:bold; font-size:11px; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
                 </tr>
@@ -8924,7 +8939,6 @@
                 <table class="tabel-rincian">
                     <thead>
                         <tr>
-                            <!-- 🔥 9 KOLOM PRESISI (TOTAL 100%) -->
                             <th style="width:4%;">No</th>
                             <th style="width:11%; text-align:left;">Tanggal</th>
                             <th style="width:15%; text-align:left;">Pasien</th>
@@ -8947,8 +8961,10 @@
                 <div class="box-final">
                     <div style="font-weight:bold; color:#2c3e50; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:5px;">B. KALKULASI FINAL (TAKE HOME PAY)</div>
                     <div class="row-calc"><span>Total Pokok Fee Bersih (Dari Tindakan)</span><span>Rp ${pokokGaji.toLocaleString('id-ID')}</span></div>
-                    <div class="row-calc" style="color: #27ae60;"><span>(+) Injeksi Bonus / Insentif</span><span>Rp ${nominalBonus.toLocaleString('id-ID')}</span></div>
-                    <div class="row-calc" style="color: #e74c3c;"><span>(-) Pemotongan Lain (Kasbon/Cicilan/dll)</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
+                    
+                    <!-- 🔥 LABEL DINAMIS SESUAI KETIKAN KASIR -->
+                    <div class="row-calc" style="color: #27ae60;"><span>(+) ${teksBonus}</span><span>Rp ${nominalBonus.toLocaleString('id-ID')}</span></div>
+                    <div class="row-calc" style="color: #e74c3c;"><span>(-) ${teksPotongan}</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
                     
                     <div style="border-top:2px dashed #2ecc71; margin: 15px 0;"></div>
                     <div class="row-calc" style="font-size: 20px; font-weight:bold; color:#27ae60;">
