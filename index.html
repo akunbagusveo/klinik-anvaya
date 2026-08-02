@@ -2018,8 +2018,9 @@
             </div>
 
             <!-- Area Tampilan Kertas Slip (Background Abu-abu dengan Kertas Putih di tengah) -->
-            <div style="padding:20px; overflow-y:auto; flex:1; background:#555; display:flex; justify-content:center;">
-                <div id="kertasPreviewPDF" style="background:white; width:210mm; min-height:297mm; padding:40px; box-sizing:border-box; box-shadow:0 0 10px rgba(0,0,0,0.5);">
+            <div style="padding:20px; overflow-y:auto; flex:1; background:#525659; text-align:center;">
+                <!-- 🔥 PERBAIKAN: margin:0 auto untuk menengahkan, max-width:100% agar tidak luber di layar kecil, text-align:left agar tulisan tidak ikut rata tengah -->
+                <div id="kertasPreviewPDF" style="background:white; width:210mm; max-width:100%; min-height:297mm; margin:0 auto; padding:40px; box-sizing:border-box; box-shadow:0 5px 15px rgba(0,0,0,0.5); text-align:left;">
                     <!-- 📄 Desain Slip akan disuntik ke sini oleh JavaScript -->
                 </div>
             </div>
@@ -8959,7 +8960,7 @@
                 </div>
 
                 <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; word-break: break-word;">
                     <thead>
                         <tr>
                             <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:4%;">No</th>
