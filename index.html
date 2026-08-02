@@ -8796,7 +8796,7 @@
                 </tr>
             `;
 
-            // 🔥 PERUBAHAN 1: UI Rincian Kokpit Dipecah Menjadi 7 Kolom
+            // 🔥 PENAMBAHAN KOLOM "DASAR FEE" DI LAYAR KOKPIT
             htmlContent += `
                 <tr id="${rowId}" style="display:none; background-color:#f8f9fa;">
                     <td colspan="4" style="padding: 0;">
@@ -8810,12 +8810,14 @@
                                     <th style="padding:8px; text-align:right; border:none !important;">Tarif (Rp)</th>
                                     <th style="padding:8px; text-align:right; border:none !important;">Biaya Lab</th>
                                     <th style="padding:8px; text-align:right; border:none !important;">Diskon</th>
+                                    <th style="padding:8px; text-align:right; border:none !important; color:#2980b9;">Dasar Fee</th>
                                     <th style="padding:8px; text-align:right; border:none !important;">Fee Bersih (40%)</th>
                                 </tr>
             `;
             d.rincian.forEach(rin => {
                 let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
                 let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
+                let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata; // 🔥 Matematika Dasar Fee
 
                 htmlContent += `
                                 <tr style="border-bottom:1px solid #f1f2f6;">
@@ -8825,6 +8827,7 @@
                                     <td style="padding:8px; text-align:right; color:#7f8c8d;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
                                     <td style="padding:8px; text-align:right; color:#e74c3c;">${labTxt}</td>
                                     <td style="padding:8px; text-align:right; color:#e74c3c;">${diskonTxt}</td>
+                                    <td style="padding:8px; text-align:right; font-weight:bold; color:#2980b9;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
                                     <td style="padding:8px; text-align:right; font-weight:bold; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
                                 </tr>
                 `;
@@ -8856,11 +8859,13 @@
         let pokokGaji = dataDokter.totalBagiHasil;
         let finalGaji = (pokokGaji + nominalBonus) - nominalPotongan;
         
-        // 🔥 PERUBAHAN 2: Pemisahan Baris HTML Cetakan
         let htmlRincian = '';
         dataDokter.rincian.forEach((rin, urut) => {
             let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
             let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
+            
+            // 🔥 Menghitung Nilai Dasar Fee
+            let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
 
             htmlRincian += `
                 <tr style="border-bottom: 1px dashed #e9ecef;">
@@ -8871,6 +8876,8 @@
                     <td style="padding:8px 5px; text-align:right; font-size:11px;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${labTxt}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${diskonTxt}</td>
+                    <!-- 🔥 Kolom Dasar Fee -->
+                    <td style="padding:8px 5px; text-align:right; font-size:11px; font-weight:bold; color:#2c3e50;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
                     <td style="padding:8px 5px; text-align:right; font-weight:bold; font-size:11px; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
                 </tr>
             `;
@@ -8917,15 +8924,16 @@
                 <table class="tabel-rincian">
                     <thead>
                         <tr>
-                            <!-- 8 KOLOM BARU YANG DIATUR DENGAN LEBAR PERSENTASE (Total 100%) -->
+                            <!-- 🔥 9 KOLOM PRESISI (TOTAL 100%) -->
                             <th style="width:4%;">No</th>
                             <th style="width:11%; text-align:left;">Tanggal</th>
-                            <th style="width:18%; text-align:left;">Pasien</th>
-                            <th style="width:23%; text-align:left;">Tindakan</th>
-                            <th style="width:11%; text-align:right;">Tarif (Rp)</th>
+                            <th style="width:15%; text-align:left;">Pasien</th>
+                            <th style="width:20%; text-align:left;">Tindakan</th>
+                            <th style="width:10%; text-align:right;">Tarif (Rp)</th>
                             <th style="width:10%; text-align:right;">Biaya Lab</th>
-                            <th style="width:10%; text-align:right;">Diskon</th>
-                            <th style="width:13%; text-align:right;">Fee Bersih</th>
+                            <th style="width:9%; text-align:right;">Diskon</th>
+                            <th style="width:10%; text-align:right; color:#2980b9;">Dasar Fee</th>
+                            <th style="width:11%; text-align:right;">Fee Bersih</th>
                         </tr>
                     </thead>
                     <tbody>
