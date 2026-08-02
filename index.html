@@ -1981,7 +1981,7 @@
                 
                 <div style="margin:20px 0;">
                     <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Harga Tagihan Asli (Rp):</label>
-                    <input type="number" id="inpLabHargaDinamis" required placeholder="Contoh: 150000" oninput="hitungRealtimePotonganLab()" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:4px; font-weight:bold; font-size:16px; color:#e74c3c; box-sizing:border-box;">
+                    <input type="text" id="inpLabHargaDinamis" required placeholder="Contoh: 1,500,000" oninput="formatRupiahRealtime(this)" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:4px; font-weight:bold; font-size:16px; color:#e74c3c; box-sizing:border-box;">
                     
                     <!-- FITUR MELIHAT POTONGAN DOKTER SECARA REALTIME -->
                     <div style="margin-top:8px; padding:8px; background:#fce4d6; border-radius:4px; border-left:4px solid #e74c3c;">
@@ -10484,8 +10484,10 @@
                 <!-- 🔥 DATA NAMA DOKTER DIRENDER DI SINI -->
                 <td style="padding:15px; font-weight:bold; color:#8e44ad;">👨‍⚕️ ${item.namaDokter}</td>
                 
-                <td style="padding:15px; font-weight:bold; color:#e67e22;">
-                    <span style="background:#fef5e7; padding:4px 8px; border-radius:4px; border:1px solid #f8c471;">${item.namaTindakan}</span>
+                <td style="padding:15px; font-weight:bold; color:#e67e22; max-width: 250px; line-height: 1.6;">
+                    <span style="display:inline-block; background:#fef5e7; padding:6px 10px; border-radius:6px; border:1px solid #f8c471; word-wrap:break-word; white-space:normal;">
+                        ${item.namaTindakan}
+                    </span>
                 </td>
                 <td style="padding:15px; text-align:center;">
                     <button onclick="bukaModalInputLab('${item.invoice}', '${item.namaPasien}', '${item.namaTindakan}', '${item.namaDokter}')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
@@ -10510,7 +10512,9 @@
     }
 
     function hitungRealtimePotonganLab() {
-        let harga = Number(document.getElementById('inpLabHargaDinamis').value) || 0;
+        // Tarik teks dari input, HAPUS KOMANYA dulu sebelum dihitung matematikanya!
+        let strHarga = document.getElementById('inpLabHargaDinamis').value.replace(/[^0-9]/g, '');
+        let harga = Number(strHarga) || 0;
         let beban = harga * 0.4; // 40% ditanggung dokter
         document.getElementById('lblPotonganDokter').innerText = "- Rp " + beban.toLocaleString('id-ID');
     }
@@ -10523,9 +10527,12 @@
         const pasien = document.getElementById('lblLabPasien').innerText;
         const tindakan = document.getElementById('lblLabTindakan').innerText;
         const dokter = document.getElementById('lblLabDokter').innerText;
-        const harga = document.getElementById('inpLabHargaDinamis').value;
         
-        let beban = Number(harga) * 0.4; // 40%
+        // 🔥 HAPUS KOMA SEBELUM DIKIRIM KE DATABASE (Database harus angka murni)
+        let strHarga = document.getElementById('inpLabHargaDinamis').value.replace(/[^0-9]/g, '');
+        const harga = Number(strHarga);
+        
+        let beban = harga * 0.4; // 40%
 
         btn.disabled = true;
         btn.innerText = "⏳ Menyimpan...";
@@ -10538,7 +10545,7 @@
                 action: "simpanDataLab", 
                 noKuitansi: invoice,
                 tanggalBayar: new Date().toISOString().split('T')[0],
-                hargaLab: harga,
+                hargaLab: harga, // Kirim angka murni tanpa koma
                 pasien: pasien,
                 perawatanLab: tindakan,
                 operator: sessionData ? sessionData.username : "Perawat"
@@ -10549,10 +10556,7 @@
             if(res.result === "success") {
                 document.getElementById('modalInputLab').style.display = 'none';
                 
-                // 🔥 TRIGGER CETAK STRUK SEBELUM ANTREAN HILANG
                 cetakStrukLabInternal(invoice, pasien, tindakan, dokter, harga, beban);
-                
-                // Refresh antrean (data yang sudah diinput akan hilang)
                 muatAntreanLab(); 
             } else {
                 alert("❌ Gagal menyimpan: " + res.message);
@@ -10618,6 +10622,22 @@
         setTimeout(() => {
             jendelaCetak.print();
         }, 500);
+    }
+
+    // 🔥 FUNGSI BARU: MEMBERI KOMA SAAT PERAWAT MENGETIK
+    function formatRupiahRealtime(input) {
+        // Hapus semua karakter selain angka (biar huruf tidak bisa masuk)
+        let angkaMurni = input.value.replace(/[^0-9]/g, '');
+        
+        // Format ulang pakai koma (Format US/English menggunakan koma untuk ribuan)
+        if (angkaMurni) {
+            input.value = Number(angkaMurni).toLocaleString('en-US');
+        } else {
+            input.value = '';
+        }
+        
+        // Panggil fungsi hitung potongan secara realtime
+        hitungRealtimePotonganLab();
     }
     
 
