@@ -8836,7 +8836,7 @@
                     <td style="padding:15px; text-align:right; font-weight:bold; color:#27ae60; background-color:#fcfdfd; font-size:15px;">
                         <span id="lblGajiFinal_${idx}">Rp ${d.totalBagiHasil.toLocaleString('id-ID')}</span>
                         <br>
-                        <button onclick="bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>
+                        <button id="btnCekSlip_${idx}" onclick="bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>
                     </td>
                 </tr>
             `;
@@ -9009,7 +9009,7 @@
     // 🔥 2. FUNGSI MENGUNCI SLIP & MENYIMPAN KE ARSIP GAJI
     // =====================================================================
     function kunciDanSimpanSlip() {
-        let bulanGaji = document.getElementById('inpBulanGaji').value; // Output: "2026-08"
+        let bulanGaji = document.getElementById('inpBulanGaji').value; 
         if (!bulanGaji) {
             alert("⚠️ Harap pilih 'Gaji Bulan' terlebih dahulu sebelum mengunci!");
             return;
@@ -9022,7 +9022,6 @@
         btn.disabled = true;
         btn.innerText = "⏳ MENGUNCI DATA...";
 
-        // Susun payload untuk dikirim ke Backend Google Sheets
         let payload = {
             action: "kunciSlipGaji",
             namaDokter: dataDokter.nama,
@@ -9032,7 +9031,7 @@
             potongan: draft.potongan,
             thp: draft.finalGaji,
             teksKeterangan: `Bonus: ${draft.teksBonus} | Potongan: ${draft.teksPotongan}`,
-            rincianJson: JSON.stringify(dataDokter.rincian) // Kita simpan raw datanya agar mudah ditarik Dashboard Dokter nanti
+            rincianJson: JSON.stringify(dataDokter.rincian) 
         };
 
         fetch(WEB_APP_URL, {
@@ -9043,9 +9042,19 @@
         .then(res => {
             btn.disabled = false;
             btn.innerText = "🔒 KUNCI & TERBITKAN SLIP";
+            
             if (res.result === "success") {
                 alert("✅ BERHASIL: " + res.message);
                 document.getElementById('modalPreviewSlip').style.display = 'none';
+                
+                // 🔥 PERBAIKAN UX: Ubah tombol di tabel menjadi Hijau & Berlabel Terkunci
+                let btnCek = document.getElementById('btnCekSlip_' + window.currentPreviewIdx);
+                if (btnCek) {
+                    btnCek.innerHTML = `✅ Terkunci (${bulanGaji})`;
+                    btnCek.style.background = "#27ae60"; // Warna hijau sukses
+                    btnCek.style.boxShadow = "none";
+                }
+
             } else {
                 alert("❌ Gagal Mengunci: " + res.message);
             }
