@@ -8810,11 +8810,31 @@
             let rowId = `detail_dokter_${idx}`;
             let chevronId = `chevron_${idx}`;
             
-            // 🔥 LOGIKA KECERDASAN TOMBOL
-            let isLocked = false;
+            // 🔥 LOGIKA TARIK DATA ARSIP KE LAYAR
+            let dataTerkunci = null;
             if (window.arsipGajiTerkunci) {
-                // Cek apakah ada data di memori radar yang cocok dengan nama dokter & bulan ini
-                isLocked = window.arsipGajiTerkunci.some(x => x.namaDokter === d.nama && x.periode === defaultBulanFilter);
+                dataTerkunci = window.arsipGajiTerkunci.find(x => x.namaDokter === d.nama && x.periode === defaultBulanFilter);
+            }
+            
+            let isLocked = !!dataTerkunci;
+            
+            // Jika terkunci, isi dengan angka arsip. Jika belum, biarkan kosong/asli
+            let valBonus = isLocked && dataTerkunci.bonus > 0 ? dataTerkunci.bonus : "";
+            let valPotongan = isLocked && dataTerkunci.potongan > 0 ? dataTerkunci.potongan : "";
+            let valTHP = isLocked ? dataTerkunci.thp : d.totalBagiHasil;
+
+            // Pecah Keterangan teks (Bonus: THR | Potongan: Kasbon)
+            let ketBonus = "";
+            let ketPotongan = "";
+            if (isLocked && dataTerkunci.teksKeterangan) {
+                let splitKet = dataTerkunci.teksKeterangan.split(" | Potongan: ");
+                if (splitKet.length === 2) {
+                    ketBonus = splitKet[0].replace("Bonus: ", "");
+                    if (ketBonus === "Injeksi Bonus / Insentif") ketBonus = ""; // Kosongkan jika default
+                    
+                    ketPotongan = splitKet[1];
+                    if (ketPotongan === "Pemotongan Lain (Kasbon dll)") ketPotongan = "";
+                }
             }
 
             let btnCetakHtml = isLocked 
@@ -8829,27 +8849,30 @@
                     </td>
                     <td style="padding:15px; text-align:center; font-weight:500;">${d.jmlTindakan}</td>
                     
+                    <!-- 🔥 KOTAK INPUT OTOMATIS TERISI DARI ARSIP -->
                     <td style="padding:15px; text-align:center;">
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
                             <div style="display:flex; gap:5px;">
-                                <input type="text" id="inpKetBonus_${idx}" placeholder="Ket: THR, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
-                                <input type="number" id="inpBonus_${idx}" placeholder="+ Rp Bonus" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
+                                <input type="text" id="inpKetBonus_${idx}" value="${ketBonus}" placeholder="Ket: THR, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
+                                <input type="number" id="inpBonus_${idx}" value="${valBonus}" placeholder="+ Rp Bonus" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
                             <div style="display:flex; gap:5px;">
-                                <input type="text" id="inpKetPotongan_${idx}" placeholder="Ket: Kasbon, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
-                                <input type="number" id="inpPotongan_${idx}" placeholder="- Rp Potong" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
+                                <input type="text" id="inpKetPotongan_${idx}" value="${ketPotongan}" placeholder="Ket: Kasbon, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
+                                <input type="number" id="inpPotongan_${idx}" value="${valPotongan}" placeholder="- Rp Potong" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
                         </div>
                     </td>
                     
+                    <!-- 🔥 LABEL GAJI MENAMPILKAN THP YANG TERKUNCI -->
                     <td style="padding:15px; text-align:right; font-weight:bold; color:#27ae60; background-color:#fcfdfd; font-size:15px;">
-                        <span id="lblGajiFinal_${idx}">Rp ${d.totalBagiHasil.toLocaleString('id-ID')}</span>
+                        <span id="lblGajiFinal_${idx}">Rp ${valTHP.toLocaleString('id-ID')}</span>
                         <br>
                         ${btnCetakHtml}
                     </td>
                 </tr>
             `;
 
+            // (Kode rincian tabelHTML sama seperti sebelumnya...)
             htmlContent += `
                 <tr id="${rowId}" style="display:none; background-color:#f8f9fa;">
                     <td colspan="4" style="padding: 0;">
@@ -9029,9 +9052,16 @@
         }
 
         let dataDokter = window.dataBagiHasilGlobal[window.currentPreviewIdx];
+        
+        // 🔥 TAMBAHAN POP-UP KONFIRMASI REVISI
+        let isAlreadyLocked = window.arsipGajiTerkunci && window.arsipGajiTerkunci.some(x => x.namaDokter === dataDokter.nama && x.periode === bulanGaji);
+        if (isAlreadyLocked) {
+            let konfirmasi = confirm(`⚠️ PERHATIAN!\nSlip Gaji periode ${bulanGaji} untuk dr. ${dataDokter.nama} SUDAH PERNAH DITERBITKAN.\n\nApakah Anda yakin ingin MEREVISI (menimpa) data lama dengan angka yang baru ini?`);
+            if (!konfirmasi) return; // Batalkan proses jika owner klik "Cancel"
+        }
+
         let draft = window.dataDraftSlip;
         let btn = document.getElementById('btnKunciSlip');
-
         btn.disabled = true;
         btn.innerText = "⏳ MENGUNCI DATA...";
 
