@@ -8818,9 +8818,9 @@
             
             let isLocked = !!dataTerkunci;
             
-            // Jika terkunci, isi dengan angka arsip. Jika belum, biarkan kosong/asli
-            let valBonus = isLocked && dataTerkunci.bonus > 0 ? dataTerkunci.bonus : "";
-            let valPotongan = isLocked && dataTerkunci.potongan > 0 ? dataTerkunci.potongan : "";
+            // Jika terkunci, isi dengan angka arsip (FORMAT RUPIAH). Jika belum, biarkan kosong
+            let valBonus = isLocked && dataTerkunci.bonus > 0 ? dataTerkunci.bonus.toLocaleString('id-ID') : "";
+            let valPotongan = isLocked && dataTerkunci.potongan > 0 ? dataTerkunci.potongan.toLocaleString('id-ID') : "";
             let valTHP = isLocked ? dataTerkunci.thp : d.totalBagiHasil;
 
             // Pecah Keterangan teks (Bonus: THR | Potongan: Kasbon)
@@ -8854,11 +8854,11 @@
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
                             <div style="display:flex; gap:5px;">
                                 <input type="text" id="inpKetBonus_${idx}" value="${ketBonus}" placeholder="Ket: THR, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
-                                <input type="number" id="inpBonus_${idx}" value="${valBonus}" placeholder="+ Rp Bonus" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
+                                <input type="text" id="inpBonus_${idx}" value="${valBonus}" placeholder="+ Rp Bonus" oninput="formatRupiahInput(this); hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
                             <div style="display:flex; gap:5px;">
                                 <input type="text" id="inpKetPotongan_${idx}" value="${ketPotongan}" placeholder="Ket: Kasbon, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
-                                <input type="number" id="inpPotongan_${idx}" value="${valPotongan}" placeholder="- Rp Potong" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
+                                <input type="text" id="inpPotongan_${idx}" value="${valPotongan}" placeholder="- Rp Potong" oninput="formatRupiahInput(this); hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
                         </div>
                     </td>
@@ -8933,9 +8933,13 @@
         let elPotongan = document.getElementById(`inpPotongan_${idx}`);
         let elKetBonus = document.getElementById(`inpKetBonus_${idx}`);
         let elKetPotongan = document.getElementById(`inpKetPotongan_${idx}`);
+
+        // 🔥 PERBAIKAN: Bersihkan titik gaya Rupiah sebelum konversi ke angka murni
+        let strBonus = elBonus ? elBonus.value.replace(/[^0-9]/g, '') : "0";
+        let strPotongan = elPotongan ? elPotongan.value.replace(/[^0-9]/g, '') : "0";
         
-        let nominalBonus = elBonus ? (Number(elBonus.value) || 0) : 0;
-        let nominalPotongan = elPotongan ? (Number(elPotongan.value) || 0) : 0;
+        let nominalBonus = Number(strBonus) || 0;
+        let nominalPotongan = Number(strPotongan) || 0;
         
         let teksBonus = (elKetBonus && elKetBonus.value.trim() !== "") ? elKetBonus.value.trim() : "Injeksi Bonus / Insentif";
         let teksPotongan = (elKetPotongan && elKetPotongan.value.trim() !== "") ? elKetPotongan.value.trim() : "Pemotongan Lain (Kasbon dll)";
@@ -9118,16 +9122,26 @@
 
     // 🔥 FUNGSI BARU (Wajib ditambahkan tepat di bawah fungsi di atas)
     // Berfungsi mengkalkulasi ketikan Owner secara Real-Time tanpa membebani server
-    function hitungRealtimeGaji(idx, gajiPokok) {
-        let inputBonus = document.getElementById(`inpBonus_${idx}`).value;
-        let inputPotongan = document.getElementById(`inpPotongan_${idx}`).value;
+    // =====================================================================
+    // 🧮 UPDATE FUNGSI HITUNG REALTIME (KEBAL TANDA TITIK)
+    // =====================================================================
+    function hitungRealtimeGaji(idx, pokokGaji) {
+        let elBonus = document.getElementById(`inpBonus_${idx}`);
+        let elPotongan = document.getElementById(`inpPotongan_${idx}`);
         
-        let bonus = Number(inputBonus) || 0;
-        let potongan = Number(inputPotongan) || 0;
+        // Bersihkan tanda titik sebelum kalkulasi matematika
+        let strBonus = elBonus ? elBonus.value.replace(/[^0-9]/g, '') : "0";
+        let strPotongan = elPotongan ? elPotongan.value.replace(/[^0-9]/g, '') : "0";
         
-        let gajiFinal = gajiPokok + bonus - potongan;
+        let nominalBonus = Number(strBonus) || 0;
+        let nominalPotongan = Number(strPotongan) || 0;
         
-        document.getElementById(`lblGajiFinal_${idx}`).innerText = "Rp " + gajiFinal.toLocaleString('id-ID');
+        let finalGaji = (pokokGaji + nominalBonus) - nominalPotongan;
+        
+        let elLabel = document.getElementById(`lblGajiFinal_${idx}`);
+        if(elLabel) {
+            elLabel.innerText = "Rp " + finalGaji.toLocaleString('id-ID');
+        }
     }
 
     // =========================================================
@@ -10946,6 +10960,20 @@
         
         // Panggil fungsi hitung potongan secara realtime
         hitungRealtimePotonganLab();
+    }
+
+    // =====================================================================
+    // 🧮 FUNGSI BANTUAN: FORMAT RUPIAH OTOMATIS SAAT KETIK
+    // =====================================================================
+    function formatRupiahInput(inputElem) {
+        // Hapus semua karakter selain angka
+        let val = inputElem.value.replace(/[^0-9]/g, '');
+        // Format dengan pemisah ribuan gaya Indonesia (Titik)
+        if (val !== "") {
+            inputElem.value = parseInt(val, 10).toLocaleString('id-ID');
+        } else {
+            inputElem.value = "";
+        }
     }
     
 
