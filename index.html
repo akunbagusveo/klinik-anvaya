@@ -8708,11 +8708,26 @@
     }
 
     // Fungsi Utama: Eksekusi Rumus Bisnis & Render UI (Reaktif terhadap filter)
-    function kalkulasiDanRenderBagiHasil() {
+    async function kalkulasiDanRenderBagiHasil() {
         let tglMulai = document.getElementById('tglMulaiFinansial').value;
         let tglAkhir = document.getElementById('tglAkhirFinansial').value;
-        
         window.periodeBagiHasilGlobal = tglMulai === tglAkhir ? tglMulai : `${tglMulai} s/d ${tglAkhir}`;
+
+        // 🔥 MENYALAKAN RADAR INGATAN PERMANEN
+        if (!window.arsipGajiTerkunci) {
+            try {
+                // Diam-diam bertanya ke server siapa saja yang sudah dikunci
+                let req = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) });
+                let res = await req.json();
+                window.arsipGajiTerkunci = (res.result === "success") ? res.data : [];
+            } catch (err) {
+                window.arsipGajiTerkunci = [];
+                console.log("Gagal menyalakan radar arsip", err);
+            }
+        }
+
+        // Ambil "Bulan" dari tanggal filter akhir (Contoh: "2026-08-31" -> "2026-08")
+        let defaultBulanFilter = tglAkhir ? tglAkhir.substring(0, 7) : "";
 
         let dataTerfilter = rawDataBagiHasil.filter(item => item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
 
@@ -8725,27 +8740,17 @@
         });
 
         let doctorMap = {};
-        
         dataTerfilter.forEach(item => {
             if (item.jenis !== "LAB") {
-                if (!doctorMap[item.dokterPelaksana]) {
-                    doctorMap[item.dokterPelaksana] = { nama: item.dokterPelaksana, jmlTindakan: 0, totalBagiHasil: 0, rincian: [] };
-                }
-
+                if (!doctorMap[item.dokterPelaksana]) doctorMap[item.dokterPelaksana] = { nama: item.dokterPelaksana, jmlTindakan: 0, totalBagiHasil: 0, rincian: [] };
                 let inv = invoiceMap[item.invoice];
                 let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
                 let diskonProrataItem = rasio * inv.diskon;
                 
                 doctorMap[item.dokterPelaksana].jmlTindakan++;
                 doctorMap[item.dokterPelaksana].rincian.push({
-                    tanggal: item.tanggal,
-                    invoice: item.invoice, 
-                    pasien: item.namaPasien,
-                    tindakan: item.namaTindakan,
-                    hargaAsli: item.hargaAsli,
-                    diskonProrata: diskonProrataItem,
-                    hargaLabVendor: 0, 
-                    feeFinal: 0 
+                    tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, tindakan: item.namaTindakan,
+                    hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
                 });
             }
         });
@@ -8756,11 +8761,7 @@
                 if (doc) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = doc.rincian.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
-                    
-                    if (match) {
-                        let hargaLabFull = item.bebanPotongan / 0.4;
-                        match.hargaLabVendor += hargaLabFull;
-                    }
+                    if (match) match.hargaLabVendor += (item.bebanPotongan / 0.4);
                 }
             }
         });
@@ -8809,6 +8810,17 @@
             let rowId = `detail_dokter_${idx}`;
             let chevronId = `chevron_${idx}`;
             
+            // 🔥 LOGIKA KECERDASAN TOMBOL
+            let isLocked = false;
+            if (window.arsipGajiTerkunci) {
+                // Cek apakah ada data di memori radar yang cocok dengan nama dokter & bulan ini
+                isLocked = window.arsipGajiTerkunci.some(x => x.namaDokter === d.nama && x.periode === defaultBulanFilter);
+            }
+
+            let btnCetakHtml = isLocked 
+                ? `<button id="btnCekSlip_${idx}" onclick="bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:none;">✅ Terkunci (${defaultBulanFilter})</button>`
+                : `<button id="btnCekSlip_${idx}" onclick="bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>`;
+            
             htmlContent += `
                 <tr style="border-bottom:1px solid #ecf0f1;">
                     <td style="padding:15px; font-weight:bold; color:#2980b9; font-size:15px; cursor:pointer;" onclick="toggleDetailDokter('${rowId}', '${chevronId}')">
@@ -8817,15 +8829,12 @@
                     </td>
                     <td style="padding:15px; text-align:center; font-weight:500;">${d.jmlTindakan}</td>
                     
-                    <!-- 🔥 PERUBAHAN UI: Penambahan Kotak Keterangan (Ket.) -->
                     <td style="padding:15px; text-align:center;">
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
-                            <!-- Baris Bonus -->
                             <div style="display:flex; gap:5px;">
                                 <input type="text" id="inpKetBonus_${idx}" placeholder="Ket: THR, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
                                 <input type="number" id="inpBonus_${idx}" placeholder="+ Rp Bonus" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
-                            <!-- Baris Potongan -->
                             <div style="display:flex; gap:5px;">
                                 <input type="text" id="inpKetPotongan_${idx}" placeholder="Ket: Kasbon, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
                                 <input type="number" id="inpPotongan_${idx}" placeholder="- Rp Potong" oninput="hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
@@ -8836,7 +8845,7 @@
                     <td style="padding:15px; text-align:right; font-weight:bold; color:#27ae60; background-color:#fcfdfd; font-size:15px;">
                         <span id="lblGajiFinal_${idx}">Rp ${d.totalBagiHasil.toLocaleString('id-ID')}</span>
                         <br>
-                        <button id="btnCekSlip_${idx}" onclick="bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>
+                        ${btnCetakHtml}
                     </td>
                 </tr>
             `;
@@ -9047,11 +9056,18 @@
                 alert("✅ BERHASIL: " + res.message);
                 document.getElementById('modalPreviewSlip').style.display = 'none';
                 
-                // 🔥 PERBAIKAN UX: Ubah tombol di tabel menjadi Hijau & Berlabel Terkunci
+                // 🔥 TAMBAH INGATAN KE RADAR LOKAL (Agar tidak perlu refresh halaman)
+                if (!window.arsipGajiTerkunci) window.arsipGajiTerkunci = [];
+                // Hapus data lama jika sedang me-revisi
+                window.arsipGajiTerkunci = window.arsipGajiTerkunci.filter(x => !(x.namaDokter === dataDokter.nama && x.periode === bulanGaji));
+                // Masukkan memori baru
+                window.arsipGajiTerkunci.push({ namaDokter: dataDokter.nama, periode: bulanGaji });
+                
+                // Ubah Visual Tombol
                 let btnCek = document.getElementById('btnCekSlip_' + window.currentPreviewIdx);
                 if (btnCek) {
                     btnCek.innerHTML = `✅ Terkunci (${bulanGaji})`;
-                    btnCek.style.background = "#27ae60"; // Warna hijau sukses
+                    btnCek.style.background = "#27ae60"; 
                     btnCek.style.boxShadow = "none";
                 }
 
