@@ -9006,9 +9006,13 @@
         document.getElementById('kertasPreviewPDF').innerHTML = htmlSlip;
         
         // Auto-isi bulan berjalan di input Kunci (Format YYYY-MM)
+        // 🔥 PERBAIKAN UX: Auto-isi mengikuti filter tanggal yang dipilih Owner
+        let tglAkhirFilter = document.getElementById('tglAkhirFinansial').value; 
         let tglSekarang = new Date();
         let blnStr = ("0" + (tglSekarang.getMonth() + 1)).slice(-2);
-        document.getElementById('inpBulanGaji').value = tglSekarang.getFullYear() + "-" + blnStr;
+        
+        let defaultBulan = tglAkhirFilter ? tglAkhirFilter.substring(0, 7) : (tglSekarang.getFullYear() + "-" + blnStr);
+        document.getElementById('inpBulanGaji').value = defaultBulan;
 
         // Tampilkan Modal
         document.getElementById('modalPreviewSlip').style.display = 'flex';
