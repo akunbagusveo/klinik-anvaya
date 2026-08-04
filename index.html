@@ -9073,10 +9073,47 @@
             <!-- 🔥 CSS JUBAH GAIB: Hanya berlaku saat tombol Print ditekan -->
             <style>
                 @media print {
-                    body * { visibility: hidden; }
-                    #kertasPreviewPDF, #kertasPreviewPDF * { visibility: visible; }
-                    #kertasPreviewPDF { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; }
+                    /* 1. Sembunyikan background aplikasi */
+                    body { 
+                        visibility: hidden; 
+                        height: auto !important; 
+                        overflow: visible !important; 
+                    }
+                    
+                    /* 2. Bebaskan modal dari kurungan layar agar mengalir ke halaman 2, 3, dst */
+                    #modalPreviewSlip {
+                        visibility: visible !important;
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        display: block !important; /* Matikan Flexbox */
+                        overflow: visible !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        background: white !important;
+                    }
+                    
+                    #kertasPreviewPDF {
+                        visibility: visible !important;
+                        position: relative !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        box-shadow: none !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        overflow: visible !important;
+                    }
+
+                    /* 3. Sembunyikan tombol cetak agar tidak ikut diprint */
                     .no-print { display: none !important; }
+
+                    /* 4. ATURAN EMAS: Cegah baris tabel terpotong di tengah huruf */
+                    table { page-break-inside: auto; width: 100%; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
                 }
             </style>
 
