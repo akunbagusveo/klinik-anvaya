@@ -11092,9 +11092,28 @@
                             Halaman ini adalah area <b>Self-Service</b> yang dirancang khusus bagi para <b>Dokter</b> untuk memantau rincian fee tindakan dan slip gaji mereka masing-masing secara mandiri.<br><br>
                             Untuk melihat analitik klinik dan mengelola slip gaji seluruh dokter, silakan gunakan menu <b>Kokpit Finansial</b>.
                         </p>
-                        <button onclick="let btn = document.getElementById('subTabFinansial'); if(btn) btn.click(); else alert('Silakan klik menu Kokpit Finansial di sidebar');" style="background:#3498db; color:white; border:none; padding:12px 30px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(52, 152, 219, 0.3); transition:0.3s;">
-                            📊 Buka Kokpit Finansial
-                        </button>
+                        <button onclick="
+                        let tabAnalisis = document.getElementById('tabAnalisisBisnisBtn');
+                        let tabBackend = document.getElementById('tabBackendBtn');
+                        let subFinansial = document.getElementById('btnSubTabFinansial');
+                        let subTabKeuangan = document.getElementById('subTabFinansialBtn');
+                        
+                        if (tabAnalisis && tabAnalisis.style.display !== 'none') {
+                            // Skenario 1: Jika Kokpit Finansial ada di sidebar utama
+                            tabAnalisis.click();
+                        } else if (subFinansial || subTabKeuangan) {
+                            // Skenario 2: Jika Kokpit Finansial adalah Sub-Tab di dalam menu Backend
+                            if (tabBackend) tabBackend.click();
+                            setTimeout(() => {
+                                if (subFinansial) subFinansial.click();
+                                else if (subTabKeuangan) subTabKeuangan.click();
+                            }, 150);
+                        } else {
+                            alert('Silakan klik menu Kokpit Finansial / Analisis Bisnis secara manual di sidebar.');
+                        }
+                    " style="background:#3498db; color:white; border:none; padding:12px 30px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(52, 152, 219, 0.3); transition:0.3s;">
+                        📊 Buka Kokpit Finansial
+                    </button>
                     </div>
                 `;
             }
