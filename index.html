@@ -11085,14 +11085,13 @@
         if (!inpBulan) return;
         
         let bulanTerpilih = inpBulan.value; // Format: "YYYY-MM"
+        if (!bulanTerpilih) return;
         
-        // 🔥 PERBAIKAN DINAMIS: Mendapatkan nama dari tulisan "User: [Nama]" di Header
-        let namaDokterAktif = "Aldila"; // Default awal
-        if (window.currentUser && window.currentUser.nama) {
+        // 1. DINAMISASI NAMA DOKTER (Mengambil dari header UI)
+        let namaDokterAktif = "Aldila"; // Fallback aman
+        if (typeof window.currentUser !== 'undefined' && window.currentUser.nama) {
             namaDokterAktif = window.currentUser.nama;
         } else {
-            // Coba cari elemen di pojok kanan atas yang berisi teks "User: Aldila"
-            // (Menggunakan deteksi teks global)
             let semuaElemen = document.querySelectorAll('*');
             for (let el of semuaElemen) {
                 if (el.textContent && el.textContent.includes('User: ')) {
@@ -11105,14 +11104,10 @@
                 }
             }
         }
-        
-        // (Pesan Konsol untuk memastikan deteksi berhasil)
-        console.log("Sedang menarik data untuk Dokter:", namaDokterAktif);
 
-        // 2. PASTIKAN RADAR ARSIP MENYALA (Tarik dari database jika kosong)
-        if (!window.arsipGajiTerkunci) {
+        // 2. PASTIKAN RADAR ARSIP MENYALA (Menarik data dari database)
+        if (typeof window.arsipGajiTerkunci === 'undefined' || !window.arsipGajiTerkunci) {
             try {
-                // Gunakan let dummy URL atau global WEB_APP_URL Anda
                 let req = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) });
                 let res = await req.json();
                 window.arsipGajiTerkunci = (res.result === "success") ? res.data : [];
@@ -11180,8 +11175,16 @@
                 `;
             }
 
-            // ⚠️ PERBAIKAN: Hitung secara mandiri dari rawDataBagiHasil
-            if (!window.rawDataBagiHasil || window.rawDataBagiHasil.length === 0) {
+            // PERBAIKAN BUG VARIABEL GLOBAL: 
+            // Mengambil data dengan aman tanpa error tipe data
+            let dataMentah = [];
+            if (typeof rawDataBagiHasil !== 'undefined') {
+                dataMentah = rawDataBagiHasil;
+            } else if (typeof window.rawDataBagiHasil !== 'undefined') {
+                dataMentah = window.rawDataBagiHasil;
+            }
+
+            if (!dataMentah || dataMentah.length === 0) {
                 document.getElementById('cardDokJmlTindakan').innerText = "0";
                 document.getElementById('cardDokFeePokok').innerText = "Rp 0";
                 document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
@@ -11190,17 +11193,18 @@
                 return;
             }
 
-            // Hitung batas tanggal ("2026-08-01" s/d "2026-08-31")
-            let tglMulai = bulanTerpilih + "-01";
+            // Perbaikan Format Tanggal untuk Filter
             let tahun = parseInt(bulanTerpilih.split('-')[0]);
             let bulan = parseInt(bulanTerpilih.split('-')[1]);
-            let tglAkhirBulan = new Date(tahun, bulan, 0).getDate(); 
-            let tglAkhir = bulanTerpilih + "-" + tglAkhirBulan;
+            
+            let tglMulai = bulanTerpilih + "-01";
+            let lastDay = new Date(tahun, bulan, 0).getDate(); 
+            let strLastDay = lastDay < 10 ? '0' + lastDay : lastDay;
+            let tglAkhir = bulanTerpilih + "-" + strLastDay;
 
-            // Filter data sesuai bulan
-            let dataTerfilter = window.rawDataBagiHasil.filter(item => item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
+            let dataTerfilter = dataMentah.filter(item => item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
 
-            // Buat Peta Invoice untuk Diskon
+            // KLONING LOGIKA OWNER: Menghitung persis seperti Kokpit Finansial
             let invoiceMap = {};
             dataTerfilter.forEach(item => {
                 if (item.jenis !== "LAB") {
@@ -11209,9 +11213,8 @@
                 }
             });
 
-            // Kumpulkan tindakan KHUSUS UNTUK DOKTER INI
             let rincianDokter = [];
-            let totalBagiHasil = 0;
+            let jmlTindakan = 0;
 
             dataTerfilter.forEach(item => {
                 if (item.jenis !== "LAB" && item.dokterPelaksana === namaDokterAktif) {
@@ -11219,6 +11222,7 @@
                     let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
                     let diskonProrataItem = rasio * inv.diskon;
                     
+                    jmlTindakan++;
                     rincianDokter.push({
                         tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, tindakan: item.namaTindakan,
                         hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
@@ -11226,7 +11230,6 @@
                 }
             });
 
-            // Masukkan potongan LAB ke tindakan dokter ini
             dataTerfilter.forEach(item => {
                 if (item.jenis === "LAB" && item.dokterPelaksana === namaDokterAktif) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
@@ -11235,7 +11238,7 @@
                 }
             });
 
-            // Hitung final fee 40%
+            let totalBagiHasil = 0;
             rincianDokter.forEach(r => {
                 let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
                 r.feeFinal = dasarBagiHasil * 0.4;
@@ -11247,7 +11250,6 @@
             document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
             document.getElementById('cardDokTHP').innerText = "Rp " + totalBagiHasil.toLocaleString('id-ID');
             
-            // Panggil fungsi render rincian tabel
             renderTabelRincianDokter(rincianDokter);
         }
     }
