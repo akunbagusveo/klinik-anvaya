@@ -11071,6 +11071,36 @@
     // 🩺 FUNGSI 1: MENGUNDUH DATA SEBELUM MENGGAMBAR LAYAR
     // =====================================================================
     function initPendapatanDokter() {
+        // 🔥 JALUR 2: SATPAM PENDETEKSI OWNER / MANAJEMEN
+        let isOwner = false;
+        if (typeof currentRole !== 'undefined' && (currentRole.toLowerCase() === 'owner' || currentRole.toLowerCase() === 'admin')) isOwner = true;
+        if (window.currentUser && window.currentUser.nama && (window.currentUser.nama.toLowerCase() === 'owner' || window.currentUser.nama.toLowerCase() === 'admin')) isOwner = true;
+
+        if (isOwner) {
+            // Ambil elemen jangkar (kotak filter bulan), lalu mundur 3 langkah ke pembungkus utama halaman
+            let jangkar = document.getElementById('filterBulanPendapatanDokter');
+            if (jangkar) {
+                let kontainerUtama = jangkar.parentElement.parentElement.parentElement; 
+                kontainerUtama.innerHTML = `
+                    <div style="text-align:center; padding:80px 20px; background:white; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+                        <div style="font-size:70px; margin-bottom:15px;">👔</div>
+                        <h2 style="color:#2c3e50; margin:0 0 10px 0; font-size:26px;">Halo, Tim Manajemen!</h2>
+                        <p style="color:#7f8c8d; font-size:15px; max-width:600px; margin:0 auto 30px auto; line-height:1.6;">
+                            Halaman ini adalah area <b>Self-Service</b> yang dirancang khusus bagi para <b>Dokter</b> untuk memantau rincian fee tindakan dan slip gaji mereka masing-masing secara mandiri.<br><br>
+                            Untuk melihat analitik klinik dan mengelola slip gaji seluruh dokter, silakan gunakan menu <b>Kokpit Finansial</b>.
+                        </p>
+                        <button onclick="document.getElementById('tabBackendBtn').click()" style="background:#3498db; color:white; border:none; padding:12px 30px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(52, 152, 219, 0.3); transition:0.3s;">
+                            📊 Buka Kokpit Finansial
+                        </button>
+                    </div>
+                `;
+            }
+            return; // 🛑 Hentikan proses, tidak perlu loading & download data ke server!
+        }
+
+        // ==========================================================
+        // KODE ASLI UNTUK DOKTER (Sapu Bersih & Fetch Data)
+        // ==========================================================
         let inpBulan = document.getElementById('filterBulanPendapatanDokter');
         if(!inpBulan.value) {
             let tglSekarang = new Date();
@@ -11078,32 +11108,28 @@
             inpBulan.value = tglSekarang.getFullYear() + "-" + blnStr;
         }
 
-        // 🔥 PERBAIKAN: "SAPU BERSIH" LAYAR (Mencegah Ghosting User Sebelumnya)
+        // "SAPU BERSIH" LAYAR (Mencegah Ghosting User Sebelumnya)
         if (document.getElementById('cardDokJmlTindakan')) document.getElementById('cardDokJmlTindakan').innerText = "⏳";
         if (document.getElementById('cardDokFeePokok')) document.getElementById('cardDokFeePokok').innerText = "Memuat...";
-        if (document.getElementById('cardDokInjeksi')) document.getElementById('cardDokInjeksi').innerText = "-";
+        if (document.getElementById('cardDokInjeksi')) document.getElementById('cardDokInjeksi').innerHTML = "-";
         if (document.getElementById('cardDokTHP')) document.getElementById('cardDokTHP').innerText = "Menghitung...";
         
         let banner = document.getElementById('bannerStatusSlip');
-        if (banner) banner.style.display = 'none'; // Sembunyikan banner sepenuhnya
+        if (banner) banner.style.display = 'none'; 
         
         let tbody = document.getElementById('tabelRincianDokterBody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#7f8c8d; font-size:14px;">Mengunduh & menyinkronkan data dari server... ⏳</td></tr>`;
 
-        // 2. Unduh Arsip Gaji Terkunci
+        // Unduh Arsip Gaji Terkunci
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) })
         .then(res => res.json())
         .then(resArsip => {
             window.arsipGajiTerkunci = (resArsip.result === "success") ? resArsip.data : [];
-            
-            // 3. Setelah Arsip selesai, lanjut Unduh Data Transaksi Berjalan
             return fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) });
         })
         .then(resTrx => resTrx.json())
         .then(resTrx => {
             window.rawDataBagiHasil = (resTrx.result === "success") ? resTrx.data : [];
-            
-            // 4. Semua data sudah komplit & aman di memori! Baru kita gambar layarnya.
             renderUIKinerjaDokter();
         })
         .catch(err => {
