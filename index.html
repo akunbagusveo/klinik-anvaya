@@ -11087,27 +11087,32 @@
         let bulanTerpilih = inpBulan.value; // Format: "YYYY-MM"
         if (!bulanTerpilih) return;
         
-        // 1. DINAMISASI NAMA DOKTER (Mengambil dari header UI)
-        let namaDokterAktif = "Aldila"; // Fallback aman
+        // 🔥 FIX 1: DETEKSI NAMA DOKTER YANG LEBIH AMAN (Tidak terseret teks menu lain)
+        let namaDokterAktif = ""; 
         if (typeof window.currentUser !== 'undefined' && window.currentUser.nama) {
             namaDokterAktif = window.currentUser.nama;
         } else {
-            let semuaElemen = document.querySelectorAll('*');
+            // Cari elemen terkecil di layar yang mengandung tulisan "User:"
+            let semuaElemen = document.querySelectorAll('span, b, strong, p, div, a, em, i');
             for (let el of semuaElemen) {
-                if (el.textContent && el.textContent.includes('User: ')) {
-                    let text = el.textContent;
-                    let match = text.match(/User:\s*([A-Za-z0-9\s]+)/);
-                    if (match && match[1]) {
-                        namaDokterAktif = match[1].trim();
-                        break;
-                    }
+                // Syarat mutlak: Tidak boleh punya anak elemen (child), harus murni teks ujung
+                if (el.children.length === 0 && el.textContent.includes('User:')) {
+                    namaDokterAktif = el.textContent.replace('User:', '').trim();
+                    break;
                 }
             }
         }
+        
+        // Fallback jika anomali
+        if (!namaDokterAktif) namaDokterAktif = "Dian"; 
+        
+        // 💡 Console log untuk Anda mengecek apakah nama sudah benar "Dian"
+        console.log("Nama Dokter yang Terdeteksi:", namaDokterAktif);
 
-        // 2. PASTIKAN RADAR ARSIP MENYALA (Mengecek status Kunci Owner)
-        if (typeof window.arsipGajiTerkunci === 'undefined' || !window.arsipGajiTerkunci) {
+        // 🔥 FIX 2: CEK ARSIP (Menggunakan pengecekan .length === 0 agar aman)
+        if (!window.arsipGajiTerkunci || window.arsipGajiTerkunci.length === 0) {
             try {
+                document.getElementById('cardDokFeePokok').innerText = "Memuat Arsip...";
                 let req = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) });
                 let res = await req.json();
                 window.arsipGajiTerkunci = (res.result === "success") ? res.data : [];
@@ -11175,26 +11180,21 @@
                 `;
             }
 
-            // 🔥 FITUR BARU: MENGUNDUH DATA TRANSAKSI SECARA MANDIRI JIKA KOSONG!
             let dataMentah = [];
-            
-            // Cek apakah data sudah ada (biasanya karena owner sudah pernah klik hitung)
             if (typeof rawDataBagiHasil !== 'undefined' && rawDataBagiHasil && rawDataBagiHasil.length > 0) {
                 dataMentah = rawDataBagiHasil;
             } else if (typeof window.rawDataBagiHasil !== 'undefined' && window.rawDataBagiHasil && window.rawDataBagiHasil.length > 0) {
                 dataMentah = window.rawDataBagiHasil;
             } else {
-                // Jika kosong, DOKTER mengunduh sendiri data transaksi
                 try {
-                    // Tampilkan indikator loading di kotak
                     document.getElementById('cardDokJmlTindakan').innerText = "⏳";
-                    document.getElementById('cardDokFeePokok').innerText = "Memuat...";
+                    document.getElementById('cardDokFeePokok').innerText = "Mengunduh...";
                     
                     let reqTarik = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) });
                     let resTarik = await reqTarik.json();
                     if(resTarik.result === "success") {
                         dataMentah = resTarik.data;
-                        window.rawDataBagiHasil = dataMentah; // Simpan memori agar ganti bulan tidak loading lagi
+                        window.rawDataBagiHasil = dataMentah; 
                     }
                 } catch(e) {
                     console.error("Gagal menarik riwayat transaksi mandiri:", e);
@@ -11210,7 +11210,6 @@
                 return;
             }
 
-            // Filter data transaksi HANYA untuk bulan yang dipilih
             let tahun = parseInt(bulanTerpilih.split('-')[0]);
             let bulan = parseInt(bulanTerpilih.split('-')[1]);
             
@@ -11221,7 +11220,6 @@
 
             let dataTerfilter = dataMentah.filter(item => item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
 
-            // KLONING LOGIKA OWNER (Persis seperti fungsi kalkulasiDanRenderBagiHasil)
             let invoiceMap = {};
             dataTerfilter.forEach(item => {
                 if (item.jenis !== "LAB") {
@@ -11232,7 +11230,6 @@
 
             let rincianDokter = [];
             dataTerfilter.forEach(item => {
-                // Pastikan mengecek nama secara dinamis
                 if (item.jenis !== "LAB" && item.dokterPelaksana.trim() === namaDokterAktif) {
                     let inv = invoiceMap[item.invoice];
                     let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
@@ -11260,12 +11257,10 @@
                 totalBagiHasil += r.feeFinal;
             });
 
-            // Render Hasil Akhir ke Layar Dokter
             document.getElementById('cardDokFeePokok').innerText = "Rp " + totalBagiHasil.toLocaleString('id-ID');
             document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
             document.getElementById('cardDokTHP').innerText = "Rp " + totalBagiHasil.toLocaleString('id-ID');
             
-            // Panggil fungsi render rincian tabel (Tetap menggunakan fungsi renderTabelRincianDokter yang sudah ada)
             renderTabelRincianDokter(rincianDokter);
         }
     }
