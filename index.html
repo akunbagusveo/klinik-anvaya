@@ -9070,7 +9070,25 @@
         
         // --- DESAIN KERTAS HTML ---
         const htmlSlip = `
-            <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5;">
+            <!-- 🔥 CSS JUBAH GAIB: Hanya berlaku saat tombol Print ditekan -->
+            <style>
+                @media print {
+                    body * { visibility: hidden; }
+                    #kertasPreviewPDF, #kertasPreviewPDF * { visibility: visible; }
+                    #kertasPreviewPDF { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; }
+                    .no-print { display: none !important; }
+                }
+            </style>
+
+            <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5; position: relative;">
+                
+                <!-- 🔥 TOMBOL CETAK PDF (Otomatis Hilang saat di-print berkat class="no-print") -->
+                <div class="no-print" style="text-align: right; margin-bottom: 20px; border-bottom: 1px dashed #bdc3c7; padding-bottom: 15px;">
+                    <button onclick="window.print()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
+                        🖨️ Cetak / Simpan PDF
+                    </button>
+                </div>
+
                 <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">
                     <h2 style="margin:0; letter-spacing: 2px;">KLINIK ANVAYA</h2>
                     <h3 style="margin:5px 0 0 0; color:#7f8c8d; font-weight:normal;">SLIP GAJI & RINCIAN TINDAKAN</h3>
@@ -9117,6 +9135,14 @@
                         <span>TOTAL DITERIMA</span><span>Rp ${window.dataDraftSlip.finalGaji.toLocaleString('id-ID')}</span>
                     </div>
                 </div>
+                
+                <!-- TTD Manajerial (Hanya muncul saat di-print) -->
+                <div style="display:flex; justify-content:flex-end; margin-top:50px; text-align:center;">
+                    <div>
+                        <p style="margin-bottom:60px;">Manajemen Klinik Anvaya,</p>
+                        <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">( ..................................... )</p>
+                    </div>
+                </div>
             </div>
         `;
         
@@ -9130,10 +9156,14 @@
         let blnStr = ("0" + (tglSekarang.getMonth() + 1)).slice(-2);
         
         let defaultBulan = tglAkhirFilter ? tglAkhirFilter.substring(0, 7) : (tglSekarang.getFullYear() + "-" + blnStr);
-        document.getElementById('inpBulanGaji').value = defaultBulan;
+        
+        // Pastikan elemen inpBulanGaji ada sebelum diisi (menghindari error jika modal dimodifikasi)
+        let elInpBulan = document.getElementById('inpBulanGaji');
+        if (elInpBulan) elInpBulan.value = defaultBulan;
 
         // Tampilkan Modal
-        document.getElementById('modalPreviewSlip').style.display = 'flex';
+        let elModal = document.getElementById('modalPreviewSlip');
+        if (elModal) elModal.style.display = 'flex';
     }
 
     // =====================================================================
