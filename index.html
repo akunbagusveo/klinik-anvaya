@@ -11065,71 +11065,72 @@
     // =====================================================================
     function initPendapatanDokter() {
         let inpBulan = document.getElementById('filterBulanPendapatanDokter');
-        
-        // Jika kotak filter bulan masih kosong, isi dengan bulan saat ini
         if(!inpBulan.value) {
             let tglSekarang = new Date();
             let blnStr = ("0" + (tglSekarang.getMonth() + 1)).slice(-2);
             inpBulan.value = tglSekarang.getFullYear() + "-" + blnStr;
         }
 
-        // Panggil fungsi render UI
-        renderUIKinerjaDokter();
+        // 1. Tampilkan indikator loading di UI agar dokter tahu sistem sedang bekerja
+        let elFee = document.getElementById('cardDokFeePokok');
+        if(elFee) elFee.innerText = "⏳ Sinkronisasi...";
+
+        // 2. Unduh Arsip Gaji Terkunci (Menggunakan rantai .then() yang lebih stabil)
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) })
+        .then(res => res.json())
+        .then(resArsip => {
+            window.arsipGajiTerkunci = (resArsip.result === "success") ? resArsip.data : [];
+            
+            // 3. Setelah Arsip selesai, lanjut Unduh Data Transaksi Berjalan
+            return fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) });
+        })
+        .then(resTrx => resTrx.json())
+        .then(resTrx => {
+            window.rawDataBagiHasil = (resTrx.result === "success") ? resTrx.data : [];
+            
+            // 4. Semua data sudah komplit & aman di memori! Baru kita gambar layarnya.
+            renderUIKinerjaDokter();
+        })
+        .catch(err => {
+            console.error("Gagal menarik data dari server:", err);
+            if(elFee) elFee.innerText = "⚠️ Gagal Koneksi";
+        });
     }
 
     // =====================================================================
     // 🩺 RENDER DATA REAL-TIME / ARSIP PADA DASHBOARD DOKTER
     // =====================================================================
-    async function renderUIKinerjaDokter() {
+    function renderUIKinerjaDokter() {
         let inpBulan = document.getElementById('filterBulanPendapatanDokter');
         if (!inpBulan) return;
         
         let bulanTerpilih = inpBulan.value; // Format: "YYYY-MM"
         if (!bulanTerpilih) return;
-        
-        // 🔥 FIX 1: DETEKSI NAMA DOKTER YANG LEBIH AMAN (Tidak terseret teks menu lain)
-        let namaDokterAktif = ""; 
-        if (typeof window.currentUser !== 'undefined' && window.currentUser.nama) {
+
+        // 🔥 FIX DINAMIS: Deteksi Nama Dokter Super Aman (Tahan Banting)
+        let namaDokterAktif = "Dian"; // Fallback awal
+        if (window.currentUser && window.currentUser.nama) {
             namaDokterAktif = window.currentUser.nama;
         } else {
-            // Cari elemen terkecil di layar yang mengandung tulisan "User:"
-            let semuaElemen = document.querySelectorAll('span, b, strong, p, div, a, em, i');
-            for (let el of semuaElemen) {
-                // Syarat mutlak: Tidak boleh punya anak elemen (child), harus murni teks ujung
-                if (el.children.length === 0 && el.textContent.includes('User:')) {
-                    namaDokterAktif = el.textContent.replace('User:', '').trim();
-                    break;
-                }
-            }
-        }
-        
-        // Fallback jika anomali
-        if (!namaDokterAktif) namaDokterAktif = "Dian"; 
-        
-        // 💡 Console log untuk Anda mengecek apakah nama sudah benar "Dian"
-        console.log("Nama Dokter yang Terdeteksi:", namaDokterAktif);
-
-        // 🔥 FIX 2: CEK ARSIP (Menggunakan pengecekan .length === 0 agar aman)
-        if (!window.arsipGajiTerkunci || window.arsipGajiTerkunci.length === 0) {
-            try {
-                document.getElementById('cardDokFeePokok').innerText = "Memuat Arsip...";
-                let req = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) });
-                let res = await req.json();
-                window.arsipGajiTerkunci = (res.result === "success") ? res.data : [];
-            } catch (err) {
-                console.log("Gagal menyalakan radar arsip", err);
-                window.arsipGajiTerkunci = [];
+            // Ambil murni dari teks rendered body (Tidak akan terseret kode HTML lain)
+            let bodyText = document.body.innerText;
+            let match = bodyText.match(/User:\s*([A-Za-z0-9\s]+)/);
+            if (match && match[1]) {
+                namaDokterAktif = match[1].trim().split('\n')[0].trim();
             }
         }
 
-        // Cek apakah Slip Gaji bulan ini SUDAH DIKUNCI
-        let dataArsip = window.arsipGajiTerkunci.find(x => x.namaDokter === namaDokterAktif && x.periode === bulanTerpilih);
+        // 1. CEK KONDISI A: SLIP SUDAH DIKUNCI
+        let dataArsip = null;
+        if (window.arsipGajiTerkunci) {
+            // Gunakan toLowerCase() agar kebal terhadap salah huruf besar/kecil (Dian vs dian)
+            dataArsip = window.arsipGajiTerkunci.find(x => x.namaDokter.toLowerCase() === namaDokterAktif.toLowerCase() && x.periode === bulanTerpilih);
+        }
+
         let banner = document.getElementById('bannerStatusSlip');
-        
+
         if (dataArsip) {
-            // ==========================================
-            // KONDISI A: SLIP SUDAH DIKUNCI (FINAL)
-            // ==========================================
+            // --- MODE SLIP TERKUNCI (HIJAU) ---
             if (banner) {
                 banner.style.display = 'flex';
                 banner.style.background = '#e8f8f5';
@@ -11161,9 +11162,7 @@
             renderTabelRincianDokter(rincianJson);
 
         } else {
-            // ==========================================
-            // KONDISI B: LIVE TRACKING (KALKULASI MANDIRI)
-            // ==========================================
+            // --- MODE LIVE TRACKING (ORANYE) ---
             if (banner) {
                 banner.style.display = 'flex';
                 banner.style.background = '#fff3cd';
@@ -11180,28 +11179,8 @@
                 `;
             }
 
-            let dataMentah = [];
-            if (typeof rawDataBagiHasil !== 'undefined' && rawDataBagiHasil && rawDataBagiHasil.length > 0) {
-                dataMentah = rawDataBagiHasil;
-            } else if (typeof window.rawDataBagiHasil !== 'undefined' && window.rawDataBagiHasil && window.rawDataBagiHasil.length > 0) {
-                dataMentah = window.rawDataBagiHasil;
-            } else {
-                try {
-                    document.getElementById('cardDokJmlTindakan').innerText = "⏳";
-                    document.getElementById('cardDokFeePokok').innerText = "Mengunduh...";
-                    
-                    let reqTarik = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) });
-                    let resTarik = await reqTarik.json();
-                    if(resTarik.result === "success") {
-                        dataMentah = resTarik.data;
-                        window.rawDataBagiHasil = dataMentah; 
-                    }
-                } catch(e) {
-                    console.error("Gagal menarik riwayat transaksi mandiri:", e);
-                }
-            }
-
-            if (!dataMentah || dataMentah.length === 0) {
+            let dataMentah = window.rawDataBagiHasil || [];
+            if (dataMentah.length === 0) {
                 document.getElementById('cardDokJmlTindakan').innerText = "0";
                 document.getElementById('cardDokFeePokok').innerText = "Rp 0";
                 document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
@@ -11230,7 +11209,8 @@
 
             let rincianDokter = [];
             dataTerfilter.forEach(item => {
-                if (item.jenis !== "LAB" && item.dokterPelaksana.trim() === namaDokterAktif) {
+                // Gunakan toLowerCase() pada filter dokter
+                if (item.jenis !== "LAB" && item.dokterPelaksana.trim().toLowerCase() === namaDokterAktif.toLowerCase()) {
                     let inv = invoiceMap[item.invoice];
                     let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
                     let diskonProrataItem = rasio * inv.diskon;
@@ -11243,7 +11223,7 @@
             });
 
             dataTerfilter.forEach(item => {
-                if (item.jenis === "LAB" && item.dokterPelaksana.trim() === namaDokterAktif) {
+                if (item.jenis === "LAB" && item.dokterPelaksana.trim().toLowerCase() === namaDokterAktif.toLowerCase()) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = rincianDokter.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
                     if (match) match.hargaLabVendor += (item.bebanPotongan / 0.4);
