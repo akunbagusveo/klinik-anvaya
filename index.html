@@ -5145,6 +5145,11 @@
             if (typeof window.dataBagiHasil !== "undefined") window.dataBagiHasil = null;
             if (typeof window.dataOmzet !== "undefined") window.dataOmzet = null;
             
+            // 🔥 TAMBAHAN BARU: Pembersihan Memori Dashboard Dokter
+            window.arsipGajiTerkunci = null; 
+            window.rawDataBagiHasil = null;
+            window.dataBagiHasilGlobal = null;
+            
             console.log("✔️ [SECURITY CLEARANCE] Seluruh angka & jejak visual finansial berhasil dimusnahkan.");
         } catch (e) {
             console.error("Gagal melakukan sanitasi DOM finansial saat logout:", e);
@@ -11063,7 +11068,7 @@
     }
 
     // =====================================================================
-    // 🩺 INISIALISASI HALAMAN PENDAPATAN DOKTER
+    // 🩺 FUNGSI 1: MENGUNDUH DATA SEBELUM MENGGAMBAR LAYAR
     // =====================================================================
     function initPendapatanDokter() {
         let inpBulan = document.getElementById('filterBulanPendapatanDokter');
@@ -11073,11 +11078,19 @@
             inpBulan.value = tglSekarang.getFullYear() + "-" + blnStr;
         }
 
-        // 1. Tampilkan indikator loading di UI agar dokter tahu sistem sedang bekerja
-        let elFee = document.getElementById('cardDokFeePokok');
-        if(elFee) elFee.innerText = "⏳ Sinkronisasi...";
+        // 🔥 PERBAIKAN: "SAPU BERSIH" LAYAR (Mencegah Ghosting User Sebelumnya)
+        if (document.getElementById('cardDokJmlTindakan')) document.getElementById('cardDokJmlTindakan').innerText = "⏳";
+        if (document.getElementById('cardDokFeePokok')) document.getElementById('cardDokFeePokok').innerText = "Memuat...";
+        if (document.getElementById('cardDokInjeksi')) document.getElementById('cardDokInjeksi').innerText = "-";
+        if (document.getElementById('cardDokTHP')) document.getElementById('cardDokTHP').innerText = "Menghitung...";
+        
+        let banner = document.getElementById('bannerStatusSlip');
+        if (banner) banner.style.display = 'none'; // Sembunyikan banner sepenuhnya
+        
+        let tbody = document.getElementById('tabelRincianDokterBody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#7f8c8d; font-size:14px;">Mengunduh & menyinkronkan data dari server... ⏳</td></tr>`;
 
-        // 2. Unduh Arsip Gaji Terkunci (Menggunakan rantai .then() yang lebih stabil)
+        // 2. Unduh Arsip Gaji Terkunci
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) })
         .then(res => res.json())
         .then(resArsip => {
@@ -11095,7 +11108,7 @@
         })
         .catch(err => {
             console.error("Gagal menarik data dari server:", err);
-            if(elFee) elFee.innerText = "⚠️ Gagal Koneksi";
+            if (document.getElementById('cardDokFeePokok')) document.getElementById('cardDokFeePokok').innerText = "⚠️ Gagal Koneksi";
         });
     }
 
