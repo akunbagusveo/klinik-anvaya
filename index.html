@@ -11071,31 +11071,44 @@
     // 🩺 FUNGSI 1: MENGUNDUH DATA SEBELUM MENGGAMBAR LAYAR
     // =====================================================================
     function initPendapatanDokter() {
-        // 🔥 JALUR 2: SATPAM PENDETEKSI OWNER / MANAJEMEN
+        // 🔥 JALUR 2: SATPAM PENDETEKSI OWNER / MANAJEMEN (SUPER PINTAR)
         let isOwner = false;
-        if (typeof currentRole !== 'undefined' && (currentRole.toLowerCase() === 'owner' || currentRole.toLowerCase() === 'admin')) isOwner = true;
-        if (window.currentUser && window.currentUser.nama && (window.currentUser.nama.toLowerCase() === 'owner' || window.currentUser.nama.toLowerCase() === 'admin')) isOwner = true;
+        
+        // 1. Cek dari variabel currentRole (Mendeteksi berbagai macam nama manajemen)
+        if (typeof currentRole !== 'undefined' && currentRole) {
+            let role = currentRole.toString().toLowerCase().trim();
+            // Tambahkan nama role Anda di sini jika ada yang spesifik
+            if (role === 'owner' || role === 'admin' || role === 'manajemen' || role === 'pemilik' || role === 'superadmin') {
+                isOwner = true;
+            }
+        }
+
+        // Tampilkan di konsol (F12) untuk membantu Anda mengecek apa nama rolenya
+        console.log("🛡️ [SATPAM] Role yang terdeteksi:", typeof currentRole !== 'undefined' ? currentRole : "Kosong");
+        console.log("🛡️ [SATPAM] Apakah ini Owner/Manajemen?", isOwner);
 
         if (isOwner) {
-            // Ambil elemen jangkar (kotak filter bulan), lalu mundur 3 langkah ke pembungkus utama halaman
             let jangkar = document.getElementById('filterBulanPendapatanDokter');
             if (jangkar) {
+                // Mundur dengan aman ke kontainer utama tab tanpa merusak struktur HTML
                 let kontainerUtama = jangkar.parentElement.parentElement.parentElement; 
+                
+                // Hapus isi layar dan timpa dengan Papan Petunjuk
                 kontainerUtama.innerHTML = `
-                    <div style="text-align:center; padding:80px 20px; background:white; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+                    <div style="text-align:center; padding:80px 20px; background:white; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); margin-bottom:20px;">
                         <div style="font-size:70px; margin-bottom:15px;">👔</div>
                         <h2 style="color:#2c3e50; margin:0 0 10px 0; font-size:26px;">Halo, Tim Manajemen!</h2>
                         <p style="color:#7f8c8d; font-size:15px; max-width:600px; margin:0 auto 30px auto; line-height:1.6;">
                             Halaman ini adalah area <b>Self-Service</b> yang dirancang khusus bagi para <b>Dokter</b> untuk memantau rincian fee tindakan dan slip gaji mereka masing-masing secara mandiri.<br><br>
                             Untuk melihat analitik klinik dan mengelola slip gaji seluruh dokter, silakan gunakan menu <b>Kokpit Finansial</b>.
                         </p>
-                        <button onclick="document.getElementById('tabBackendBtn').click()" style="background:#3498db; color:white; border:none; padding:12px 30px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(52, 152, 219, 0.3); transition:0.3s;">
+                        <button onclick="let btn = document.getElementById('tabBackendBtn'); if(btn) btn.click(); else alert('Silakan klik menu Kokpit Finansial di sidebar');" style="background:#3498db; color:white; border:none; padding:12px 30px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(52, 152, 219, 0.3); transition:0.3s;">
                             📊 Buka Kokpit Finansial
                         </button>
                     </div>
                 `;
             }
-            return; // 🛑 Hentikan proses, tidak perlu loading & download data ke server!
+            return; // 🛑 Wajib! Hentikan fungsi di sini agar data tidak diunduh!
         }
 
         // ==========================================================
