@@ -11169,6 +11169,26 @@
             let finalTHP = dataArsip.thp || (totalPokok + netInjeksi);
 
             document.getElementById('cardDokFeePokok').innerText = "Rp " + totalPokok.toLocaleString('id-ID');
+            
+            // 🔥 LOGIKA BARU: Tampilan Card Bonus & Potongan Terpisah
+            let elInjeksi = document.getElementById('cardDokInjeksi');
+            if (totalBonus === 0 && totalPotong === 0) {
+                elInjeksi.innerHTML = `<span style="color:#9b59b6;">Rp 0</span>`;
+            } else if (totalBonus > 0 && totalPotong > 0) {
+                // Tampilkan 2 baris (font dikecilkan sedikit jadi 18px agar muat dan rapi)
+                elInjeksi.innerHTML = `
+                    <div style="color:#27ae60; font-size:18px; margin-bottom:4px;">+ Rp ${totalBonus.toLocaleString('id-ID')}</div>
+                    <div style="color:#e74c3c; font-size:18px;">- Rp ${totalPotong.toLocaleString('id-ID')}</div>
+                `;
+            } else if (totalBonus > 0) {
+                elInjeksi.innerHTML = `<span style="color:#27ae60;">+ Rp ${totalBonus.toLocaleString('id-ID')}</span>`;
+            } else if (totalPotong > 0) {
+                elInjeksi.innerHTML = `<span style="color:#e74c3c;">- Rp ${totalPotong.toLocaleString('id-ID')}</span>`;
+            }
+
+            document.getElementById('cardDokTHP').innerText = "Rp " + finalTHP.toLocaleString('id-ID');
+
+            document.getElementById('cardDokFeePokok').innerText = "Rp " + totalPokok.toLocaleString('id-ID');
             document.getElementById('cardDokInjeksi').innerText = (netInjeksi >= 0 ? "+ Rp " : "- Rp ") + Math.abs(netInjeksi).toLocaleString('id-ID');
             document.getElementById('cardDokTHP').innerText = "Rp " + finalTHP.toLocaleString('id-ID');
 
@@ -11198,7 +11218,7 @@
             if (dataMentah.length === 0) {
                 document.getElementById('cardDokJmlTindakan').innerText = "0";
                 document.getElementById('cardDokFeePokok').innerText = "Rp 0";
-                document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
+                document.getElementById('cardDokInjeksi').innerHTML = `<span style="color:#95a5a6; font-size:16px;">Rp 0 (Belum ACC)</span>`;
                 document.getElementById('cardDokTHP').innerText = "Rp 0";
                 renderTabelRincianDokter([]);
                 return;
@@ -11253,7 +11273,7 @@
             });
 
             document.getElementById('cardDokFeePokok').innerText = "Rp " + totalBagiHasil.toLocaleString('id-ID');
-            document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
+            document.getElementById('cardDokInjeksi').innerHTML = `<span style="color:#95a5a6; font-size:16px;">Rp 0 (Belum ACC)</span>`;
             document.getElementById('cardDokTHP').innerText = "Rp " + totalBagiHasil.toLocaleString('id-ID');
             
             renderTabelRincianDokter(rincianDokter);
