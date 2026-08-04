@@ -1054,23 +1054,23 @@
         </div>
 
         <!-- Info Cards (Summary) -->
-        <div style="display:flex; gap:15px; margin-bottom:20px;">
-            <div style="flex:1; background:#fff; padding:20px; border-radius:8px; border-bottom:4px solid #3498db; box-shadow:0 2px 5px rgba(0,0,0,0.05); text-align:center;">
+        <div style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:20px;">
+            <div style="flex:1; min-width:200px; background:#fff; padding:20px; border-radius:8px; border-bottom:4px solid #3498db; box-shadow:0 2px 5px rgba(0,0,0,0.05); text-align:center;">
                 <div style="font-size:12px; color:#7f8c8d; text-transform:uppercase; font-weight:bold; margin-bottom:5px;">Total Tindakan</div>
                 <div id="cardDokJmlTindakan" style="font-size:28px; color:#2c3e50; font-weight:bold;">0</div>
                 <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Pasien ditangani</div>
             </div>
-            <div style="flex:1; background:#fff; padding:20px; border-radius:8px; border-bottom:4px solid #f39c12; box-shadow:0 2px 5px rgba(0,0,0,0.05); text-align:center;">
+            <div style="flex:1; min-width:200px; background:#fff; padding:20px; border-radius:8px; border-bottom:4px solid #f39c12; box-shadow:0 2px 5px rgba(0,0,0,0.05); text-align:center;">
                 <div style="font-size:12px; color:#7f8c8d; text-transform:uppercase; font-weight:bold; margin-bottom:5px;">Pokok Fee (40%)</div>
                 <div id="cardDokFeePokok" style="font-size:24px; color:#f39c12; font-weight:bold;">Rp 0</div>
                 <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Dari tarif tindakan bersih</div>
             </div>
-            <div style="flex:1; background:#fff; padding:20px; border-radius:8px; border-bottom:4px solid #9b59b6; box-shadow:0 2px 5px rgba(0,0,0,0.05); text-align:center;">
+            <div style="flex:1; min-width:200px; background:#fff; padding:20px; border-radius:8px; border-bottom:4px solid #9b59b6; box-shadow:0 2px 5px rgba(0,0,0,0.05); text-align:center;">
                 <div style="font-size:12px; color:#7f8c8d; text-transform:uppercase; font-weight:bold; margin-bottom:5px;">Bonus / (Potongan)</div>
                 <div id="cardDokInjeksi" style="font-size:24px; color:#9b59b6; font-weight:bold;">Rp 0</div>
                 <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Dari Manajemen (Jika Ada)</div>
             </div>
-            <div style="flex:1.2; background:#2c3e50; padding:20px; border-radius:8px; border-bottom:4px solid #2ecc71; box-shadow:0 4px 10px rgba(0,0,0,0.15); text-align:center; color:white;">
+            <div style="flex:1.2; min-width:220px; background:#2c3e50; padding:20px; border-radius:8px; border-bottom:4px solid #2ecc71; box-shadow:0 4px 10px rgba(0,0,0,0.15); text-align:center; color:white;">
                 <div style="font-size:13px; color:#bdc3c7; text-transform:uppercase; font-weight:bold; margin-bottom:5px;">Estimasi Take Home Pay</div>
                 <div id="cardDokTHP" style="font-size:30px; color:#2ecc71; font-weight:bold;">Rp 0</div>
                 <div style="font-size:12px; color:#ecf0f1; margin-top:5px;">Total Gaji Diterima</div>
@@ -1082,7 +1082,7 @@
             <h3 style="margin-top:0; margin-bottom:15px; font-size:16px; color:#34495e; border-bottom:2px solid #ecf0f1; padding-bottom:10px;">📋 Rincian Tindakan Bulan Ini</h3>
             <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse; text-align:left;">
-                    <thead>
+                    <thead style="position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <tr>
                             <th style="padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7;">Tanggal</th>
                             <th style="padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7;">Nama Pasien</th>
@@ -11143,7 +11143,7 @@
                             <p style="margin:2px 0 0 0; color:#2c3e50; font-size:13px;">Data periode ${bulanTerpilih} sudah di-ACC oleh Manajemen dan bersifat final.</p>
                         </div>
                     </div>
-                    <button onclick="alert('Fitur PDF akan segera aktif!')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);">📄 Lihat Slip PDF Final</button>
+                    <button onclick="tampilkanSlipGajiDokter('${dataArsip.namaDokter}', '${bulanTerpilih}')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);">📄 Lihat Slip PDF Final</button>
                 `;
             }
 
@@ -11280,6 +11280,122 @@
 
         tbody.innerHTML = html;
     }
+
+    // =====================================================================
+    // 🩺 FUNGSI: MENAMPILKAN POP-UP SLIP GAJI (PRINTABLE PDF)
+    // =====================================================================
+    function tampilkanSlipGajiDokter(nama, periode) {
+        if (!window.arsipGajiTerkunci) return alert("Data arsip tidak ditemukan!");
+        
+        // Cari data arsip berdasarkan nama dan bulan
+        let dataArsip = window.arsipGajiTerkunci.find(x => x.namaDokter.toLowerCase() === nama.toLowerCase() && x.periode === periode);
+        if (!dataArsip) return alert("Slip belum diterbitkan untuk bulan ini.");
+
+        // Parse JSON rincian untuk menghitung jumlah tindakan
+        let rincianArr = [];
+        try { rincianArr = JSON.parse(dataArsip.rincianJson || "[]"); } catch(e) {}
+        let jmlTindakan = rincianArr.length;
+
+        // Ambil Keterangan Kustom (THR / Kasbon)
+        let ketBonus = "Injeksi Bonus / Insentif";
+        let ketPotongan = "Pemotongan Lain (Kasbon dll)";
+        if (dataArsip.teksKeterangan) {
+            let splitKet = dataArsip.teksKeterangan.split(" | Potongan: ");
+            if (splitKet.length === 2) {
+                ketBonus = splitKet[0].replace("Bonus: ", "") || ketBonus;
+                ketPotongan = splitKet[1] || ketPotongan;
+            }
+        }
+
+        // Buat format rupiah yang rapi
+        const rp = (angka) => "Rp " + (angka || 0).toLocaleString('id-ID');
+
+        // Buat elemen Pop-up (Overlay Modal)
+        let modalId = 'modalSlipDokterPrint';
+        let adaModal = document.getElementById(modalId);
+        if (adaModal) adaModal.remove(); // Hapus yang lama jika ada
+
+        let modalHtml = `
+            <div id="${modalId}" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; display:flex; justify-content:center; align-items:flex-start; overflow-y:auto; padding:20px; font-family:Arial, sans-serif;">
+                
+                <div style="background:white; width:100%; max-width:700px; margin:20px auto; padding:40px; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); position:relative;" id="areaPrintSlipDokter">
+                    
+                    <!-- Tombol Tutup & Print (Disembunyikan saat print pakai CSS khusus) -->
+                    <div class="no-print" style="position:absolute; top:20px; right:20px; display:flex; gap:10px;">
+                        <button onclick="window.print()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">🖨️ Cetak / Simpan PDF</button>
+                        <button onclick="document.getElementById('${modalId}').remove()" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">✖ Tutup</button>
+                    </div>
+
+                    <!-- KOP SLIP GAJI -->
+                    <div style="text-align:center; border-bottom:3px solid #2c3e50; padding-bottom:15px; margin-bottom:20px;">
+                        <h1 style="margin:0; color:#2c3e50; font-size:24px; text-transform:uppercase; letter-spacing:1px;">KLINIK ANVAYA</h1>
+                        <p style="margin:5px 0 0 0; color:#7f8c8d; font-size:14px;">Slip Honorarium & Fee Tindakan Medis</p>
+                    </div>
+
+                    <!-- INFO DOKTER -->
+                    <table style="width:100%; margin-bottom:20px; font-size:14px; color:#34495e;">
+                        <tr><td style="width:150px; font-weight:bold; padding:5px 0;">Nama Dokter</td><td style="width:10px;">:</td><td style="font-weight:bold; color:#2980b9; font-size:16px;">dr. ${dataArsip.namaDokter}</td></tr>
+                        <tr><td style="font-weight:bold; padding:5px 0;">Periode Kinerja</td><td>:</td><td>Bulan ${periode}</td></tr>
+                        <tr><td style="font-weight:bold; padding:5px 0;">Total Tindakan</td><td>:</td><td>${jmlTindakan} Pasien</td></tr>
+                    </table>
+
+                    <!-- TABEL RINCIAN PENDAPATAN -->
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:30px; font-size:14px;">
+                        <thead>
+                            <tr style="background:#ecf0f1; color:#2c3e50; text-align:left;">
+                                <th style="padding:10px; border:1px solid #bdc3c7;">Komponen Pendapatan</th>
+                                <th style="padding:10px; border:1px solid #bdc3c7; text-align:right;">Nominal (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:12px; border:1px solid #bdc3c7;"><strong>1. Pokok Fee Tindakan (40%)</strong><br><span style="font-size:12px; color:#7f8c8d;">Berdasarkan tarif bersih setelah potongan lab & diskon.</span></td>
+                                <td style="padding:12px; border:1px solid #bdc3c7; text-align:right; font-weight:bold; color:#2c3e50;">${rp(dataArsip.pokokFee)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px; border:1px solid #bdc3c7;"><strong>2. Penambahan / Bonus</strong><br><span style="font-size:12px; color:#7f8c8d;">Keterangan: ${ketBonus}</span></td>
+                                <td style="padding:12px; border:1px solid #bdc3c7; text-align:right; color:#27ae60;">${dataArsip.bonus > 0 ? "+ " + rp(dataArsip.bonus) : "-"}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:12px; border:1px solid #bdc3c7;"><strong>3. Pemotongan</strong><br><span style="font-size:12px; color:#7f8c8d;">Keterangan: ${ketPotongan}</span></td>
+                                <td style="padding:12px; border:1px solid #bdc3c7; text-align:right; color:#e74c3c;">${dataArsip.potongan > 0 ? "- " + rp(dataArsip.potongan) : "-"}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#2c3e50; color:white;">
+                                <td style="padding:15px; border:1px solid #2c3e50; text-align:right; font-size:16px; font-weight:bold; text-transform:uppercase;">Total Take Home Pay :</td>
+                                <td style="padding:15px; border:1px solid #2c3e50; text-align:right; font-size:18px; font-weight:bold; color:#2ecc71;">${rp(dataArsip.thp)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- FOOTER / TTD -->
+                    <div style="display:flex; justify-content:space-between; margin-top:40px; font-size:14px; color:#2c3e50;">
+                        <div style="text-align:center;">
+                            <p style="margin-bottom:60px;">Penerima,</p>
+                            <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">dr. ${dataArsip.namaDokter}</p>
+                        </div>
+                        <div style="text-align:center;">
+                            <p style="margin-bottom:60px;">Manajemen / Keuangan,</p>
+                            <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">Klinik Anvaya</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CSS ini bertugas "menyembunyikan" background hitam & tombol saat di-print PDF -->
+                <style>
+                    @media print {
+                        body * { visibility: hidden; }
+                        #areaPrintSlipDokter, #areaPrintSlipDokter * { visibility: visible; }
+                        #areaPrintSlipDokter { position: absolute; left: 0; top: 0; margin:0; padding:0; box-shadow:none; width:100%; }
+                        .no-print { display: none !important; }
+                    }
+                </style>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }    
     
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
