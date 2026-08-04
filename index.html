@@ -11071,29 +11071,19 @@
     // 🩺 FUNGSI 1: MENGUNDUH DATA SEBELUM MENGGAMBAR LAYAR
     // =====================================================================
     function initPendapatanDokter() {
-        // 🔥 JALUR 2: SATPAM PENDETEKSI OWNER / MANAJEMEN (SUPER PINTAR)
-        let isOwner = false;
+        // 🔥 JALUR 2: SATPAM PENDETEKSI OWNER (CLONING DARI GOD MODE)
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+        const roleId = sessionData && sessionData.role ? String(sessionData.role).toLowerCase().trim() : "";
+        const roleName = sessionData && sessionData.namaRole ? String(sessionData.namaRole).toLowerCase().trim() : "";
         
-        // 1. Cek dari variabel currentRole (Mendeteksi berbagai macam nama manajemen)
-        if (typeof currentRole !== 'undefined' && currentRole) {
-            let role = currentRole.toString().toLowerCase().trim();
-            // Tambahkan nama role Anda di sini jika ada yang spesifik
-            if (role === 'owner' || role === 'admin' || role === 'manajemen' || role === 'pemilik' || role === 'Super Admin') {
-                isOwner = true;
-            }
-        }
+        // Logika ini sama persis 100% dengan fungsi aplikasikanHakAkses milik Anda!
+        const isSuperAdmin = roleId === "rol-01" || roleName === "super admin" || roleName === "owner" || roleId === "owner";
 
-        // Tampilkan di konsol (F12) untuk membantu Anda mengecek apa nama rolenya
-        console.log("🛡️ [SATPAM] Role yang terdeteksi:", typeof currentRole !== 'undefined' ? currentRole : "Kosong");
-        console.log("🛡️ [SATPAM] Apakah ini Owner/Manajemen?", isOwner);
-
-        if (isOwner) {
+        if (isSuperAdmin) {
             let jangkar = document.getElementById('filterBulanPendapatanDokter');
             if (jangkar) {
-                // Mundur dengan aman ke kontainer utama tab tanpa merusak struktur HTML
+                // Mundur 3 langkah ke kontainer utama halaman
                 let kontainerUtama = jangkar.parentElement.parentElement.parentElement; 
-                
-                // Hapus isi layar dan timpa dengan Papan Petunjuk
                 kontainerUtama.innerHTML = `
                     <div style="text-align:center; padding:80px 20px; background:white; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); margin-bottom:20px;">
                         <div style="font-size:70px; margin-bottom:15px;">👔</div>
@@ -11108,7 +11098,7 @@
                     </div>
                 `;
             }
-            return; // 🛑 Wajib! Hentikan fungsi di sini agar data tidak diunduh!
+            return; // 🛑 Hentikan proses, jangan download data dokter yang isinya 0
         }
 
         // ==========================================================
@@ -11121,7 +11111,7 @@
             inpBulan.value = tglSekarang.getFullYear() + "-" + blnStr;
         }
 
-        // "SAPU BERSIH" LAYAR (Mencegah Ghosting User Sebelumnya)
+        // "SAPU BERSIH" LAYAR
         if (document.getElementById('cardDokJmlTindakan')) document.getElementById('cardDokJmlTindakan').innerText = "⏳";
         if (document.getElementById('cardDokFeePokok')) document.getElementById('cardDokFeePokok').innerText = "Memuat...";
         if (document.getElementById('cardDokInjeksi')) document.getElementById('cardDokInjeksi').innerHTML = "-";
