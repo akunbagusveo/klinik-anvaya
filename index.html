@@ -5764,7 +5764,7 @@
         { key: 'worklistKontrol', label: 'Worklist Kontrol', class: 'chk-worklist-kontrol', fallbackKeys: ['worklist'] },
         { key: 'kalenderPraktik', label: 'Kalender Praktik', class: 'chk-kalender-praktik', fallbackKeys: ['aksesKalenderPraktik'] },
         { key: 'tagihanLab', label: 'Tagihan Lab', class: 'chk-tagihan-lab', fallbackKeys: ['aksesTagihanLab'] },
-        { key: 'pendapatanDokter', label: 'Pendapatan Saya (Dokter)', class: 'chk-pendapatan-dokter', fallbackKeys: ['aksesPendapatanDokter'] }
+        { key: 'pendapatanDokter', label: 'Pendapatan Dokter', class: 'chk-pendapatan-dokter', fallbackKeys: ['aksesPendapatanDokter'] }
     ];
 
     // ==========================================
@@ -11077,6 +11077,138 @@
         renderUIKinerjaDokter();
     }
 
+    // =====================================================================
+    // 🩺 RENDER DATA REAL-TIME / ARSIP PADA DASHBOARD DOKTER
+    // =====================================================================
+    function renderUIKinerjaDokter() {
+        let inpBulan = document.getElementById('filterBulanPendapatanDokter');
+        if (!inpBulan) return;
+        
+        let bulanTerpilih = inpBulan.value; // Format: "YYYY-MM" (Contoh: "2026-08")
+        
+        // 1. Ambil Nama Dokter yang sedang Login dari variabel session/global Anda
+        // (Sesuaikan variabel 'currentUser' dengan variabel nama dokter yang aktif di sistem Anda)
+        let namaDokterAktif = (window.currentUser && window.currentUser.nama) ? window.currentUser.nama : "Aldila";
+
+        // 2. Cek apakah Slip Gaji bulan ini SUDAH DIKUNCI di 'ArsipGaji'
+        let dataArsip = null;
+        if (window.arsipGajiTerkunci) {
+            dataArsip = window.arsipGajiTerkunci.find(x => x.namaDokter === namaDokterAktif && x.periode === bulanTerpilih);
+        }
+
+        let banner = document.getElementById('bannerStatusSlip');
+        
+        if (dataArsip) {
+            // ==========================================
+            // KONDISI A: SLIP SUDAH DIKUNCI (FINAL)
+            // ==========================================
+            if (banner) {
+                banner.style.display = 'flex';
+                banner.style.background = '#e8f8f5';
+                banner.style.borderLeft = '5px solid #27ae60';
+                banner.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:24px;">✅</span>
+                        <div>
+                            <h4 style="margin:0; color:#27ae60; font-size:16px;">Slip Gaji Telah Diterbitkan!</h4>
+                            <p style="margin:2px 0 0 0; color:#2c3e50; font-size:13px;">Data periode ${bulanTerpilih} sudah di-ACC oleh Manajemen dan bersifat final.</p>
+                        </div>
+                    </div>
+                    <button onclick="bukaPDFSlipDokter('${dataArsip.namaDokter}', '${bulanTerpilih}')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);">📄 Lihat Slip PDF Final</button>
+                `;
+            }
+
+            // Isikan angka dari Arsip
+            let totalPokok = dataArsip.pokokFee || 0;
+            let totalBonus = dataArsip.bonus || 0;
+            let totalPotong = dataArsip.potongan || 0;
+            let netInjeksi = totalBonus - totalPotong;
+            let finalTHP = dataArsip.thp || (totalPokok + netInjeksi);
+
+            document.getElementById('cardDokFeePokok').innerText = "Rp " + totalPokok.toLocaleString('id-ID');
+            document.getElementById('cardDokInjeksi').innerText = (netInjeksi >= 0 ? "+ Rp " : "- Rp ") + Math.abs(netInjeksi).toLocaleString('id-ID');
+            document.getElementById('cardDokTHP').innerText = "Rp " + finalTHP.toLocaleString('id-ID');
+
+            // Render tabel rincian dari data JSON Arsip jika tersedia
+            renderTabelRincianDokter(dataArsip.rincian || []);
+
+        } else {
+            // ==========================================
+            // KONDISI B: LIVE TRACKING (BELUM DIKUNCI)
+            // ==========================================
+            if (banner) {
+                banner.style.display = 'flex';
+                banner.style.background = '#fff3cd';
+                banner.style.borderLeft = '5px solid #f39c12';
+                banner.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:24px;">⏳</span>
+                        <div>
+                            <h4 style="margin:0; color:#d35400; font-size:16px;">Live Tracking (Periode Berjalan)</h4>
+                            <p style="margin:2px 0 0 0; color:#2c3e50; font-size:13px;">Gaji belum final. Angka di bawah adalah estimasi sementara yang akan di-review Manajemen.</p>
+                        </div>
+                    </div>
+                    <div style="color:#f39c12; font-weight:bold; font-size:14px; padding-right:10px;">Masih Berjalan...</div>
+                `;
+            }
+
+            // Cari data tindakan berjalan milik dokter ini di window.dataBagiHasilGlobal
+            let dataDokterGlobal = (window.dataBagiHasilGlobal || []).find(d => d.nama === namaDokterAktif);
+
+            if (dataDokterGlobal) {
+                let totalPokok = dataDokterGlobal.totalBagiHasil || 0;
+                document.getElementById('cardDokFeePokok').innerText = "Rp " + totalPokok.toLocaleString('id-ID');
+                document.getElementById('cardDokInjeksi').innerText = "Rp 0 (Belum ada)";
+                document.getElementById('cardDokTHP').innerText = "Rp " + totalPokok.toLocaleString('id-ID');
+                
+                document.getElementById('cardDokJmlTindakan').innerText = dataDokterGlobal.jmlTindakan || 0;
+                renderTabelRincianDokter(dataDokterGlobal.rincian || []);
+            } else {
+                // Jika tidak ada data tindakan sama sekali di bulan ini
+                document.getElementById('cardDokJmlTindakan').innerText = "0";
+                document.getElementById('cardDokFeePokok').innerText = "Rp 0";
+                document.getElementById('cardDokInjeksi').innerText = "Rp 0";
+                document.getElementById('cardDokTHP').innerText = "Rp 0";
+                renderTabelRincianDokter([]);
+            }
+        }
+    }
+
+    // =====================================================================
+    // 📋 AUXILIARY: RENDER BARIS TABEL RINCIAN DOKTER
+    // =====================================================================
+    function renderTabelRincianDokter(listRincian) {
+        let tbody = document.getElementById('tabelRincianDokterBody');
+        if (!tbody) return;
+
+        if (!listRincian || listRincian.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#95a5a6;">Belum ada tindakan tercatat pada periode ini.</td></tr>`;
+            if (document.getElementById('cardDokJmlTindakan')) document.getElementById('cardDokJmlTindakan').innerText = "0";
+            return;
+        }
+
+        if (document.getElementById('cardDokJmlTindakan')) {
+            document.getElementById('cardDokJmlTindakan').innerText = listRincian.length;
+        }
+
+        let html = '';
+        listRincian.forEach((rin) => {
+            let dasarBagiHasil = rin.hargaAsli - (rin.hargaLabVendor || 0) - (rin.diskonProrata || 0);
+            let feeDokter = rin.feeFinal || (dasarBagiHasil * 0.4);
+
+            html += `
+                <tr style="border-bottom:1px solid #ecf0f1;">
+                    <td style="padding:12px; color:#7f8c8d; font-size:13px;">${rin.tanggal}</td>
+                    <td style="padding:12px; color:#2c3e50; font-weight:bold; font-size:13px;">${rin.pasien}</td>
+                    <td style="padding:12px; color:#34495e; font-size:13px;">${rin.tindakan}</td>
+                    <td style="padding:12px; text-align:right; color:#7f8c8d; font-size:13px;">Rp ${dasarBagiHasil.toLocaleString('id-ID')}</td>
+                    <td style="padding:12px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">Rp ${feeDokter.toLocaleString('id-ID')}</td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
     
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
