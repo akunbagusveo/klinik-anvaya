@@ -11084,11 +11084,30 @@
         let inpBulan = document.getElementById('filterBulanPendapatanDokter');
         if (!inpBulan) return;
         
-        let bulanTerpilih = inpBulan.value; // Format: "2026-08"
+        let bulanTerpilih = inpBulan.value; // Format: "YYYY-MM"
         
-        // 1. Ambil Nama Dokter yang sedang Login 
-        // (Ganti "Aldila" dengan "Sista" atau "Dian" jika Anda ingin mengetes dokter lain)
-        let namaDokterAktif = (window.currentUser && window.currentUser.nama) ? window.currentUser.nama : "Aldila";
+        // 🔥 PERBAIKAN DINAMIS: Mendapatkan nama dari tulisan "User: [Nama]" di Header
+        let namaDokterAktif = "Aldila"; // Default awal
+        if (window.currentUser && window.currentUser.nama) {
+            namaDokterAktif = window.currentUser.nama;
+        } else {
+            // Coba cari elemen di pojok kanan atas yang berisi teks "User: Aldila"
+            // (Menggunakan deteksi teks global)
+            let semuaElemen = document.querySelectorAll('*');
+            for (let el of semuaElemen) {
+                if (el.textContent && el.textContent.includes('User: ')) {
+                    let text = el.textContent;
+                    let match = text.match(/User:\s*([A-Za-z0-9\s]+)/);
+                    if (match && match[1]) {
+                        namaDokterAktif = match[1].trim();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // (Pesan Konsol untuk memastikan deteksi berhasil)
+        console.log("Sedang menarik data untuk Dokter:", namaDokterAktif);
 
         // 2. PASTIKAN RADAR ARSIP MENYALA (Tarik dari database jika kosong)
         if (!window.arsipGajiTerkunci) {
