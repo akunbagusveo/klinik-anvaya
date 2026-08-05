@@ -11795,19 +11795,25 @@
     function bukaModalTindakan(id) {
         document.getElementById('inpTindakanId').value = id;
         
-        // 🔥 MESIN DROPDOWN KATEGORI (VERSI BULLETPROOF / ANTI-ERROR)
+        // 🔥 MESIN DROPDOWN KATEGORI (VERSI DOM MANIPULATION / ANTI-MALAS)
         let datalist = document.getElementById('listKategoriTindakan');
         if (datalist && window.dataMasterTindakanGlobal) {
-            // 1. Ambil data, bersihkan spasi nyasar, dan buang yang kosong (blank)
+            // 1. Kosongkan isi datalist agar opsi tidak menumpuk dobel saat diklik berulang kali
+            datalist.innerHTML = ''; 
+            
+            // 2. Ambil data, bersihkan spasi nyasar, buang yang kosong, & hilangkan duplikat
             let listBersih = window.dataMasterTindakanGlobal
                 .map(item => item.kategori ? String(item.kategori).trim() : '')
                 .filter(kat => kat !== '');
-                
-            // 2. Saring agar tidak ada nama kategori yang ganda (Duplikat)
             let unikKategori = [...new Set(listBersih)];
             
-            // 3. Suntikkan ke HTML dengan tag penutup </option> yang disukai semua Browser
-            datalist.innerHTML = unikKategori.map(kat => `<option value="${kat}"></option>`).join('');
+            // 3. Paksa browser membaca opsi dengan membuat "Elemen Fisik" secara langsung
+            unikKategori.forEach(kat => {
+                let opt = document.createElement('option');
+                opt.value = kat; // Nilai yang akan tersimpan
+                opt.text = kat;  // 🔥 Teks yang wajib muncul agar terbaca oleh mesin Safari/Chrome
+                datalist.appendChild(opt);
+            });
         }
 
         if (id === '') {
