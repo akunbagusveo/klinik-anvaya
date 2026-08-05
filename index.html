@@ -667,7 +667,7 @@
         <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold; color: #ffeb3b;">📈 Analisis Bisnis</button>
         <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold; color: #32ac36;">💰 Kasir & Billing</button>
         <!-- Tombol Menu Pendapatan Dokter -->
-        <button id="tabPendapatanDokterBtn" class="tab-link" onclick="switchTab('pendapatanDokter'); initPendapatanDokter();" style="display: none; font-weight: bold; color: #053f1a;">💰 Pendapatan Saya</button>
+        <button id="tabPendapatanDokterBtn" class="tab-link" onclick="switchTab('pendapatanDokter'); initPendapatanDokter();" style="display: none; font-weight: bold; color: #91a799;">💰 Pendapatan Saya</button>
         
         <!-- 🔥 MENU BARU DITAMBAHKAN DI SINI -->
         <button id="tabTagihanLabBtn" class="tab-link" onclick="switchTab('tagihanLab'); muatAntreanLab();" style="display: none; font-weight: bold; color: #e67e22;">🧪 Tagihan Eksternal / Lab</button>
@@ -1344,6 +1344,7 @@
             <button id="subTabAksesBtn" onclick="bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
             <button id="subTabJadwalBtn" onclick="bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
             <button id="subTabLogBtn" onclick="bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
+            <button id="subTabMasterTindakanBtn" onclick="bukaSubTab('masterTindakan')" style="display:none; padding:10px 15px; margin-right:5px; background:#ecf0f1; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#2c3e50;">📋 Master Tindakan</button>
         </div>
 
         <!-- ========================================== -->
@@ -1602,6 +1603,114 @@
                     </div>
                     <div id="logPaginationButtons" style="display: flex; gap: 5px;">
                         </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 📋 HALAMAN MASTER TINDAKAN                 -->
+        <!-- ========================================== -->
+        <div id="tabMasterTindakan" style="display:none; padding:20px; background:white; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-top:15px;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #ecf0f1; padding-bottom:15px; margin-bottom:15px;">
+                <h2 style="margin:0; color:#2c3e50; font-size:20px;">Manajemen Master Tindakan</h2>
+                <button onclick="bukaModalTindakan('')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(39, 174, 96, 0.3);">+ Tambah Tindakan Baru</button>
+            </div>
+
+            <!-- Filter & Pencarian -->
+            <div style="display:flex; gap:10px; margin-bottom:15px; background:#f8f9fa; padding:15px; border-radius:6px;">
+                <input type="text" id="cariTindakan" placeholder="🔍 Cari nama atau kategori..." onkeyup="renderTabelMasterTindakan()" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px;">
+                <select id="filterStatusTindakan" onchange="renderTabelMasterTindakan()" style="padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px; width:150px;">
+                    <option value="Semua">Semua Status</option>
+                    <option value="Aktif" selected>Hanya Aktif</option>
+                    <option value="Nonaktif">Non-Aktif (Arsip)</option>
+                </select>
+            </div>
+
+            <!-- Tabel Master -->
+            <div style="overflow-x:auto; border:1px solid #ecf0f1; border-radius:6px;">
+                <table style="width:100%; border-collapse:collapse; min-width:900px; text-align:left;">
+                    <thead>
+                        <tr style="background:#34495e; color:white;">
+                            <th style="padding:12px 10px;">No</th>
+                            <th style="padding:12px 10px;">Nama Tindakan</th>
+                            <th style="padding:12px 10px;">Kategori</th>
+                            <th style="padding:12px 10px; text-align:right;">Harga Dasar</th>
+                            <th style="padding:12px 10px; text-align:center;">Consent</th>
+                            <th style="padding:12px 10px; text-align:center;">Butuh Lab</th>
+                            <th style="padding:12px 10px; text-align:center;">Status</th>
+                            <th style="padding:12px 10px; text-align:center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelMasterTindakanBody">
+                        <!-- Disuntik via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ✏️ MODAL FORMULIR TINDAKAN                 -->
+        <!-- ========================================== -->
+        <div id="modalMasterTindakan" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+            <div style="background:white; width:90%; max-width:550px; border-radius:8px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <div style="background:#2c3e50; color:white; padding:15px 20px; font-size:18px; font-weight:bold;">
+                    <span id="judulModalTindakan">Tambah Tindakan Baru</span>
+                </div>
+                <div style="padding:20px; max-height:70vh; overflow-y:auto;">
+                    <input type="hidden" id="inpTindakanId">
+                    
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Nama Tindakan *</label>
+                        <input type="text" id="inpTindakanNama" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Kategori (Cth: Estetika, Injeksi, Konsul) *</label>
+                        <input type="text" id="inpTindakanKategori" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
+                    </div>
+
+                    <div style="display:flex; gap:15px; margin-bottom:12px;">
+                        <div style="flex:1;">
+                            <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Harga Dasar (Rp) *</label>
+                            <input type="number" id="inpTindakanHarga" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Harga Maks (Rp)</label>
+                            <input type="number" id="inpTindakanMaks" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Deskripsi / Keterangan</label>
+                        <textarea id="inpTindakanKet" rows="2" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;"></textarea>
+                    </div>
+
+                    <div style="display:flex; gap:15px; margin-bottom:15px; background:#f9f9f9; padding:10px; border-radius:4px;">
+                        <div style="flex:1;">
+                            <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Wajib TTD Consent?</label>
+                            <select id="inpTindakanConsent" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+                                <option value="Tidak">Tidak</option><option value="Ya">Ya</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Tindakan Lab Luar?</label>
+                            <select id="inpTindakanLab" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+                                <option value="Tidak">Tidak</option><option value="Ya">Ya</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Status</label>
+                            <select id="inpTindakanStatus" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+                                <option value="Aktif">Aktif</option><option value="Nonaktif">Non-Aktif</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="padding:15px 20px; background:#f8f9fa; text-align:right; border-top:1px solid #ecf0f1;">
+                    <button onclick="document.getElementById('modalMasterTindakan').style.display='none'" style="background:white; border:1px solid #bdc3c7; padding:10px 20px; border-radius:4px; cursor:pointer; margin-right:10px; color:#2c3e50;">Batal</button>
+                    <button id="btnSimpanTindakan" onclick="simpanMasterTindakan()" style="background:#2980b9; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Data</button>
                 </div>
             </div>
         </div>
@@ -5531,21 +5640,30 @@
 
     
     function bukaSubTab(subTabId) {
+        // 1. Sembunyikan semua sub-tab bawaan
         document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
         
+        // 🔥 TAMBAHAN: Sembunyikan halaman Master Tindakan secara manual
+        const tabMaster = document.getElementById('tabMasterTindakan');
+        if (tabMaster) tabMaster.style.display = 'none';
+        
+        // 2. Munculkan target sub-tab (untuk menu bawaan)
         const target = document.getElementById(subTabId);
         if (target) target.style.display = 'block';
         
-        // Sinkronisasi warna tombol aktif
+        // 3. Sinkronisasi warna tombol aktif
         document.getElementById('subTabUserBtn').style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
         document.getElementById('subTabAksesBtn').style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
         document.getElementById('subTabJadwalBtn').style.backgroundColor = (subTabId === 'manajemenJadwal') ? '#ddd' : '';
         
-        // 🔥 TAMBAHAN BARU: Warna Tombol Log
         const btnLog = document.getElementById('subTabLogBtn');
         if (btnLog) btnLog.style.backgroundColor = (subTabId === 'manajemenLog') ? '#ddd' : '';
 
-        // Pemanggilan data otomatis
+        // 🔥 TAMBAHAN: Warna Tombol Master Tindakan
+        const btnMaster = document.getElementById('subTabMasterTindakanBtn');
+        if (btnMaster) btnMaster.style.backgroundColor = (subTabId === 'masterTindakan') ? '#ddd' : '';
+
+        // 4. Pemanggilan data otomatis (Routing Mesin)
         if (subTabId === 'manajemenUser') {
             muatDataUser();
         } else if (subTabId === 'manajemenAkses') {
@@ -5553,10 +5671,13 @@
         } else if (subTabId === 'manajemenJadwal') {
             if(typeof muatDropdownDokterJadwal === "function") muatDropdownDokterJadwal(); 
             if(typeof muatJadwalMaster === "function") muatJadwalMaster(); 
-        } 
-        // 🔥 TAMBAHAN BARU: Tarik data log saat sub-tab log dibuka
-        else if (subTabId === 'manajemenLog') {
+        } else if (subTabId === 'manajemenLog') {
             muatLogAktivitas(1);
+        } 
+        // 🔥 TAMBAHAN: Tampilkan & Muat Data Master Tindakan
+        else if (subTabId === 'masterTindakan') {
+            if (tabMaster) tabMaster.style.display = 'block'; // Tampilkan paksa halamannya
+            if (typeof initMasterTindakan === "function") initMasterTindakan(); // Unduh datanya dari Backend
         }
     }
 
@@ -11578,7 +11699,148 @@
         `;
 
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }    
+    }  
+    
+    // ==========================================
+    // 🛠️ MESIN CRUD MASTER TINDAKAN
+    // ==========================================
+    window.dataMasterTindakanGlobal = [];
+
+    function initMasterTindakan() {
+        let tbody = document.getElementById('tabelMasterTindakanBody');
+        if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#7f8c8d;">Mengunduh Master Data Tindakan dari server... ⏳</td></tr>`;
+
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllMasterTindakan" }) })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                window.dataMasterTindakanGlobal = res.data;
+                renderTabelMasterTindakan();
+            } else alert("Gagal: " + res.message);
+        })
+        .catch(err => {
+            console.error(err);
+            if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#e74c3c;">Gagal koneksi ke server.</td></tr>`;
+        });
+    }
+
+    function renderTabelMasterTindakan() {
+        let cari = document.getElementById('cariTindakan').value.toLowerCase();
+        let statusFilter = document.getElementById('filterStatusTindakan').value;
+        let tbody = document.getElementById('tabelMasterTindakanBody');
+        
+        let terfilter = window.dataMasterTindakanGlobal.filter(t => {
+            let matchCari = t.namaTindakan.toLowerCase().includes(cari) || t.kategori.toLowerCase().includes(cari);
+            let matchStatus = (statusFilter === 'Semua') ? true : (t.status === statusFilter);
+            return matchCari && matchStatus;
+        });
+
+        if (terfilter.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#95a5a6;">Data tidak ditemukan.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        terfilter.forEach((t, i) => {
+            let badgeStatus = t.status === 'Aktif' 
+                ? `<span style="background:#d4efdf; color:#27ae60; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Aktif</span>` 
+                : `<span style="background:#fadbd8; color:#c0392b; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Nonaktif</span>`;
+                
+            let icnConsent = (t.butuhConsent === "Ya" || t.butuhConsent === 1 || t.butuhConsent === true) ? "📝 Ya" : "-";
+            let icnLab = (t.butuhLab === "Ya" || t.butuhLab === 1 || t.butuhLab === true) ? "🧪 Ya" : "-";
+
+            html += `
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding:12px 10px; font-size:13px; color:#7f8c8d;">${i + 1}</td>
+                    <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2c3e50;">${t.namaTindakan}</td>
+                    <td style="padding:12px 10px; font-size:13px; color:#34495e;">${t.kategori}</td>
+                    <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2980b9; text-align:right;">Rp ${Number(t.hargaDasar).toLocaleString('id-ID')}</td>
+                    <td style="padding:12px 10px; font-size:13px; text-align:center; color:#e67e22;">${icnConsent}</td>
+                    <td style="padding:12px 10px; font-size:13px; text-align:center; color:#9b59b6;">${icnLab}</td>
+                    <td style="padding:12px 10px; text-align:center;">${badgeStatus}</td>
+                    <td style="padding:12px 10px; text-align:center;">
+                        <button onclick="bukaModalTindakan('${t.idTindakan}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">✏️ Edit</button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function bukaModalTindakan(id) {
+        document.getElementById('inpTindakanId').value = id;
+        
+        if (id === '') {
+            // MODE TAMBAH BARU
+            document.getElementById('judulModalTindakan').innerText = "✨ Tambah Tindakan Baru";
+            document.getElementById('inpTindakanNama').value = "";
+            document.getElementById('inpTindakanKategori').value = "";
+            document.getElementById('inpTindakanHarga').value = "";
+            document.getElementById('inpTindakanMaks').value = "";
+            document.getElementById('inpTindakanKet').value = "";
+            document.getElementById('inpTindakanConsent').value = "Tidak";
+            document.getElementById('inpTindakanLab').value = "Tidak";
+            document.getElementById('inpTindakanStatus').value = "Aktif";
+        } else {
+            // MODE EDIT DATA (Cari data dari memori)
+            document.getElementById('judulModalTindakan').innerText = "✏️ Edit Tindakan";
+            let data = window.dataMasterTindakanGlobal.find(x => x.idTindakan === id);
+            if(data) {
+                document.getElementById('inpTindakanNama').value = data.namaTindakan;
+                document.getElementById('inpTindakanKategori').value = data.kategori;
+                document.getElementById('inpTindakanHarga').value = data.hargaDasar;
+                document.getElementById('inpTindakanMaks').value = data.hargaMaksimal || "";
+                document.getElementById('inpTindakanKet').value = data.keterangan || "";
+                document.getElementById('inpTindakanConsent').value = (data.butuhConsent === "Ya" || data.butuhConsent === 1) ? "Ya" : "Tidak";
+                document.getElementById('inpTindakanLab').value = (data.butuhLab === "Ya" || data.butuhLab === 1) ? "Ya" : "Tidak";
+                document.getElementById('inpTindakanStatus').value = data.status || "Aktif";
+            }
+        }
+        document.getElementById('modalMasterTindakan').style.display = 'flex';
+    }
+
+    function simpanMasterTindakan() {
+        let payload = {
+            idTindakan: document.getElementById('inpTindakanId').value,
+            namaTindakan: document.getElementById('inpTindakanNama').value.trim(),
+            kategori: document.getElementById('inpTindakanKategori').value.trim(),
+            hargaDasar: document.getElementById('inpTindakanHarga').value,
+            hargaMaksimal: document.getElementById('inpTindakanMaks').value || 0,
+            keterangan: document.getElementById('inpTindakanKet').value,
+            butuhConsent: document.getElementById('inpTindakanConsent').value,
+            butuhLab: document.getElementById('inpTindakanLab').value,
+            status: document.getElementById('inpTindakanStatus').value
+        };
+
+        if (!payload.namaTindakan || !payload.kategori || !payload.hargaDasar) {
+            alert("⚠️ Nama Tindakan, Kategori, dan Harga Dasar wajib diisi!"); return;
+        }
+
+        document.getElementById('btnSimpanTindakan').innerText = "Menyimpan... ⏳";
+        document.getElementById('btnSimpanTindakan').disabled = true;
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "simpanMasterTindakan", payload: payload })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                document.getElementById('modalMasterTindakan').style.display = 'none';
+                alert("✅ Master Tindakan berhasil disimpan!");
+                initMasterTindakan(); // Muat ulang tabel
+            } else {
+                alert("Gagal menyimpan: " + res.message);
+            }
+        })
+        .catch(err => {
+            console.error(err); alert("⚠️ Gagal koneksi ke server.");
+        })
+        .finally(() => {
+            document.getElementById('btnSimpanTindakan').innerText = "💾 Simpan Data";
+            document.getElementById('btnSimpanTindakan').disabled = false;
+        });
+    }
     
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
