@@ -9073,13 +9073,20 @@
             <!-- 🔥 CSS JUBAH GAIB: Hanya berlaku saat tombol Print ditekan -->
             <style>
                 @media print {
-                    /* 1. Sembunyikan seluruh elemen di layar utama */
-                    body * { 
+                    /* 1. MANTRA SAKTI: Matikan tulisan Tanggal, Judul Web, dan URL bawaan browser */
+                    @page {
+                        margin: 0; /* Memaksa browser membuang header & footer otomatis */
+                    }
+
+                    /* 2. Sembunyikan seluruh elemen di layar utama */
+                    body { 
                         visibility: hidden; 
+                        margin: 1.5cm; /* Beri margin ke kertas agar tulisan tidak mepet ujung kertas printer */
+                        background: white !important;
                     }
                     
-                    /* 2. Bebaskan ukuran modal, TAPI jangan buat isinya visible */
-                    #modalPreviewSlip {
+                    /* 3. Lucuti semua garis (border/shadow) dari sisa kotak Pop-up */
+                    #modalPreviewSlip, .modal-content, .modal-dialog {
                         position: absolute !important;
                         left: 0 !important;
                         top: 0 !important;
@@ -9089,14 +9096,16 @@
                         overflow: visible !important;
                         background: transparent !important;
                         border: none !important;
+                        box-shadow: none !important;
+                        outline: none !important;
                     }
                     
-                    /* 3. HANYA kertas ini beserta isinya yang diizinkan tampil! */
+                    /* 4. HANYA kertas ini beserta isinya yang diizinkan tampil! */
                     #kertasPreviewPDF, #kertasPreviewPDF * {
                         visibility: visible !important;
                     }
                     
-                    /* 4. Tarik kertas paksa ke pojok kiri atas agar tidak ada ruang kosong bekas judul modal */
+                    /* 5. Tarik kertas paksa ke pojok atas dan buang sisa border */
                     #kertasPreviewPDF {
                         position: absolute !important;
                         left: 0 !important;
@@ -9104,16 +9113,18 @@
                         margin: 0 !important;
                         padding: 0 !important;
                         width: 100% !important;
+                        border: none !important;
+                        box-shadow: none !important;
                     }
 
-                    /* 5. Failsafe: Paksa matikan semua tombol yang ada di dalam modal (Batal/Kunci/dll) */
+                    /* 6. Failsafe: Bunuh tombol di modal saat diprint */
                     #modalPreviewSlip button {
                         display: none !important;
                     }
                     
                     .no-print { display: none !important; }
 
-                    /* 6. ATURAN EMAS: Cegah baris tabel terpotong di tengah huruf */
+                    /* 7. ATURAN EMAS: Cegah baris tabel terpotong di tengah huruf */
                     table { page-break-inside: auto; width: 100%; }
                     tr { page-break-inside: avoid; page-break-after: auto; }
                     thead { display: table-header-group; }
