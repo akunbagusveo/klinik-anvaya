@@ -9071,56 +9071,56 @@
         // --- DESAIN KERTAS HTML ---
     const htmlSlip = `
         <!-- 🔥 CSS JUBAH GAIB (VERSI BERSIH TOTAL, AUTO-PAGINATION & ANTI-TERPOTONG) -->
-        <style>
-            @media print {
-                /* Matikan tulisan Tanggal, Judul Web, dan URL bawaan browser */
-                @page { margin: 0; }
+            <style>
+                @media print {
+                    /* 🔥 PERBAIKAN 1: Margin dipindah ke fisik kertas agar HALAMAN 2 dst punya spasi atas! */
+                    @page { 
+                        size: auto;
+                        margin: 15mm 20mm; /* Memberi jarak Atas-bawah 15mm, Kanan-kiri 20mm pada SETIAP LEMBAR */
+                    }
 
-                /* Sembunyikan elemen utama */
-                body { visibility: hidden; background: white !important; }
-                
-                /* Lucuti semua garis (border/shadow) dari sisa kotak Pop-up */
-                #modalPreviewSlip, .modal-content, .modal-dialog {
-                    position: absolute !important;
-                    left: 0 !important; top: 0 !important;
-                    width: 100% !important; height: auto !important;
-                    display: block !important; overflow: visible !important;
-                    background: transparent !important;
-                    border: none !important; box-shadow: none !important; outline: none !important;
+                    /* Sembunyikan elemen utama */
+                    body { visibility: hidden; background: white !important; }
+                    
+                    /* Lucuti semua garis dari sisa kotak Pop-up */
+                    #modalPreviewSlip, .modal-content, .modal-dialog {
+                        position: absolute !important;
+                        left: 0 !important; top: 0 !important;
+                        width: 100% !important; height: auto !important;
+                        display: block !important; overflow: visible !important;
+                        background: transparent !important;
+                        border: none !important; box-shadow: none !important; outline: none !important;
+                    }
+                    
+                    /* HANYA kertas ini beserta isinya yang diizinkan tampil */
+                    #kertasPreviewPDF, #kertasPreviewPDF * { visibility: visible !important; }
+                    
+                    /* 🔥 PERBAIKAN 2: Padding di sini DIHAPUS agar tidak terjadi "Double Spasi" di halaman 1 */
+                    #kertasPreviewPDF {
+                        position: absolute !important;
+                        left: 0 !important; top: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important; 
+                        width: 100% !important;
+                        border: none !important; box-shadow: none !important;
+                    }
+
+                    /* Bunuh tombol di modal saat diprint */
+                    #modalPreviewSlip button, .no-print { display: none !important; }
+
+                    /* Aturan tabel agar tidak terpotong */
+                    table { page-break-inside: auto; width: 100%; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+
+                    /* Mantra agar kotak tertentu utuh tidak terbelah */
+                    .hindari-terpotong { 
+                        page-break-inside: avoid !important; 
+                        break-inside: avoid !important; 
+                    }
                 }
-                
-                /* HANYA kertas ini beserta isinya yang diizinkan tampil */
-                #kertasPreviewPDF, #kertasPreviewPDF * { visibility: visible !important; }
-                
-                /* 🔥 PERBAIKAN 1: Margin/Spasi Kanan Kiri yang Rapi */
-                #kertasPreviewPDF {
-                    position: absolute !important;
-                    left: 0 !important; top: 0 !important;
-                    margin: 0 !important;
-                    /* Beri jarak 1.5cm atas-bawah, dan 2cm kanan-kiri */
-                    padding: 1.5cm 2cm !important; 
-                    /* box-sizing wajib agar padding tidak membuat kertas melebar melebihi layar */
-                    box-sizing: border-box !important; 
-                    width: 100% !important;
-                    border: none !important; box-shadow: none !important;
-                }
-
-                /* Bunuh tombol di modal saat diprint */
-                #modalPreviewSlip button, .no-print { display: none !important; }
-
-                /* Aturan tabel agar tidak terpotong */
-                table { page-break-inside: auto; width: 100%; }
-                tr { page-break-inside: avoid; page-break-after: auto; }
-                thead { display: table-header-group; }
-                tfoot { display: table-footer-group; }
-
-                /* 🔥 PERBAIKAN 2: Mantra agar kotak tertentu (Kalkulasi & TTD) utuh tidak terbelah */
-                .hindari-terpotong { 
-                    page-break-inside: avoid !important; 
-                    break-inside: avoid !important; 
-                }
-            }
-        </style>
+            </style>
 
         <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5; position: relative;">
             
