@@ -667,7 +667,7 @@
         <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold; color: #ffeb3b;">📈 Analisis Bisnis</button>
         <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold; color: #32ac36;">💰 Kasir & Billing</button>
         <!-- Tombol Menu Pendapatan Dokter -->
-        <button id="tabPendapatanDokterBtn" class="tab-link" onclick="switchTab('pendapatanDokter'); initPendapatanDokter();" style="display: none; font-weight: bold; color: #2ecc71;">💰 Pendapatan Saya</button>
+        <button id="tabPendapatanDokterBtn" class="tab-link" onclick="switchTab('pendapatanDokter'); initPendapatanDokter();" style="display: none; font-weight: bold; color: #053f1a;">💰 Pendapatan Saya</button>
         
         <!-- 🔥 MENU BARU DITAMBAHKAN DI SINI -->
         <button id="tabTagihanLabBtn" class="tab-link" onclick="switchTab('tagihanLab'); muatAntreanLab();" style="display: none; font-weight: bold; color: #e67e22;">🧪 Tagihan Eksternal / Lab</button>
@@ -5467,6 +5467,10 @@
         if (btnSubTabFinansial) {
             btnSubTabFinansial.style.display = punyaAksesFinansial ? 'inline-block' : 'none';
         }
+
+        const punyaAksesMasterTindakan = cekIzin('mastertindakan');
+        const elMasterTindakanBtn = document.getElementById('subTabMasterTindakanBtn'); // Nanti kita buat tombol ini di HTML
+        if (elMasterTindakanBtn) elMasterTindakanBtn.style.display = punyaAksesMasterTindakan ? 'inline-block' : 'none';
         
         // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
         setTimeout(() => {
@@ -5777,7 +5781,8 @@
         { key: 'worklistKontrol', label: 'Worklist Kontrol', class: 'chk-worklist-kontrol', fallbackKeys: ['worklist'] },
         { key: 'kalenderPraktik', label: 'Kalender Praktik', class: 'chk-kalender-praktik', fallbackKeys: ['aksesKalenderPraktik'] },
         { key: 'tagihanLab', label: 'Tagihan Lab', class: 'chk-tagihan-lab', fallbackKeys: ['aksesTagihanLab'] },
-        { key: 'pendapatanDokter', label: 'Pendapatan Dokter', class: 'chk-pendapatan-dokter', fallbackKeys: ['aksesPendapatanDokter'] }
+        { key: 'pendapatanDokter', label: 'Pendapatan Dokter', class: 'chk-pendapatan-dokter', fallbackKeys: ['aksesPendapatanDokter'] },
+        { key: 'masterTindakan', label: 'Master Tindakan', class: 'chk-master-tindakan', fallbackKeys: ['aksesMasterTindakan'] }
     ];
 
     // ==========================================
