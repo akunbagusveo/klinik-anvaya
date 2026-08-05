@@ -1077,20 +1077,26 @@
         </div>
 
         <!-- Tabel Rincian Tindakan -->
+        <!-- Tabel Rincian Tindakan -->
         <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
             <h3 style="margin-top:0; margin-bottom:15px; font-size:16px; color:#34495e; border-bottom:2px solid #ecf0f1; padding-bottom:10px;">📋 Rincian Tindakan Bulan Ini</h3>
             
-            <!-- Pembungkus scroll tabel -->
-            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ecf0f1; border-radius: 6px;">
-                <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <!-- 🔥 PERBAIKAN UX: overflow-x: auto untuk Scroll Kanan-Kiri di Tablet -->
+            <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid #ecf0f1; border-radius: 6px;">
+                
+                <!-- 🔥 PERBAIKAN UX: min-width: 900px agar teks 9 kolom tidak berdesakan -->
+                <table style="width:100%; border-collapse:collapse; text-align:left; min-width: 900px;">
                     <thead>
                         <tr>
-                            <!-- 🔥 PERBAIKAN: Memindahkan position:sticky langsung ke setiap <th> -->
+                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7;">No</th>
                             <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7;">Tanggal</th>
                             <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7;">Nama Pasien</th>
                             <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7;">Tindakan</th>
-                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7; text-align:right;">Dasar Fee</th>
-                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2980b9; font-size:13px; border-bottom:2px solid #2980b9; text-align:right;">Fee Anda (40%)</th>
+                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7; text-align:right;">Tarif (Rp)</th>
+                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7; text-align:right;">Biaya Lab</th>
+                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2c3e50; font-size:13px; border-bottom:2px solid #bdc3c7; text-align:right;">Diskon</th>
+                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#ecf0f1; color:#2980b9; font-size:13px; border-bottom:2px solid #2980b9; text-align:right;">Dasar Fee</th>
+                            <th style="position:sticky; top:0; z-index:10; padding:12px; background:#27ae60; color:white; font-size:13px; border-bottom:2px solid #2ecc71; text-align:right;">Fee Anda (40%)</th>
                         </tr>
                     </thead>
                     <tbody id="tabelRincianDokterBody">
@@ -11408,7 +11414,8 @@
         if (!tbody) return;
 
         if (!listRincian || listRincian.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#95a5a6;">Belum ada tindakan tercatat pada periode ini.</td></tr>`;
+            // 🔥 PERBAIKAN 1: Ubah colspan="5" menjadi colspan="9" agar pesan kosong melintang di semua kolom
+            tbody.innerHTML = `<tr><td colspan="9" style="padding:40px; text-align:center; color:#95a5a6; font-size:14px;">Belum ada tindakan tercatat pada periode ini.</td></tr>`;
             if (document.getElementById('cardDokJmlTindakan')) document.getElementById('cardDokJmlTindakan').innerText = "0";
             return;
         }
@@ -11418,17 +11425,33 @@
         }
 
         let html = '';
-        listRincian.forEach((rin) => {
-            let dasarBagiHasil = rin.hargaAsli - (rin.hargaLabVendor || 0) - (rin.diskonProrata || 0);
+        // 🔥 PERBAIKAN 2: Tambahkan parameter 'index' di dalam forEach untuk nomor urut
+        listRincian.forEach((rin, index) => {
+            let hargaAsli = rin.hargaAsli || 0;
+            let lab = rin.hargaLabVendor || 0;
+            let diskon = rin.diskonProrata || 0;
+            
+            let dasarBagiHasil = hargaAsli - lab - diskon;
             let feeDokter = rin.feeFinal || (dasarBagiHasil * 0.4);
 
+            // Teks dinamis untuk Lab dan Diskon (Tampil merah jika ada potongan, strip jika nol)
+            let txtLab = lab > 0 ? `-${lab.toLocaleString('id-ID')}` : '-';
+            let txtDiskon = diskon > 0 ? `-${diskon.toLocaleString('id-ID')}` : '-';
+
+            // 🔥 PERBAIKAN 3: Cetak 9 Kolom sesuai urutan Header HTML
             html += `
                 <tr style="border-bottom:1px solid #ecf0f1;">
+                    <td style="padding:12px; text-align:center; color:#7f8c8d; font-size:13px;">${index + 1}</td>
                     <td style="padding:12px; color:#7f8c8d; font-size:13px;">${rin.tanggal}</td>
                     <td style="padding:12px; color:#2c3e50; font-weight:bold; font-size:13px;">${rin.pasien}</td>
                     <td style="padding:12px; color:#34495e; font-size:13px;">${rin.tindakan}</td>
-                    <td style="padding:12px; text-align:right; color:#7f8c8d; font-size:13px;">Rp ${dasarBagiHasil.toLocaleString('id-ID')}</td>
-                    <td style="padding:12px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">Rp ${feeDokter.toLocaleString('id-ID')}</td>
+                    
+                    <td style="padding:12px; text-align:right; color:#7f8c8d; font-size:13px;">${hargaAsli.toLocaleString('id-ID')}</td>
+                    <td style="padding:12px; text-align:right; color:#e74c3c; font-size:13px;">${txtLab}</td>
+                    <td style="padding:12px; text-align:right; color:#e74c3c; font-size:13px;">${txtDiskon}</td>
+                    
+                    <td style="padding:12px; text-align:right; font-weight:bold; color:#2980b9; font-size:13px;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
+                    <td style="padding:12px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">${feeDokter.toLocaleString('id-ID')}</td>
                 </tr>
             `;
         });
