@@ -11795,12 +11795,13 @@
     function bukaModalTindakan(id) {
         document.getElementById('inpTindakanId').value = id;
         
-        // 🔥 OTOMATISASI DROPDOWN KATEGORI: Ambil data unik tanpa duplikat dari database global
+        // 🔥 MESIN DROPDOWN KATEGORI (Ini yang kemungkinan hilang)
+        // Mengambil semua kategori dari database, menghapus duplikat, lalu menyuntikkan ke Datalist
         let datalist = document.getElementById('listKategoriTindakan');
-        let unikKategori = [...new Set(window.dataMasterTindakanGlobal.map(item => item.kategori))];
-        
-        // Suntikkan ke HTML sebagai opsi dropdown
-        datalist.innerHTML = unikKategori.map(kat => `<option value="${kat}">`).join('');
+        if (datalist && window.dataMasterTindakanGlobal) {
+            let unikKategori = [...new Set(window.dataMasterTindakanGlobal.map(item => item.kategori))];
+            datalist.innerHTML = unikKategori.map(kat => `<option value="${kat}">`).join('');
+        }
 
         if (id === '') {
             // MODE TAMBAH BARU
@@ -11821,7 +11822,7 @@
                 document.getElementById('inpTindakanNama').value = data.namaTindakan;
                 document.getElementById('inpTindakanKategori').value = data.kategori;
                 
-                // 🔥 Load harga lama, beri titik ribuan sebelum ditampilkan ke User
+                // Load harga lama, beri titik ribuan sebelum ditampilkan
                 document.getElementById('inpTindakanHarga').value = Number(data.hargaDasar).toLocaleString('id-ID');
                 document.getElementById('inpTindakanMaks').value = (data.hargaMaksimal && Number(data.hargaMaksimal) > 0) ? Number(data.hargaMaksimal).toLocaleString('id-ID') : "";
                 
@@ -11845,7 +11846,7 @@
         let hargaMentah = document.getElementById('inpTindakanHarga').value.replace(/[^0-9]/g, '');
         let maksMentah = document.getElementById('inpTindakanMaks').value.replace(/[^0-9]/g, '');
 
-        // 🔥 PERBAIKAN: Translasi Teks "Ya"/"Tidak" menjadi Angka 1 / 0 untuk menjaga konsistensi Database
+        // Translasi Teks "Ya"/"Tidak" menjadi Angka 1 / 0
         let valConsent = document.getElementById('inpTindakanConsent').value === 'Ya' ? 1 : 0;
         let valLab = document.getElementById('inpTindakanLab').value === 'Ya' ? 1 : 0;
 
@@ -11856,8 +11857,8 @@
             hargaDasar: Number(hargaMentah) || 0,
             hargaMaksimal: Number(maksMentah) || 0,
             keterangan: document.getElementById('inpTindakanKet').value,
-            butuhConsent: valConsent, // <-- Sekarang mengirim angka 1 atau 0 ke Sheets
-            butuhLab: valLab,         // <-- Sekarang mengirim angka 1 atau 0 ke Sheets
+            butuhConsent: valConsent, // Mengirim 1 / 0
+            butuhLab: valLab,         // Mengirim 1 / 0
             status: document.getElementById('inpTindakanStatus').value
         };
 
