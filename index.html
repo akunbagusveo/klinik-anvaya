@@ -9069,134 +9069,124 @@
         const tglCetak = new Date().toLocaleString('id-ID');
         
         // --- DESAIN KERTAS HTML ---
-        const htmlSlip = `
-            <!-- 🔥 CSS JUBAH GAIB: Hanya berlaku saat tombol Print ditekan -->
-            <style>
-                @media print {
-                    /* 1. MANTRA SAKTI: Matikan tulisan Tanggal, Judul Web, dan URL bawaan browser */
-                    @page {
-                        margin: 0; /* Memaksa browser membuang header & footer otomatis */
-                    }
+    const htmlSlip = `
+        <!-- 🔥 CSS JUBAH GAIB (VERSI BERSIH TOTAL, AUTO-PAGINATION & ANTI-TERPOTONG) -->
+        <style>
+            @media print {
+                /* Matikan tulisan Tanggal, Judul Web, dan URL bawaan browser */
+                @page { margin: 0; }
 
-                    /* 2. Sembunyikan seluruh elemen di layar utama */
-                    body { 
-                        visibility: hidden; 
-                        margin: 1.5cm; /* Beri margin ke kertas agar tulisan tidak mepet ujung kertas printer */
-                        background: white !important;
-                    }
-                    
-                    /* 3. Lucuti semua garis (border/shadow) dari sisa kotak Pop-up */
-                    #modalPreviewSlip, .modal-content, .modal-dialog {
-                        position: absolute !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        width: 100% !important;
-                        height: auto !important;
-                        display: block !important; 
-                        overflow: visible !important;
-                        background: transparent !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                        outline: none !important;
-                    }
-                    
-                    /* 4. HANYA kertas ini beserta isinya yang diizinkan tampil! */
-                    #kertasPreviewPDF, #kertasPreviewPDF * {
-                        visibility: visible !important;
-                    }
-                    
-                    /* 5. Tarik kertas paksa ke pojok atas dan buang sisa border */
-                    #kertasPreviewPDF {
-                        position: absolute !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        width: 100% !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                    }
-
-                    /* 6. Failsafe: Bunuh tombol di modal saat diprint */
-                    #modalPreviewSlip button {
-                        display: none !important;
-                    }
-                    
-                    .no-print { display: none !important; }
-
-                    /* 7. ATURAN EMAS: Cegah baris tabel terpotong di tengah huruf */
-                    table { page-break-inside: auto; width: 100%; }
-                    tr { page-break-inside: avoid; page-break-after: auto; }
-                    thead { display: table-header-group; }
-                    tfoot { display: table-footer-group; }
+                /* Sembunyikan elemen utama */
+                body { visibility: hidden; background: white !important; }
+                
+                /* Lucuti semua garis (border/shadow) dari sisa kotak Pop-up */
+                #modalPreviewSlip, .modal-content, .modal-dialog {
+                    position: absolute !important;
+                    left: 0 !important; top: 0 !important;
+                    width: 100% !important; height: auto !important;
+                    display: block !important; overflow: visible !important;
+                    background: transparent !important;
+                    border: none !important; box-shadow: none !important; outline: none !important;
                 }
-            </style>
-
-            <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5; position: relative;">
                 
-                <!-- 🔥 TOMBOL CETAK PDF (Otomatis Hilang saat di-print berkat class="no-print") -->
-                <div class="no-print" style="text-align: right; margin-bottom: 20px; border-bottom: 1px dashed #bdc3c7; padding-bottom: 15px;">
-                    <button onclick="window.print()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
-                        🖨️ Cetak / Simpan PDF
-                    </button>
-                </div>
-
-                <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">
-                    <h2 style="margin:0; letter-spacing: 2px;">KLINIK ANVAYA</h2>
-                    <h3 style="margin:5px 0 0 0; color:#7f8c8d; font-weight:normal;">SLIP GAJI & RINCIAN TINDAKAN</h3>
-                </div>
+                /* HANYA kertas ini beserta isinya yang diizinkan tampil */
+                #kertasPreviewPDF, #kertasPreviewPDF * { visibility: visible !important; }
                 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px;">
-                    <div>
-                        <div style="font-size: 12px; color: #7f8c8d;">Nama Dokter</div>
-                        <div style="font-weight: bold; font-size: 16px;">${dataDokter.nama}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 11px; margin-top: 3px; color:#95a5a6;">Dirender pada: ${tglCetak}</div>
-                    </div>
-                </div>
+                /* 🔥 PERBAIKAN 1: Margin/Spasi Kanan Kiri yang Rapi */
+                #kertasPreviewPDF {
+                    position: absolute !important;
+                    left: 0 !important; top: 0 !important;
+                    margin: 0 !important;
+                    /* Beri jarak 1.5cm atas-bawah, dan 2cm kanan-kiri */
+                    padding: 1.5cm 2cm !important; 
+                    /* box-sizing wajib agar padding tidak membuat kertas melebar melebihi layar */
+                    box-sizing: border-box !important; 
+                    width: 100% !important;
+                    border: none !important; box-shadow: none !important;
+                }
 
-                <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; word-break: break-word;">
-                    <thead>
-                        <tr>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:4%;">No</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:left;">Tanggal</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:15%; text-align:left;">Pasien</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:20%; text-align:left;">Tindakan</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Tarif (Rp)</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Biaya Lab</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:9%; text-align:right;">Diskon</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right; color:#2980b9;">Dasar Fee</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:right;">Fee Bersih</th>
-                        </tr>
-                    </thead>
-                    <tbody>${htmlRincian}</tbody>
-                </table>
-                <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 14px;">
-                    Total Fee Bersih: Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}
-                </div>
+                /* Bunuh tombol di modal saat diprint */
+                #modalPreviewSlip button, .no-print { display: none !important; }
 
-                <div style="border: 2px solid #2ecc71; padding: 15px; margin-top: 25px; background: #f9fffb; border-radius: 6px;">
-                    <div style="font-weight:bold; color:#2c3e50; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:5px;">B. KALKULASI FINAL (TAKE HOME PAY)</div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px;"><span>Total Pokok Fee Bersih (Dari Tindakan)</span><span>Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px; color:#27ae60;"><span>(+) ${teksBonus}</span><span>Rp ${nominalBonus.toLocaleString('id-ID')}</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px; color:#e74c3c;"><span>(-) ${teksPotongan}</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
-                    <div style="border-top:2px dashed #2ecc71; margin: 15px 0;"></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:20px; font-weight:bold; color:#27ae60;">
-                        <span>TOTAL DITERIMA</span><span>Rp ${window.dataDraftSlip.finalGaji.toLocaleString('id-ID')}</span>
-                    </div>
+                /* Aturan tabel agar tidak terpotong */
+                table { page-break-inside: auto; width: 100%; }
+                tr { page-break-inside: avoid; page-break-after: auto; }
+                thead { display: table-header-group; }
+                tfoot { display: table-footer-group; }
+
+                /* 🔥 PERBAIKAN 2: Mantra agar kotak tertentu (Kalkulasi & TTD) utuh tidak terbelah */
+                .hindari-terpotong { 
+                    page-break-inside: avoid !important; 
+                    break-inside: avoid !important; 
+                }
+            }
+        </style>
+
+        <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5; position: relative;">
+            
+            <div class="no-print" style="text-align: right; margin-bottom: 20px; border-bottom: 1px dashed #bdc3c7; padding-bottom: 15px;">
+                <button onclick="window.print()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
+                    🖨️ Cetak / Simpan PDF
+                </button>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">
+                <h2 style="margin:0; letter-spacing: 2px;">KLINIK ANVAYA</h2>
+                <h3 style="margin:5px 0 0 0; color:#7f8c8d; font-weight:normal;">SLIP GAJI & RINCIAN TINDAKAN</h3>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                <div>
+                    <div style="font-size: 12px; color: #7f8c8d;">Nama Dokter</div>
+                    <div style="font-weight: bold; font-size: 16px;">${dataDokter.nama}</div>
                 </div>
-                
-                <!-- TTD Manajerial (Hanya muncul saat di-print) -->
-                <div style="display:flex; justify-content:flex-end; margin-top:50px; text-align:center;">
-                    <div>
-                        <p style="margin-bottom:60px;">Manajemen Klinik Anvaya,</p>
-                        <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">( ..................................... )</p>
-                    </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 11px; margin-top: 3px; color:#95a5a6;">Dirender pada: ${tglCetak}</div>
                 </div>
             </div>
-        `;
+
+            <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; word-break: break-word;">
+                <thead>
+                    <tr>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:4%;">No</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:left;">Tanggal</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:15%; text-align:left;">Pasien</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:20%; text-align:left;">Tindakan</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Tarif (Rp)</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Biaya Lab</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:9%; text-align:right;">Diskon</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right; color:#2980b9;">Dasar Fee</th>
+                        <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:right;">Fee Bersih</th>
+                    </tr>
+                </thead>
+                <tbody>${htmlRincian}</tbody>
+            </table>
+            <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 14px;">
+                Total Fee Bersih: Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}
+            </div>
+
+            <!-- 🔥 KOTAK KALKULASI: Diberi class hindari-terpotong -->
+            <div class="hindari-terpotong" style="border: 2px solid #2ecc71; padding: 15px; margin-top: 25px; background: #f9fffb; border-radius: 6px;">
+                <div style="font-weight:bold; color:#2c3e50; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:5px;">B. KALKULASI FINAL (TAKE HOME PAY)</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px;"><span>Total Pokok Fee Bersih (Dari Tindakan)</span><span>Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px; color:#27ae60;"><span>(+) ${teksBonus}</span><span>Rp ${nominalBonus.toLocaleString('id-ID')}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px; color:#e74c3c;"><span>(-) ${teksPotongan}</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
+                <div style="border-top:2px dashed #2ecc71; margin: 15px 0;"></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:20px; font-weight:bold; color:#27ae60;">
+                    <span>TOTAL DITERIMA</span><span>Rp ${window.dataDraftSlip.finalGaji.toLocaleString('id-ID')}</span>
+                </div>
+            </div>
+            
+            <!-- 🔥 KOTAK TTD: Diberi class hindari-terpotong juga! -->
+            <div class="hindari-terpotong" style="display:flex; justify-content:flex-end; margin-top:50px; text-align:center;">
+                <div>
+                    <p style="margin-bottom:60px;">Manajemen Klinik Anvaya,</p>
+                    <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">( ..................................... )</p>
+                </div>
+            </div>
+        </div>
+    `;
         
         // Suntikkan ke HTML
         document.getElementById('kertasPreviewPDF').innerHTML = htmlSlip;
