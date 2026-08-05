@@ -11841,20 +11841,23 @@
     // 🔄 TIMPA FUNGSI SIMPAN MODAL INI
     // ==========================================
     function simpanMasterTindakan() {
-        // 🔥 PENTING: Bersihkan titik ribuan yang diketik User sebelum dikirim ke Google Sheets
-        // Agar Google Sheets tetap menerimanya sebagai angka murni (Integer)
+        // Bersihkan titik ribuan yang diketik User 
         let hargaMentah = document.getElementById('inpTindakanHarga').value.replace(/[^0-9]/g, '');
         let maksMentah = document.getElementById('inpTindakanMaks').value.replace(/[^0-9]/g, '');
+
+        // 🔥 PERBAIKAN: Translasi Teks "Ya"/"Tidak" menjadi Angka 1 / 0 untuk menjaga konsistensi Database
+        let valConsent = document.getElementById('inpTindakanConsent').value === 'Ya' ? 1 : 0;
+        let valLab = document.getElementById('inpTindakanLab').value === 'Ya' ? 1 : 0;
 
         let payload = {
             idTindakan: document.getElementById('inpTindakanId').value,
             namaTindakan: document.getElementById('inpTindakanNama').value.trim(),
             kategori: document.getElementById('inpTindakanKategori').value.trim(),
-            hargaDasar: Number(hargaMentah) || 0,       // Angka murni (misal: 100000)
-            hargaMaksimal: Number(maksMentah) || 0,     // Angka murni
+            hargaDasar: Number(hargaMentah) || 0,
+            hargaMaksimal: Number(maksMentah) || 0,
             keterangan: document.getElementById('inpTindakanKet').value,
-            butuhConsent: document.getElementById('inpTindakanConsent').value,
-            butuhLab: document.getElementById('inpTindakanLab').value,
+            butuhConsent: valConsent, // <-- Sekarang mengirim angka 1 atau 0 ke Sheets
+            butuhLab: valLab,         // <-- Sekarang mengirim angka 1 atau 0 ke Sheets
             status: document.getElementById('inpTindakanStatus').value
         };
 
@@ -11874,7 +11877,7 @@
             if (res.result === "success") {
                 document.getElementById('modalMasterTindakan').style.display = 'none';
                 alert("✅ Master Tindakan berhasil disimpan!");
-                initMasterTindakan(); 
+                initMasterTindakan(); // Muat ulang tabel
             } else {
                 alert("Gagal menyimpan: " + res.message);
             }
