@@ -1628,18 +1628,24 @@
             </div>
 
             <!-- Tabel Master -->
-            <div style="overflow-x:auto; border:1px solid #ecf0f1; border-radius:6px;">
-                <table style="width:100%; border-collapse:collapse; min-width:900px; text-align:left;">
+            <!-- 🔥 PERBAIKAN 1: Tambahkan max-height: 500px dan overflow-y: auto agar bisa scroll atas-bawah -->
+            <div style="max-height:500px; overflow-y:auto; overflow-x:auto; border:1px solid #ecf0f1; border-radius:6px;">
+                <table style="width:100%; border-collapse:collapse; min-width:1000px; text-align:left;">
                     <thead>
-                        <tr style="background:#34495e; color:white;">
-                            <th style="padding:12px 10px;">No</th>
-                            <th style="padding:12px 10px;">Nama Tindakan</th>
-                            <th style="padding:12px 10px;">Kategori</th>
-                            <th style="padding:12px 10px; text-align:right;">Harga Dasar</th>
-                            <th style="padding:12px 10px; text-align:center;">Consent</th>
-                            <th style="padding:12px 10px; text-align:center;">Butuh Lab</th>
-                            <th style="padding:12px 10px; text-align:center;">Status</th>
-                            <th style="padding:12px 10px; text-align:center;">Aksi</th>
+                        <tr>
+                            <!-- 🔥 PERBAIKAN 2: Tambahkan position:sticky dan top:0 di setiap TH -->
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px;">No</th>
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px;">Nama Tindakan</th>
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px;">Kategori</th>
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:right;">Harga Dasar</th>
+                            
+                            <!-- 🔥 PERBAIKAN 3: Tambahkan Kolom Harga Maksimal -->
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:right;">Harga Maksimal</th>
+                            
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Consent</th>
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Butuh Lab</th>
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Status</th>
+                            <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tabelMasterTindakanBody">
@@ -11736,7 +11742,7 @@
         });
 
         if (terfilter.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#95a5a6;">Data tidak ditemukan.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#95a5a6;">Data tidak ditemukan.</td></tr>`;
             return;
         }
 
@@ -11746,8 +11752,17 @@
                 ? `<span style="background:#d4efdf; color:#27ae60; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Aktif</span>` 
                 : `<span style="background:#fadbd8; color:#c0392b; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Nonaktif</span>`;
                 
-            let icnConsent = (t.butuhConsent === "Ya" || t.butuhConsent === 1 || t.butuhConsent === true) ? "📝 Ya" : "-";
-            let icnLab = (t.butuhLab === "Ya" || t.butuhLab === 1 || t.butuhLab === true) ? "🧪 Ya" : "-";
+            // 🔥 PERBAIKAN 1: Gunakan == 1 (bukan ===) dan konversi ke String untuk mendeteksi "Ya" dengan aman
+            let strConsent = String(t.butuhConsent).toLowerCase().trim();
+            let strLab = String(t.butuhLab).toLowerCase().trim();
+            
+            let icnConsent = (t.butuhConsent == 1 || strConsent === "ya" || strConsent === "true") ? "📝 Ya" : "-";
+            let icnLab = (t.butuhLab == 1 || strLab === "ya" || strLab === "true") ? "🧪 Ya" : "-";
+
+            // 🔥 PERBAIKAN 2: Format Harga Maksimal (Jika kosong / 0, tampilkan strip)
+            let hargaMaksTxt = (t.hargaMaksimal && Number(t.hargaMaksimal) > 0) 
+                ? `Rp ${Number(t.hargaMaksimal).toLocaleString('id-ID')}` 
+                : `-`;
 
             html += `
                 <tr style="border-bottom: 1px solid #ecf0f1;">
@@ -11755,6 +11770,10 @@
                     <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2c3e50;">${t.namaTindakan}</td>
                     <td style="padding:12px 10px; font-size:13px; color:#34495e;">${t.kategori}</td>
                     <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2980b9; text-align:right;">Rp ${Number(t.hargaDasar).toLocaleString('id-ID')}</td>
+                    
+                    <!-- 🔥 PERBAIKAN 3: Suntikkan Kolom Harga Maksimal -->
+                    <td style="padding:12px 10px; font-size:13px; color:#7f8c8d; text-align:right;">${hargaMaksTxt}</td>
+                    
                     <td style="padding:12px 10px; font-size:13px; text-align:center; color:#e67e22;">${icnConsent}</td>
                     <td style="padding:12px 10px; font-size:13px; text-align:center; color:#9b59b6;">${icnLab}</td>
                     <td style="padding:12px 10px; text-align:center;">${badgeStatus}</td>
