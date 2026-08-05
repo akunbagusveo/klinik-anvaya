@@ -11795,12 +11795,19 @@
     function bukaModalTindakan(id) {
         document.getElementById('inpTindakanId').value = id;
         
-        // 🔥 MESIN DROPDOWN KATEGORI (Ini yang kemungkinan hilang)
-        // Mengambil semua kategori dari database, menghapus duplikat, lalu menyuntikkan ke Datalist
+        // 🔥 MESIN DROPDOWN KATEGORI (VERSI BULLETPROOF / ANTI-ERROR)
         let datalist = document.getElementById('listKategoriTindakan');
         if (datalist && window.dataMasterTindakanGlobal) {
-            let unikKategori = [...new Set(window.dataMasterTindakanGlobal.map(item => item.kategori))];
-            datalist.innerHTML = unikKategori.map(kat => `<option value="${kat}">`).join('');
+            // 1. Ambil data, bersihkan spasi nyasar, dan buang yang kosong (blank)
+            let listBersih = window.dataMasterTindakanGlobal
+                .map(item => item.kategori ? String(item.kategori).trim() : '')
+                .filter(kat => kat !== '');
+                
+            // 2. Saring agar tidak ada nama kategori yang ganda (Duplikat)
+            let unikKategori = [...new Set(listBersih)];
+            
+            // 3. Suntikkan ke HTML dengan tag penutup </option> yang disukai semua Browser
+            datalist.innerHTML = unikKategori.map(kat => `<option value="${kat}"></option>`).join('');
         }
 
         if (id === '') {
