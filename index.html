@@ -11802,7 +11802,7 @@
     }
 
     // ==========================================
-    // 🔄 TIMPA FUNGSI SIMPAN MODAL INI
+    // 🔄 TIMPA FUNGSI SIMPAN TINDAKAN BARU
     // ==========================================
     function simpanMasterTindakan() {
         let hargaMentah = document.getElementById('inpTindakanHarga').value.replace(/[^0-9]/g, '');
@@ -11811,7 +11811,6 @@
         let valConsent = document.getElementById('inpTindakanConsent').value === 'Ya' ? 1 : 0;
         let valLab = document.getElementById('inpTindakanLab').value === 'Ya' ? 1 : 0;
         
-        // 🔥 LAPIS 1: Buat Token Unik untuk Master Tindakan
         if (!window.tokenMasterTindakan) {
             window.tokenMasterTindakan = "MST-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
         }
@@ -11826,11 +11825,14 @@
             butuhConsent: valConsent, 
             butuhLab: valLab,         
             status: document.getElementById('inpTindakanStatus').value,
-            tokenId: window.tokenMasterTindakan // 🔥 Sisipkan Token
+            tokenId: window.tokenMasterTindakan 
         };
 
-        if (!payload.namaTindakan || !payload.kategori || !payload.hargaDasar) {
-            alert("⚠️ Nama Tindakan, Kategori, dan Harga Dasar wajib diisi!"); return;
+        // 🔥 PERBAIKAN BUG HARGA 0: Kita cek 'hargaMentah === ""', bukan nilai angkanya.
+        // Jadi jika User mengetik angka "0", sistem akan menganggapnya ada isinya dan meloloskannya!
+        if (!payload.namaTindakan || !payload.kategori || hargaMentah === "") {
+            alert("⚠️ Nama Tindakan, Kategori, dan Harga Dasar wajib diisi! (Ketik angka 0 jika gratis)"); 
+            return;
         }
 
         document.getElementById('btnSimpanTindakan').innerText = "Menyimpan... ⏳";
@@ -11845,17 +11847,13 @@
             if (res.result === "success") {
                 document.getElementById('modalMasterTindakan').style.display = 'none';
                 alert("✅ Master Tindakan berhasil disimpan!");
-                
-                // 🔥 Hapus token setelah sukses
                 window.tokenMasterTindakan = null;
-                
                 initMasterTindakan(); 
             } else {
                 alert("Gagal menyimpan: " + res.message);
             }
         })
         .catch(err => {
-            // 🔥 LAPIS 3: UX Anti-Panik
             console.error(err);
             document.getElementById('btnSimpanTindakan').innerText = "Koneksi Terputus...";
             alert("⚠️ KONEKSI TERPUTUS!\n\nJangan klik simpan berulang kali. Data Anda kemungkinan sudah masuk ke sistem.\n\nTabel akan dimuat ulang untuk memastikannya.");
