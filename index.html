@@ -5131,11 +5131,11 @@
     document.getElementById('formPasien').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // 🔥 1. SATPAM VALIDASI: Pastikan staf sudah memilih Jenis Pasien (Baru / Lama)
+        // 🔥 1. SATPAM VALIDASI: Pastikan staf sudah memilih Jenis Pasien
         const elTipePasien = document.querySelector('input[name="tipePasien"]:checked');
         if (!elTipePasien) {
             alert("⚠️ Harap pilih Jenis Pasien (Pasien Baru / Pasien Lama) terlebih dahulu!");
-            return; // Hentikan proses simpan jika belum dipilih
+            return; 
         }
         const tipePasienAktif = elTipePasien.value;
 
@@ -5143,14 +5143,20 @@
         submitBtn.disabled = true; 
         submitBtn.innerText = "Mengirim...";
 
-        // 🔥 AMBIL DATA OPERATOR AKTIF DARI STORAGE
+        // AMBIL DATA OPERATOR AKTIF
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Anonymous";
         const roleAktif     = sessionData ? sessionData.role : "Staff";
 
+        // 🔥 Pastikan token tersedia (jika form tidak dibuka dari menu, buat token darurat)
+        if (!window.tokenPendaftaranUnik) {
+            window.tokenPendaftaranUnik = "TX-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
+        }
+
         const data = {
             action: "submit", 
             targetSheet: "Pendaftaran",
+            tokenId: window.tokenPendaftaranUnik, // 🔥 LAPIS 1: Kirim Token Rahasia ke Backend
             tipePasien: tipePasienAktif,
             noRM: tipePasienAktif === "baru" ? "" : document.getElementById('txtNoRM').value,
             nama: document.getElementById('nama').value,
@@ -5171,8 +5177,8 @@
             riwayatObat: document.getElementById('riwayatObat').value,
             idDokter: document.getElementById('pilihDokter').value,
             statusBayar: "Belum Lunas",
-            operatorUsername: usernameAktif, // 🔥 Tambahan untuk Log
-            operatorRole: roleAktif          // 🔥 Tambahan untuk Log
+            operatorUsername: usernameAktif, 
+            operatorRole: roleAktif          
         };
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
@@ -5185,25 +5191,29 @@
                 alert("🎉 Pendaftaran berhasil disimpan ke data master klinik!");
                 document.getElementById('formPasien').reset();
                 
-                // =================================================================
-                // 🔥 2. EKSEKUSI NETRAL: Kembalikan form ke posisi standby (kosong & netral)
-                // =================================================================
-                if(typeof resetFormKePosisiNetral === "function") {
-                    resetFormKePosisiNetral();
-                }
-                // =================================================================
+                // Generate ulang token baru agar pasien berikutnya bisa didaftarkan
+                window.tokenPendaftaranUnik = "TX-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
                 
+                if(typeof resetFormKePosisiNetral === "function") resetFormKePosisiNetral();
                 if(typeof aturStatusProteksiForm === "function") aturStatusProteksiForm(false); 
-                muatAntreanHariIni();
+                if(typeof muatAntreanHariIni === "function") muatAntreanHariIni(1);
             } else { 
                 alert("Gagal menyimpan ke Sheets: " + (res.message || "Error tidak diketahui")); 
             }
         })
         .catch(err => {
-            submitBtn.disabled = false; 
-            submitBtn.innerText = "Kirim & Simpan Pendaftaran";
-            alert("⚠️ Terjadi gangguan koneksi internet. Silakan coba lagi.");
+            // 🔥 LAPIS 3 (MANAJEMEN PANIK UX): Ubah cara sistem merespons internet putus
+            submitBtn.innerText = "Koneksi Terputus...";
+            alert("⚠️ KONEKSI TERPUTUS SAAT MENGIRIM!\n\nJangan panik atau klik simpan ulang. Data Anda kemungkinan besar SUDAH MASUK ke server.\n\nSistem akan memuat ulang antrean untuk memastikannya. Silakan cek tabel Antrean setelah ini.");
+            
+            if(typeof muatAntreanHariIni === "function") muatAntreanHariIni(1);
             console.error("Error submit pendaftaran:", err);
+            
+            // Biarkan tombol disable sejenak agar user melihat antrean dulu
+            setTimeout(() => {
+                submitBtn.disabled = false; 
+                submitBtn.innerText = "Kirim & Simpan Pendaftaran";
+            }, 5000);
         });
     });
 
@@ -5325,6 +5335,8 @@
             if (typeof resetFormKePosisiNetral === "function") {
                 resetFormKePosisiNetral();
             }
+            // 🔥 LAPIS 1 (ANTI-GANDA): Buat Token Idempotensi Rahasia saat form dibuka
+            window.tokenPendaftaranUnik = "TX-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
         }
 
         // 🔥 PEMICU UTAMA KALENDER PRAKTIK DOKTER:
@@ -6035,142 +6047,6 @@
         });
     }
 
-    // function muatMatriksAkses() {
-    //     const tbody = document.getElementById('bodyMatriksAkses');
-    //     // colspan diubah menjadi 19 (karena ada tambahan 1 kolom baru)
-    //     tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color: #555;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
-
-    //     fetch(WEB_APP_URL, {
-    //         method: "POST",
-    //         body: JSON.stringify({ action: "getMatrixRole" })
-    //     })
-    //     .then(res => res.json())
-    //     .then(res => {
-    //         if (res.result === "success") {
-    //             tbody.innerHTML = "";
-                
-    //             res.data.forEach(role => {
-    //                 const isSuperAdmin = role.idRole.toLowerCase() === 'rol-01' || role.namaRole.toLowerCase() === 'owner';
-    //                 const disabledAttr = isSuperAdmin ? 'disabled checked' : '';
-
-    //                 const chkPendaftaran = (role.pendaftaran == 1 || role.pendaftaran === true) ? 'checked' : '';
-    //                 const chkRekamMedis  = (role.rekamMedis == 1 || role.rekamMedis === true) ? 'checked' : '';
-    //                 const chkDatabase    = (role.databasePasien == 1 || role.databasePasien === true) ? 'checked' : '';
-    //                 const chkAntrian     = (role.antrian == 1 || role.antrian === true) ? 'checked' : '';
-    //                 const chkKamus       = (role.kamusDikte == 1 || role.kamusDikte === true) ? 'checked' : '';
-    //                 const chkPengaturan  = (role.pengaturan == 1 || role.pengaturan === true) ? 'checked' : '';
-    //                 const chkMngUser     = (role.manajemenUser == 1 || role.manajemenUser === true) ? 'checked' : '';
-    //                 const chkJadwal      = (role.kelolaJadwal == 1 || role.kelolaJadwal === true) ? 'checked' : '';
-    //                 const chkEditPasien  = (role.editPasien == 1 || role.editPasien === true) ? 'checked' : '';
-    //                 const chkHapusPasien = (role.hapusPasien == 1 || role.hapusPasien === true) ? 'checked' : '';
-    //                 const chkEditRME     = (role.editRME == 1 || role.editRME === true) ? 'checked' : '';
-    //                 const chkInputRME    = (role.aksesInputRME == 1 || role.aksesInputRME === true) ? 'checked' : '';
-    //                 const chkEditAntrean = (role.aksesEditAntrean == 1 || role.aksesEditAntrean === true) ? 'checked' : '';
-                    
-    //                 const chkAnalisisBisnis = (role.analisisBisnis == 1 || role.analisisBisnis === true || role.aksesAnalisisBisnis == 1) ? 'checked' : '';
-    //                 const chkKasir          = (role.kasir == 1 || role.kasir === true || role.aksesKasir == 1) ? 'checked' : '';
-    //                 const chkLogAktifitas   = (role.logAktifitas == 1 || role.logAktifitas === true || role.aksesLogAktifitas == 1) ? 'checked' : '';
-    //                 const chkKokpit         = (role.kokpitFinansial == 1 || role.kokpitFinansial === true) ? 'checked' : '';
-                    
-    //                 // 🔥 TAMBAHAN WORKLIST KONTROL: Membaca status centang dari server
-    //                 const chkWorklist       = (role.worklistKontrol == 1 || role.worklistKontrol === true || role.worklist == 1) ? 'checked' : '';
-
-    //                 let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
-    //                     <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-daftar" ${chkPendaftaran} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-rm" ${chkRekamMedis} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-db" ${chkDatabase} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-antrian" ${chkAntrian} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kamus" ${chkKamus} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-pengaturan" ${chkPengaturan} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-mnguser" ${chkMngUser} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-jadwal" ${chkJadwal} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-pasien" ${chkEditPasien} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-hapus-pasien" ${chkHapusPasien} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-rme" ${chkEditRME} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-input-rme" ${chkInputRME} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-edit-antrean" ${chkEditAntrean} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-analisis-bisnis" ${chkAnalisisBisnis} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kasir" ${chkKasir} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-log-aktifitas" ${chkLogAktifitas} ${disabledAttr}></td>
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-kokpit-finansial" ${chkKokpit} ${disabledAttr}></td>
-                        
-    //                     <!-- 🔥 TAMBAHAN WORKLIST KONTROL: Gambar Checkbox ke Layar -->
-    //                     <td style="padding: 12px; text-align: center;"><input type="checkbox" class="chk-worklist-kontrol" ${chkWorklist} ${disabledAttr}></td>
-    //                 </tr>`;
-    //                 tbody.innerHTML += row;
-    //             });
-    //         } else {
-    //             tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color:red;">Gagal memuat: ${res.message}</td></tr>`;
-    //         }
-    //     })
-    //     .catch(err => {
-    //         console.error("Error matriks:", err);
-    //         tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color:red;">Gagal menyambungkan data ke database.</td></tr>`;
-    //     });
-    // }
-
-    // function simpanMatriksAkses() {
-    //     const btn = document.getElementById('btnSimpanAkses');
-    //     btn.disabled = true;
-    //     btn.innerText = "⏳ Menyimpan Perubahan...";
-
-    //     const matrixPayload = [];
-    //     const rows = document.querySelectorAll('.baris-akses-role');
-
-    //     rows.forEach(row => {
-    //         const barisNum = row.getAttribute('data-baris');
-            
-    //         matrixPayload.push({
-    //             barisSheet: parseInt(barisNum),
-    //             pendaftaran: row.querySelector('.chk-daftar').checked,
-    //             rekamMedis: row.querySelector('.chk-rm').checked,
-    //             databasePasien: row.querySelector('.chk-db').checked,
-    //             antrian: row.querySelector('.chk-antrian').checked,
-    //             kamusDikte: row.querySelector('.chk-kamus').checked,
-    //             pengaturan: row.querySelector('.chk-pengaturan').checked,
-    //             manajemenUser: row.querySelector('.chk-mnguser').checked,
-    //             kelolaJadwal: row.querySelector('.chk-jadwal').checked,
-    //             editPasien: row.querySelector('.chk-edit-pasien').checked,
-    //             hapusPasien: row.querySelector('.chk-hapus-pasien').checked,
-    //             editRME: row.querySelector('.chk-edit-rme').checked,
-    //             aksesInputRME: row.querySelector('.chk-input-rme').checked,
-    //             aksesEditAntrean: row.querySelector('.chk-edit-antrean').checked,
-    //             analisisBisnis: row.querySelector('.chk-analisis-bisnis').checked,
-    //             kasir: row.querySelector('.chk-kasir').checked,
-    //             logAktifitas: row.querySelector('.chk-log-aktifitas').checked,
-    //             kokpitFinansial: row.querySelector('.chk-kokpit-finansial').checked,
-                
-    //             // 🔥 TAMBAHAN WORKLIST KONTROL: Tangkap status centang dan masukkan ke payload
-    //             worklistKontrol: row.querySelector('.chk-worklist-kontrol') ? row.querySelector('.chk-worklist-kontrol').checked : false
-    //         });
-    //     });
-
-    //     fetch(WEB_APP_URL, {
-    //         method: "POST",
-    //         body: JSON.stringify({
-    //             action: "simpanMatrixRole",
-    //             matrix: matrixPayload
-    //         })
-    //     })
-    //     .then(res => res.json())
-    //     .then(res => {
-    //         btn.disabled = false;
-    //         btn.innerText = "💾 Simpan Perubahan Hak Akses";
-    //         if (res.result === "success") {
-    //             alert("🎉 Hak akses role berhasil diperbarui!");
-    //             muatMatriksAkses(); 
-    //         } else {
-    //             alert("❌ Gagal menyimpan perubahan: " + res.message);
-    //         }
-    //     })
-    //     .catch(err => {
-    //         btn.disabled = false;
-    //         btn.innerText = "💾 Simpan Perubahan Hak Akses";
-    //         console.error("Gagal mengirim data matrix:", err);
-    //         alert("⚠️ Terjadi gangguan koneksi sistem saat menyimpan data.");
-    //     });
-    // }
 
     function prosesTambahRoleBaru() {
         const inputRole = document.getElementById('inputNamaRoleBaru');
