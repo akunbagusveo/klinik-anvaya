@@ -6201,8 +6201,14 @@
     }
 
     function simpanJadwalBaru() {
+        // 🔥 LAPIS 1: Buat Token Unik
+        if (!window.tokenJadwalDokter) {
+            window.tokenJadwalDokter = "JDW-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+        }
+
         const payload = {
             action: "tambahJadwalDokter",
+            tokenId: window.tokenJadwalDokter, // 🔥 Sisipkan Token ke Backend
             dokter: document.getElementById('jadwalNamaDokter').value.trim(),
             hari: document.getElementById('jadwalHari').value,
             jamMulai: document.getElementById('jadwalJamMulai').value.trim(),
@@ -6215,16 +6221,46 @@
             return;
         }
 
+        // 🔥 UX: Ubah tombol jadi loading (Otomatis mendeteksi tombol yang sedang diklik)
+        const btnSubmit = document.activeElement; 
+        const teksAsli = btnSubmit ? btnSubmit.innerText : "Simpan";
+        if (btnSubmit && btnSubmit.tagName === 'BUTTON') {
+            btnSubmit.innerText = "Menyimpan... ⏳";
+            btnSubmit.disabled = true;
+        }
+
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
             if(res.result === "success") {
                 alert("🎉 Jadwal praktik dokter berhasil ditambahkan!");
-                tutupModalJadwal(); // 🔥 BARU: Otomatis menutup pop-up modal setelah sukses
-                muatJadwalMaster(); // Refresh isi tabel jadwal agar langsung update
+                
+                window.tokenJadwalDokter = null; // 🔥 Reset token setelah sukses
+                
+                tutupModalJadwal(); 
+                muatJadwalMaster(); 
             } else {
                 alert("Gagal: " + res.message);
             }
+        })
+        .catch(err => {
+            // 🔥 LAPIS 3: UX Anti-Panik
+            console.error(err);
+            if (btnSubmit && btnSubmit.tagName === 'BUTTON') btnSubmit.innerText = "Koneksi Terputus...";
+            
+            alert("⚠️ KONEKSI TERPUTUS!\n\nJadwal Anda kemungkinan sudah masuk. Sistem akan menutup formulir dan memuat ulang tabel untuk memastikannya.");
+            
+            tutupModalJadwal();
+            muatJadwalMaster();
+        })
+        .finally(() => {
+            // Kembalikan tombol ke semula setelah jeda
+            setTimeout(() => {
+                if (btnSubmit && btnSubmit.tagName === 'BUTTON') {
+                    btnSubmit.innerText = teksAsli;
+                    btnSubmit.disabled = false;
+                }
+            }, 3000);
         });
     }
 
