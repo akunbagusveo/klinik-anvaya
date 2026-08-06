@@ -5017,7 +5017,7 @@
             const usernameAktif  = sessionData ? sessionData.username : "Anonymous"; 
             const roleAktif      = sessionData ? sessionData.role : "Staff";        
 
-            // Deteksi input file dinamis berdasarkan form yang aktif
+            // Deteksi input file dinamis
             const idInputFile = document.getElementById('modalFileFoto') ? 'modalFileFoto' : 'txtFileFoto';
             let dataFileModal = null;
             if (typeof bacaFileKeBase64 === "function") {
@@ -5031,8 +5031,6 @@
                 return el2 ? el2.value : "";
             };
 
-            // Loop dinamis mengumpulkan baris tindakan medis murni
-            // Loop dinamis mengumpulkan baris tindakan medis murni
             const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
             let listTindakanDipilih = [];
 
@@ -5045,7 +5043,6 @@
                     let hargaMurni = Number(inpHarga.value.replace(/[^0-9]/g, '')) || 0;
                     let namaTindakanFix = selNama.value.trim();
                     
-                    // 🔥 KECERDASAN OTOMATIS: Cari tahu apakah tindakan ini butuh lab dari memori global
                     let statusButuhLab = 0;
                     if (window.masterTindakanGlobal) {
                         let dataMasterItem = window.masterTindakanGlobal.find(t => t.nama === namaTindakanFix);
@@ -5058,16 +5055,20 @@
                         namaTindakan: namaTindakanFix,
                         hargaBersihPerItem: hargaMurni,
                         catatanKlinis: inpCatatan ? inpCatatan.value.trim() : "",
-                        // 🔥 Label rahasia ini sekarang tertanam selamanya di database pasien!
                         butuhLab: statusButuhLab 
                     });
                 }
             });
 
-            // Kompilasi paket data terpadu (Aman dari bentrok komponen baru/lama)
+            // 🔥 LAPIS 1: Buat Token RME Unik jika belum ada
+            if (!window.tokenRmeUnik) {
+                window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
+            }
+
             const data = {
                 action: "submitRekamMedis",
                 targetSheet: "RekamMedis",
+                tokenId: window.tokenRmeUnik, // 🔥 Kirim Token ke Backend
                 noRM: dapatkanNilaiDOM('modalNoRM', 'billNoRM') || formAktifRme.dataset.activeNoRM || "",
                 rowUpdate: dapatkanNilaiDOM('modalRowUpdate', 'modalRowUpdate') || formAktifRme.dataset.rowUpdate || "", 
                 namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
@@ -5099,8 +5100,9 @@
                 if(res.result === "success") {
                     alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
                     
-                    // 🔥 SISIPAN PENTING: Reset status consent agar saat pasien berikutnya
-                    // diperiksa, sistem kembali meminta persetujuan baru!
+                    // 🔥 Hapus token setelah sukses penuh, agar pasien berikutnya aman
+                    window.tokenRmeUnik = null; 
+                    
                     if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
                     
                     const currentRM = data.noRM;
@@ -5117,12 +5119,24 @@
                     alert("❌ Gagal menyimpan: " + (res.message || "Terjadi kesalahan server.")); 
                 }
             }).catch(err => {
-                if (submitBtn) {
-                    submitBtn.disabled = false; 
-                    submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan";
-                }
-                alert("⚠️ Terjadi gangguan koneksi jaringan.");
+                // 🔥 LAPIS 3 (MANAJEMEN PANIK UX DOKTER)
                 console.error(err);
+                if (submitBtn) submitBtn.innerText = "Koneksi Terputus...";
+                
+                alert("⚠️ KONEKSI TERPUTUS SAAT MENYIMPAN!\n\nDokter tidak perlu panik atau mengetik ulang. Data Rekam Medis kemungkinan besar SUDAH MASUK dengan aman ke server.\n\nSistem akan menutup formulir ini dan memuat ulang antrean untuk memastikannya (Jika status pasien berubah jadi 'Sudah Diperiksa', berarti data aman).");
+                
+                const modalFull = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
+                if(modalFull) modalFull.style.display = 'none'; 
+                
+                if (typeof switchTab === "function") switchTab('antrean');
+                if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
+                
+                setTimeout(() => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false; 
+                        submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan";
+                    }
+                }, 5000);
             });
         });
     }
