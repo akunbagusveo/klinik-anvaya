@@ -1344,7 +1344,7 @@
             <button id="subTabAksesBtn" onclick="bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
             <button id="subTabJadwalBtn" onclick="bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
             <button id="subTabLogBtn" onclick="bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
-            <button id="subTabMasterTindakanBtn" onclick="bukaSubTab('masterTindakan')" style="display:none; padding:10px 15px; margin-right:5px; background:#ecf0f1; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#2c3e50;">📋 Master Tindakan</button>
+            <button id="subTabMasterTindakanBtn" onclick="bukaSubTab('masterTindakan')" class="tab-link" style="font-weight:bold;">📋 Master Tindakan</button>
         </div>
 
         <!-- ========================================== -->
@@ -7772,7 +7772,7 @@
         
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         
-        // 🔥 Grand Total sekarang murni hanya dari tindakan dikurangi diskon
+        // Grand Total murni hanya dari tindakan dikurangi diskon
         const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
@@ -7786,7 +7786,7 @@
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
         const tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
 
-        // 🔥 Teks Konfirmasi Dinamis (Bersih dari urusan Lab)
+        // Teks Konfirmasi Dinamis 
         let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan & Buat PDF?`;
@@ -7798,19 +7798,25 @@
             btnKunciCetak.innerText = "⏳ Sedang Mengukir Kuitansi...";
         }
 
-        // 🔥 Payload yang dikirim ke Google Sheets (Lab diset 0 secara default)
+        // 🔥 LAPIS 1: Buat Token Kasir Unik jika belum ada
+        if (!window.tokenKasirUnik) {
+            window.tokenKasirUnik = "KASIR-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
+        }
+
+        // Payload yang dikirim ke Google Sheets 
         const payload = {
             action: "prosesFinalBilling",
+            tokenId: window.tokenKasirUnik, // 🔥 Kirim token ke Backend
             barisPendaftaran: barisPendaftaran,
             noRM: noRM,
             namaPasien: namaPasien,
             tindakanRaw: tindakanRawStr,
             totalTindakan: window.totalTindakanAktifKasir,
             diskon: diskonMurni,
-            biayaLab: 0,        // <-- Diset 0
-            dpLab: 0,           // <-- Diset 0
-            labelCetakLab: "",  // <-- Kosongkan agar backend PDF tidak ikut mencetak baris Lab
-            sisaPiutang: 0,     // <-- Diset 0
+            biayaLab: 0,        
+            dpLab: 0,           
+            labelCetakLab: "",  
+            sisaPiutang: 0,     
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             kasirOperator: usernameAktif
@@ -7830,6 +7836,9 @@
             if (res.result === "success") {
                 alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!`);
                 
+                // 🔥 Reset token karena transaksi sudah benar-benar sukses dan selesai
+                window.tokenKasirUnik = null; 
+                
                 // Buka PDF di tab baru
                 if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
                 
@@ -7841,11 +7850,22 @@
         })
         .catch(err => {
             console.error(err);
+            
+            // 🔥 LAPIS 3 (MANAJEMEN PANIK UX KASIR)
             if (btnKunciCetak) {
-                btnKunciCetak.disabled = false;
-                btnKunciCetak.innerText = "🖨️ Kunci & Cetak Kuitansi PDF";
+                btnKunciCetak.innerText = "Koneksi Terputus...";
             }
-            alert("⚠️ Terjadi gangguan jaringan internet saat membuat PDF.");
+            alert("⚠️ KONEKSI TERPUTUS SAAT MEMPROSES PEMBAYARAN!\n\nJangan panik. Transaksi Anda kemungkinan besar sudah berhasil dicatat dan PDF sedang dibuat oleh sistem.\n\nSistem akan memuat ulang antrean kasir. Jika nama pasien sudah hilang dari antrean, berarti pembayaran SUKSES masuk ke laporan keuangan.");
+            
+            tutupModalBilling();
+            if (typeof muatAntreanKasir === "function") muatAntreanKasir();
+            
+            setTimeout(() => {
+                if (btnKunciCetak) {
+                    btnKunciCetak.disabled = false;
+                    btnKunciCetak.innerText = "🖨️ Kunci & Cetak Kuitansi PDF";
+                }
+            }, 5000);
         });
     }
 
