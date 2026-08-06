@@ -5784,11 +5784,13 @@
             return;
         }
 
-        // Ubah teks tombol jadi loading
-        const btn = event.target;
+        const btn = event.target || document.querySelector('#formTambahUser button');
         const teksAsli = btn.innerText;
         btn.innerText = "Menyimpan...";
         btn.disabled = true;
+
+        // 🔥 Buat Token
+        if (!window.tokenUserBaru) window.tokenUserBaru = "USR-" + new Date().getTime();
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -5796,28 +5798,26 @@
                 action: "simpanUser", 
                 username: username, 
                 password: password, 
-                role: role 
+                role: role,
+                tokenId: window.tokenUserBaru // 🔥 Kirim Token
             })
         })
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
                 alert("Pengguna baru berhasil ditambahkan!");
-                // Bersihkan form
+                window.tokenUserBaru = null; // Reset
                 document.getElementById('inputUsernameBaru').value = "";
                 document.getElementById('inputPasswordBaru').value = "";
                 document.getElementById('inputRoleBaru').value = "";
-                muatDataUser(); // Muat ulang tabel
-            } else {
-                alert("Gagal menyimpan: " + res.message);
-            }
+                muatDataUser(); 
+            } else alert("Gagal menyimpan: " + res.message);
         })
-        .catch(err => alert("Terjadi kesalahan jaringan."))
-        .finally(() => {
-            // Kembalikan kondisi tombol
-            btn.innerText = teksAsli;
-            btn.disabled = false;
-        });
+        .catch(err => {
+            alert("⚠️ KONEKSI TERPUTUS!\n\nSistem mungkin sudah mencatat user ini. Tabel akan dimuat ulang.");
+            muatDataUser();
+        })
+        .finally(() => { setTimeout(() => { btn.innerText = teksAsli; btn.disabled = false; }, 3000); });
     }
 
     // 1. Membuka form edit dan mengisi datanya otomatis
@@ -5845,8 +5845,9 @@
             barisSheet: document.getElementById('editBarisSheet').value,
             newUsername: document.getElementById('editUsername').value,
             newRole: document.getElementById('editRole').value,
-            newStatus: document.getElementById('editStatus').value, // 🔥 Ikut kirim status baru
-            newPassword: document.getElementById('editPassword').value
+            newStatus: document.getElementById('editStatus').value, 
+            newPassword: document.getElementById('editPassword').value,
+            tokenId: "UPD-" + new Date().getTime() // Token Instan untuk edit
         };
 
         fetch(WEB_APP_URL, {
@@ -5858,10 +5859,13 @@
             if(res.result === "success") {
                 alert("Data pengguna berhasil diperbarui!");
                 document.getElementById('formEditUser').style.display = 'none';
-                muatDataUser(); // Refresh isi tabel
-            } else {
-                alert("Gagal: " + res.message);
-            }
+                muatDataUser();
+            } else alert("Gagal: " + res.message);
+        })
+        .catch(err => {
+            alert("⚠️ KONEKSI TERPUTUS!\n\nPerubahan mungkin sudah tersimpan. Tabel akan dimuat ulang.");
+            document.getElementById('formEditUser').style.display = 'none';
+            muatDataUser();
         });
     }
 
@@ -11765,13 +11769,16 @@
     // 🔄 TIMPA FUNGSI SIMPAN MODAL INI
     // ==========================================
     function simpanMasterTindakan() {
-        // Bersihkan titik ribuan yang diketik User 
         let hargaMentah = document.getElementById('inpTindakanHarga').value.replace(/[^0-9]/g, '');
         let maksMentah = document.getElementById('inpTindakanMaks').value.replace(/[^0-9]/g, '');
 
-        // Translasi Teks "Ya"/"Tidak" menjadi Angka 1 / 0
         let valConsent = document.getElementById('inpTindakanConsent').value === 'Ya' ? 1 : 0;
         let valLab = document.getElementById('inpTindakanLab').value === 'Ya' ? 1 : 0;
+        
+        // 🔥 LAPIS 1: Buat Token Unik untuk Master Tindakan
+        if (!window.tokenMasterTindakan) {
+            window.tokenMasterTindakan = "MST-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+        }
 
         let payload = {
             idTindakan: document.getElementById('inpTindakanId').value,
@@ -11780,9 +11787,10 @@
             hargaDasar: Number(hargaMentah) || 0,
             hargaMaksimal: Number(maksMentah) || 0,
             keterangan: document.getElementById('inpTindakanKet').value,
-            butuhConsent: valConsent, // Mengirim 1 / 0
-            butuhLab: valLab,         // Mengirim 1 / 0
-            status: document.getElementById('inpTindakanStatus').value
+            butuhConsent: valConsent, 
+            butuhLab: valLab,         
+            status: document.getElementById('inpTindakanStatus').value,
+            tokenId: window.tokenMasterTindakan // 🔥 Sisipkan Token
         };
 
         if (!payload.namaTindakan || !payload.kategori || !payload.hargaDasar) {
@@ -11801,17 +11809,29 @@
             if (res.result === "success") {
                 document.getElementById('modalMasterTindakan').style.display = 'none';
                 alert("✅ Master Tindakan berhasil disimpan!");
-                initMasterTindakan(); // Muat ulang tabel
+                
+                // 🔥 Hapus token setelah sukses
+                window.tokenMasterTindakan = null;
+                
+                initMasterTindakan(); 
             } else {
                 alert("Gagal menyimpan: " + res.message);
             }
         })
         .catch(err => {
-            console.error(err); alert("⚠️ Gagal koneksi ke server.");
+            // 🔥 LAPIS 3: UX Anti-Panik
+            console.error(err);
+            document.getElementById('btnSimpanTindakan').innerText = "Koneksi Terputus...";
+            alert("⚠️ KONEKSI TERPUTUS!\n\nJangan klik simpan berulang kali. Data Anda kemungkinan sudah masuk ke sistem.\n\nTabel akan dimuat ulang untuk memastikannya.");
+            
+            document.getElementById('modalMasterTindakan').style.display = 'none';
+            initMasterTindakan(); 
         })
         .finally(() => {
-            document.getElementById('btnSimpanTindakan').innerText = "💾 Simpan Data";
-            document.getElementById('btnSimpanTindakan').disabled = false;
+            setTimeout(() => {
+                document.getElementById('btnSimpanTindakan').innerText = "💾 Simpan Data";
+                document.getElementById('btnSimpanTindakan').disabled = false;
+            }, 3000);
         });
     }
 
