@@ -7556,6 +7556,10 @@
         const inpHarga = row.querySelector('.inp-harga-tindakan');
         const boxHarga = row.querySelector('.box-harga-container');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
+        
+        // 🔥 FIX 1: Tangkap elemen Label Kategori yang sebelumnya terlupakan
+        const lblKategori = row.querySelector('.lbl-kategori'); 
+        
         const infoDetail = row.querySelector('.info-tindakan-detail');
         let selTindakan = row.querySelector('.sel-nama-tindakan');
 
@@ -7576,19 +7580,16 @@
                     if (maxHarga > 0) {
                         const angkaInput = Number(valMurni);
                         if (angkaInput < minHarga || angkaInput > maxHarga) {
-                            // ❌ DI LUAR RANGE: Blokir tombol simpan & warnai merah
                             const pesanError = `Harga harus di antara Rp ${minHarga.toLocaleString('en-US')} - Rp ${maxHarga.toLocaleString('en-US')}`;
-                            this.setCustomValidity(pesanError); // HTML5 Blocker!
-                            this.style.color = "#c0392b"; // Teks Merah
-                            if (boxHarga) boxHarga.style.border = "2px solid #e74c3c"; // Kotak Merah
+                            this.setCustomValidity(pesanError); 
+                            this.style.color = "#c0392b"; 
+                            if (boxHarga) boxHarga.style.border = "2px solid #e74c3c"; 
                         } else {
-                            // ✅ DI DALAM RANGE: Buka blokir & normalkan warna
                             this.setCustomValidity(''); 
                             this.style.color = "inherit";
                             if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
                         }
                     } else {
-                        // TINDAKAN KUSTOM (Bebas tanpa batas)
                         this.setCustomValidity('');
                         this.style.color = "inherit";
                         if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
@@ -7610,7 +7611,7 @@
             if (inpHarga) { 
                 inpHarga.value = ""; 
                 inpHarga.disabled = true; 
-                inpHarga.setCustomValidity(''); // Bersihkan error
+                inpHarga.setCustomValidity(''); 
                 inpHarga.style.color = "inherit";
             }
             if (boxHarga) {
@@ -7646,14 +7647,14 @@
                 inpHarga.readOnly = false;
                 inpHarga.value = "";
                 inpHarga.placeholder = "Ketik harga manual...";
-                inpHarga.setCustomValidity(''); // Bebas tanpa validasi
+                inpHarga.setCustomValidity(''); 
                 inpHarga.style.color = "inherit";
                 
                 if (boxHarga) {
                     boxHarga.style.backgroundColor = "white"; 
                     boxHarga.style.border = "1px solid #bdc3c7";
                 }
-                pasangAutoFormatHarga(0, 0); // Kustom tidak punya min/max
+                pasangAutoFormatHarga(0, 0); 
             }
             
             if (infoDetail) infoDetail.style.display = 'none';
@@ -7685,30 +7686,46 @@
                 inpHarga.style.color = "inherit";
                 if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
                 
-                // JIKA RANGE (BISA DIEDIT & DI-VALIDASI)
                 if (hargaMaksimal > 0 && hargaMaksimal !== hargaDasar) {
                     inpHarga.disabled = false;
                     inpHarga.readOnly = false;
                     inpHarga.placeholder = `Rp ${hargaDasar.toLocaleString('en-US')} - ${hargaMaksimal.toLocaleString('en-US')}`;
                     if (boxHarga) boxHarga.style.backgroundColor = "white"; 
-                    
-                    // Nyalakan alarm validasi rentang harga!
                     pasangAutoFormatHarga(hargaDasar, hargaMaksimal); 
                 } else {
-                    // JIKA FIXED (TERKUNCI AMAN)
                     inpHarga.disabled = true; 
                     inpHarga.placeholder = "0";
                     if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; 
                     inpHarga.oninput = null; 
                 }
-
                 inpHarga.dispatchEvent(new Event('input'));
                 inpHarga.dispatchEvent(new Event('change'));
             }
             
+            // =====================================================================
+            // 🔥 FIX 2: SUNTIKKAN DATA KATEGORI DAN KETERANGAN KE LABEL HTML
+            // =====================================================================
             const teksKet = String(match.keterangan || "").trim();
+            const teksKategori = String(match.kategori || "").trim();
+            
             if (lblKeterangan) lblKeterangan.innerText = teksKet;
-            if (infoDetail) infoDetail.style.display = teksKet ? 'block' : 'none';
+            
+            // Cek jika kategori ada, cetak huruf besar. Jika tidak, hilangkan background-nya agar rapi.
+            if (lblKategori) {
+                if (teksKategori) {
+                    lblKategori.innerText = teksKategori.toUpperCase();
+                    lblKategori.style.display = 'inline-block';
+                } else {
+                    lblKategori.innerText = "";
+                    lblKategori.style.display = 'none'; // Sembunyikan kotaknya jika kategori kosong
+                }
+            }
+            
+            // Tampilkan kontainer detail jika Kategori ATAU Keterangan ada isinya
+            if (infoDetail) {
+                infoDetail.style.display = (teksKet || teksKategori) ? 'block' : 'none';
+            }
+            // =====================================================================
 
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
