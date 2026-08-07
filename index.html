@@ -4574,9 +4574,8 @@
         }, 300);
     }
 
-
     // =========================================================================
-    // ✏️ FUNGSI EDIT & SALIN RME (DENGAN SMART DATE EXTRACTOR)
+    // ✏️ FUNGSI EDIT & SALIN RME (DENGAN SMART DATE EXTRACTOR + PROTEKSI UI)
     // =========================================================================
     function salinAtauEditRME(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
         const kolomKiri = document.getElementById('kolomInputRME');
@@ -4599,18 +4598,15 @@
         let catatanMurni = proKon || "";
         let tglMurni = "";
         
-        // Gunakan Regex untuk melacak format tanggal kalender HTML5 (YYYY-MM-DD) di dalam teks lama
         const matchDate = catatanMurni.match(/(20\d{2}-\d{2}-\d{2})/);
         if (matchDate) {
             tglMurni = matchDate[1];
-            // Hapus tanggal dari textarea agar tidak tertulis dua kali
             catatanMurni = catatanMurni.replace(tglMurni, '').trim(); 
-            // Bersihkan tanda hubung atau koma yang tersisa di awal kalimat
             catatanMurni = catatanMurni.replace(/^[-,\s]+/, ''); 
         }
 
-        setNilaiAman('tanggalKontrol', tglMurni); // Suntikkan ke kotak Kalender
-        setNilaiAman('modalProKontrol', catatanMurni); // Suntikkan ke kotak Catatan
+        setNilaiAman('tanggalKontrol', tglMurni); 
+        setNilaiAman('modalProKontrol', catatanMurni); 
         // =====================================================================
 
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
@@ -4658,6 +4654,23 @@
 
         const btnBatal = document.getElementById('btnBatalEdit');
         if(btnBatal) btnBatal.style.display = 'block';
+
+        // =====================================================================
+        // 🔥 FITUR BARU: PROTEKSI UI - KUNCI SEMUA TOMBOL DI HISTORI
+        // =====================================================================
+        const wrapperHistori = document.getElementById('wrapperRiwayatFull');
+        if (wrapperHistori) {
+            // Cari semua tombol di dalam histori secara dinamis
+            const tombolHistori = wrapperHistori.querySelectorAll('button');
+            tombolHistori.forEach(btn => {
+                btn.classList.add('disabled-by-edit'); // Beri stempel agar mudah dicari nanti
+                btn.disabled = true; // Kunci tombolnya
+                btn.style.opacity = '0.4'; // Buat transparan (abu-abu)
+                btn.style.cursor = 'not-allowed'; // Ubah kursor jadi dilarang
+                btn.title = "Selesaikan atau batalkan mode Edit/Salin di sebelah kiri terlebih dahulu.";
+            });
+        }
+        // =====================================================================
         
         if (typeof simpanDraftRME === "function") {
             simpanDraftRME();
@@ -4667,7 +4680,6 @@
     // 🔥 FUNGSI BARU: Mengamankan form jika dokter membatalkan proses edit
     function batalEditRME() {
         // 🔥 1. OBAT BIUS (SABUK PENGAMAN TAMBAHAN): 
-        // Tidurkan fungsi Auto-Save (simpanDraftRME) selama proses pembersihan berlangsung!
         window.isRestoringDraft = true; 
 
         // 2. Kosongkan isian dan memori form untuk keamanan
@@ -4695,9 +4707,25 @@
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
         }
+
+        // =====================================================================
+        // 🔥 FITUR BARU: PROTEKSI UI - BUKA KEMBALI KUNCI TOMBOL HISTORI
+        // =====================================================================
+        const wrapperHistori = document.getElementById('wrapperRiwayatFull');
+        if (wrapperHistori) {
+            // Cari hanya tombol yang tadi kita stempel 'disabled-by-edit'
+            const tombolHistori = wrapperHistori.querySelectorAll('button.disabled-by-edit');
+            tombolHistori.forEach(btn => {
+                btn.classList.remove('disabled-by-edit'); // Hapus stempel
+                btn.disabled = false; // Buka kuncinya
+                btn.style.opacity = '1'; // Kembalikan warna terang
+                btn.style.cursor = 'pointer'; // Kembalikan kursor normal
+                btn.title = ""; 
+            });
+        }
+        // =====================================================================
         
         // 🔥 6. BANGUNKAN KEMBALI AUTO-SAVE: 
-        // Beri jeda 200ms agar browser selesai merender form kosong, baru aktifkan lagi.
         setTimeout(() => { 
             window.isRestoringDraft = false; 
         }, 200);
