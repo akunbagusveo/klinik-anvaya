@@ -6075,30 +6075,86 @@
             return;
         }
 
-        // Kirim request ke backend
+        // 🔥 LAPIS 1: Token Anti-Ganda
+        if (!window.tokenTambahRole) {
+            window.tokenTambahRole = "ROL-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+        }
+
+        const btn = document.activeElement;
+        const teksAsli = btn ? btn.innerText : "Tambah Role";
+        if (btn && btn.tagName === 'BUTTON') {
+            btn.innerText = "Menyimpan... ⏳";
+            btn.disabled = true;
+        }
+
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
                 action: "tambahRole",
-                namaRole: namaRoleValue
+                namaRole: namaRoleValue,
+                tokenId: window.tokenTambahRole // 🔥 Kirim token
             })
         })
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
                 alert(`🎉 Role "${namaRoleValue}" berhasil didaftarkan ke sistem Klinik Anvaya!`);
-                inputRole.value = ""; // Bersihkan kolom ketik
+                window.tokenTambahRole = null; // Reset token
+                inputRole.value = ""; 
                 
-                // SANGAT PENTING: Refresh semua komponen agar data baru langsung sinkron seketika
-                muatMatriksAkses(); // Menggambar ulang baris baru di tabel Hak Akses
-                muatPilihanRole();  // Memperbarui dropdown di form Tambah/Edit Pengguna secara realtime
+                if(typeof muatMatriksAkses === "function") muatMatriksAkses(); 
+                if(typeof muatPilihanRole === "function") muatPilihanRole();  
             } else {
                 alert("Gagal menambahkan role: " + res.message);
             }
         })
         .catch(err => {
             console.error("Error tambah role:", err);
-            alert("Terjadi masalah koneksi saat mencoba menambahkan role.");
+            alert("⚠️ KONEKSI TERPUTUS!\n\nRole mungkin sudah ditambahkan. Sistem akan memuat ulang tabel.");
+            if(typeof muatMatriksAkses === "function") muatMatriksAkses();
+        })
+        .finally(() => {
+            setTimeout(() => {
+                if (btn && btn.tagName === 'BUTTON') {
+                    btn.innerText = teksAsli;
+                    btn.disabled = false;
+                }
+            }, 3000);
+        });
+    }
+
+    // ==========================================
+    // 🔥 FITUR BARU: HAPUS ROLE (DELETE)
+    // ==========================================
+    function hapusRole(idRole, namaRole) {
+        // 🛡️ Proteksi Awal di Frontend (Mencegah sistem kacau)
+        const roleInti = ["ROL-01", "ROL-02", "ROL-03", "ROL-04", "ROL-05", "ROL-06", "ROL-07"];
+        if (roleInti.includes(idRole)) {
+            alert(`⚠️ DITOLAK: Role bawaan sistem (${namaRole}) tidak boleh dihapus!`);
+            return;
+        }
+
+        if (!confirm(`TINDAKAN FATAL ⚠️\n\nApakah Anda yakin ingin menghapus role "${namaRole}" secara permanen?\n\n(Pastikan tidak ada staf User yang sedang menggunakan role ini di menu Manajemen Pengguna!)`)) {
+            return;
+        }
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "hapusRole", idRole: idRole })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.result === "success") {
+                alert(`✅ Role "${namaRole}" berhasil dihapus dari sistem!`);
+                if(typeof muatMatriksAkses === "function") muatMatriksAkses(); 
+                if(typeof muatPilihanRole === "function") muatPilihanRole(); 
+            } else {
+                alert("Gagal menghapus: " + res.message);
+            }
+        })
+        .catch(err => {
+            alert("⚠️ KONEKSI TERPUTUS!\n\nProses penghapusan mungkin sudah berhasil. Tabel akan dimuat ulang.");
+            if(typeof muatMatriksAkses === "function") muatMatriksAkses();
         });
     }
 
