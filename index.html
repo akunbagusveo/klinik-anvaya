@@ -8405,7 +8405,7 @@
         const tglMulai = elTglMulai ? elTglMulai.value : "";
         const tglAkhir = elTglAkhir ? elTglAkhir.value : "";
         
-        // 🔥 FIX 1: Pencarian tombol menggunakan '*=' (Contains) sehingga tahan banting!
+        // Pencarian tombol menggunakan '*=' (Contains) sehingga tahan banting!
         const btnFilter = document.querySelector('button[onclick*="muatDataFinansial"]');
         let teksAsli = "Terapkan Filter";
         
@@ -8431,7 +8431,7 @@
             }
 
             if (res.result === "success") {
-                // 🔥 FIX 2: Suntik Metrik dengan Pelindung (Safety Check)
+                // Suntik Metrik dengan Pelindung (Safety Check)
                 const elPendapatan = document.getElementById('valPendapatanBersih');
                 if(elPendapatan) elPendapatan.innerText = formatRupiahFinansial(res.metrik.pendapatan);
                 
@@ -8444,12 +8444,11 @@
                 const elDiskon = document.getElementById('valTotalDiskon');
                 if(elDiskon) elDiskon.innerText = formatRupiahFinansial(res.metrik.diskon);
 
-                // 1. TANGKAP ELEMEN DROPDOWN PEMBAYARAN DENGAN AMAN
+                // TANGKAP ELEMEN DROPDOWN PEMBAYARAN DENGAN AMAN
                 const selectDokter = document.getElementById('filterSelectDokter');
                 const selectTindakan = document.getElementById('filterSelectTindakan');
                 const selectPembayaran = document.getElementById('filterSelectPembayaran');
                 
-                // Jika elemen filter ada, proses isinya
                 if (selectDokter && selectTindakan && selectPembayaran) {
                     const valDokter = selectDokter.value;
                     const valTindakan = selectTindakan.value;
@@ -8503,13 +8502,39 @@
                                 ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` 
                                 : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
 
+                            // ====================================================================
+                            // 🔥 FILTER CERDAS: MEMBERSIHKAN DATA DOKTER ("-" dan Duplikat)
+                            // ====================================================================
+                            let strDokter = nota.dokter || "";
+                            // 1. Pecah tulisan berdasarkan Enter/Ganti Baris (<br>) atau Koma
+                            let arrDokter = strDokter.split(/<br\s*\/?>|,|\n/i);
+                            
+                            // 2. Bersihkan masing-masing baris dari "-" dan kosong
+                            let dokterBersih = arrDokter.map(d => d.trim()).filter(d => {
+                                // Hapus ikon dokter sementara untuk mengecek apakah isinya cuma "-"
+                                let textOnly = d.replace(/👨‍⚕️/g, "").trim(); 
+                                return textOnly !== "" && textOnly !== "-"; // Buang yang kosong atau "-"
+                            });
+                            
+                            // 3. Hapus nama ganda (misal Aldila masuk 2x, jadikan 1x saja)
+                            let dokterUnik = [...new Set(dokterBersih)];
+                            
+                            // 4. Gabungkan lagi dengan <br>, beri teks default jika tidak ada dokter sama sekali
+                            let dokterFinal = dokterUnik.length > 0 
+                                ? dokterUnik.join('<br>') 
+                                : `<span style="color:#bdc3c7; font-style:italic;">Tanpa Dokter</span>`;
+                            // ====================================================================
+
                             tbody.innerHTML += `
                                 <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
                                     <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
                                     <td style="padding: 12px;">${nota.tanggal}</td>
                                     <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
                                     <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
-                                    <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${nota.dokter}</td>
+                                    
+                                    <!-- 🔥 Menggunakan variabel dokterFinal yang sudah bersih -->
+                                    <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${dokterFinal}</td>
+                                    
                                     <td style="padding: 12px; text-align:center;">
                                         <span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">
                                             ${nota.metodeBayar}
