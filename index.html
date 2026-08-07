@@ -5951,14 +5951,17 @@
     function muatMatriksAkses() {
         const thead = document.getElementById('headMatriksAkses');
         const tbody = document.getElementById('bodyMatriksAkses');
-        const totalKolom = DAFTAR_MENU_AKSES.length + 1; // 1 Kolom Nama Role + jumlah menu
+        
+        // 🔥 PERUBAHAN 1: Tambah +2 kolom (1 untuk Nama Role, 1 untuk kolom Aksi)
+        const totalKolom = DAFTAR_MENU_AKSES.length + 2; 
 
         // Render Header Tabel secara Dinamis
         let headerHTML = `<tr><th style="padding: 10px;">Nama Role</th>`;
         DAFTAR_MENU_AKSES.forEach(menu => {
             headerHTML += `<th style="padding: 10px; text-align: center;">${menu.label}</th>`;
         });
-        headerHTML += `</tr>`;
+        // 🔥 PERUBAHAN 2: Tambahkan Header "Aksi" di paling kanan
+        headerHTML += `<th style="padding: 10px; text-align: center;">Aksi</th></tr>`;
         thead.innerHTML = headerHTML;
 
         // Tampilkan status loading
@@ -5979,7 +5982,6 @@
 
                     // Render kolom checkbox secara dinamis berdasarkan array DAFTAR_MENU_AKSES
                     let tdCheckboxes = DAFTAR_MENU_AKSES.map(menu => {
-                        // Cari nilai dari key utama atau fallback keys jika penamaan di backend berbeda
                         let val = role[menu.key];
                         if (val === undefined && menu.fallbackKeys) {
                             for (let fk of menu.fallbackKeys) {
@@ -5996,10 +5998,28 @@
                         </td>`;
                     }).join('');
 
+                    // =====================================================================
+                    // 🔥 PERUBAHAN 3: RENDER TOMBOL HAPUS & PROTEKSI UI UNTUK ROLE INTI
+                    // =====================================================================
+                    const roleInti = ["rol-01", "rol-02", "rol-03", "rol-04", "rol-05", "rol-06", "rol-07"];
+                    const isRoleInti = roleInti.includes(role.idRole.toLowerCase());
+                    let btnHapus = "";
+                    
+                    if (isRoleInti) {
+                        // Jika Role Inti, tombol mati dan warna abu-abu
+                        btnHapus = `<button disabled style="background-color: #e0e0e0; color: #888; border: 1px solid #ccc; padding: 5px 10px; border-radius: 4px; cursor: not-allowed; font-size: 12px;">Bawaan Sistem</button>`;
+                    } else {
+                        // Jika Role Tambahan, tombol merah menyala memanggil fungsi hapusRole()
+                        btnHapus = `<button onclick="hapusRole('${role.idRole}', '${role.namaRole}')" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>`;
+                    }
+
+                    // Susun baris HTML utuh
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;"><strong>${role.namaRole}</strong> <br><small style="color:gray;">${role.idRole}</small></td>
                         ${tdCheckboxes}
+                        <td style="padding: 12px; text-align: center;">${btnHapus}</td>
                     </tr>`;
+                    // =====================================================================
                     
                     tbody.innerHTML += row;
                 });
