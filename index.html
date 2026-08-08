@@ -4221,6 +4221,30 @@
         const kolomKiri = document.getElementById('kolomInputRME');
         const formSplit = document.getElementById('formModalMedisSplit');
         
+        // =====================================================================
+        // 🔥 FIX BUG UI: PENCUCI MEMORI LAYAR (RESET STATUS TOGGLE)
+        // =====================================================================
+        const panelHistori = document.getElementById('kolomHistoriRME');
+        const btnToggle = document.getElementById('btnToggleHistori');
+        
+        // 1. Bangunkan kembali panel kanan dari mode gaib
+        if (panelHistori) {
+            panelHistori.style.display = 'block'; 
+        }
+        
+        // 2. Kembalikan bentuk, warna, dan tulisan tombol ke kondisi standar
+        if (btnToggle) {
+            btnToggle.innerHTML = '👁️ Sembunyikan Histori';
+            btnToggle.style.backgroundColor = '#34495e';
+        }
+
+        // 3. Kembalikan porsi rasio kolom kiri ke 55% dan pasang lagi garis pembatasnya
+        if (kolomKiri) {
+            kolomKiri.style.flex = '0 0 55%';
+            kolomKiri.style.borderRight = '2px solid #bdc3c7';
+        }
+        // =====================================================================
+        
         if (mode === 'view') {
             if (kolomKiri) kolomKiri.style.display = 'none'; 
         } else {
