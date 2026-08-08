@@ -9315,9 +9315,29 @@
         // =====================================================================
         // 🔥 FITUR AUDIT UI: DETEKSI LAB MENGGANTUNG UNTUK BANNER VISUAL
         // =====================================================================
-        let labMenggantung = dataDokter.rincian.filter(r => 
-            r.tindakan.match(/\blab\b/i) && r.hargaLabVendor === 0
-        );
+        let labMenggantung = dataDokter.rincian.filter(r => {
+            let isButuhLab = false;
+            
+            // 1. Cek dari nama (Deteksi darurat jika diketik manual dengan kata "lab")
+            if (String(r.tindakan).match(/\blab\b/i)) {
+                isButuhLab = true;
+            }
+            
+            // 2. Cek cerdas silang ke Database Master Tindakan (Mendeteksi Crown, Bleaching, dll)
+            if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
+                let dataMaster = window.masterTindakanGlobal.find(m => 
+                    String(m.nama).trim().toLowerCase() === String(r.tindakan).trim().toLowerCase()
+                );
+                
+                // Jika di master terdeteksi tindakan ini Butuh_Lab = 1
+                if (dataMaster && (dataMaster.Butuh_Lab === 1 || dataMaster.butuhLab === 1 || String(dataMaster.Butuh_Lab) === "1")) {
+                    isButuhLab = true;
+                }
+            }
+            
+            // Jika tindakan ini terkonfirmasi BUTUH LAB, TAPI tagihan dari vendor masih Rp 0 (menggantung)
+            return isButuhLab && (r.hargaLabVendor === 0 || !r.hargaLabVendor);
+        });
 
         let bannerPeringatanHtml = "";
         let isBlokirKunci = false;
