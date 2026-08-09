@@ -3870,9 +3870,41 @@
         let namaDokterBaru = document.getElementById('editDokterSelect').value;
 
         if (!namaDokterBaru || namaDokterBaru.includes("Tidak ada dokter") || namaDokterBaru.includes("Memuat")) {
-            alert("Silakan pilih dokter yang valid terlebih dahulu!");
+            alert("⚠️ Silakan pilih dokter yang valid terlebih dahulu!");
             return;
         }
+
+        // =====================================================================
+        // 🔥 BENTENG 1: BLOKIR KETIK MANUAL TANGGAL MASA LALU
+        // =====================================================================
+        const hariIniStr = new Date().toLocaleDateString('en-CA'); // Format YYYY-MM-DD yang aman
+        if (tanggalBaru < hariIniStr) {
+            alert("🚫 TANGGAL TIDAK VALID!\n\nAnda mengetikkan tanggal di masa lalu. Secara logika, pasien tidak mungkin didaftarkan untuk kemarin.");
+            // Kembalikan otomatis ke tanggal hari ini agar staf sadar
+            document.getElementById('editTanggalInput').value = hariIniStr;
+            return; // Hentikan eksekusi simpan!
+        }
+        // =====================================================================
+
+        // =====================================================================
+        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (TABRAKAN JADWAL DOKTER)
+        // =====================================================================
+        if (window.dataAntreanGlobal && window.dataAntreanGlobal.length > 0) {
+            // Sistem menyisir seluruh antrean mencari kecocokan: Tanggal, Jam, dan Dokter yang sama
+            const konflikJadwal = window.dataAntreanGlobal.find(pasien => 
+                pasien.tanggalDaftar === tanggalBaru && 
+                pasien.jam === jamBaru && 
+                (pasien.namaDokter === namaDokterBaru || pasien.idDokter === namaDokterBaru) && 
+                String(pasien.rowNumber) !== String(rowNumber) // Abaikan baris miliknya sendiri (karena ini mode edit)
+            );
+
+            if (konflikJadwal) {
+                let namaKonflik = konflikJadwal.namaPasien || "Pasien Lain";
+                alert(`🚫 TABRAKAN JADWAL!\n\nDokter bersangkutan sudah di-booking oleh pasien lain:\n👤 Nama: ${namaKonflik}\n🗓️ Tgl: ${tanggalBaru}\n🕒 Jam: ${jamBaru}\n\nSecara logika, dokter tidak bisa menangani 2 pasien bersamaan. Silakan pilih jam atau dokter lain!`);
+                return; // Hentikan eksekusi simpan!
+            }
+        }
+        // =====================================================================
 
         // 🔥 1. AMBIL DATA OPERATOR AKTIF DARI LOCAL STORAGE
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
@@ -3887,24 +3919,42 @@
             jam: jamBaru,
             tujuan: tujuanBaru,
             idDokter: namaDokterBaru,
-            operatorUsername: usernameAktif, // Kirim Username Owner ke backend
-            operatorRole: roleAktif         // Kirim Role Owner ke backend
+            operatorUsername: usernameAktif, 
+            operatorRole: roleAktif         
         };
+
+        // 🔥 Proteksi Tambahan: Kunci tombol simpan agar tidak di-klik ganda (Spam)
+        const btnSimpan = document.querySelector('#modalEditAntrean button[onclick="simpanEditAntrean()"]');
+        if (btnSimpan) {
+            btnSimpan.innerText = "Menyimpan...";
+            btnSimpan.disabled = true;
+        }
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(res => {
+            // Buka kembali kunci tombol
+            if (btnSimpan) {
+                btnSimpan.innerText = "Simpan";
+                btnSimpan.disabled = false;
+            }
+
             if(res.result === "success") {
-                alert("Data antrean berhasil diperbarui!");
+                alert("✅ Data antrean berhasil diperbarui!");
                 tutupModalEdit();
                 if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
             } else {
-                alert("Gagal memperbarui antrean.");
+                alert("❌ Gagal memperbarui antrean: " + (res.message || "Kesalahan Server"));
             }
         })
         .catch(err => {
+            // Buka kembali kunci tombol jika gagal
+            if (btnSimpan) {
+                btnSimpan.innerText = "Simpan";
+                btnSimpan.disabled = false;
+            }
             console.error("Error saat menyimpan:", err);
-            alert("Terjadi kesalahan koneksi server.");
+            alert("⚠️ Terjadi kesalahan koneksi server.");
         });
     }
 
