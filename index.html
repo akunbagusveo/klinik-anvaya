@@ -3887,21 +3887,46 @@
         // =====================================================================
 
         // =====================================================================
-        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (TABRAKAN JADWAL DOKTER)
+        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE ULTIMATE RADAR)
         // =====================================================================
         if (window.dataAntreanGlobal && window.dataAntreanGlobal.length > 0) {
-            // Sistem menyisir seluruh antrean mencari kecocokan: Tanggal, Jam, dan Dokter yang sama
-            const konflikJadwal = window.dataAntreanGlobal.find(pasien => 
-                pasien.tanggalDaftar === tanggalBaru && 
-                pasien.jam === jamBaru && 
-                (pasien.namaDokter === namaDokterBaru || pasien.idDokter === namaDokterBaru) && 
-                String(pasien.rowNumber) !== String(rowNumber) // Abaikan baris miliknya sendiri (karena ini mode edit)
-            );
+            
+            let formTgl = String(tanggalBaru).trim();
+            let formJam = String(jamBaru).trim();
+            
+            // 1. Ambil Value (Biasanya ID: USR-xxx) dari dropdown
+            let formDokterVal = String(namaDokterBaru).trim().toLowerCase(); 
+            
+            // 2. Ambil Teks Asli (Biasanya Nama: dr. Intan) dari dropdown
+            let selectDokter = document.getElementById('editDokterSelect');
+            let formDokterTeks = selectDokter.selectedIndex >= 0 ? 
+                                String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
+
+            const konflikJadwal = window.dataAntreanGlobal.find(pasien => {
+                let tglPasien = String(pasien.tanggalDaftar || pasien.tanggal || "").trim().substring(0, 10);
+                let jamPasien = String(pasien.jam || pasien.waktu || "").trim();
+                
+                let idDokDb = String(pasien.idDokter || "").trim().toLowerCase();
+                let namaDokDb = String(pasien.namaDokter || "").trim().toLowerCase();
+                
+                // 🔥 PENCOCOKAN BRUTAL (CROSS-CHECK)
+                let isDokterSama = false;
+                // Cek 1: Apakah ID dari dropdown sama dengan ID/Nama di Database?
+                if (idDokDb === formDokterVal || namaDokDb === formDokterVal) isDokterSama = true;
+                
+                // Cek 2: Apakah Teks Nama dari dropdown mengandung kata dari Database? (Misal: "dr. intan" mengandung kata "intan")
+                if (idDokDb !== "" && formDokterTeks.includes(idDokDb)) isDokterSama = true;
+                if (namaDokDb !== "" && formDokterTeks.includes(namaDokDb)) isDokterSama = true;
+                
+                let isBukanDiriSendiri = String(pasien.rowNumber) !== String(rowNumber);
+
+                return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && isBukanDiriSendiri;
+            });
 
             if (konflikJadwal) {
                 let namaKonflik = konflikJadwal.namaPasien || "Pasien Lain";
                 alert(`🚫 TABRAKAN JADWAL!\n\nDokter bersangkutan sudah di-booking oleh pasien lain:\n👤 Nama: ${namaKonflik}\n🗓️ Tgl: ${tanggalBaru}\n🕒 Jam: ${jamBaru}\n\nSecara logika, dokter tidak bisa menangani 2 pasien bersamaan. Silakan pilih jam atau dokter lain!`);
-                return; // Hentikan eksekusi simpan!
+                return; // 🛑 Hentikan eksekusi simpan mutlak!
             }
         }
         // =====================================================================
