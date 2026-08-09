@@ -3001,7 +3001,7 @@
                         });
                         selectDokter.disabled = false;
                     } else {
-                        selectDokter.innerHTML = '<option value="">❌ Tidak ada dokter praktik di slot ini</option>';
+                        selectDokter.innerHTML = '<option value="">❌ Tidak ada dokter/ Klinik tutup</option>';
                     }
                 } else {
                     selectDokter.innerHTML = `<option value="">⚠️ Error System: ${res.message || 'Gagal mengambil data'}</option>`;
@@ -3852,7 +3852,7 @@
                 
                 selectElement.innerHTML = opsiHTML;
             } else {
-                selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas di slot ini</option>';
+                selectElement.innerHTML = '<option value="">❌ Tidak ada dokter bertugas/ Klinik tutup</option>';
             }
         })
         .catch(err => {
