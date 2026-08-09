@@ -2363,8 +2363,22 @@
             <div style="margin-bottom:12px;">
                 <label style="font-weight:bold; font-size:13px; color:#34495e;">Waktu Kunjungan:</label>
                 <select id="editJamSelect" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
-                    <option value="Siang (11.00 - 15.00)">Siang (11.00 - 15.00)</option>
-                    <option value="Sore/Malam (15.00 - Selesai)">Sore/Malam (15.00 - Selesai)</option>
+                    <option value="11:00">11:00</option>
+                    <option value="11:30">11:30</option>
+                    <option value="12:00">12:00</option>
+                    <option value="12:30">12:30</option>
+                    <option value="13:00">13:00</option>
+                    <option value="13:30">13:30</option>
+                    <option value="14:00">14:00</option>
+                    <option value="14:30">14:30</option>
+                    <option value="15:00">15:00</option>
+                    <option value="15:30">15:30</option>
+                    <option value="16:00">16:00</option>
+                    <option value="16:30">16:30</option>
+                    <option value="17:00">17:00</option>
+                    <option value="17:30">17:30</option>
+                    <option value="18:00">18:00</option>
+                    <option value="18:30">18:30</option>
                 </select>
             </div>
 
@@ -3751,33 +3765,39 @@
         // 🔥 FITUR 1: GEMBOK WAKTU (MENCEGAH MASA LALU DIPILIH)
         // =====================================================================
         const inputTanggal = document.getElementById('editTanggalInput');
-        // Ambil tanggal hari ini berdasarkan zona waktu perangkat/komputer
-        const hariIni = new Date().toLocaleDateString('en-CA'); // Menghasilkan format YYYY-MM-DD dengan aman
-        
-        // Setel batas minimal. Semua tanggal sebelum 'hariIni' akan lumpuh (abu-abu)!
+        const hariIni = new Date().toLocaleDateString('en-CA'); 
         inputTanggal.setAttribute('min', hariIni); 
-        
-        // Isi value tanggal lama ke kotak input
         inputTanggal.value = tanggalSekarang;
         // =====================================================================
 
-        document.getElementById('editJamSelect').value = jamSekarang;
+        // =====================================================================
+        // 🔥 FITUR 1.5: SELECT DROPDOWN CERDAS UNTUK JAM KUNJUNGAN
+        // =====================================================================
+        const inputJam = document.getElementById('editJamSelect');
+        
+        // Cek apakah jam dari database ada di daftar <option> HTML
+        let jamExists = Array.from(inputJam.options).some(opt => opt.value === jamSekarang);
+        
+        // Jika tidak ada (kasus data format lama), buatkan opsi sementara agar tidak blank
+        if (!jamExists && jamSekarang && jamSekarang !== "-") {
+            let newJamOption = new Option(jamSekarang, jamSekarang);
+            inputJam.add(newJamOption);
+        }
+        inputJam.value = jamSekarang;
+        // =====================================================================
         
         // =====================================================================
-        // 🔥 FITUR 2: SELECT DROPDOWN CERDAS (ANTI HILANG DATA)
+        // 🔥 FITUR 2: SELECT DROPDOWN CERDAS UNTUK TUJUAN (ANTI HILANG DATA)
         // =====================================================================
         const inputTujuan = document.getElementById('editTujuanInput');
         
-        // 1. Cek apakah "tujuanSekarang" (data dari server) ada di dalam daftar <option> HTML kita?
         let optionExists = Array.from(inputTujuan.options).some(opt => opt.value === tujuanSekarang);
         
-        // 2. Jika tujuan tidak ada di daftar (misal pasien lama pakai teks manual), tambahkan opsi baru secara dinamis!
         if (!optionExists && tujuanSekarang && tujuanSekarang !== "-") {
             let newOption = new Option(tujuanSekarang, tujuanSekarang);
             inputTujuan.add(newOption);
         }
         
-        // 3. Setel nilai dropdown sesuai tujuan pasien
         inputTujuan.value = tujuanSekarang;
         // =====================================================================
         
