@@ -1431,7 +1431,7 @@
             
             <div class="table-matrix-wrapper" style="overflow-x: auto; max-width: 100%; border: 1px solid #dee2e6; border-radius: 6px; margin-top: 15px; background: #ffffff;">
                 <table border="1" width="100%" style="text-align: left; border-collapse: collapse; margin-bottom: 20px;">
-                    <thead style="background-color: #ddd;position:sticky;" id="headMatriksAkses">
+                    <thead style="background-color: #ddd; position:sticky;" id="headMatriksAkses">
                         <!-- Header akan digenerate secara dinamis oleh JavaScript -->
                     </thead>
                     <tbody id="bodyMatriksAkses">
@@ -2370,7 +2370,16 @@
 
             <div style="margin-bottom:12px;">
                 <label style="font-weight:bold; font-size:13px; color:#34495e;">Tujuan Perawatan:</label>
-                <input type="text" id="editTujuanInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                <!-- 🔥 PERUBAHAN: Diubah menjadi tag <select> namun tetap mempertahankan ID "editTujuanInput" agar sistem tidak error -->
+                <select id="editTujuanInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                    <option value="Konsultasi Orthodontic">Konsultasi Orthodontic</option>
+                    <option value="Scaling">Scaling (Pembersihan Karang)</option>
+                    <option value="Tambal Gigi">Tambal Gigi</option>
+                    <option value="Cabut Gigi">Cabut Gigi</option>
+                    <option value="Aesthetic (Veneer/Bleaching)">Aesthetic (Veneer/Bleaching)</option>
+                    <option value="Kontrol">Kontrol</option>
+                    <option value="Lainnya">Lainnya</option>
+                </select>
             </div>
             
             <div style="margin-bottom:20px;">
@@ -3737,9 +3746,40 @@
     // 1. Fungsi saat tombol "Edit" di tabel diklik (Pastikan parameter terakhir mengirim NAMA dokter saat ini)
     function bukaModalEditAntrean(rowNumber, tanggalSekarang, jamSekarang, tujuanSekarang, namaDokterSekarang) {
         document.getElementById('editRowNumber').value = rowNumber;
-        document.getElementById('editTanggalInput').value = tanggalSekarang;
+        
+        // =====================================================================
+        // 🔥 FITUR 1: GEMBOK WAKTU (MENCEGAH MASA LALU DIPILIH)
+        // =====================================================================
+        const inputTanggal = document.getElementById('editTanggalInput');
+        // Ambil tanggal hari ini berdasarkan zona waktu perangkat/komputer
+        const hariIni = new Date().toLocaleDateString('en-CA'); // Menghasilkan format YYYY-MM-DD dengan aman
+        
+        // Setel batas minimal. Semua tanggal sebelum 'hariIni' akan lumpuh (abu-abu)!
+        inputTanggal.setAttribute('min', hariIni); 
+        
+        // Isi value tanggal lama ke kotak input
+        inputTanggal.value = tanggalSekarang;
+        // =====================================================================
+
         document.getElementById('editJamSelect').value = jamSekarang;
-        document.getElementById('editTujuanInput').value = tujuanSekarang;
+        
+        // =====================================================================
+        // 🔥 FITUR 2: SELECT DROPDOWN CERDAS (ANTI HILANG DATA)
+        // =====================================================================
+        const inputTujuan = document.getElementById('editTujuanInput');
+        
+        // 1. Cek apakah "tujuanSekarang" (data dari server) ada di dalam daftar <option> HTML kita?
+        let optionExists = Array.from(inputTujuan.options).some(opt => opt.value === tujuanSekarang);
+        
+        // 2. Jika tujuan tidak ada di daftar (misal pasien lama pakai teks manual), tambahkan opsi baru secara dinamis!
+        if (!optionExists && tujuanSekarang && tujuanSekarang !== "-") {
+            let newOption = new Option(tujuanSekarang, tujuanSekarang);
+            inputTujuan.add(newOption);
+        }
+        
+        // 3. Setel nilai dropdown sesuai tujuan pasien
+        inputTujuan.value = tujuanSekarang;
+        // =====================================================================
         
         // Ambil daftar dokter berdasarkan parameter saat ini
         muatDokterTersedia(tanggalSekarang, jamSekarang, namaDokterSekarang);
