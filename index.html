@@ -3877,46 +3877,44 @@
         // =====================================================================
         // 🔥 BENTENG 1: BLOKIR KETIK MANUAL TANGGAL MASA LALU
         // =====================================================================
-        const hariIniStr = new Date().toLocaleDateString('en-CA'); // Format YYYY-MM-DD yang aman
+        const hariIniStr = new Date().toLocaleDateString('en-CA'); 
         if (tanggalBaru < hariIniStr) {
             alert("🚫 TANGGAL TIDAK VALID!\n\nAnda mengetikkan tanggal di masa lalu. Secara logika, pasien tidak mungkin didaftarkan untuk kemarin.");
-            // Kembalikan otomatis ke tanggal hari ini agar staf sadar
             document.getElementById('editTanggalInput').value = hariIniStr;
-            return; // Hentikan eksekusi simpan!
+            return; 
         }
         // =====================================================================
 
         // =====================================================================
-        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE ULTIMATE RADAR)
+        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE OMNI-RADAR)
         // =====================================================================
         if (window.dataAntreanGlobal && window.dataAntreanGlobal.length > 0) {
             
             let formTgl = String(tanggalBaru).trim();
             let formJam = String(jamBaru).trim();
             
-            // 1. Ambil Value (Biasanya ID: USR-xxx) dari dropdown
+            // 1. Ambil Value (Biasanya ID) dan Teks (Label) dari dropdown
             let formDokterVal = String(namaDokterBaru).trim().toLowerCase(); 
-            
-            // 2. Ambil Teks Asli (Biasanya Nama: dr. Intan) dari dropdown
             let selectDokter = document.getElementById('editDokterSelect');
             let formDokterTeks = selectDokter.selectedIndex >= 0 ? 
                                 String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
 
             const konflikJadwal = window.dataAntreanGlobal.find(pasien => {
-                let tglPasien = String(pasien.tanggalDaftar || pasien.tanggal || "").trim().substring(0, 10);
-                let jamPasien = String(pasien.jam || pasien.waktu || "").trim();
+                // 🔥 SAPU BERSIH NAMA PROPERTI TANGGAL & JAM
+                let tglPasien = String(pasien.tanggalDaftar || pasien.tglKunjungan || pasien.tanggal || "").trim().substring(0, 10);
+                let jamPasien = String(pasien.jam || pasien.waktuKunjungan || pasien.waktu || "").trim();
                 
+                // 🔥 SAPU BERSIH SEMUA KEMUNGKINAN NAMA PROPERTI DOKTER DI MEMORI
                 let idDokDb = String(pasien.idDokter || "").trim().toLowerCase();
                 let namaDokDb = String(pasien.namaDokter || "").trim().toLowerCase();
+                let dokterDb = String(pasien.dokter || "").trim().toLowerCase(); // <-- INI KUNCI UTAMANYA!
                 
-                // 🔥 PENCOCOKAN BRUTAL (CROSS-CHECK)
                 let isDokterSama = false;
-                // Cek 1: Apakah ID dari dropdown sama dengan ID/Nama di Database?
-                if (idDokDb === formDokterVal || namaDokDb === formDokterVal) isDokterSama = true;
                 
-                // Cek 2: Apakah Teks Nama dari dropdown mengandung kata dari Database? (Misal: "dr. intan" mengandung kata "intan")
-                if (idDokDb !== "" && formDokterTeks.includes(idDokDb)) isDokterSama = true;
-                if (namaDokDb !== "" && formDokterTeks.includes(namaDokDb)) isDokterSama = true;
+                // Pencocokan Ekstrem: Jika Value ATAU Teks mengandung salah satu data dari DB, maka itu dokter yang sama!
+                if (idDokDb && (idDokDb === formDokterVal || formDokterTeks.includes(idDokDb))) isDokterSama = true;
+                if (namaDokDb && (namaDokDb === formDokterVal || formDokterTeks.includes(namaDokDb))) isDokterSama = true;
+                if (dokterDb && (dokterDb === formDokterVal || formDokterTeks.includes(dokterDb))) isDokterSama = true;
                 
                 let isBukanDiriSendiri = String(pasien.rowNumber) !== String(rowNumber);
 
@@ -3924,19 +3922,18 @@
             });
 
             if (konflikJadwal) {
-                let namaKonflik = konflikJadwal.namaPasien || "Pasien Lain";
+                // Sapu bersih nama pasien agar pasti muncul
+                let namaKonflik = konflikJadwal.namaPasien || konflikJadwal.nama || "Pasien Lain";
                 alert(`🚫 TABRAKAN JADWAL!\n\nDokter bersangkutan sudah di-booking oleh pasien lain:\n👤 Nama: ${namaKonflik}\n🗓️ Tgl: ${tanggalBaru}\n🕒 Jam: ${jamBaru}\n\nSecara logika, dokter tidak bisa menangani 2 pasien bersamaan. Silakan pilih jam atau dokter lain!`);
                 return; // 🛑 Hentikan eksekusi simpan mutlak!
             }
         }
         // =====================================================================
 
-        // 🔥 1. AMBIL DATA OPERATOR AKTIF DARI LOCAL STORAGE
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Anonymous";
         const roleAktif     = sessionData ? sessionData.role : "Staff";
 
-        // 🔥 2. SISIPIKAN OPERATOR KE PAYLOAD DATA
         const payload = {
             action: "editAntreanFull",
             rowNumber: rowNumber,
@@ -3948,7 +3945,6 @@
             operatorRole: roleAktif         
         };
 
-        // 🔥 Proteksi Tambahan: Kunci tombol simpan agar tidak di-klik ganda (Spam)
         const btnSimpan = document.querySelector('#modalEditAntrean button[onclick="simpanEditAntrean()"]');
         if (btnSimpan) {
             btnSimpan.innerText = "Menyimpan...";
@@ -3958,7 +3954,6 @@
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(res => {
-            // Buka kembali kunci tombol
             if (btnSimpan) {
                 btnSimpan.innerText = "Simpan";
                 btnSimpan.disabled = false;
@@ -3973,7 +3968,6 @@
             }
         })
         .catch(err => {
-            // Buka kembali kunci tombol jika gagal
             if (btnSimpan) {
                 btnSimpan.innerText = "Simpan";
                 btnSimpan.disabled = false;
