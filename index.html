@@ -5346,6 +5346,62 @@
         }
         const tipePasienAktif = elTipePasien.value;
 
+        // Ambil variabel penting untuk Radar
+        const tglKunjunganVal = document.getElementById('tglKunjungan').value;
+        const waktuKunjunganVal = document.getElementById('waktuKunjungan').value;
+        const idDokterVal = document.getElementById('pilihDokter').value;
+        
+        const selectDokter = document.getElementById('pilihDokter');
+        const teksDokterVal = selectDokter.selectedIndex >= 0 ? 
+                            String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
+
+        // =====================================================================
+        // 🔥 BENTENG 1: BLOKIR KETIK MANUAL TANGGAL MASA LALU
+        // =====================================================================
+        const hariIniStr = new Date().toLocaleDateString('en-CA'); 
+        if (tglKunjunganVal < hariIniStr) {
+            alert("🚫 TANGGAL TIDAK VALID!\n\nAnda memasukkan tanggal di masa lalu. Secara logika, pendaftaran baru tidak bisa mundur ke hari kemarin.");
+            return; // Hentikan eksekusi simpan!
+        }
+        // =====================================================================
+
+        // =====================================================================
+        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE ULTIMATE RADAR PADA PENDAFTARAN)
+        // =====================================================================
+        if (window.dataAntreanGlobal && window.dataAntreanGlobal.length > 0) {
+            
+            let formTgl = String(tglKunjunganVal).trim();
+            let formJam = String(waktuKunjunganVal).trim();
+            let formDokterId = String(idDokterVal).trim().toLowerCase(); 
+
+            const konflikJadwal = window.dataAntreanGlobal.find(pasien => {
+                let tglPasien = String(pasien.tanggalDaftar || pasien.tanggal || "").trim().substring(0, 10);
+                let jamPasien = String(pasien.jam || pasien.waktu || "").trim();
+                
+                let idDokDb = String(pasien.idDokter || "").trim().toLowerCase();
+                let namaDokDb = String(pasien.namaDokter || "").trim().toLowerCase();
+                
+                // Pencocokan Silang Ekstrem
+                let isDokterSama = false;
+                if (idDokDb === formDokterId || namaDokDb === formDokterId) isDokterSama = true;
+                if (idDokDb !== "" && teksDokterVal.includes(idDokDb)) isDokterSama = true;
+                if (namaDokDb !== "" && teksDokterVal.includes(namaDokDb)) isDokterSama = true;
+                
+                // Catatan: Karena ini Pendaftaran Baru, kita TIDAK PERLU mengecek "bukan dirinya sendiri" seperti di form Edit.
+                // Pokoknya kalau ada yang cocok, berarti sudah ada orang lain di jadwal itu!
+                return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama;
+            });
+
+            if (konflikJadwal) {
+                let namaKonflik = konflikJadwal.namaPasien || "Pasien Lain";
+                alert(`🚫 TABRAKAN JADWAL (DOUBLE BOOKING)!\n\nDokter bersangkutan baru saja di-booking oleh:\n👤 Nama: ${namaKonflik}\n🗓️ Tgl: ${tglKunjunganVal}\n🕒 Jam: ${waktuKunjunganVal}\n\nSistem menolak pendaftaran ini untuk mencegah jadwal ganda. Silakan pilih jam atau dokter lain!`);
+                // Refresh paksa dropdown dokter agar update
+                if (typeof updateDaftarDokter === "function") updateDaftarDokter();
+                return; // 🛑 Hentikan eksekusi simpan!
+            }
+        }
+        // =====================================================================
+
         const submitBtn = e.target.querySelector('button[type="submit"]');
         submitBtn.disabled = true; 
         submitBtn.innerText = "Mengirim...";
@@ -5355,7 +5411,7 @@
         const usernameAktif = sessionData ? sessionData.username : "Anonymous";
         const roleAktif     = sessionData ? sessionData.role : "Staff";
 
-        // 🔥 Pastikan token tersedia (jika form tidak dibuka dari menu, buat token darurat)
+        // 🔥 Pastikan token tersedia
         if (!window.tokenPendaftaranUnik) {
             window.tokenPendaftaranUnik = "TX-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
         }
@@ -5363,7 +5419,7 @@
         const data = {
             action: "submit", 
             targetSheet: "Pendaftaran",
-            tokenId: window.tokenPendaftaranUnik, // 🔥 LAPIS 1: Kirim Token Rahasia ke Backend
+            tokenId: window.tokenPendaftaranUnik, 
             tipePasien: tipePasienAktif,
             noRM: tipePasienAktif === "baru" ? "" : document.getElementById('txtNoRM').value,
             nama: document.getElementById('nama').value,
@@ -5377,12 +5433,12 @@
             alamat: document.getElementById('alamat').value,
             kecamatan: document.getElementById('kecamatan').value,
             kota: document.getElementById('kota').value, 
-            tglKunjungan: document.getElementById('tglKunjungan').value,
-            waktuKunjungan: document.getElementById('waktuKunjungan').value,
+            tglKunjungan: tglKunjunganVal,
+            waktuKunjungan: waktuKunjunganVal,
             tujuan: document.getElementById('tujuan').value, 
             riwayatAlergi: document.getElementById('riwayatAlergi').value,
             riwayatObat: document.getElementById('riwayatObat').value,
-            idDokter: document.getElementById('pilihDokter').value,
+            idDokter: idDokterVal,
             statusBayar: "Belum Lunas",
             operatorUsername: usernameAktif, 
             operatorRole: roleAktif          
@@ -5405,11 +5461,11 @@
                 if(typeof aturStatusProteksiForm === "function") aturStatusProteksiForm(false); 
                 if(typeof muatAntreanHariIni === "function") muatAntreanHariIni(1);
             } else { 
-                alert("Gagal menyimpan ke Sheets: " + (res.message || "Error tidak diketahui")); 
+                alert("❌ Gagal menyimpan ke Sheets: " + (res.message || "Error tidak diketahui")); 
             }
         })
         .catch(err => {
-            // 🔥 LAPIS 3 (MANAJEMEN PANIK UX): Ubah cara sistem merespons internet putus
+            // 🔥 LAPIS 3 (MANAJEMEN PANIK UX)
             submitBtn.innerText = "Koneksi Terputus...";
             alert("⚠️ KONEKSI TERPUTUS SAAT MENGIRIM!\n\nJangan panik atau klik simpan ulang. Data Anda kemungkinan besar SUDAH MASUK ke server.\n\nSistem akan memuat ulang antrean untuk memastikannya. Silakan cek tabel Antrean setelah ini.");
             
