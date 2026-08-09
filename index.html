@@ -3886,47 +3886,52 @@
         // =====================================================================
 
         // =====================================================================
-        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE OMNI-RADAR)
+        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE OMNI-RADAR V2 - KOKOH & PRESISI)
         // =====================================================================
-        if (window.dataAntreanGlobal && window.dataAntreanGlobal.length > 0) {
+        // 1. Tangkap variabel global dengan aman (mengakali scoping 'let'/'const' di JS)
+        let antreanLokal = typeof dataAntreanGlobal !== 'undefined' ? dataAntreanGlobal : (window.dataAntreanGlobal || []);
+
+        if (antreanLokal && antreanLokal.length > 0) {
             
-            let formTgl = String(tanggalBaru).trim();
-            let formJam = String(jamBaru).trim();
+            let formTgl = String(tanggalBaru).trim().substring(0, 10);
             
-            // 1. Ambil Value (Biasanya ID) dan Teks (Label) dari dropdown
+            // Normalisasi Jam: Ubah titik ke titik dua, dan potong jadi 5 digit agar "12:30:00" mutlak menjadi "12:30"
+            let formJam = String(jamBaru).trim().replace('.', ':').substring(0, 5); 
+            
             let formDokterVal = String(namaDokterBaru).trim().toLowerCase(); 
             let selectDokter = document.getElementById('editDokterSelect');
             let formDokterTeks = selectDokter.selectedIndex >= 0 ? 
                                 String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
 
-            const konflikJadwal = window.dataAntreanGlobal.find(pasien => {
-                // 🔥 SAPU BERSIH NAMA PROPERTI TANGGAL & JAM
+            const konflikJadwal = antreanLokal.find(pasien => {
                 let tglPasien = String(pasien.tanggalDaftar || pasien.tglKunjungan || pasien.tanggal || "").trim().substring(0, 10);
-                let jamPasien = String(pasien.jam || pasien.waktuKunjungan || pasien.waktu || "").trim();
                 
-                // 🔥 SAPU BERSIH SEMUA KEMUNGKINAN NAMA PROPERTI DOKTER DI MEMORI
+                // Normalisasi Jam dari Database (Sapubersih properti jam, waktuKunjungan, atau waktu)
+                let jamPasien = String(pasien.waktu || pasien.jam || pasien.waktuKunjungan || "").trim().replace('.', ':').substring(0, 5);
+                
                 let idDokDb = String(pasien.idDokter || "").trim().toLowerCase();
                 let namaDokDb = String(pasien.namaDokter || "").trim().toLowerCase();
-                let dokterDb = String(pasien.dokter || "").trim().toLowerCase(); // <-- INI KUNCI UTAMANYA!
+                let dokterDb = String(pasien.dokter || "").trim().toLowerCase(); 
                 
                 let isDokterSama = false;
                 
-                // Pencocokan Ekstrem: Jika Value ATAU Teks mengandung salah satu data dari DB, maka itu dokter yang sama!
                 if (idDokDb && (idDokDb === formDokterVal || formDokterTeks.includes(idDokDb))) isDokterSama = true;
                 if (namaDokDb && (namaDokDb === formDokterVal || formDokterTeks.includes(namaDokDb))) isDokterSama = true;
                 if (dokterDb && (dokterDb === formDokterVal || formDokterTeks.includes(dokterDb))) isDokterSama = true;
                 
+                // Filter wajib: Jangan tabrakkan dengan baris data dirinya sendiri!
                 let isBukanDiriSendiri = String(pasien.rowNumber) !== String(rowNumber);
 
                 return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && isBukanDiriSendiri;
             });
 
             if (konflikJadwal) {
-                // Sapu bersih nama pasien agar pasti muncul
                 let namaKonflik = konflikJadwal.namaPasien || konflikJadwal.nama || "Pasien Lain";
                 alert(`🚫 TABRAKAN JADWAL!\n\nDokter bersangkutan sudah di-booking oleh pasien lain:\n👤 Nama: ${namaKonflik}\n🗓️ Tgl: ${tanggalBaru}\n🕒 Jam: ${jamBaru}\n\nSecara logika, dokter tidak bisa menangani 2 pasien bersamaan. Silakan pilih jam atau dokter lain!`);
                 return; // 🛑 Hentikan eksekusi simpan mutlak!
             }
+        } else {
+            console.warn("⚠️ Peringatan Sistem: Variabel data antrean kosong, Radar dinonaktifkan sementara.");
         }
         // =====================================================================
 
