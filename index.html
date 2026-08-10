@@ -4705,6 +4705,34 @@
         const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
         
         if (dataTerpilih) {
+            
+            // =====================================================================
+            // 🔥 PISAU BEDAH REGEX: Ekstrak Tanggal Kontrol & Bersihkan Catatan
+            // =====================================================================
+            let proKontrolMentah = dataTerpilih.proKontrol || "";
+            let extractedDate = "";
+            let pureCatatan = proKontrolMentah;
+
+            // Memburu pola tanggal YYYY-MM-DD di dalam teks
+            const regexTgl = /🗓️ Tgl Kontrol:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/;
+            const matchTgl = proKontrolMentah.match(regexTgl);
+            
+            if (matchTgl && matchTgl[1]) {
+                extractedDate = matchTgl[1]; // Dapatkan murni tanggalnya saja
+                
+                // Cuci bersih teksnya agar hanya menyisakan pesannya saja untuk Textarea
+                pureCatatan = proKontrolMentah.replace(/🗓️ Tgl Kontrol:.*?\n📝 Catatan:\s*/g, "").trim();
+                pureCatatan = pureCatatan.replace(/🗓️ Tgl Kontrol:.*?\n/g, "").trim(); // Fallback pengaman
+            }
+            
+            // Tembakkan tanggal hasil ekstraksi langsung ke elemen Kalender UI
+            // (Mendukung ID modalTanggalKontrol atau tanggalKontrol)
+            const elTgl1 = document.getElementById('modalTanggalKontrol');
+            const elTgl2 = document.getElementById('tanggalKontrol');
+            if (elTgl1) elTgl1.value = extractedDate;
+            if (elTgl2) elTgl2.value = extractedDate;
+            // =====================================================================
+
             // Teruskan data asli murni tanpa takut terdistorsi regex atau tanda petik HTML
             salinAtauEditRME(
                 isHariIni,
@@ -4715,7 +4743,7 @@
                 dataTerpilih.perawatan,
                 dataTerpilih.resep,
                 dataTerpilih.proPerawatan,
-                dataTerpilih.proKontrol
+                pureCatatan // 🔥 DATA YANG DIKIRIM KE TEXTAREA KINI SUDAH BERSIH!
             );
             
             // Pemicu tambahan untuk memunculkan tombol batal edit jika elemennya eksis
