@@ -4707,33 +4707,32 @@
         if (dataTerpilih) {
             
             // =====================================================================
-            // 🔥 PISAU BEDAH REGEX: Ekstrak Tanggal Kontrol & Bersihkan Catatan
+            // 🔥 PISAU BEDAH REGEX V2: Lebih Kuat & Tahan Banting
             // =====================================================================
             let proKontrolMentah = dataTerpilih.proKontrol || "";
             let extractedDate = "";
             let pureCatatan = proKontrolMentah;
 
-            // Memburu pola tanggal YYYY-MM-DD di dalam teks
-            const regexTgl = /🗓️ Tgl Kontrol:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/;
+            // Memburu pola tanggal dengan toleransi format (menangkap YYYY-MM-DD atau DD-MM-YYYY)
+            const regexTgl = /Tgl Kontrol:\s*([0-9]{2,4}-[0-9]{2}-[0-9]{2,4})/i;
             const matchTgl = proKontrolMentah.match(regexTgl);
             
             if (matchTgl && matchTgl[1]) {
-                extractedDate = matchTgl[1]; // Dapatkan murni tanggalnya saja
+                extractedDate = matchTgl[1].trim();
                 
-                // Cuci bersih teksnya agar hanya menyisakan pesannya saja untuk Textarea
+                // Jika format yang tertangkap adalah DD-MM-YYYY, balik menjadi YYYY-MM-DD (Syarat mutlak kalender HTML)
+                if (extractedDate.match(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/)) {
+                    let p = extractedDate.split('-');
+                    extractedDate = `${p[2]}-${p[1]}-${p[0]}`; // Posisi 2 adalah Tahun, 1 Bulan, 0 Tanggal
+                }
+
+                // Cuci bersih teksnya agar murni sisa catatannya saja
                 pureCatatan = proKontrolMentah.replace(/🗓️ Tgl Kontrol:.*?\n📝 Catatan:\s*/g, "").trim();
-                pureCatatan = pureCatatan.replace(/🗓️ Tgl Kontrol:.*?\n/g, "").trim(); // Fallback pengaman
+                pureCatatan = pureCatatan.replace(/🗓️ Tgl Kontrol:.*?\n/g, "").trim(); 
             }
-            
-            // Tembakkan tanggal hasil ekstraksi langsung ke elemen Kalender UI
-            // (Mendukung ID modalTanggalKontrol atau tanggalKontrol)
-            const elTgl1 = document.getElementById('modalTanggalKontrol');
-            const elTgl2 = document.getElementById('tanggalKontrol');
-            if (elTgl1) elTgl1.value = extractedDate;
-            if (elTgl2) elTgl2.value = extractedDate;
             // =====================================================================
 
-            // Teruskan data asli murni tanpa takut terdistorsi regex atau tanda petik HTML
+            // Teruskan data asli murni ke fungsi bawaan Anda (Catatan sudah bersih)
             salinAtauEditRME(
                 isHariIni,
                 dataTerpilih.barisSheet,
@@ -4743,10 +4742,20 @@
                 dataTerpilih.perawatan,
                 dataTerpilih.resep,
                 dataTerpilih.proPerawatan,
-                pureCatatan // 🔥 DATA YANG DIKIRIM KE TEXTAREA KINI SUDAH BERSIH!
+                pureCatatan 
             );
+
+            // =====================================================================
+            // 🔥 KUNCI PERBAIKAN: Tembakkan Tanggal SETELAH Form Di-reset!
+            // Diberi jeda 50ms agar tidak tertimpa oleh efek pembersihan fungsi di atas
+            // =====================================================================
+            setTimeout(() => {
+                const elTgl1 = document.getElementById('modalTanggalKontrol');
+                const elTgl2 = document.getElementById('tanggalKontrol');
+                if (elTgl1) elTgl1.value = extractedDate;
+                if (elTgl2) elTgl2.value = extractedDate;
+            }, 50);
             
-            // Pemicu tambahan untuk memunculkan tombol batal edit jika elemennya eksis
             const btnBatal = document.getElementById('btnBatalEdit');
             if (btnBatal) btnBatal.style.setProperty('display', 'block', 'important');
             
