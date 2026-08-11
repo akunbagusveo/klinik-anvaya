@@ -2559,6 +2559,28 @@
         </div>
     </div>
 
+    <!-- ======================================================= -->
+    <!-- 🔥 GLOBAL LOADING OVERLAY (ANTI KLIK GANDA & ANTI BINGUNG) -->
+    <!-- ======================================================= -->
+    <div id="globalSpinnerOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 99999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(3px);">
+        <!-- Animasi Putaran (Spinner) -->
+        <div style="border: 6px solid #f3f3f3; border-top: 6px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: putarSpinner 1s linear infinite; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+        
+        <!-- Teks Informasi -->
+        <div id="globalSpinnerText" style="color: white; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            ⏳ Memproses Data...
+        </div>
+        
+        <!-- CSS Animasi Spinner (Disisipkan langsung agar praktis) -->
+        <style>
+            @keyframes putarSpinner {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    </div>
+    <!-- ======================================================= -->
+
 </div>
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtKbuvQhrLcVRaoo33z6MmV6oMRBK_ZGTkPFyNH5xNgAxG1j3H5GJAFuGW9WzzvKhS/exec"; 
@@ -3504,21 +3526,16 @@
         if (!tglMulai) { tglMulai = formatHariIni; document.getElementById('filterTanggalMulai').value = tglMulai; }
         if (!tglAkhir) { tglAkhir = formatHariIni; document.getElementById('filterTanggalAkhir').value = tglAkhir; }
 
-        // ==========================================
-        // 🔒 LOGIKA PERLINDUNGAN SERVER KHUSUS TABEL
-        // ==========================================
         let tglAkhirKhususTabel = tglAkhir;
         const start = new Date(tglMulai);
         const end = new Date(tglAkhir);
         const selisihHari = (end.getTime() - start.getTime()) / (1000 * 3600 * 24);
 
         if (selisihHari > 31) {
-            // Jika user memilih 3 bulan, khusus untuk TABEL kita potong jadi 31 hari dari tanggal mulai
             const maxEnd = new Date(start);
             maxEnd.setDate(start.getDate() + 31);
             tglAkhirKhususTabel = `${maxEnd.getFullYear()}-${String(maxEnd.getMonth() + 1).padStart(2, '0')}-${String(maxEnd.getDate()).padStart(2, '0')}`;
         }
-        // ==========================================
 
         const sesiAktif = localStorage.getItem('anvaya_session');
         let roleUser = "", idUserDokter = "", usernameUser = "";
@@ -3533,7 +3550,7 @@
         const payload = {
             action: "getTodayQueue",
             startDate: tglMulai, 
-            endDate: tglAkhirKhususTabel, // 👈 Dikirim menggunakan tanggal yang dibatasi
+            endDate: tglAkhirKhususTabel, 
             realToday: formatHariIni,
             role: roleUser,
             idDokter: idUserDokter,
@@ -3543,7 +3560,6 @@
             limit: limitDataPerHalaman    
         };
 
-        // Modifikasi teks loading agar user tahu datanya dibatasi di layar
         let teksLoading = tglMulai === tglAkhirKhususTabel ? `tanggal ${tglMulai}` : `periode ${tglMulai} s/d ${tglAkhirKhususTabel}`;
         if (selisihHari > 31) {
             teksLoading += ` <i>(Dibatasi 31 hari di layar)</i>`;
@@ -3551,17 +3567,21 @@
         
         document.getElementById('tabelAntreanBody').innerHTML = `<tr><td colspan="7" style="text-align:center;">Memuat data halaman ${currentPageAntrean} untuk ${teksLoading}...</td></tr>`;
 
+        // 🔥 PANGGIL LAYAR HITAM LOADING DI SINI
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menarik Data Antrean dari Server...");
+
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(data => {
+            // 🔥 MATIKAN LAYAR HITAM LOADING DI SINI
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (data.result === "success") {
-                // 1. Update Statistik di Tab Antrian Pasien (#antrean)
                 if(document.getElementById('statTotal')) document.getElementById('statTotal').innerText = data.stats.total;
                 if(document.getElementById('statBelum')) document.getElementById('statBelum').innerText = data.stats.belum;
                 if(document.getElementById('statSedang')) document.getElementById('statSedang').innerText = data.stats.sedang;
                 if(document.getElementById('statSudah')) document.getElementById('statSudah').innerText = data.stats.sudah;
 
-                // 2. Update Statistik di Tab Beranda Dokter (#dokter)
                 if(document.getElementById('homeStatTotal')) document.getElementById('homeStatTotal').innerText = data.stats.total;
                 if(document.getElementById('homeStatBelum')) document.getElementById('homeStatBelum').innerText = data.stats.belum;
                 if(document.getElementById('homeStatSedang')) document.getElementById('homeStatSedang').innerText = data.stats.sedang;
@@ -3573,6 +3593,8 @@
             }
         })
         .catch(err => {
+            // 🔥 MATIKAN LAYAR HITAM LOADING JIKA ERROR
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
             console.error(err);
             document.getElementById('tabelAntreanBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal mengambil data antrean.</td></tr>`;
         });
@@ -3874,52 +3896,34 @@
             return;
         }
 
-        // =====================================================================
-        // 🔥 BENTENG 1: BLOKIR KETIK MANUAL TANGGAL MASA LALU
-        // =====================================================================
         const hariIniStr = new Date().toLocaleDateString('en-CA'); 
         if (tanggalBaru < hariIniStr) {
             alert("🚫 TANGGAL TIDAK VALID!\n\nAnda mengetikkan tanggal di masa lalu. Secara logika, pasien tidak mungkin didaftarkan untuk kemarin.");
             document.getElementById('editTanggalInput').value = hariIniStr;
             return; 
         }
-        // =====================================================================
 
-        // =====================================================================
-        // 🔥 BENTENG 2: ANTI DOUBLE-BOOKING (THE OMNI-RADAR V2 - KOKOH & PRESISI)
-        // =====================================================================
-        // 1. Tangkap variabel global dengan aman (mengakali scoping 'let'/'const' di JS)
         let antreanLokal = typeof dataAntreanGlobal !== 'undefined' ? dataAntreanGlobal : (window.dataAntreanGlobal || []);
 
         if (antreanLokal && antreanLokal.length > 0) {
-            
             let formTgl = String(tanggalBaru).trim().substring(0, 10);
-            
-            // Normalisasi Jam: Ubah titik ke titik dua, dan potong jadi 5 digit agar "12:30:00" mutlak menjadi "12:30"
             let formJam = String(jamBaru).trim().replace('.', ':').substring(0, 5); 
-            
             let formDokterVal = String(namaDokterBaru).trim().toLowerCase(); 
             let selectDokter = document.getElementById('editDokterSelect');
-            let formDokterTeks = selectDokter.selectedIndex >= 0 ? 
-                                String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
+            let formDokterTeks = selectDokter.selectedIndex >= 0 ? String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
 
             const konflikJadwal = antreanLokal.find(pasien => {
                 let tglPasien = String(pasien.tanggalDaftar || pasien.tglKunjungan || pasien.tanggal || "").trim().substring(0, 10);
-                
-                // Normalisasi Jam dari Database (Sapubersih properti jam, waktuKunjungan, atau waktu)
                 let jamPasien = String(pasien.waktu || pasien.jam || pasien.waktuKunjungan || "").trim().replace('.', ':').substring(0, 5);
-                
                 let idDokDb = String(pasien.idDokter || "").trim().toLowerCase();
                 let namaDokDb = String(pasien.namaDokter || "").trim().toLowerCase();
                 let dokterDb = String(pasien.dokter || "").trim().toLowerCase(); 
-                
                 let isDokterSama = false;
                 
                 if (idDokDb && (idDokDb === formDokterVal || formDokterTeks.includes(idDokDb))) isDokterSama = true;
                 if (namaDokDb && (namaDokDb === formDokterVal || formDokterTeks.includes(namaDokDb))) isDokterSama = true;
                 if (dokterDb && (dokterDb === formDokterVal || formDokterTeks.includes(dokterDb))) isDokterSama = true;
                 
-                // Filter wajib: Jangan tabrakkan dengan baris data dirinya sendiri!
                 let isBukanDiriSendiri = String(pasien.rowNumber) !== String(rowNumber);
 
                 return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && isBukanDiriSendiri;
@@ -3928,12 +3932,9 @@
             if (konflikJadwal) {
                 let namaKonflik = konflikJadwal.namaPasien || konflikJadwal.nama || "Pasien Lain";
                 alert(`🚫 TABRAKAN JADWAL!\n\nDokter bersangkutan sudah di-booking oleh pasien lain:\n👤 Nama: ${namaKonflik}\n🗓️ Tgl: ${tanggalBaru}\n🕒 Jam: ${jamBaru}\n\nSecara logika, dokter tidak bisa menangani 2 pasien bersamaan. Silakan pilih jam atau dokter lain!`);
-                return; // 🛑 Hentikan eksekusi simpan mutlak!
+                return; 
             }
-        } else {
-            console.warn("⚠️ Peringatan Sistem: Variabel data antrean kosong, Radar dinonaktifkan sementara.");
         }
-        // =====================================================================
 
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const usernameAktif = sessionData ? sessionData.username : "Anonymous";
@@ -3956,9 +3957,15 @@
             btnSimpan.disabled = true;
         }
 
+        // 🔥 PANGGIL LAYAR HITAM LOADING DI SINI
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menyimpan Perubahan Jadwal...");
+
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(res => {
+            // 🔥 MATIKAN LAYAR HITAM LOADING DI SINI
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (btnSimpan) {
                 btnSimpan.innerText = "Simpan";
                 btnSimpan.disabled = false;
@@ -3973,6 +3980,9 @@
             }
         })
         .catch(err => {
+            // 🔥 MATIKAN LAYAR HITAM LOADING JIKA ERROR
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (btnSimpan) {
                 btnSimpan.innerText = "Simpan";
                 btnSimpan.disabled = false;
@@ -5227,13 +5237,9 @@
         formAktifRme.addEventListener('submit', async function(e) { 
             e.preventDefault(); 
             
-            // =========================================================================
-            // 🔥 SISIPAN LANGKAH 3: CEK INFORMED CONSENT SEBELUM PROSES LANJUT
-            // =========================================================================
             if (typeof validasiSebelumSimpanRME === "function" && !validasiSebelumSimpanRME()) {
-                return; // ⛔ Hentikan eksekusi di sini! Modal consent akan terbuka otomatis.
+                return; 
             }
-            // =========================================================================
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
             if (submitBtn) {
@@ -5241,12 +5247,14 @@
                 submitBtn.innerText = "⏳ Menyimpan Perubahan...";
             }
 
+            // 🔥 PANGGIL LAYAR HITAM LOADING DI SINI (Diletakkan sebelum baca file karena baca gambar butuh waktu)
+            if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Mengenkripsi & Menyimpan Rekam Medis...");
+
             const sessionData    = JSON.parse(localStorage.getItem('anvaya_session'));
             const idDokterAktif  = sessionData ? sessionData.idUser : "USR-000"; 
             const usernameAktif  = sessionData ? sessionData.username : "Anonymous"; 
             const roleAktif      = sessionData ? sessionData.role : "Staff";        
 
-            // Deteksi input file dinamis
             const idInputFile = document.getElementById('modalFileFoto') ? 'modalFileFoto' : 'txtFileFoto';
             let dataFileModal = null;
             if (typeof bacaFileKeBase64 === "function") {
@@ -5289,7 +5297,6 @@
                 }
             });
 
-            // 🔥 LAPIS 1: Buat Token RME Unik jika belum ada
             if (!window.tokenRmeUnik) {
                 window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
             }
@@ -5297,7 +5304,7 @@
             const data = {
                 action: "submitRekamMedis",
                 targetSheet: "RekamMedis",
-                tokenId: window.tokenRmeUnik, // 🔥 Kirim Token ke Backend
+                tokenId: window.tokenRmeUnik, 
                 noRM: dapatkanNilaiDOM('modalNoRM', 'billNoRM') || formAktifRme.dataset.activeNoRM || "",
                 rowUpdate: dapatkanNilaiDOM('modalRowUpdate', 'modalRowUpdate') || formAktifRme.dataset.rowUpdate || "", 
                 namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
@@ -5321,6 +5328,9 @@
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
             .then(response => response.json())
             .then(res => {
+                // 🔥 MATIKAN LAYAR HITAM LOADING DI SINI (Sebelum alert muncul)
+                if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
                 if (submitBtn) {
                     submitBtn.disabled = false; 
                     submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan";
@@ -5329,7 +5339,6 @@
                 if(res.result === "success") {
                     alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
                     
-                    // 🔥 Hapus token setelah sukses penuh, agar pasien berikutnya aman
                     window.tokenRmeUnik = null; 
                     
                     if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
@@ -5348,11 +5357,13 @@
                     alert("❌ Gagal menyimpan: " + (res.message || "Terjadi kesalahan server.")); 
                 }
             }).catch(err => {
-                // 🔥 LAPIS 3 (MANAJEMEN PANIK UX DOKTER)
+                // 🔥 MATIKAN LAYAR HITAM LOADING JIKA ERROR
+                if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
                 console.error(err);
                 if (submitBtn) submitBtn.innerText = "Koneksi Terputus...";
                 
-                alert("⚠️ KONEKSI TERPUTUS SAAT MENYIMPAN!\n\nDokter tidak perlu panik atau mengetik ulang. Data Rekam Medis kemungkinan besar SUDAH MASUK dengan aman ke server.\n\nSistem akan menutup formulir ini dan memuat ulang antrean untuk memastikannya (Jika status pasien berubah jadi 'Sudah Diperiksa', berarti data aman).");
+                alert("⚠️ KONEKSI TERPUTUS SAAT MENYIMPAN!\n\nDokter tidak perlu panik atau mengetik ulang. Data Rekam Medis kemungkinan besar SUDAH MASUK dengan aman ke server.\n\nSistem akan menutup formulir ini dan memuat ulang antrean untuk memastikannya.");
                 
                 const modalFull = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
                 if(modalFull) modalFull.style.display = 'none'; 
@@ -12376,6 +12387,26 @@
             btnToggle.style.backgroundColor = '#2980b9'; // Ubah warna jadi biru terang agar dokter ingat bisa membukanya lagi
         }
     }
+
+    // =========================================================================
+    // 🔥 REMOTE CONTROL: GLOBAL LOADING OVERLAY
+    // =========================================================================
+    function tampilkanLoading(pesan = "⏳ Sedang Memproses Data...") {
+        const overlay = document.getElementById('globalSpinnerOverlay');
+        const teks = document.getElementById('globalSpinnerText');
+        if (overlay && teks) {
+            teks.innerText = pesan;
+            overlay.style.display = 'flex'; // Munculkan layar hitam
+        }
+    }
+
+    function sembunyikanLoading() {
+        const overlay = document.getElementById('globalSpinnerOverlay');
+        if (overlay) {
+            overlay.style.display = 'none'; // Sembunyikan layar hitam
+        }
+    }
+    // =========================================================================
     
 
     // === AUTO-SET BULAN SAAT INI (UX Enhancement) ===
