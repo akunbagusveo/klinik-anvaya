@@ -2257,10 +2257,29 @@
                             <label>🔍 Pemeriksaan Fisik & Objektif (O) <button type="button" class="btn-mic" onclick="mulaiDikte('modalObjektif')">🎙️</button></label>
                             <textarea id="modalObjektif" rows="3"  required></textarea>
                         </div>
-                        <div class="form-group">
+                        <!-- ======================================================= -->
+                        <!-- 🔥 UPGRADE: SMART AUTOCOMPLETE ICD-10 & QUICK PICK -->
+                        <!-- ======================================================= -->
+                        <div class="form-group" style="position: relative;">
                             <label>📌 Diagnosa / Penyakit (ICD-10) <button type="button" class="btn-mic" onclick="mulaiDikte('modalDiagnosa')">🎙️</button></label>
-                            <input type="text" id="modalDiagnosa" required>
+                            
+                            <!-- Tombol Quick Pick (Penyakit Langganan Dokter Gigi) -->
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                                <button type="button" onclick="pilihICD('K02.9 - Dental caries, unspecified')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Karies</button>
+                                <button type="button" onclick="pilihICD('K04.0 - Pulpitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Pulpitis</button>
+                                <button type="button" onclick="pilihICD('K05.0 - Acute gingivitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Gingivitis</button>
+                                <button type="button" onclick="pilihICD('K04.1 - Necrosis of pulp')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Nekrosis Pulpa</button>
+                                <button type="button" onclick="pilihICD('K01.1 - Impacted teeth')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Impaksi</button>
+                            </div>
+
+                            <!-- Input Teks Pencarian -->
+                            <input type="text" id="modalDiagnosa" autocomplete="off" placeholder="Ketik nama penyakit atau kode ICD (Misal: Karies atau K02)..." required>
+                            
+                            <!-- Kontainer Dropdown (Tersembunyi secara default) -->
+                            <div id="icdDropdown" style="display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #bdc3c7; border-radius: 4px; width: 100%; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-top: 2px;">
+                            </div>
                         </div>
+                        <!-- ======================================================= -->
                         <div class="form-group" style="border: 1px solid #dcdde1; padding: 15px; border-radius: 4px; background-color: #f8f9fa; margin-bottom: 15px; margin-top: 25px;">
                             <label style="font-weight: bold; color: #2c3e50; display: block; margin-bottom: 10px;">🛠️ Daftar Tindakan / Perawatan Hari Ini</label>
                             
@@ -12406,6 +12425,118 @@
             overlay.style.display = 'none'; // Sembunyikan layar hitam
         }
     }
+    // =========================================================================
+
+    // =========================================================================
+    // 🔥 MESIN SMART AUTOCOMPLETE ICD-10 (INTEGRASI GITHUB & FILTER GIGI)
+    // =========================================================================
+
+    // 1. Variabel Global penyimpan 52.000 data agar tidak perlu unduh berkali-kali
+    window.masterICD = [];
+
+    // 2. Tarik Data di Background saat web pertama kali dibuka
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch('https://raw.githubusercontent.com/fendis0709/icd-10/master/master_icd_x.json')
+            .then(response => response.json())
+            .then(data => {
+                window.masterICD = data;
+                console.log("✅ 52.347 Data ICD-10 Berhasil Dimuat ke Memori Browser!");
+            })
+            .catch(err => console.error("Gagal memuat database ICD-10:", err));
+    });
+
+    // 3. Fungsi untuk mengeksekusi klik dari tombol Quick Pick
+    function pilihICD(teksDiagnosa) {
+        const inputDiagnosa = document.getElementById('modalDiagnosa');
+        const dropdownIcd = document.getElementById('icdDropdown');
+        if (inputDiagnosa) {
+            inputDiagnosa.value = teksDiagnosa;
+            if (dropdownIcd) dropdownIcd.style.display = 'none'; // Tutup dropdown jika sedang terbuka
+        }
+    }
+
+    // 4. Logika Pendeteksi Ketikan (Merespons saat dokter mengetik)
+    document.addEventListener('input', function(e) {
+        if (e.target && e.target.id === 'modalDiagnosa') {
+            const keyword = e.target.value.toLowerCase().trim();
+            const dropdownIcd = document.getElementById('icdDropdown');
+            
+            // Mencegah lag: Hanya cari jika huruf yang diketik minimal 3 karakter
+            if (keyword.length < 3) {
+                dropdownIcd.style.display = 'none';
+                return; 
+            }
+
+            if (window.masterICD.length === 0) {
+                dropdownIcd.innerHTML = '<div style="padding: 10px; font-size: 13px; color: #e67e22;">⏳ Sedang mengunduh database medis... Coba lagi dalam 3 detik.</div>';
+                dropdownIcd.style.display = 'block';
+                return;
+            }
+
+            // Filter data berdasarkan kode, nama inggris, atau nama indonesia
+            let hasilCari = window.masterICD.filter(item => 
+                (item.nama_icd && item.nama_icd.toLowerCase().includes(keyword)) ||
+                (item.nama_icd_indo && item.nama_icd_indo.toLowerCase().includes(keyword)) ||
+                (item.kode_icd && item.kode_icd.toLowerCase().includes(keyword))
+            );
+
+            // 🔥 SORTING PINTAR: Prioritaskan Blok Penyakit Mulut & Gigi (K00 - K14) ke urutan Teratas!
+            hasilCari.sort((a, b) => {
+                const isGigiA = a.kode_icd.startsWith('K0') || a.kode_icd.startsWith('K1');
+                const isGigiB = b.kode_icd.startsWith('K0') || b.kode_icd.startsWith('K1');
+                if (isGigiA && !isGigiB) return -1;
+                if (!isGigiA && isGigiB) return 1;
+                return 0;
+            });
+
+            // Potong hasil jadi maksimal 20 agar layar browser tidak hang saat merender HTML
+            const hasilFinal = hasilCari.slice(0, 20);
+
+            // Render List HTML
+            dropdownIcd.innerHTML = '';
+            if (hasilFinal.length > 0) {
+                hasilFinal.forEach(item => {
+                    let div = document.createElement('div');
+                    // Styling per baris dropdown
+                    div.style.padding = '8px 12px';
+                    div.style.borderBottom = '1px solid #f1f2f6';
+                    div.style.cursor = 'pointer';
+                    div.style.fontSize = '12px';
+                    div.style.color = '#2f3640';
+                    
+                    // Efek Hover via JS
+                    div.onmouseover = function() { this.style.backgroundColor = '#f1f2f6'; }
+                    div.onmouseout = function() { this.style.backgroundColor = 'transparent'; }
+                    
+                    // Gabungkan teks untuk tampilan
+                    let teksTampil = item.nama_icd_indo && item.nama_icd_indo !== "-" ? item.nama_icd_indo : item.nama_icd;
+                    div.innerHTML = `<strong style="color: #c0392b;">${item.kode_icd}</strong> - ${teksTampil}<br><small style="color:#7f8c8d;">${item.nama_icd}</small>`;
+                    
+                    // Aksi saat item diklik
+                    div.addEventListener('click', function() {
+                        e.target.value = `${item.kode_icd} - ${teksTampil}`;
+                        dropdownIcd.style.display = 'none';
+                    });
+                    
+                    dropdownIcd.appendChild(div);
+                });
+                dropdownIcd.style.display = 'block';
+            } else {
+                dropdownIcd.innerHTML = '<div style="padding: 10px; color: #e74c3c; font-size: 13px;">❌ Penyakit tidak ditemukan dalam database ICD-10.</div>';
+                dropdownIcd.style.display = 'block';
+            }
+        }
+    });
+
+    // 5. Fitur Penutup Dropdown: Sembunyikan otomatis jika dokter mengklik area luar kotak
+    document.addEventListener('click', function(e) {
+        const inputDiagnosa = document.getElementById('modalDiagnosa');
+        const dropdownIcd = document.getElementById('icdDropdown');
+        
+        if (dropdownIcd && e.target !== inputDiagnosa && e.target !== dropdownIcd) {
+            dropdownIcd.style.display = 'none';
+        }
+    });
     // =========================================================================
     
 
