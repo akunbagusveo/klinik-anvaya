@@ -4855,16 +4855,17 @@
         const hiddenRow = document.getElementById('modalRowUpdate');
 
         // =====================================================================
-        // 🔥 SINKRONISASI LOGIKA UI & BACKEND (MODE KOREKSI)
+        // 🔥 SINKRONISASI LOGIKA UI & BACKEND (MODE KOREKSI / AUDIT TRAIL)
         // =====================================================================
         if (isHariIni === true || isHariIni === "true") {
             if(hiddenRow) hiddenRow.value = barisSheet;
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
             alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
         } else {
-            if(hiddenRow) hiddenRow.value = barisSheet; // ⚠️ WAJIB: Kirim nomor baris agar Backend tahu baris mana yang harus ditimpa!
+            if(hiddenRow) hiddenRow.value = barisSheet; 
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
-            alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU. Sistem akan menimpa perubahannya dan mencatat waktu hari ini sebagai waktu koreksi terbaru tanpa membuat baris baru.");
+            // 🎯 Teks Peringatan Diperbarui Sesuai Keinginan Owner
+            alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU.\n\nSistem TIDAK AKAN menghapus data asli, melainkan membuat BARIS KOREKSI BARU sebagai rekam jejak audit (Audit Trail) untuk Owner.");
         }
         // =====================================================================
 
