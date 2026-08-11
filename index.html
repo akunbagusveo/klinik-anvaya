@@ -4816,22 +4816,10 @@
         setNilaiAman('modalResep', res);
         setNilaiAman('modalProPerawatan', proPer);
         
-        // =====================================================================
-        // 🔥 PEMISAH TANGGAL DAN CATATAN SECARA CERDAS
-        // =====================================================================
-        let catatanMurni = proKon || "";
-        let tglMurni = "";
-        
-        const matchDate = catatanMurni.match(/(20\d{2}-\d{2}-\d{2})/);
-        if (matchDate) {
-            tglMurni = matchDate[1];
-            catatanMurni = catatanMurni.replace(tglMurni, '').trim(); 
-            catatanMurni = catatanMurni.replace(/^[-,\s]+/, ''); 
-        }
-
-        setNilaiAman('tanggalKontrol', tglMurni); 
-        setNilaiAman('modalProKontrol', catatanMurni); 
-        // =====================================================================
+        // 🔥 REGEX LAMA TELAH DIHAPUS (CLEAN UP)
+        // Pemisahan tanggal sudah ditangani dengan sangat cerdas oleh fungsi "pemicuEditCatatanMulai", 
+        // jadi data `proKon` yang masuk ke sini sudah bersih dari tanggal. Kita langsung set saja:
+        setNilaiAman('modalProKontrol', proKon); 
 
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
@@ -4866,35 +4854,37 @@
         const btnSimpan = document.getElementById('btnSimpanRME');
         const hiddenRow = document.getElementById('modalRowUpdate');
 
+        // =====================================================================
+        // 🔥 SINKRONISASI LOGIKA UI & BACKEND (MODE KOREKSI)
+        // =====================================================================
         if (isHariIni === true || isHariIni === "true") {
             if(hiddenRow) hiddenRow.value = barisSheet;
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
-            alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis ini secara langsung.");
+            alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
         } else {
-            if(hiddenRow) hiddenRow.value = ""; 
-            if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Sebagai Kunjungan Baru"; 
-            alert("Mode Salin Aktif: Data riwayat lama telah disalin sebagai template. Saat disimpan, sistem akan mencatatnya sebagai Kunjungan Baru.");
+            if(hiddenRow) hiddenRow.value = barisSheet; // ⚠️ WAJIB: Kirim nomor baris agar Backend tahu baris mana yang harus ditimpa!
+            if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
+            alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU. Sistem akan menimpa perubahannya dan mencatat waktu hari ini sebagai waktu koreksi terbaru tanpa membuat baris baru.");
         }
+        // =====================================================================
 
         const btnBatal = document.getElementById('btnBatalEdit');
         if(btnBatal) btnBatal.style.display = 'block';
 
         // =====================================================================
-        // 🔥 FITUR BARU: PROTEKSI UI - KUNCI SEMUA TOMBOL DI HISTORI
+        // 🔥 FITUR PROTEKSI UI - KUNCI SEMUA TOMBOL DI HISTORI
         // =====================================================================
         const wrapperHistori = document.getElementById('wrapperRiwayatFull');
         if (wrapperHistori) {
-            // Cari semua tombol di dalam histori secara dinamis
             const tombolHistori = wrapperHistori.querySelectorAll('button');
             tombolHistori.forEach(btn => {
-                btn.classList.add('disabled-by-edit'); // Beri stempel agar mudah dicari nanti
-                btn.disabled = true; // Kunci tombolnya
-                btn.style.opacity = '0.4'; // Buat transparan (abu-abu)
-                btn.style.cursor = 'not-allowed'; // Ubah kursor jadi dilarang
+                btn.classList.add('disabled-by-edit'); 
+                btn.disabled = true; 
+                btn.style.opacity = '0.4'; 
+                btn.style.cursor = 'not-allowed'; 
                 btn.title = "Selesaikan atau batalkan mode Edit/Salin di sebelah kiri terlebih dahulu.";
             });
         }
-        // =====================================================================
         
         if (typeof simpanDraftRME === "function") {
             simpanDraftRME();
