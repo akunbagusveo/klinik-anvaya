@@ -11820,6 +11820,11 @@
         let tbody = document.getElementById('tabelRincianDokterBody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#7f8c8d; font-size:14px;">Mengunduh & menyinkronkan data dari server... ⏳</td></tr>`;
 
+        // =====================================================================
+        // 🔥 PANGGIL LAYAR HITAM LOADING DI SINI (Sebelum Fetch dimulai)
+        // =====================================================================
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Mengunduh Data Pendapatan & Kalkulasi Slip Gaji...");
+
         // Unduh Arsip Gaji Terkunci
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) })
         .then(res => res.json())
@@ -11829,12 +11834,23 @@
         })
         .then(resTrx => resTrx.json())
         .then(resTrx => {
+            // =====================================================================
+            // 🔥 MATIKAN LAYAR HITAM LOADING DI SINI (Data sukses didapat)
+            // =====================================================================
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             window.rawDataBagiHasil = (resTrx.result === "success") ? resTrx.data : [];
             renderUIKinerjaDokter();
         })
         .catch(err => {
+            // =====================================================================
+            // 🔥 MATIKAN LAYAR HITAM LOADING JIKA KONEKSI TERPUTUS
+            // =====================================================================
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             console.error("Gagal menarik data dari server:", err);
             if (document.getElementById('cardDokFeePokok')) document.getElementById('cardDokFeePokok').innerText = "⚠️ Gagal Koneksi";
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#e74c3c; font-size:14px; font-weight:bold;">❌ Gagal menghubungi server. Silakan muat ulang.</td></tr>`;
         });
     }
 
