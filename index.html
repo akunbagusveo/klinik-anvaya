@@ -8264,6 +8264,10 @@
             btnKunciCetak.innerText = "⏳ Sedang Mengukir Kuitansi...";
         }
 
+        // 🔥 PANGGIL LAYAR HITAM LOADING DI SINI (Setelah Kasir Klik OK)
+        // Teksnya dibuat meyakinkan agar kasir sabar menunggu PDF selesai digenerate
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Memproses Pembayaran & Membuat Kuitansi PDF...");
+
         // 🔥 LAPIS 1: Buat Token Kasir Unik jika belum ada
         if (!window.tokenKasirUnik) {
             window.tokenKasirUnik = "KASIR-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
@@ -8272,7 +8276,7 @@
         // Payload yang dikirim ke Google Sheets 
         const payload = {
             action: "prosesFinalBilling",
-            tokenId: window.tokenKasirUnik, // 🔥 Kirim token ke Backend
+            tokenId: window.tokenKasirUnik, 
             barisPendaftaran: barisPendaftaran,
             noRM: noRM,
             namaPasien: namaPasien,
@@ -8294,6 +8298,9 @@
         })
         .then(res => res.json())
         .then(res => {
+            // 🔥 MATIKAN LAYAR HITAM LOADING DI SINI (Saat PDF sudah siap dan balasan server tiba)
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (btnKunciCetak) {
                 btnKunciCetak.disabled = false;
                 btnKunciCetak.innerText = "🖨️ Kunci & Cetak Kuitansi PDF";
@@ -8315,6 +8322,9 @@
             }
         })
         .catch(err => {
+            // 🔥 MATIKAN LAYAR HITAM LOADING JIKA INTERNET TERPUTUS
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             console.error(err);
             
             // 🔥 LAPIS 3 (MANAJEMEN PANIK UX KASIR)
