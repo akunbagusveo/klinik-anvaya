@@ -2621,11 +2621,15 @@
 
     // 2. Fungsi untuk menarik data kamus saat halaman web dibuka
     function muatKamusDikte() {
-        // 🔥 FIX UTAMA 1: Amankan selektor DOM dengan perlindungan check-null
         const bodyKamus = document.getElementById('bodyKamus');
         if (bodyKamus) {
             bodyKamus.innerHTML = `<tr><td colspan="3" style="text-align:center;">Memuat data kamus...</td></tr>`;
         }
+
+        // =====================================================================
+        // 🔥 PANGGIL LAYAR LOADING DI SINI (Saat membuka menu)
+        // =====================================================================
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Memuat data Kamus Dikte dari Server...");
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -2633,6 +2637,11 @@
         })
         .then(res => res.json())
         .then(res => {
+            // =====================================================================
+            // 🔥 MATIKAN LAYAR LOADING DI SINI (Saat data berhasil turun)
+            // =====================================================================
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (res.result === "success") {
                 if (!res.data) return;
 
@@ -2660,13 +2669,11 @@
                     });
                 }
 
-                // 🔥 KUNCI UTAMA: Mengisi variabel global agar siap digunakan Speech Recognition kapan saja
                 kamusKoreksiDinamis = objekKoreksiBersih; 
                 dataKamusArray = arrayUntukTabel;
                 
                 currentPage = 1; 
                 
-                // 🔥 FIX UTAMA 2: Hanya gambar tabel kamus jika elemen visualnya sedang terbuka di layar
                 if (bodyKamus && typeof renderKamusTable === "function") {
                     renderKamusTable(); 
                 }
@@ -2677,6 +2684,8 @@
             }
         })
         .catch(err => {
+            // 🔥 MATIKAN LAYAR LOADING JIKA KONEKSI PUTUS
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
             console.error("Gagal memuat kamus dikte:", err);
             if (bodyKamus) {
                 bodyKamus.innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Gagal memuat data.</td></tr>`;
@@ -5958,12 +5967,20 @@
             return;
         }
         
+        // =====================================================================
+        // 🔥 PANGGIL LAYAR LOADING DI SINI (Saat menyimpan kata)
+        // =====================================================================
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menyimpan kata ke database...");
+
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "simpanKamus", salah: salah, benar: benar })
         })
         .then(res => res.json())
         .then(res => {
+            // 🔥 MATIKAN LAYAR LOADING
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (res.result === "success") {
                 alert("Kata berhasil ditambahkan ke kamus!");
                 document.getElementById('inputSalah').value = "";
@@ -5971,25 +5988,41 @@
                 muatKamusDikte(); // Muat ulang agar data ter-update
             }
         })
-        .catch(err => console.error("Gagal menambah data:", err));
+        .catch(err => {
+            // 🔥 MATIKAN LAYAR LOADING
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+            console.error("Gagal menambah data:", err);
+        });
     }
 
     // Fungsi aksi tombol "Hapus" dari Google Sheets via Fetch
     function hapusKamus(rowIndex) {
         if (!confirm("Apakah Anda yakin ingin menghapus baris kata ini?")) return;
         
+        // =====================================================================
+        // 🔥 PANGGIL LAYAR LOADING DI SINI (Saat menghapus)
+        // =====================================================================
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menghapus kata dari database...");
+
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "hapusKamus", rowIndex: rowIndex })
         })
         .then(res => res.json())
         .then(res => {
+            // 🔥 MATIKAN LAYAR LOADING
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
             if (res.result === "success") {
                 alert("Kata berhasil dihapus!");
                 muatKamusDikte(); // Muat ulang tabel
             }
         })
-        .catch(err => console.error("Gagal menghapus data:", err));
+        .catch(err => {
+            // 🔥 MATIKAN LAYAR LOADING
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+            console.error("Gagal menghapus data:", err);
+        });
     }
 
     
