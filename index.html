@@ -2623,12 +2623,9 @@
     function muatKamusDikte() {
         const bodyKamus = document.getElementById('bodyKamus');
         if (bodyKamus) {
-            bodyKamus.innerHTML = `<tr><td colspan="3" style="text-align:center;">Memuat data kamus...</td></tr>`;
+            bodyKamus.innerHTML = `<tr><td colspan="3" style="text-align:center;">Memuat data kamus... ⏳</td></tr>`;
         }
 
-        // =====================================================================
-        // 🔥 PANGGIL LAYAR LOADING DI SINI (Saat membuka menu)
-        // =====================================================================
         if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Memuat data Kamus Dikte dari Server...");
 
         fetch(WEB_APP_URL, {
@@ -2637,9 +2634,6 @@
         })
         .then(res => res.json())
         .then(res => {
-            // =====================================================================
-            // 🔥 MATIKAN LAYAR LOADING DI SINI (Saat data berhasil turun)
-            // =====================================================================
             if (typeof sembunyikanLoading === "function") sembunyikanLoading();
 
             if (res.result === "success") {
@@ -2669,10 +2663,13 @@
                     });
                 }
 
+                // 🔥 THE MAGIC TRICK: Balik urutan array agar yang TERBARU (Paling Bawah di Sheet) muncul di ATAS (Halaman 1)
+                arrayUntukTabel.reverse();
+
                 kamusKoreksiDinamis = objekKoreksiBersih; 
                 dataKamusArray = arrayUntukTabel;
                 
-                currentPage = 1; 
+                currentPage = 1; // Selalu kembali ke Halaman 1 saat di-refresh
                 
                 if (bodyKamus && typeof renderKamusTable === "function") {
                     renderKamusTable(); 
@@ -2684,7 +2681,6 @@
             }
         })
         .catch(err => {
-            // 🔥 MATIKAN LAYAR LOADING JIKA KONEKSI PUTUS
             if (typeof sembunyikanLoading === "function") sembunyikanLoading();
             console.error("Gagal memuat kamus dikte:", err);
             if (bodyKamus) {
@@ -5959,18 +5955,18 @@
 
     // Fungsi aksi tombol "Tambah Data" ke Google Sheets via Fetch
     function tambahKamus() {
-        const salah = document.getElementById('inputSalah').value.trim();
-        const benar = document.getElementById('inputBenar').value.trim();
+        const elInputSalah = document.getElementById('inputSalah');
+        const elInputBenar = document.getElementById('inputBenar');
+        const salah = elInputSalah.value.trim();
+        const benar = elInputBenar.value.trim();
         
         if (!salah || !benar) {
-            alert("Kolom kata salah dan kata perbaikan tidak boleh kosong!");
+            alert("⚠️ Kolom kata salah dan kata perbaikan tidak boleh kosong!");
             return;
         }
         
-        // =====================================================================
-        // 🔥 PANGGIL LAYAR LOADING DI SINI (Saat menyimpan kata)
-        // =====================================================================
-        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menyimpan kata ke database...");
+        // 1. PANGGIL LOADING
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menyimpan kata baru ke Kamus...");
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -5978,20 +5974,29 @@
         })
         .then(res => res.json())
         .then(res => {
-            // 🔥 MATIKAN LAYAR LOADING
-            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
-
             if (res.result === "success") {
-                alert("Kata berhasil ditambahkan ke kamus!");
-                document.getElementById('inputSalah').value = "";
-                document.getElementById('inputBenar').value = "";
-                muatKamusDikte(); // Muat ulang agar data ter-update
+                // 2. KOSONGKAN INPUT TERLEBIH DAHULU (Agar UI langsung bersih)
+                elInputSalah.value = "";
+                elInputBenar.value = "";
+                
+                // 3. MATIKAN LOADING
+                if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+
+                // 4. MUNCULKAN ALERT (Gunakan timeout kecil agar browser sempat menghapus teks input di layar)
+                setTimeout(() => {
+                    alert("✅ Kata berhasil ditambahkan ke kamus!");
+                    // 5. RENDER ULANG TABEL
+                    muatKamusDikte(); 
+                }, 100);
+            } else {
+                if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+                alert("❌ Gagal menyimpan kata: " + res.message);
             }
         })
         .catch(err => {
-            // 🔥 MATIKAN LAYAR LOADING
             if (typeof sembunyikanLoading === "function") sembunyikanLoading();
             console.error("Gagal menambah data:", err);
+            alert("⚠️ Gangguan koneksi saat menyimpan kata.");
         });
     }
 
