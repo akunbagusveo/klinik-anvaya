@@ -5964,8 +5964,20 @@
             alert("⚠️ Kolom kata salah dan kata perbaikan tidak boleh kosong!");
             return;
         }
+
+        // =====================================================================
+        // 🔥 LAPIS 1: SATPAM PENCEGAH DUPLIKAT (FRONTEND)
+        // Mengecek dari memori browser secara instan tanpa perlu ke server
+        // =====================================================================
+        const salahLower = salah.toLowerCase();
+        // Kita manfaatkan variabel kamusKoreksiDinamis yang sudah dibuat oleh muatKamusDikte
+        if (typeof kamusKoreksiDinamis !== "undefined" && kamusKoreksiDinamis[salahLower]) {
+            const kataLama = kamusKoreksiDinamis[salahLower];
+            alert(`🚫 KATA SUDAH TERDAFTAR!\n\nKata salah "${salah}" sudah ada di dalam kamus dengan perbaikan menjadi "${kataLama}".\n\nJika ingin mengubahnya, silakan hapus data yang lama terlebih dahulu di tabel bawah.`);
+            return; // Hentikan proses secara instan!
+        }
+        // =====================================================================
         
-        // 1. PANGGIL LOADING
         if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menyimpan kata baru ke Kamus...");
 
         fetch(WEB_APP_URL, {
@@ -5975,22 +5987,18 @@
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
-                // 2. KOSONGKAN INPUT TERLEBIH DAHULU (Agar UI langsung bersih)
                 elInputSalah.value = "";
                 elInputBenar.value = "";
                 
-                // 3. MATIKAN LOADING
                 if (typeof sembunyikanLoading === "function") sembunyikanLoading();
 
-                // 4. MUNCULKAN ALERT (Gunakan timeout kecil agar browser sempat menghapus teks input di layar)
                 setTimeout(() => {
                     alert("✅ Kata berhasil ditambahkan ke kamus!");
-                    // 5. RENDER ULANG TABEL
                     muatKamusDikte(); 
                 }, 100);
             } else {
                 if (typeof sembunyikanLoading === "function") sembunyikanLoading();
-                alert("❌ Gagal menyimpan kata: " + res.message);
+                alert("❌ Gagal menyimpan kata: " + res.message); // Akan memunculkan pesan dari Backend jika duplikat lolos
             }
         })
         .catch(err => {
