@@ -1617,31 +1617,28 @@
                 <button onclick="bukaModalTindakan('')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(39, 174, 96, 0.3);">+ Tambah Tindakan Baru</button>
             </div>
 
-            <!-- Filter & Pencarian -->
-            <div style="display:flex; gap:10px; margin-bottom:15px; background:#f8f9fa; padding:15px; border-radius:6px;">
-                <input type="text" id="cariTindakan" placeholder="🔍 Cari nama atau kategori..." onkeyup="renderTabelMasterTindakan()" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px;">
-                <select id="filterStatusTindakan" onchange="renderTabelMasterTindakan()" style="padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px; width:150px;">
+           <!-- Filter, Pencarian & Tombol Segarkan (Ditambahkan Tombol Refresh Cache) -->
+           <div style="display:flex; gap:10px; margin-bottom:15px; background:#f8f9fa; padding:15px; border-radius:6px;">
+                <input type="text" id="cariTindakan" placeholder="🔍 Cari nama atau kategori..." onkeyup="renderTabelMasterTindakan(true)" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px;">
+                <select id="filterStatusTindakan" onchange="renderTabelMasterTindakan(true)" style="padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px; width:150px;">
                     <option value="Semua">Semua Status</option>
                     <option value="Aktif" selected>Hanya Aktif</option>
                     <option value="Nonaktif">Non-Aktif (Arsip)</option>
                 </select>
+                <!-- Tombol Paksa Unduh Ulang dari Server -->
+                <button onclick="initMasterTindakan(true)" style="background:#3498db; color:white; border:none; padding:10px 15px; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Tarik data terbaru dari server">🔄 Segarkan</button>
             </div>
 
-            <!-- Tabel Master -->
-            <!-- 🔥 PERBAIKAN 1: Tambahkan max-height: 500px dan overflow-y: auto agar bisa scroll atas-bawah -->
-            <div style="max-height:500px; overflow-y:auto; overflow-x:auto; border:1px solid #ecf0f1; border-radius:6px;">
+            <!-- Tabel Master (Tingginya disesuaikan untuk 50 baris) -->
+            <div style="max-height:650px; overflow-y:auto; overflow-x:auto; border:1px solid #ecf0f1; border-radius:6px;">
                 <table style="width:100%; border-collapse:collapse; min-width:1000px; text-align:left;">
                     <thead>
                         <tr>
-                            <!-- 🔥 PERBAIKAN 2: Tambahkan position:sticky dan top:0 di setiap TH -->
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px;">No</th>
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px;">Nama Tindakan</th>
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px;">Kategori</th>
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:right;">Harga Dasar</th>
-                            
-                            <!-- 🔥 PERBAIKAN 3: Tambahkan Kolom Harga Maksimal -->
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:right;">Harga Maksimal</th>
-                            
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Consent</th>
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Butuh Lab</th>
                             <th style="position:sticky; top:0; z-index:10; background:#34495e; color:white; padding:12px 10px; text-align:center;">Status</th>
@@ -1652,6 +1649,13 @@
                         <!-- Disuntik via JavaScript -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 🔥 KONTROL PAGINATION (HALAMAN) DITAMBAHKAN DI SINI -->
+            <div id="paginationControlsTindakan" style="margin-top: 15px; text-align: center; display: none; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ecf0f1;">
+                <button id="btnPrevTindakan" onclick="ubahHalamanTindakan(-1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">⬅️ Sebelumnya</button>
+                <span id="pageInfoTindakan" style="margin: 0 20px; font-weight: bold; color: #2c3e50;">Halaman 1 dari 1</span>
+                <button id="btnNextTindakan" onclick="ubahHalamanTindakan(1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">Selanjutnya ➡️</button>
             </div>
         </div>
 
@@ -12240,31 +12244,56 @@
     // ==========================================
     // 🛠️ MESIN CRUD MASTER TINDAKAN
     // ==========================================
-    window.dataMasterTindakanGlobal = [];
+    window.dataMasterTindakanGlobal = window.dataMasterTindakanGlobal || [];
+    let currentPageTindakan = 1;
+    const rowsPerPageTindakan = 50; // Render 50 baris per halaman agar browser tidak hang
 
-    function initMasterTindakan() {
+    // Tambahkan parameter "forceRefresh"
+    function initMasterTindakan(forceRefresh = false) {
         let tbody = document.getElementById('tabelMasterTindakanBody');
-        if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#7f8c8d;">Mengunduh Master Data Tindakan dari server... ⏳</td></tr>`;
+
+        // 🔥 THE SMART CACHE: Jika data sudah ada di memori dan tidak dipaksa refresh, pakai memori!
+        if (!forceRefresh && window.dataMasterTindakanGlobal && window.dataMasterTindakanGlobal.length > 0) {
+            console.log("⚡ Memuat Master Tindakan dari Cache Memory (Instan!)");
+            currentPageTindakan = 1;
+            renderTabelMasterTindakan();
+            return; // Hentikan eksekusi, jangan ganggu server Google!
+        }
+
+        if(tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#7f8c8d; font-weight:bold;">Mengunduh Master Data Tindakan dari server... ⏳</td></tr>`;
+        
+        // Panggil layar hitam loading agar layar tidak bisa di-klik sembarangan
+        if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Menyinkronkan ratusan data Master Tindakan...");
 
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllMasterTindakan" }) })
         .then(res => res.json())
         .then(res => {
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+            
             if (res.result === "success") {
                 window.dataMasterTindakanGlobal = res.data;
+                currentPageTindakan = 1; // Reset halaman
                 renderTabelMasterTindakan();
-            } else alert("Gagal: " + res.message);
+            } else {
+                alert("Gagal: " + res.message);
+            }
         })
         .catch(err => {
+            if (typeof sembunyikanLoading === "function") sembunyikanLoading();
             console.error(err);
-            if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#e74c3c;">Gagal koneksi ke server.</td></tr>`;
+            if(tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#e74c3c; font-weight:bold;">⚠️ Gagal koneksi ke server. Silakan klik tombol Segarkan.</td></tr>`;
         });
     }
 
-    function renderTabelMasterTindakan() {
+    function renderTabelMasterTindakan(resetHalaman = false) {
+        if (resetHalaman) currentPageTindakan = 1;
+
         let cari = document.getElementById('cariTindakan').value.toLowerCase();
         let statusFilter = document.getElementById('filterStatusTindakan').value;
         let tbody = document.getElementById('tabelMasterTindakanBody');
+        let paginationDiv = document.getElementById('paginationControlsTindakan');
         
+        // 1. FILTERING INSTAN DI MEMORI RAM (Sangat Cepat)
         let terfilter = window.dataMasterTindakanGlobal.filter(t => {
             let matchCari = t.namaTindakan.toLowerCase().includes(cari) || t.kategori.toLowerCase().includes(cari);
             let matchStatus = (statusFilter === 'Semua') ? true : (t.status === statusFilter);
@@ -12272,48 +12301,71 @@
         });
 
         if (terfilter.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#95a5a6;">Data tidak ditemukan.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#95a5a6; font-weight:bold;">Data tidak ditemukan.</td></tr>`;
+            if (paginationDiv) paginationDiv.style.display = 'none';
             return;
         }
 
+        // 2. PEMOTONGAN DATA (PAGINATION) UNTUK MENCEGAH BROWSER HANG
+        if (paginationDiv) paginationDiv.style.display = 'block';
+
+        const totalPages = Math.ceil(terfilter.length / rowsPerPageTindakan);
+        if (currentPageTindakan > totalPages) currentPageTindakan = totalPages;
+
+        const startIndex = (currentPageTindakan - 1) * rowsPerPageTindakan;
+        const endIndex = startIndex + rowsPerPageTindakan;
+        const paginatedItems = terfilter.slice(startIndex, endIndex);
+
         let html = '';
-        terfilter.forEach((t, i) => {
+        paginatedItems.forEach((t, i) => {
+            let actualIndex = startIndex + i + 1; // Penomoran asli berlanjut
+            
             let badgeStatus = t.status === 'Aktif' 
                 ? `<span style="background:#d4efdf; color:#27ae60; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Aktif</span>` 
                 : `<span style="background:#fadbd8; color:#c0392b; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Nonaktif</span>`;
                 
-            // 🔥 PERBAIKAN 1: Gunakan == 1 (bukan ===) dan konversi ke String untuk mendeteksi "Ya" dengan aman
             let strConsent = String(t.butuhConsent).toLowerCase().trim();
             let strLab = String(t.butuhLab).toLowerCase().trim();
             
             let icnConsent = (t.butuhConsent == 1 || strConsent === "ya" || strConsent === "true") ? "📝 Ya" : "-";
             let icnLab = (t.butuhLab == 1 || strLab === "ya" || strLab === "true") ? "🧪 Ya" : "-";
 
-            // 🔥 PERBAIKAN 2: Format Harga Maksimal (Jika kosong / 0, tampilkan strip)
             let hargaMaksTxt = (t.hargaMaksimal && Number(t.hargaMaksimal) > 0) 
                 ? `Rp ${Number(t.hargaMaksimal).toLocaleString('id-ID')}` 
                 : `-`;
 
             html += `
                 <tr style="border-bottom: 1px solid #ecf0f1;">
-                    <td style="padding:12px 10px; font-size:13px; color:#7f8c8d;">${i + 1}</td>
+                    <td style="padding:12px 10px; font-size:13px; color:#7f8c8d;">${actualIndex}</td>
                     <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2c3e50;">${t.namaTindakan}</td>
                     <td style="padding:12px 10px; font-size:13px; color:#34495e;">${t.kategori}</td>
                     <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2980b9; text-align:right;">Rp ${Number(t.hargaDasar).toLocaleString('id-ID')}</td>
-                    
-                    <!-- 🔥 PERBAIKAN 3: Suntikkan Kolom Harga Maksimal -->
                     <td style="padding:12px 10px; font-size:13px; color:#7f8c8d; text-align:right;">${hargaMaksTxt}</td>
-                    
                     <td style="padding:12px 10px; font-size:13px; text-align:center; color:#e67e22;">${icnConsent}</td>
                     <td style="padding:12px 10px; font-size:13px; text-align:center; color:#9b59b6;">${icnLab}</td>
                     <td style="padding:12px 10px; text-align:center;">${badgeStatus}</td>
                     <td style="padding:12px 10px; text-align:center;">
-                        <button onclick="bukaModalTindakan('${t.idTindakan}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">✏️ Edit</button>
+                        <button onclick="bukaModalTindakan('${t.idTindakan}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit</button>
                     </td>
                 </tr>
             `;
         });
         tbody.innerHTML = html;
+
+        // 3. UPDATE TAMPILAN KONTROL HALAMAN
+        let pageInfo = document.getElementById('pageInfoTindakan');
+        if (pageInfo) pageInfo.innerText = `Halaman ${currentPageTindakan} dari ${totalPages}`;
+        
+        let btnPrev = document.getElementById('btnPrevTindakan');
+        let btnNext = document.getElementById('btnNextTindakan');
+        if (btnPrev) btnPrev.disabled = (currentPageTindakan === 1);
+        if (btnNext) btnNext.disabled = (currentPageTindakan === totalPages);
+    }
+
+    // 🔥 FUNGSI BARU UNTUK NAVIGASI HALAMAN
+    function ubahHalamanTindakan(step) {
+        currentPageTindakan += step;
+        renderTabelMasterTindakan(false); // Render ulang tanpa me-reset halaman ke 1
     }
 
     // ==========================================
