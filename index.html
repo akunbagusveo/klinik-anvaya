@@ -12640,15 +12640,26 @@
         }
     }
 
-    // 3. FUNGSI KETIKA USER MEMILIH DIAGNOSA
+    // 3. FUNGSI KETIKA USER MEMILIH ATAU MENGINPUT DIAGNOSA
     function pilihICD(teksDiagnosa) {
         const inputCari = document.getElementById('inputCariDiagnosa');
         const dropdownIcd = document.getElementById('icdDropdown');
         
+        // =====================================================================
+        // 🔥 FITUR BARU: SMART CUSTOM TAGGING
+        // Mengecek apakah inputan adalah kode ICD asli atau ketikan bebas/dikte
+        // Kode ICD asli selalu memiliki format "K00.0 - Nama Penyakit"
+        // =====================================================================
+        if (!teksDiagnosa.includes(" - ")) {
+            // Jika tidak ada tanda " - ", berarti ini ketikan bebas / dikte custom
+            // Kita ubah bentuknya agar rapi saat menjadi Chip Kapsul
+            teksDiagnosa = "📝 CUSTOM - " + teksDiagnosa.charAt(0).toUpperCase() + teksDiagnosa.slice(1);
+        }
+
         // Mencegah duplikasi diagnosa yang persis sama di 1 pasien
         if (!window.diagnosaTerpilih.includes(teksDiagnosa)) {
             window.diagnosaTerpilih.push(teksDiagnosa);
-            renderChipDiagnosa();
+            renderChipDiagnosa(); // Gambar ulang UI Kapsulnya
         }
         
         if (inputCari) {
