@@ -2263,13 +2263,13 @@
                         </div>
                     
                         <!-- ======================================================= -->
-                        <!-- 🔥 UPGRADE: MULTIPLE DIAGNOSES (ICD-10) & QUICK PICK -->
+                        <!-- 🔥 UPGRADE: MULTIPLE DIAGNOSES DENGAN UI CHIP (KAPSUL) -->
                         <!-- ======================================================= -->
                         <div class="form-group" style="position: relative;">
-                            <label>📌 Diagnosa / Penyakit Primer & Sekunder (ICD-10) <button type="button" class="btn-mic" onclick="mulaiDikte('modalDiagnosa')">🎙️</button></label>
+                            <label>📌 Diagnosa / Penyakit Primer & Sekunder <button type="button" class="btn-mic" onclick="mulaiDikte('inputCariDiagnosa')">🎙️</button></label>
                             
                             <!-- Tombol Quick Pick -->
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
                                 <button type="button" onclick="pilihICD('K02.9 - Dental caries, unspecified')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Karies</button>
                                 <button type="button" onclick="pilihICD('K04.0 - Pulpitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Pulpitis</button>
                                 <button type="button" onclick="pilihICD('K05.0 - Acute gingivitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Gingivitis</button>
@@ -2277,14 +2277,19 @@
                                 <button type="button" onclick="pilihICD('K01.1 - Impacted teeth')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Impaksi</button>
                             </div>
 
-                            <!-- 🔥 BERUBAH: Dari <input> menjadi <textarea> agar muat banyak diagnosa bertingkat ke bawah -->
-                            <textarea id="modalDiagnosa" rows="3" autocomplete="off" placeholder="Ketik nama penyakit... (Gunakan tombol 'Enter' untuk menambah diagnosa sekunder)" required style="font-family: monospace; line-height: 1.5;"></textarea>
+                            <!-- 🔥 AREA CHIP DIAGNOSA TERPILIH (Visual list dengan tombol X akan muncul di sini) -->
+                            <div id="tempatChipDiagnosa" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
+
+                            <!-- 🔥 INPUT PENCARIAN & DIKTE (Dokter mengetik di sini, setelah dipilih, teksnya akan pindah ke atas menjadi Chip) -->
+                            <input type="text" id="inputCariDiagnosa" autocomplete="off" placeholder="Ketik nama penyakit lalu klik hasilnya... (Atau ketik bebas & tekan Enter)" style="border: 1px dashed #3498db; background: #f9fcff; margin-bottom: 0;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); if(this.value.trim() !== '') pilihICD(this.value.trim()); }">
+                            
+                            <!-- 🔥 TEXTAREA ASLI (Disembunyikan! Berfungsi sebagai jembatan untuk menyimpan & mengirim data ke Google Sheets) -->
+                            <textarea id="modalDiagnosa" required style="display: none;"></textarea>
                             
                             <!-- Kontainer Dropdown -->
                             <div id="icdDropdown" style="display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #bdc3c7; border-radius: 4px; width: 100%; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-top: 2px;">
                             </div>
                         </div>
-                        <!-- ======================================================= -->
                         <!-- ======================================================= -->
                         <div class="form-group" style="border: 1px solid #dcdde1; padding: 15px; border-radius: 4px; background-color: #f8f9fa; margin-bottom: 15px; margin-top: 25px;">
                             <label style="font-weight: bold; color: #2c3e50; display: block; margin-bottom: 10px;">🛠️ Daftar Tindakan / Perawatan Hari Ini</label>
@@ -4836,6 +4841,7 @@
         setNilaiAman('modalAnamnesa', anam);
         setNilaiAman('modalObjektif', obj);
         setNilaiAman('modalDiagnosa', diag);
+        if (typeof sinkronisasiChipDiagnosa === "function") sinkronisasiChipDiagnosa();
         setNilaiAman('modalResep', res);
         setNilaiAman('modalProPerawatan', proPer);
         
@@ -12565,9 +12571,10 @@
     // =========================================================================
 
     // =========================================================================
-    // 🔥 MESIN SMART AUTOCOMPLETE ICD-10 (MULTIPLE DIAGNOSES SUPPORT)
+    // 🔥 MESIN SMART AUTOCOMPLETE ICD-10 (CHIP / TAG UI)
     // =========================================================================
     window.masterICD = [];
+    window.diagnosaTerpilih = []; // Memori penyimpan daftar diagnosa di layar
 
     document.addEventListener("DOMContentLoaded", function() {
         fetch('https://raw.githubusercontent.com/fendis0709/icd-10/master/master_icd_x.json')
@@ -12579,37 +12586,94 @@
             .catch(err => console.error("Gagal memuat database ICD-10:", err));
     });
 
-    // 🔥 LOGIKA BARU: Fungsi untuk mengeksekusi klik dari tombol Quick Pick
-    function pilihICD(teksDiagnosa) {
-        const inputDiagnosa = document.getElementById('modalDiagnosa');
-        const dropdownIcd = document.getElementById('icdDropdown');
+    // 1. FUNGSI MENGGAMBAR CHIP (KAPSUL) DI LAYAR
+    function renderChipDiagnosa() {
+        const tempatChip = document.getElementById('tempatChipDiagnosa');
+        const textareaDB = document.getElementById('modalDiagnosa'); // Textarea tersembunyi
         
-        if (inputDiagnosa) {
-            // Jika kotak masih kosong, langsung masukkan.
-            // Jika sudah ada isinya, tambahkan di baris baru agar rapi ke bawah.
-            if (inputDiagnosa.value.trim() === "") {
-                inputDiagnosa.value = teksDiagnosa;
-            } else {
-                // Cek agar tidak terjadi double input diagnosa yang sama via Quick Pick
-                if (!inputDiagnosa.value.includes(teksDiagnosa)) {
-                    inputDiagnosa.value += "\n" + teksDiagnosa;
-                }
-            }
-            if (dropdownIcd) dropdownIcd.style.display = 'none'; 
-            inputDiagnosa.focus(); // Kembalikan kursor ke kotak
+        tempatChip.innerHTML = ""; // Bersihkan layar
+        
+        window.diagnosaTerpilih.forEach((diag, index) => {
+            const chip = document.createElement('div');
+            chip.style.display = "flex";
+            chip.style.justifyContent = "space-between";
+            chip.style.alignItems = "center";
+            chip.style.background = "#fff";
+            chip.style.border = "1px solid #dcdde1";
+            chip.style.padding = "8px 12px";
+            chip.style.borderRadius = "4px";
+            chip.style.fontSize = "13px";
+            chip.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+            chip.style.borderLeft = "4px solid #3498db";
+            
+            const teks = document.createElement('span');
+            teks.innerText = diag;
+            teks.style.flex = "1";
+            teks.style.fontWeight = "500";
+            teks.style.color = "#2c3e50";
+            
+            // 🔥 TOMBOL X UNTUK MENGHAPUS INSTAN TANPA BACKSPACE
+            const btnHapus = document.createElement('button');
+            btnHapus.innerHTML = "❌ Hapus";
+            btnHapus.style.background = "#ffeaa7";
+            btnHapus.style.color = "#d35400";
+            btnHapus.style.border = "none";
+            btnHapus.style.borderRadius = "4px";
+            btnHapus.style.cursor = "pointer";
+            btnHapus.style.fontSize = "11px";
+            btnHapus.style.fontWeight = "bold";
+            btnHapus.style.padding = "4px 8px";
+            
+            btnHapus.onclick = function() {
+                window.diagnosaTerpilih.splice(index, 1); // Hapus dari memori
+                renderChipDiagnosa(); // Gambar ulang secara otomatis!
+            };
+            
+            chip.appendChild(teks);
+            chip.appendChild(btnHapus);
+            tempatChip.appendChild(chip);
+        });
+
+        // 2. SINKRONISASI KE DATABASE (Pindahkan data visual ke textarea tersembunyi)
+        if (textareaDB) {
+            textareaDB.value = window.diagnosaTerpilih.join('\n');
         }
     }
 
-    // 🔥 LOGIKA BARU: Pendeteksi Ketikan Multibaris
+    // 3. FUNGSI KETIKA USER MEMILIH DIAGNOSA
+    function pilihICD(teksDiagnosa) {
+        const inputCari = document.getElementById('inputCariDiagnosa');
+        const dropdownIcd = document.getElementById('icdDropdown');
+        
+        // Mencegah duplikasi diagnosa yang persis sama di 1 pasien
+        if (!window.diagnosaTerpilih.includes(teksDiagnosa)) {
+            window.diagnosaTerpilih.push(teksDiagnosa);
+            renderChipDiagnosa();
+        }
+        
+        if (inputCari) {
+            inputCari.value = ""; // Langsung bersihkan kotak pencarian agar siap dicari lagi
+            inputCari.focus();
+        }
+        if (dropdownIcd) dropdownIcd.style.display = 'none';
+    }
+
+    // 4. FUNGSI SINKRONISASI SAAT BUKA FITUR "EDIT HISTORI" MASA LALU
+    function sinkronisasiChipDiagnosa() {
+        const textareaDB = document.getElementById('modalDiagnosa');
+        if (textareaDB && textareaDB.value.trim() !== "") {
+            window.diagnosaTerpilih = textareaDB.value.split('\n').map(item => item.trim()).filter(item => item !== "");
+        } else {
+            window.diagnosaTerpilih = [];
+        }
+        renderChipDiagnosa();
+    }
+
+    // 5. PENDETEKSI KETIKAN PENCARIAN
     document.addEventListener('input', function(e) {
-        if (e.target && e.target.id === 'modalDiagnosa') {
-            const fullText = e.target.value;
+        if (e.target && e.target.id === 'inputCariDiagnosa') {
+            const keyword = e.target.value.toLowerCase().trim();
             const dropdownIcd = document.getElementById('icdDropdown');
-            
-            // Pecah teks berdasarkan "Enter" (Baris Baru). 
-            // Kita hanya akan menggunakan baris paling bawah yang sedang diketik sebagai kata pencarian!
-            const lines = fullText.split('\n');
-            const keyword = lines[lines.length - 1].toLowerCase().trim(); 
             
             if (keyword.length < 3) {
                 dropdownIcd.style.display = 'none';
@@ -12628,6 +12692,7 @@
                 (item.kode_icd && item.kode_icd.toLowerCase().includes(keyword))
             );
 
+            // Filter pintar gigi ditaruh paling atas
             hasilCari.sort((a, b) => {
                 const isGigiA = a.kode_icd.startsWith('K0') || a.kode_icd.startsWith('K1');
                 const isGigiB = b.kode_icd.startsWith('K0') || b.kode_icd.startsWith('K1');
@@ -12654,32 +12719,25 @@
                     let teksTampil = item.nama_icd_indo && item.nama_icd_indo !== "-" ? item.nama_icd_indo : item.nama_icd;
                     div.innerHTML = `<strong style="color: #c0392b;">${item.kode_icd}</strong> - ${teksTampil}<br><small style="color:#7f8c8d;">${item.nama_icd}</small>`;
                     
-                    // 🔥 THE MAGIC: Saat diklik, sistem HANYA mengganti baris terakhir dengan hasil pilihan
                     div.addEventListener('click', function() {
-                        lines[lines.length - 1] = `${item.kode_icd} - ${teksTampil}`;
-                        
-                        // Gabungkan kembali semua baris, dan berikan "Enter" ( \n ) di akhir 
-                        // agar dokter siap mengetik diagnosa ke-3 jika diperlukan!
-                        e.target.value = lines.join('\n') + '\n'; 
-                        
-                        dropdownIcd.style.display = 'none';
-                        e.target.focus();
+                        pilihICD(`${item.kode_icd} - ${teksTampil}`);
                     });
                     
                     dropdownIcd.appendChild(div);
                 });
                 dropdownIcd.style.display = 'block';
             } else {
-                dropdownIcd.innerHTML = '<div style="padding: 10px; color: #e74c3c; font-size: 13px;">❌ Penyakit tidak ditemukan dalam database.</div>';
+                dropdownIcd.innerHTML = '<div style="padding: 10px; color: #e74c3c; font-size: 13px;">❌ Penyakit tidak ditemukan dalam database. (Jika ingin menambahkan custom, tekan ENTER saja)</div>';
                 dropdownIcd.style.display = 'block';
             }
         }
     });
 
+    // 6. PENUTUP DROPDOWN OTOMATIS
     document.addEventListener('click', function(e) {
-        const inputDiagnosa = document.getElementById('modalDiagnosa');
+        const inputCari = document.getElementById('inputCariDiagnosa');
         const dropdownIcd = document.getElementById('icdDropdown');
-        if (dropdownIcd && e.target !== inputDiagnosa && e.target !== dropdownIcd) {
+        if (dropdownIcd && e.target !== inputCari && e.target !== dropdownIcd) {
             dropdownIcd.style.display = 'none';
         }
     });
