@@ -7401,7 +7401,7 @@
     let pengenalSuaraAktif = null; // Menyimpan status mic
 
     // 🔥 SOLUSI BIJAK: Kita tidak perlu lagi menulis "let pengenalSuaraAktif = null;" secara terpisah di luar fungsi.
-// Kita langsung kelola statusnya secara dinamis menggunakan objek global browser (window.pengenalSuaraAktif)
+    // Kita langsung kelola statusnya secara dinamis menggunakan objek global browser (window.pengenalSuaraAktif)
 
     function mulaiDikte(targetId) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -7478,30 +7478,31 @@
             hasilText = hasilText.replace(/\.\s*,/g, ",");
             hasilText = hasilText.replace(/\.{2,}/g, ".");
 
-            // 4. 🔥 FIX UTAMA: KUNCI ALUR SEBAGAI PARAGRAF MENGALIR BIASA DI FORM
+            // 4. KUNCI ALUR SEBAGAI PARAGRAF MENGALIR BIASA DI FORM
             if (hasilText) {
                 let currentVal = targetInput.value;
                 let spasiPemisah = "";
                 
                 if (currentVal !== "") {
-                    // Beri spasi jika di ujung teks lama belum ada spasi atau enter
                     if (!currentVal.endsWith(" ") && !currentVal.endsWith("\n")) {
                         spasiPemisah = " ";
                     }
                 }
                 
-                // Kapitalisasi Otomatis: Hanya jika teks kosong atau setelah tanda baca akhir (. / ! / ?)
                 let harusKapital = currentVal.trim() === "" || /[.\!?]\s*$/.test(currentVal);
                 if (harusKapital) {
                     hasilText = hasilText.charAt(0).toUpperCase() + hasilText.slice(1);
                 }
                 
-                // Masukkan langsung sebagai paragraf biasa, tanpa peluru bullet atau ganti baris terpaksa
+                // Masukkan teks ke dalam kotak input
                 targetInput.value += spasiPemisah + hasilText;
-                
-                // Pembersihan akhir spasi ganda penyusup dan picu trigger input DOM
                 targetInput.value = targetInput.value.replace(/\s{2,}/g, " ");
-                targetInput.dispatchEvent(new Event('input'));
+                
+                // =====================================================================
+                // 🔥 THE MAGIC FIX: Tambahkan { bubbles: true }
+                // Agar sistem Dropdown ICD-10 menyadari ada teks yang masuk via suara
+                // =====================================================================
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         };
 
@@ -7521,7 +7522,7 @@
         };
 
         recognition.start();
-    }  
+    }
 
     // Listener Auto-Bullet Point pada textarea
     document.addEventListener('DOMContentLoaded', function() {
