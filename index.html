@@ -4445,9 +4445,11 @@
         if (savedDraft && mode === 'input') {
             try {
                 const tempDraft = JSON.parse(savedDraft);
-                // Jika draf dari kunjungan lama, kita buang ke tempat sampah!
-                if (tempDraft.visitDate && tempDraft.visitDate !== window.tanggalKunjunganAktif) {
-                    console.log("🗑️ Draf usang dari kunjungan lama terdeteksi. Melakukan pembersihan otomatis...");
+                
+                // 🔥 PERBAIKAN LOGIKA: 
+                // Jika draf TIDAK PUNYA TANGGAL (draf usang sebelum update) ATAU tanggalnya beda, BUANG!
+                if (!tempDraft.visitDate || tempDraft.visitDate !== window.tanggalKunjunganAktif) {
+                    console.log("🗑️ Draf usang atau dari kunjungan lama terdeteksi. Melakukan pembersihan otomatis...");
                     localStorage.removeItem('draft_rme_' + cleanNoRM);
                     localStorage.removeItem('ttd_consent_' + cleanNoRM);
                     localStorage.removeItem('tujuan_consent_' + cleanNoRM);
@@ -4456,6 +4458,7 @@
                 }
             } catch(e) {
                 console.error("Format draf rusak", e);
+                localStorage.removeItem('draft_rme_' + cleanNoRM); // Bersihkan juga jika formatnya rusak
             }
         }
         
