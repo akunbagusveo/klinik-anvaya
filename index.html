@@ -12531,9 +12531,47 @@
         .then(res => {
             if (res.result === "success") {
                 document.getElementById('modalMasterTindakan').style.display = 'none';
+
+                // =====================================================================
+                // 🔥 FITUR BARU: OPTIMISTIC UI UPDATE (REAKTIF 0 DETIK)
+                // Memperbarui memori RAM secara instan tanpa menunggu loading dari server
+                // =====================================================================
+                if (typeof window.dataMasterTindakanGlobal !== "undefined") {
+                    let indexDicari = -1;
+                    if (payload.idTindakan) {
+                        indexDicari = window.dataMasterTindakanGlobal.findIndex(t => String(t.idTindakan) === String(payload.idTindakan));
+                    } else {
+                        // Jika ID kosong, cari berdasarkan nama
+                        indexDicari = window.dataMasterTindakanGlobal.findIndex(t => t.namaTindakan.toLowerCase() === payload.namaTindakan.toLowerCase());
+                    }
+
+                    if (indexDicari !== -1) {
+                        // MODE EDIT: Timpa data lama dengan data baru di RAM
+                        window.dataMasterTindakanGlobal[indexDicari].namaTindakan = payload.namaTindakan;
+                        window.dataMasterTindakanGlobal[indexDicari].kategori = payload.kategori;
+                        window.dataMasterTindakanGlobal[indexDicari].hargaDasar = payload.hargaDasar;
+                        window.dataMasterTindakanGlobal[indexDicari].hargaMaksimal = payload.hargaMaksimal;
+                        window.dataMasterTindakanGlobal[indexDicari].butuhConsent = payload.butuhConsent;
+                        window.dataMasterTindakanGlobal[indexDicari].butuhLab = payload.butuhLab;
+                        window.dataMasterTindakanGlobal[indexDicari].status = payload.status;
+                        window.dataMasterTindakanGlobal[indexDicari].keterangan = payload.keterangan;
+                    } else {
+                        // MODE TAMBAH BARU: Sisipkan data baru di urutan paling atas RAM
+                        window.dataMasterTindakanGlobal.unshift(payload);
+                    }
+
+                    // Render ulang tabel seketika tanpa menunggu!
+                    if (typeof renderTabelMasterTindakan === "function") {
+                        renderTabelMasterTindakan(false);
+                    }
+                }
+                // =====================================================================
+
                 alert("✅ Master Tindakan berhasil disimpan!");
                 window.tokenMasterTindakan = null;
-                initMasterTindakan(); 
+                
+                // Proses download server (init) tetap berjalan di background secara diam-diam
+                if (typeof initMasterTindakan === "function") initMasterTindakan(); 
             } else {
                 alert("Gagal menyimpan: " + res.message);
             }
@@ -12544,7 +12582,7 @@
             alert("⚠️ KONEKSI TERPUTUS!\n\nJangan klik simpan berulang kali. Data Anda kemungkinan sudah masuk ke sistem.\n\nTabel akan dimuat ulang untuk memastikannya.");
             
             document.getElementById('modalMasterTindakan').style.display = 'none';
-            initMasterTindakan(); 
+            if (typeof initMasterTindakan === "function") initMasterTindakan(); 
         })
         .finally(() => {
             setTimeout(() => {
