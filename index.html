@@ -4369,7 +4369,6 @@
     // ==========================================
     // 🔥 UPGRADE: Tambahkan parameter tanggalDaftarLangsung di akhir
     function bukaModalRiwayatFull(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "", rowNumberTarget = "") {
-        // 🔥 SANITASI MUTLAK: Pastikan noRM tidak kosong atau bernilai "-"
         const cleanNoRM = String(noRM || "").trim();
         if (!cleanNoRM || cleanNoRM === "-" || cleanNoRM === "undefined") {
             alert("⚠️ Nomor Rekam Medis pasien tidak valid (" + cleanNoRM + "). Tidak dapat memuat profil RME.");
@@ -4397,9 +4396,7 @@
         }
 
         const btnTambah = document.getElementById('btnTambahTindakan');
-        if (btnTambah) {
-            btnTambah.style.display = window.isPasienLunasAktif ? 'none' : 'inline-block';
-        }
+        if (btnTambah) btnTambah.style.display = window.isPasienLunasAktif ? 'none' : 'inline-block';
 
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const perms = sessionData && sessionData.permissions ? sessionData.permissions : {};
@@ -4412,29 +4409,18 @@
         const kolomKiri = document.getElementById('kolomInputRME');
         const formSplit = document.getElementById('formModalMedisSplit');
         
-        // =====================================================================
-        // 🔥 FIX BUG UI: PENCUCI MEMORI LAYAR (RESET STATUS TOGGLE)
-        // =====================================================================
         const panelHistori = document.getElementById('kolomHistoriRME');
         const btnToggle = document.getElementById('btnToggleHistori');
         
-        // 1. Bangunkan kembali panel kanan dari mode gaib
-        if (panelHistori) {
-            panelHistori.style.display = 'block'; 
-        }
-        
-        // 2. Kembalikan bentuk, warna, dan tulisan tombol ke kondisi standar
+        if (panelHistori) panelHistori.style.display = 'block'; 
         if (btnToggle) {
             btnToggle.innerHTML = '👁️ Sembunyikan Histori';
             btnToggle.style.backgroundColor = '#34495e';
         }
-
-        // 3. Kembalikan porsi rasio kolom kiri ke 55% dan pasang lagi garis pembatasnya
         if (kolomKiri) {
             kolomKiri.style.flex = '0 0 55%';
             kolomKiri.style.borderRight = '2px solid #bdc3c7';
         }
-        // =====================================================================
         
         if (mode === 'view') {
             if (kolomKiri) kolomKiri.style.display = 'none'; 
@@ -4449,35 +4435,52 @@
         
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
+
+        // =========================================================================
+        // 🔥 SATPAM PENJAGA TANGGAL DRAF (ANTI-GHOSTING)
+        // =========================================================================
+        const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
+        let draftValidObj = null;
+
+        if (savedDraft && mode === 'input') {
+            try {
+                const tempDraft = JSON.parse(savedDraft);
+                // Jika draf dari kunjungan lama, kita buang ke tempat sampah!
+                if (tempDraft.visitDate && tempDraft.visitDate !== window.tanggalKunjunganAktif) {
+                    console.log("🗑️ Draf usang dari kunjungan lama terdeteksi. Melakukan pembersihan otomatis...");
+                    localStorage.removeItem('draft_rme_' + cleanNoRM);
+                    localStorage.removeItem('ttd_consent_' + cleanNoRM);
+                    localStorage.removeItem('tujuan_consent_' + cleanNoRM);
+                } else {
+                    draftValidObj = tempDraft; // Draf terbukti sah untuk hari ini
+                }
+            } catch(e) {
+                console.error("Format draf rusak", e);
+            }
+        }
         
         // =========================================================================
-        // 🔥 SENSOR RESTORASI CONSENT (ANTI-HILANG SAAT HARD REFRESH)
+        // 🔥 SENSOR RESTORASI CONSENT 
         // =========================================================================
         if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
         window.consentSudahDisimpanHariIni = false;
         window.urlFotoConsentAktif = "";
         window.tujuanConsentAktif = "";
 
-        // Geledah memori lokal: Apakah pasien ini sudah punya consent yang tersimpan?
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
         const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM);
 
         if (savedTTD && savedTTD !== "-" && savedTTD !== "undefined") {
-            console.log("🟢 [Consent Restore] Menemukan arsip consent untuk RM: " + cleanNoRM + ". Memulihkan status hijau...");
-            
-            // 1. Pulihkan status memori global
             window.consentSudahDisimpanHariIni = true;
             window.urlFotoConsentAktif = savedTTD;
             if (savedTujuan) window.tujuanConsentAktif = savedTujuan;
 
-            // 2. Ubah tombol utama di form RME langsung menjadi Hijau Sukses
             const btnConsent = document.getElementById('btnBuatConsent');
             if (btnConsent) {
-                btnConsent.style.backgroundColor = "#27ae60"; // Warna hijau
+                btnConsent.style.backgroundColor = "#27ae60"; 
                 btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             }
         }
-        // =========================================================================
         
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
@@ -4500,24 +4503,17 @@
         }
 
         // =========================================================================
-        // 💾 RESTORASI DRAF RME (DENGAN SMART WAITER ANTI-GANGGUAN JARINGAN)
+        // 💾 RESTORASI DRAF RME (HANYA DIEKSEKUSI JIKA DRAF SAH)
         // =========================================================================
-        const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
-        if (savedDraft && mode === 'input') { 
-            // 🔥 FUNGSI REKURSIF PINTAR: Menunda eksekusi sampai data server selesai dimuat
+        if (draftValidObj) { 
             const eksekusiRestorasi = () => {
-                // Cek apakah data master belum ada ATAU masih kosong
                 if (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0) {
-                    console.log("⏳ [Draft Restore] Menunggu data Master Tindakan dari server...");
-                    setTimeout(eksekusiRestorasi, 300); // Cek ulang setiap 0.3 detik
+                    setTimeout(eksekusiRestorasi, 300);
                     return;
                 }
                 
-                // Jika lolos ke sini, berarti Master Tindakan sudah sukses terdownload!
                 try {
-                    console.log("✅ [Draft Restore] Master Tindakan siap! Memulai pemulihan draf...");
-                    const draftObj = JSON.parse(savedDraft);
-                    
+                    const draftObj = draftValidObj;
                     const pasokNilai = (id, val) => {
                         const el = document.getElementById(id);
                         if (el) el.value = val || "";
@@ -4535,14 +4531,12 @@
                     pasokNilai('modalProKontrol', draftObj.proKontrol);
                     pasokNilai('tanggalKontrol', draftObj.tanggalKontrol);
 
-                    // 1. PEMULIH MEMORI CONSENT DARI DRAF
                     if (draftObj.savedTTD && draftObj.savedTTD !== "-" && draftObj.savedTTD !== "") {
                         localStorage.setItem('ttd_consent_' + cleanNoRM, draftObj.savedTTD);
                         window.consentSudahDisimpanHariIni = true;
                         window.urlFotoConsentAktif = draftObj.savedTTD;
                     }
 
-                    // 2. PEMULIH TINDAKAN DINAMIS
                     if (draftObj.tindakanDinamis && Array.isArray(draftObj.tindakanDinamis) && draftObj.tindakanDinamis.length > 0) {
                         draftObj.tindakanDinamis.forEach(t => {
                             if (typeof tambahBarisTindakan === "function") tambahBarisTindakan(t);
@@ -4579,15 +4573,10 @@
                     console.error("Gagal merestorasi data draf RME:", e);
                 }
             };
-            
-            // 🔥 Picu siklus penunggu ini untuk pertama kalinya
             eksekusiRestorasi();
         } else {
-            // 🔥 PERBAIKAN: Jika pasien baru / tidak ada draf, paksa scanner berjalan 
-            // agar tombol langsung dievaluasi menjadi REDUP (Disabled)!
             if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
         }
-        // =========================================================================
 
         setTimeout(() => { window.isRestoringDraft = false; }, 200);
 
@@ -4597,7 +4586,6 @@
         const bannerMedis = document.getElementById('bannerPeringatanMedis');
         if (bannerMedis) bannerMedis.style.display = 'none';
 
-        // 🔥 FETCH 1: PROFIL PASIEN (Menggunakan cleanNoRM yang sudah pasti valid)
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
@@ -4631,7 +4619,6 @@
         })
         .catch(err => console.error("Gagal muat profil medis:", err));
 
-        // 🔥 FETCH 2: HISTORI RIWAYAT MEDIS (Menggunakan cleanNoRM)
         fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
@@ -5367,7 +5354,6 @@
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
             .then(response => response.json())
             .then(res => {
-                // 🔥 MATIKAN LAYAR HITAM LOADING DI SINI (Sebelum alert muncul)
                 if (typeof sembunyikanLoading === "function") sembunyikanLoading();
 
                 if (submitBtn) {
@@ -5379,12 +5365,19 @@
                     alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
                     
                     window.tokenRmeUnik = null; 
-                    
                     if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
                     
+                    // =================================================================
+                    // 🔥 PASUKAN PEMBERSIH MEMORI (CLEANUP CREW)
+                    // Menghapus total draf & consent agar tidak nyasar ke kunjungan berikutnya
+                    // =================================================================
                     const currentRM = data.noRM;
                     if(currentRM) {
-                        localStorage.removeItem('draft_rme_' + String(currentRM).trim());
+                        const rmTrim = String(currentRM).trim();
+                        localStorage.removeItem('draft_rme_' + rmTrim);
+                        localStorage.removeItem('ttd_consent_' + rmTrim);
+                        localStorage.removeItem('tujuan_consent_' + rmTrim);
+                        localStorage.removeItem('pdf_url_consent_' + rmTrim); // Bersihkan info kasir
                     }
                     
                     const modalFull = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
@@ -7592,6 +7585,7 @@
         if (listTindakanDraft.length === 0 && anamnesa === "" && objektif === "" && diagnosa === "" && resep === "") return;
 
         const draft = {
+            visitDate: window.tanggalKunjunganAktif, // 🔥 CAP STEMPEL TANGGAL KUNJUNGAN
             anamnesa: anamnesa,
             objektif: objektif,
             diagnosa: diagnosa,
@@ -7599,10 +7593,7 @@
             resep: resep,
             proPerawatan: ambilNilaiDualId('proPerawatan', 'modalProPerawatan'),
             proKontrol: ambilNilaiDualId('proKontrol', 'modalProKontrol'),
-            
-            // 🔥 PERBAIKAN: Amankan nilai Tanggal Kontrol (Kalender)
             tanggalKontrol: document.getElementById('tanggalKontrol') ? document.getElementById('tanggalKontrol').value : "",
-            
             savedTTD: localStorage.getItem('ttd_consent_' + noRM) || ""
         };
         
