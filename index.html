@@ -4812,7 +4812,8 @@
                 normalisasiTeks(dataTerpilih.perawatan) +
                 normalisasiTeks(dataTerpilih.resep) +
                 normalisasiTeks(dataTerpilih.proPerawatan) +
-                normalisasiTeks(pureCatatan);
+                normalisasiTeks(pureCatatan) +
+                normalisasiTeks(extractedDate);
             // =====================================================================
 
             // 🔥 KUNCI PERBAIKAN: Tembakkan Tanggal SETELAH Form Di-reset!
@@ -5365,7 +5366,8 @@
                     normalisasiTeks(JSON.stringify(listTindakanDipilih)) + 
                     normalisasiTeks(dapatkanNilaiDOM('modalResep', 'txtResep')) +
                     normalisasiTeks(dapatkanNilaiDOM('modalProPerawatan', 'txtProPerawatan')) +
-                    normalisasiTeks(dapatkanNilaiDOM('modalProKontrol', 'txtProKontrol'));
+                    normalisasiTeks(dapatkanNilaiDOM('modalProKontrol', 'txtProKontrol')) +
+                    normalisasiTeks(dapatkanNilaiDOM('modalTanggalKontrol', 'tanggalKontrol'));
 
                 // Jika kata dan angkanya 100% SAMA PERSIS dengan saat awal tombol Edit diklik:
                 if (currentSnapshot === window.originalRmeSnapshot) {
