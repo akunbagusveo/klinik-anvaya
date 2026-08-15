@@ -4436,6 +4436,13 @@
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
 
+        // =====================================================================
+        // 🔥 RESET SENSOR SNAPSHOT (ANTI-BOCOR ANTAR PASIEN)
+        // Memastikan pasien baru tidak terblokir oleh sensor Edit pasien sebelumnya
+        // =====================================================================
+        window.originalRmeSnapshot = null;
+        // =====================================================================
+
         // =========================================================================
         // 🔥 SATPAM PENJAGA TANGGAL DRAF (ANTI-GHOSTING)
         // =========================================================================
@@ -4793,9 +4800,22 @@
             );
 
             // =====================================================================
-            // 🔥 KUNCI PERBAIKAN: Tembakkan Tanggal SETELAH Form Di-reset!
-            // Diberi jeda 50ms agar tidak tertimpa oleh efek pembersihan fungsi di atas
+            // 🔥 FITUR BARU: SNAPSHOT (FOTO COPY) DATA ASLI (ANTI-SPAM DATABASE)
+            // Menggabungkan semua teks, lalu membuang SEMUA spasi, enter, dan tanda baca!
             // =====================================================================
+            const normalisasiTeks = (teks) => (teks || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+            
+            window.originalRmeSnapshot = 
+                normalisasiTeks(dataTerpilih.anamnesa) +
+                normalisasiTeks(dataTerpilih.objektif) +
+                normalisasiTeks(dataTerpilih.diagnosa) +
+                normalisasiTeks(dataTerpilih.perawatan) +
+                normalisasiTeks(dataTerpilih.resep) +
+                normalisasiTeks(dataTerpilih.proPerawatan) +
+                normalisasiTeks(pureCatatan);
+            // =====================================================================
+
+            // 🔥 KUNCI PERBAIKAN: Tembakkan Tanggal SETELAH Form Di-reset!
             setTimeout(() => {
                 const elTgl1 = document.getElementById('modalTanggalKontrol');
                 const elTgl2 = document.getElementById('tanggalKontrol');
@@ -5328,6 +5348,37 @@
 
             if (!window.tokenRmeUnik) {
                 window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
+            }
+
+            // =====================================================================
+            // 🔥 SATPAM PENDETEKSI PERUBAHAN KATA (STATE COMPARISON)
+            // Mengecek apakah dokter HANYA mengubah spasi/koma, atau tidak mengubah sama sekali
+            // =====================================================================
+            if (window.originalRmeSnapshot) {
+                const normalisasiTeks = (teks) => (teks || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+                
+                // Ambil semua isi form saat ini dan buang spasi/koma nya
+                const currentSnapshot = 
+                    normalisasiTeks(dapatkanNilaiDOM('modalAnamnesa', 'txtAnamnesa')) +
+                    normalisasiTeks(dapatkanNilaiDOM('modalObjektif', 'txtObjektif')) +
+                    normalisasiTeks(dapatkanNilaiDOM('modalDiagnosa', 'txtDiagnosa')) +
+                    normalisasiTeks(JSON.stringify(listTindakanDipilih)) + 
+                    normalisasiTeks(dapatkanNilaiDOM('modalResep', 'txtResep')) +
+                    normalisasiTeks(dapatkanNilaiDOM('modalProPerawatan', 'txtProPerawatan')) +
+                    normalisasiTeks(dapatkanNilaiDOM('modalProKontrol', 'txtProKontrol'));
+
+                // Jika kata dan angkanya 100% SAMA PERSIS dengan saat awal tombol Edit diklik:
+                if (currentSnapshot === window.originalRmeSnapshot) {
+                    if (typeof sembunyikanLoading === "function") sembunyikanLoading(); // Matikan layar loading
+                    
+                    alert("⚠️ Tidak ada perubahan kalimat/kata yang terdeteksi.\n(Hanya mengubah spasi atau tanda baca tidak dihitung).\n\nPenyimpanan dibatalkan untuk mencegah duplikasi database.");
+                    
+                    if (submitBtn) {
+                        submitBtn.disabled = false; 
+                        submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan";
+                    }
+                    return; // 🚫 HENTIKAN PROSES! Jangan fetch ke server sama sekali.
+                }
             }
 
             const data = {
