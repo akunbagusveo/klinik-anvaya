@@ -5,7 +5,620 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Klinik Anvaya Beta Version - Dashboard Dokter</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;}
+        .container { max-width: 900px; background: white; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
+        h3 { color: #2980b9; margin-top: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        
+        /* Dashboard Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { padding: 15px; border-radius: 6px; text-align: center; color: white; font-weight: bold; }
+        .bg-total { background-color: #34495e; }
+        .bg-belum { background-color: #f1c40f; color: #333; }
+        .bg-sedang { background-color: #e67e22; }
+        .bg-sudah { background-color: #2ecc71; }
+        .stat-card h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card p { margin: 8px 0 0 0; font-size: 28px; }
+
+        /* Queue Table Style */
+        .table-responsive { overflow-x: auto; margin-bottom: 25px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        
+        /* Badges & Buttons */
+        .badge { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
+        .badge-belum { background-color: #f1c40f; color: #333; }
+        .badge-sedang { background-color: #e67e22; }
+        .badge-sudah { background-color: #2ecc71; }
+        .btn-action { width: auto; padding: 6px 12px; font-size: 12px; font-weight: bold; margin-right: 5px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-start { background-color: #e67e22; }
+        .btn-done { background-color: #2ecc71; }
+        .btn-rme { background-color: #9b59b6; }
+        .btn-action:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+        /* Form Layout */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* KELOMPOK FORM VERTIKAL (Untuk Input Kamus) */
+        .form-v {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+        .form-v input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-v button {
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #a9a9a9;
+            border-radius: 4px;
+            cursor: pointer;
+            align-self: flex-start;
+        }
+
+        /* KELOMPOK FORM HORIZONTAL (Untuk Pencarian Pasien di Gambar) */
+        .form-h {
+            display: flex;
+            flex-direction: row;   /* Menyusun elemen ke samping */
+            align-items: flex-end; /* Menyelaraskan bagian bawah input dan tombol */
+            gap: 10px;             /* Jarak antar elemen */
+            flex-wrap: wrap;       /* Agar responsif jika layar sekecil smartphone */
+        }
+        .form-h .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-h label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-h input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 250px;
+        }
+        .form-h .btn-group {
+            display: flex;
+            gap: 8px;              /* Jarak antara tombol Cari dan Reset */
+        }
+        .form-h button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .form-h .btn-cari { background-color: #3498db; color: white; }
+        .form-h .btn-reset { background-color: #95a5a6; color: white; }
+
+        .form-group button:hover {
+            background-color: #e0e0e0; /* Efek saat tombol diarahkan kursor */
+        }
+        .full-width { grid-column: span 2; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 14px; }
+        input[type="text"], input[type="password"], input[type="date"], input[type="email"], textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 80px; resize: vertical; }
+        .radio-group { display: flex; gap: 15px; margin-top: 8px; }
+        button[type="submit"] { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; }
+        button[type="submit"]:hover { background-color: #2980b9; }
+        
+        /* Structure Layout */
+        .login-box { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #mainPage { display: none; }
+        .header-area { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; margin-bottom: 20px; padding-bottom: 10px;}
+        .nav-tabs { display: flex; }
+        .tab-link { padding: 10px 20px; cursor: pointer; background: #e0e0e0; border: none; margin-right: 5px; border-radius: 5px 5px 0 0; font-weight: bold; width: auto; color: #333;}
+        .tab-link.active { background: #3498db; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .btn-logout { background-color: #e74c3c; width: auto; padding: 8px 15px; font-size: 12px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .btn-voice { background-color: #2ecc71; margin-top: 5px; width: auto; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .btn-voice.recording { background-color: #e74c3c; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .user-info { font-size: 14px; color: #7f8c8d; font-style: italic; }
+        #sectionRME { display: none; background: #f9f9f9; padding: 20px; border-radius: 6px; border-left: 5px solid #9b59b6; margin-top: 25px; }
+        
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin: 20px 0 30px 0; }
+        .menu-card { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); border-color: #3498db; }
+        .menu-card h4 { margin: 10px 0 5px 0; color: #2c3e50; font-size: 16px; }
+        .menu-card p { margin: 0; font-size: 12px; color: #7f8c8d; line-height: 1.4; }
+
+        /* CSS DESAIN FILTER ANTREN (DESKTOP) */
+        .antrean-filter-wrapper { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-group { display: flex; align-items: center; gap: 10px; }
+        .date-range-inputs { display: flex; align-items: center; gap: 10px; }
+        #filterStatusAntrean { width: 300px; }
+
+        /* CSS DESAIN MODAL REKAM MEDIS (DESKTOP) */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
+        .modal-content-box { background: white; max-width: 95%; margin: 30px auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); box-sizing: border-box; }
+        .modal-custom-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #9b59b6; margin-bottom: 15px; padding-bottom: 10px; gap: 15px; }
+        .modal-custom-header h2 { color: #9b59b6; margin: 0; font-size: 20px; border: none; border-bottom: none; padding: 0; }
+        .btn-close-modal { background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; flex-shrink: 0; }
+
+        /* Top Navbar */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); /* Warna elegan khas Enterprise */
+            color: white;
+            padding: 10px 20px;
+            height: 60px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .navbar-left, .navbar-right { display: flex; align-items: center; gap: 15px; }
+        .burger-btn {
+            background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px;
+        }
+        .brand-logo { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+
+        /* Sidebar Samping */
+        .sidebar {
+            position: fixed;
+            top: 60px; /* Di bawah Top Navbar */
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 60px);
+            background-color: #2c3e50;
+            color: white;
+            overflow-y: auto;
+            transition: transform 0.3s ease; /* Animasi mulus */
+            z-index: 999;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar-menu { display: flex; flex-direction: column; padding: 15px 0; }
+        .sidebar-category {
+            font-size: 12px; color: #95a5a6; padding: 10px 20px 5px; margin-top: 10px; font-weight: bold; letter-spacing: 1px;
+        }
+        
+        /* Tombol Menu di Sidebar */
+        .sidebar-menu .tab-link {
+            background: transparent; color: #9FA8DA; border: none; padding: 12px 20px; text-align: left;
+            font-size: 15px; cursor: pointer; transition: background 0.2s, border-left 0.2s;
+            border-left: 4px solid transparent; width: 100%;
+        }
+        .sidebar-menu .tab-link:hover { background-color: #34495e; border-left: 4px solid #3498db; }
+        .sidebar-menu .tab-link.active { background-color: #ddd; border-left: 4px solid #16a085; font-weight: bold;}
+
+        /* Kontainer Konten Utama */
+        #mainPage.container {
+            margin-top: 80px !important; /* Memberi ruang untuk Top Navbar */
+            margin-left: 260px; /* Memberi ruang untuk Sidebar di Laptop */
+            padding: 15px;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Overlay (Gelap di belakang sidebar untuk HP) */
+        .sidebar-overlay {
+            display: none; position: fixed; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px);
+            background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s;
+        }
+
+        /* === RESPONSIVE UNTUK HP & TABLET === */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); /* Sembunyikan sidebar ke kiri di HP */ }
+            .sidebar.open { transform: translateX(0); /* Munculkan saat burger diklik */ }
+            #mainPage.container { margin-left: 0; /* Konten penuh layar di HP */ }
+            .sidebar-overlay.show { display: block; opacity: 1; }
+            .brand-logo { font-size: 16px; }
+            .user-info { display: none; /* Sembunyikan nama user agar tidak sesak di HP */ }
+        }
+        
+        /* =========================================================
+           🔥 ATURAN RESPONSIVE UNTUK LAYAR HP & TABLET 🔥
+           ========================================================= */
+        @media screen and (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; margin: 10px auto; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .header-area { flex-direction: column; align-items: flex-start; gap: 15px; }
+            
+            .nav-tabs { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; width: 100%; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+            .tab-link { flex: 0 0 auto; font-size: 13px; padding: 10px 15px; }
+            
+            th, td { font-size: 12px; padding: 8px; }
+            .btn-action { font-size: 11px; padding: 6px 8px; margin-bottom: 5px; width: 100%; display: block; text-align: center; box-sizing: border-box; }
+
+            /* 🔥 FIX RESPONSIVE: Filter Antrean di HP */
+            .antrean-filter-wrapper { flex-direction: column; align-items: stretch; gap: 12px; padding: 10px; }
+            .filter-group { flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
+            .date-range-inputs { width: 100%; justify-content: space-between; }
+            .date-range-inputs input { flex: 1; min-width: 0; } /* Mencegah kotak tanggal meluber */
+            #filterStatusAntrean { width: 100% !important; } /* Dropdown otomatis melebar penuh */
+
+            /* 🔥 FIX RESPONSIVE: Jendela Modal di HP */
+            .modal-backdrop { padding: 8px; }
+            .modal-content-box { max-width: 100%; margin: 10px auto; padding: 15px; }
+            .modal-custom-header { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+            .modal-custom-header h2 { font-size: 15px; line-height: 1.4; text-align: left; }
+            .btn-close-modal { width: 100%; text-align: center; padding: 10px; }
+        }
+
+        @media screen and (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Style untuk Latar Belakang Pop-up (Overlay) */
+        .modal-popup-container {
+            display: none; /* Tersembunyi secara default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Efek gelap transparan */
+            z-index: 9999; /* Memastikan pop-up berada di paling depan */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Style untuk Kotak Form di Dalam Pop-up */
+        .modal-popup-content {
+            background-color: #fff3cd; /* Mempertahankan warna kuning khas form edit Anda */
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 450px; /* Batas lebar kotak pop-up */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: popMasuk 0.3s ease; /* Efek animasi muncul */
+            max-height: 90vh;       /* Membatasi modal agar tidak melebihi tinggi layar browser */
+            overflow: hidden;       /* Mencegah elemen di dalam modal keluar dari garis pembatas */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Animasi Smooth Pop-up */
+        @keyframes popMasuk {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Merapikan susunan input di dalam pop-up agar vertikal ke bawah */
+        .modal-popup-content input, 
+        .modal-popup-content select {
+            display: block;
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal-action-buttons {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        /* Container Utama untuk Jalur Garis Waktu */
+        .rme-timeline-container {
+            position: relative;
+            padding: 10px 0 20px 20px;
+            margin-top: 15px;
+        }
+
+        /* Garis Vertikal Timeline */
+        .rme-timeline-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 8px;
+            width: 3px;
+            height: 100%;
+            background-color: #34495e; /* Warna garis maskulin */
+            border-radius: 2px;
+        }
+
+        /* Kotak Kartu Rekam Medis */
+        .rme-card {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Titik Indikator pada Garis Waktu */
+        .rme-card::before {
+            content: '';
+            position: absolute;
+            top: 22px;
+            left: -17px;
+            width: 11px;
+            height: 11px;
+            background-color: #e67e22; /* Warna orange estetik */
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            z-index: 1;
+            box-shadow: 0 0 0 2px #34495e;
+        }
+
+        /* Header Kartu: Tanggal dan Dokter */
+        .rme-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* Grid Konten Medis Berpasangan */
+        .rme-card-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        /* Pengaturan Responsif Lebar Layar PC */
+        @media (min-width: 768px) {
+            .rme-card-grid {
+                grid-template-columns: 1fr 1fr; /* Membagi dua kolom kanan-kiri agar hemat ruang vertikal */
+            }
+            .grid-span-full {
+                grid-column: span 2; /* Kolom yang memakan baris penuh */
+            }
+        }
+
+        /* Blok Area Isian Medis */
+        .rme-section-box {
+            background-color: #f8fafc;
+            border-left: 4px solid #cbd5e1;
+            padding: 10px 12px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .rme-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .rme-section-content {
+            font-size: 14px;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        /* Mengunci Tinggi Area Timeline RME & Mengaktifkan Internal Scrollbar */
+        #wrapperRiwayatFull {
+            max-height: 52vh;       /* Membatasi tinggi area kartu sebesar 65% dari tinggi layar browser */
+            overflow-y: auto;       /* Otomatis memunculkan scrollbar vertikal jika konten melebihi batas */
+            padding-right: 15px;    /* Memberikan ruang di sisi kanan agar scrollbar tidak menempel rapat ke kartu */
+            margin-right: -5px;
+        }
+
+        /* Merapikan Tampilan Scrollbar Khusus untuk Browser Chrome/Edge agar Terlihat Lebih Minimalis (Opsional) */
+        #wrapperRiwayatFull::-webkit-scrollbar {
+            width: 6px;             /* Membuat ukuran scrollbar menjadi tipis dan elegan */
+        }
+
+        #wrapperRiwayatFull::-webkit-scrollbar-track {
+            background: #f1f1f1;    /* Warna latar jalur scrollbar */
+            border-radius: 4px;
+        }
+
+        #wrapperRiwayatFull::-webkit-scrollbar-thumb {
+            background: #cbd5e1;    /* Warna gagang scrollbar */
+            border-radius: 4px;
+        }
+
+        #wrapperRiwayatFull::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;    /* Warna gagang saat pointer mouse melintas */
+        }
+
+        /* 🔥 MEMBUAT KOLOM NAMA ROLE FIXED (STICKY) SAAT DI-SCROLL HORIZONTAL */
+
+        /* 1. Kunci posisi kolom pertama pada baris biasa (td) dan baris judul (th) */
+        .table-matrix-wrapper table th:first-child,
+        .table-matrix-wrapper table td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;              /* Mencegah kolom lain menimpa kolom ini saat digeser */
+            background-color: #ffffff; /* Warna putih padat agar teks di belakangnya tidak menembus transparan */
+            box-shadow: 3px 0 6px -3px rgba(0, 0, 0, 0.2); /* Efek bayangan vertikal halus sebagai garis pembatas geser */
+            font-weight: bold;
+        }
+
+        /* 2. Khusus untuk Kepala Tabel (Header th) Kolom Pertama */
+        .table-matrix-wrapper table th:first-child {
+            z-index: 3;              /* Lapisan lebih tinggi agar tidak tertimpa oleh scroll vertikal/horizontal body */
+            background-color: #f8fafc; /* Warna abu-abu sangat muda/sesuaikan dengan warna header asli Anda */
+        }
+
+        /* 3. Menjaga estetika baris striping (jika tabel Anda menggunakan warna selang-seling) */
+        .table-matrix-wrapper table tr:nth-child(even) td:first-child {
+            background-color: #f8fafc; /* Menyelaraskan warna background sticky td pada baris genap */
+        }
+
+        .badge-absen {
+            background-color: #7f8c8d !important;
+            color: white !important;
+        }
+
+        /* ========================================= */
+        /* CSS KOKPIT FINANSIAL & SUB-TAB            */
+        /* ========================================= */
+        
+        .sub-tab-container {
+            display: flex; gap: 10px; margin-top: 15px; border-bottom: 2px solid #dee2e6; padding-bottom: 10px;
+        }
+        .sub-tab-btn {
+            background: #ecf0f1; border: none; padding: 10px 20px; border-radius: 20px; 
+            font-size: 14px; color: #7f8c8d; cursor: pointer; transition: 0.3s;
+        }
+        .sub-tab-btn.active { background: #2c3e50; color: white; font-weight: bold; }
+        
+        /* Grid Metrik Finansial */
+        .financial-metrics {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); color: white;
+            padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: right;
+        }
+        .metric-card.alert { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+        .metric-title { font-size: 13px; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .metric-value { font-size: 24px; font-weight: 900; }
+
+        /* Kapsul Pills Navigasi */
+        .pills-container {
+            display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;
+        }
+        .pill-btn {
+            background: transparent; border: 1px solid #3498db; color: #3498db; padding: 8px 16px; 
+            border-radius: 5px; font-size: 13px; cursor: pointer; transition: 0.2s;
+        }
+        .pill-btn.active { background: #3498db; color: white; font-weight: bold; }
+
+        /* Tombol Preset Filter Finansial */
+        .preset-dates { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .preset-btn {
+            background: #f1f2f6; border: 1px solid #dcdde1; padding: 5px 12px; 
+            border-radius: 15px; font-size: 11px; font-weight: bold; color: #2f3640; 
+            cursor: pointer; transition: all 0.2s;
+        }
+        .preset-btn:hover, .preset-btn:active { background: #3498db; color: white; border-color: #3498db; }
+
+        @keyframes putarSpinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Pembungkus agar kalender bisa digeser horizontal di HP tanpa merusak layar */
+        .kalender-container-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
+        }
+
+        /* Batas lebar minimum agar kotak tanggal tidak pernah tergencet di layar kecil */
+        .kalender-grid-min-width {
+            min-width: 750px; 
+        }
+
+        /* Desain Kartu Pasien di dalam kotak tanggal */
+        .kartu-pasien-kalender {
+            padding: 6px 8px;
+            margin-top: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.3;
+            text-align: left;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: transform 0.1s, box-shadow 0.1s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .kartu-pasien-kalender:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            white-space: normal; /* Tampilkan seluruh teks keluhan saat kursor di atasnya */
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Adaptasi otomatis saat dibuka di HP (< 768px) */
+        @media screen and (max-width: 768px) {
+            #dokter h2 { font-size: 18px !important; }
+            #dokter .header-kalender { flex-direction: column; align-items: stretch !important; text-align: center; }
+            #labelBulanTahunKalender { margin: 10px 0 !important; display: block; }
+            .kartu-pasien-kalender { font-size: 10px; padding: 4px; white-space: normal; }
+        }
+
+        @keyframes modalMuncul {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Animasi berkedip lembut untuk mengingatkan dokter */
+        @keyframes pulse-warning {
+            0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); transform: scale(1); }
+        }
+
+        .btn-consent-wajib {
+            animation: pulse-warning 2s infinite !important;
+            background-color: #d35400 !important;
+            border: 2px solid #f39c12 !important;
+        }
+
+        /* =========================================================================
+        🎨 FIX TATA LETAK INFORMED CONSENT & BADGE
+        ========================================================================= */
+
+        /* 1. Mencegah badge menggeser/merusak tinggi dropdown tindakan */
+        .badge-consent {
+            display: inline-flex !important;
+            align-items: center;
+            vertical-align: middle !important;
+            background-color: #e74c3c;
+            color: white;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+            line-height: 1.2;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        /* 2. Memastikan tombol berdampingan dengan ukuran dan tinggi sejajar */
+        .kontainer-tombol-aksi-tindakan {
+            display: flex !important;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap; /* Otomatis turun ke bawah hanya jika layar tablet/HP sangat sempit */
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #dcdde1;
+        }
+
+        .kontainer-tombol-aksi-tindakan button {
+            margin: 0 !important; /* Hilangkan margin bawaan yang membuat tombol tidak rata */
+            height: 40px;         /* Samakan tinggi kedua tombol */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+    </style>
 </head>
 <body>
 
@@ -12238,6 +12851,8 @@
             inputFinansial.value = `${yyyy}-${mm}`; // Set default ke bulan ini
         }
     });
+
+
 
 </script>
 </body>
