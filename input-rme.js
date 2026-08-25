@@ -7,9 +7,8 @@
     window.masterTindakanGlobal = [];
     window.consentSudahDisimpanHariIni = false;
 
-
     // Listener Auto-Bullet Point pada textarea
-    document.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('DOMContentLoaded', function() {
         const textareas = document.querySelectorAll('.auto-bullet');
         textareas.forEach(ta => {
             ta.addEventListener('focus', function() {
@@ -76,7 +75,7 @@
         if (listTindakanDraft.length === 0 && anamnesa === "" && objektif === "" && diagnosa === "" && resep === "") return;
 
         const draft = {
-            visitDate: window.tanggalKunjunganAktif, // 🔥 CAP STEMPEL TANGGAL KUNJUNGAN
+            visitDate: window.tanggalKunjunganAktif, 
             anamnesa: anamnesa,
             objektif: objektif,
             diagnosa: diagnosa,
@@ -104,7 +103,6 @@
         rowWrapper.className = 'baris-tindakan-item';
         rowWrapper.style = "display: flex; flex-direction: column; background: white; padding: 15px; border: 1px solid #ebd3c7; border-radius: 4px; border-left: 4px solid #3498db; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
 
-        // 1. Kumpulkan daftar Kategori Unik secara otomatis dari master data global
         let setKategori = new Set();
         if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
             window.masterTindakanGlobal.forEach(t => {
@@ -117,20 +115,18 @@
             opsiKategoriHtml += `<option value="${kat}">${kat.toUpperCase()}</option>`;
         });
 
-        // 2. Susun Layout HTML dengan Alignment Top (flex-start) Anti-Geser
         rowWrapper.innerHTML = `
             <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
                 <div style="flex: 1.2; min-width: 180px;">
-                    <select class="sel-kategori-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="filterTindakanPerKategori('${rowId}', this.value)" required>
+                    <select class="sel-kategori-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="window.filterTindakanPerKategori('${rowId}', this.value)" required>
                         ${opsiKategoriHtml}
                     </select>
                 </div>
                 
                 <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-start;">
-                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="pilihTindakanDinamis('${rowId}', this.value)" disabled required>
+                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" disabled required>
                         <option value="">-- Pilih Tindakan Medis --</option>
                     </select>
-                    <!-- Label ⚠️ Wajib Consent akan diinjeksikan secara otomatis & rapi di bawah kotak ini -->
                 </div>
                 
                 <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa; height: 38px; box-sizing: border-box;" class="box-harga-container">
@@ -140,11 +136,11 @@
                 
                 <div style="flex: 2; min-width: 200px; display: flex; gap: 5px; align-items: center;">
                     <input type="text" class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan)..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px; box-sizing: border-box;">
-                    <button type="button" class="btn-mic" style="padding: 0 10px; height: 38px; display: inline-flex; align-items: center;" onclick="mulaiDikteInputDinamis('${rowId}')">🎙️</button>
+                    <button type="button" class="btn-mic" style="padding: 0 10px; height: 38px; display: inline-flex; align-items: center;" onclick="window.mulaiDikteInputDinamis('${rowId}')">🎙️</button>
                 </div>
                 
                 <div>
-                    <button type="button" style="background-color:#e74c3c; color:white; border:none; padding:0 12px; height:38px; cursor:pointer; border-radius:4px; font-weight:bold; display:inline-flex; align-items:center;" onclick="hapusBarisTindakan('${rowId}')">🗑️</button>
+                    <button type="button" style="background-color:#e74c3c; color:white; border:none; padding:0 12px; height:38px; cursor:pointer; border-radius:4px; font-weight:bold; display:inline-flex; align-items:center;" onclick="window.hapusBarisTindakan('${rowId}')">🗑️</button>
                 </div>
             </div>
             
@@ -154,7 +150,6 @@
             </div>
         `;
 
-
         kontainer.appendChild(rowWrapper);
 
         const elemenKategori = rowWrapper.querySelector('.sel-kategori-tindakan');
@@ -162,27 +157,26 @@
         const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
         const elemenCatatan = rowWrapper.querySelector('.inp-catatan-tindakan');
 
-        if (elemenKategori) elemenKategori.addEventListener('change', simpanDraftRME);
+        if (elemenKategori) elemenKategori.addEventListener('change', window.simpanDraftRME);
         if (elemenTindakan) {
             elemenTindakan.addEventListener('change', () => {
-                simpanDraftRME();
-                if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+                window.simpanDraftRME();
+                if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
             });
         }
         if (elemenHarga) {
-            elemenHarga.addEventListener('input', simpanDraftRME);
-            elemenHarga.addEventListener('change', simpanDraftRME);
+            elemenHarga.addEventListener('input', window.simpanDraftRME);
+            elemenHarga.addEventListener('change', window.simpanDraftRME);
         }
-        if (elemenCatatan) elemenCatatan.addEventListener('input', simpanDraftRME);
+        if (elemenCatatan) elemenCatatan.addEventListener('input', window.simpanDraftRME);
 
-        // Otomatisasi handling jika ada pengisian data awal draft/edit
         if (dataAwal) {
             const matchTindakan = window.masterTindakanGlobal.find(t => t.nama === dataAwal.namaTindakan);
             if (matchTindakan) {
                 rowWrapper.querySelector('.sel-kategori-tindakan').value = matchTindakan.kategori;
-                filterTindakanPerKategori(rowId, matchTindakan.kategori);
+                window.filterTindakanPerKategori(rowId, matchTindakan.kategori);
                 rowWrapper.querySelector('.sel-nama-tindakan').value = dataAwal.namaTindakan;
-                pilihTindakanDinamis(rowId, dataAwal.namaTindakan);
+                window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan);
                 
                 const inpHarga = rowWrapper.querySelector('.inp-harga-tindakan');
                 inpHarga.value = Number(dataAwal.hargaDiinput).toLocaleString('en-US');
@@ -190,45 +184,39 @@
             }
         }
 
-        // =========================================================================
-        // 🔥 EKSEKUSI PEMBEKUAN JIKA LUNAS (UPGRADE AGRESIF)
-        // =========================================================================
         if (window.isPasienLunasAktif) {
             const elemenKategori = rowWrapper.querySelector('.sel-kategori-tindakan');
             const elemenTindakan = rowWrapper.querySelector('.sel-nama-tindakan');
             const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
             
-            // Matikan fungsi klik & ubah warna jadi abu-abu
             if (elemenKategori) { elemenKategori.disabled = true; elemenKategori.style.backgroundColor = "#e9ecef"; }
             if (elemenTindakan) { elemenTindakan.disabled = true; elemenTindakan.style.backgroundColor = "#e9ecef"; }
             if (elemenHarga) { elemenHarga.readOnly = true; elemenHarga.style.backgroundColor = "#e9ecef"; }
             
-            // 🚀 PENARGETAN AGRESIF: Sapu bersih semua tombol hapus/tong sampah
             const elemenTombolHapus = rowWrapper.querySelectorAll('button, [class*="hapus"], [onclick*="hapus"]');
             elemenTombolHapus.forEach(tombol => {
                 tombol.style.display = 'none';
             });
         }
 
-        // Picu penyimpanan draft sesaat setelah baris baru ditambahkan ke layar
-        simpanDraftRME();
-        if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+        window.simpanDraftRME();
+        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
 
-        // 🔥 TAMBAHAN DINAMIS: Setiap kali baris tindakan ditambah/diubah, otomatis simpan ke Draf!
         setTimeout(() => {
-            if (typeof simpanDraftRME === "function") simpanDraftRME();
-            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            window.simpanDraftRME();
+            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
         }, 150);
     };
 
-    // 🔥 FUNGSI: Menghapus Baris Tindakan Tertentu
     window.hapusBarisTindakan = function(rowId) {
         const row = document.getElementById(rowId);
         if (row) row.remove();
+        window.simpanDraftRME();
+        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
     };
 
     // =========================================================================
-    // 🎯 FILTER TINDAKAN PER KATEGORI (WITH AUTO-TRIM & DATA-CONSENT INJECTION)
+    // 🎯 FILTER TINDAKAN PER KATEGORI 
     // =========================================================================
     window.filterTindakanPerKategori = function(rowId, kategoriTerpilih) {
         const row = document.getElementById(rowId);
@@ -241,7 +229,6 @@
 
         if (!selTindakan) return;
 
-        // 🔥 FIX DINAMIS (AUTO-REVERT): Kembalikan input teks Kustom menjadi SELECT dropdown standar
         if (selTindakan.tagName.toLowerCase() === 'input') {
             let cellTindakan = selTindakan.parentElement;
             if (cellTindakan && cellTindakan.classList.contains('wrapper-kustom-input')) {
@@ -250,25 +237,23 @@
             
             if (cellTindakan) {
                 cellTindakan.innerHTML = `
-                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="pilihTindakanDinamis('${rowId}', this.value)" required>
+                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" required>
                         <option value="">-- Pilih Tindakan Medis --</option>
                     </select>
                 `;
                 selTindakan = row.querySelector('.sel-nama-tindakan');
                 if (selTindakan) {
                     selTindakan.addEventListener('change', () => {
-                        if (typeof simpanDraftRME === "function") simpanDraftRME();
-                        if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+                        window.simpanDraftRME();
+                        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
                     });
                 }
             }
         }
 
-        // 🔥 FIX DINAMIS: Sembunyikan badge consent saat kategori baru dipilih
         const badgeConsent = row.querySelector('.badge-wajib-consent');
         if (badgeConsent) badgeConsent.style.display = "none";
 
-        // Reset status bawahan jika kategori dikosongkan
         selTindakan.innerHTML = `<option value="" data-butuh-consent="0">-- Pilih Tindakan Medis --</option>`;
         if (inpHarga) {
             inpHarga.value = "";
@@ -281,39 +266,33 @@
         if (!cleanKategoriTerpilih) {
             selTindakan.disabled = true;
             selTindakan.style.backgroundColor = "#f5f6fa";
-            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
             return;
         }
 
-        // Aktifkan dropdown tindakan
         selTindakan.disabled = false;
         selTindakan.style.backgroundColor = "white";
 
-        // 🔥 SUNTIKKAN OPSI TINDAKAN + ATRIBUT data-butuh-consent SECARA DINAMIS & ANTI-WHITESPACE
         const masterList = window.masterTindakanGlobal || [];
         masterList.forEach(t => {
             const katMaster = String(t.kategori || t.Kategori || "").trim().toLowerCase();
             
             if (katMaster === cleanKategoriTerpilih) {
                 const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
-                
-                // Cek nilai Butuh_Consent dari database
                 const valConsent = t.Butuh_Consent || t.butuhConsent || t.butuh_consent || t[3] || 0;
                 const isWajib = (String(valConsent).trim() === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true");
                 
-                // Tanamkan atribut data-butuh-consent pada setiap tag <option>
                 selTindakan.innerHTML += `<option value="${namaBersih}" data-butuh-consent="${isWajib ? '1' : '0'}">${namaBersih}</option>`;
             }
         });
 
         selTindakan.innerHTML += `<option value="KUSTOM" data-butuh-consent="0">Lain-lain / Tindakan Kustom</option>`;
         
-        // Periksa ulang label consent agar antarmuka selalu akurat
-        if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
     };
 
     // =========================================================================
-    // 🎯 PEMILIH TINDAKAN DINAMIS (FULL FITUR: CONSENT, KOMA, & RANGE ALARM)
+    // 🎯 PEMILIH TINDAKAN DINAMIS
     // =========================================================================
     window.pilihTindakanDinamis = function(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
@@ -322,27 +301,18 @@
         const inpHarga = row.querySelector('.inp-harga-tindakan');
         const boxHarga = row.querySelector('.box-harga-container');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
-        
-        // 🔥 FIX 1: Tangkap elemen Label Kategori yang sebelumnya terlupakan
         const lblKategori = row.querySelector('.lbl-kategori'); 
-        
         const infoDetail = row.querySelector('.info-tindakan-detail');
         let selTindakan = row.querySelector('.sel-nama-tindakan');
 
         const cleanNamaPilihan = String(namaTindakan || "").trim();
 
-        // =====================================================================
-        // 🛠️ MESIN KETIK PINTAR + ALARM RANGE HARGA
-        // =====================================================================
         const pasangAutoFormatHarga = (minHarga = 0, maxHarga = 0) => {
             if (!inpHarga) return;
             inpHarga.oninput = function() {
                 let valMurni = this.value.replace(/[^0-9]/g, '');
                 if (valMurni) {
-                    // 1. Format koma
                     this.value = Number(valMurni).toLocaleString('en-US');
-                    
-                    // 2. 🔥 VALIDASI RANGE HARGA BLOKIR SISTEM (Hanya aktif jika maxHarga > 0)
                     if (maxHarga > 0) {
                         const angkaInput = Number(valMurni);
                         if (angkaInput < minHarga || angkaInput > maxHarga) {
@@ -366,13 +336,10 @@
                     this.style.color = "inherit";
                     if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
                 }
-                if (typeof simpanDraftRME === "function") simpanDraftRME();
+                window.simpanDraftRME();
             };
         };
 
-        // =====================================================================
-        // 🛑 JIKA DIKOSONGKAN (-- Pilih Tindakan --)
-        // =====================================================================
         if (!cleanNamaPilihan) {
             if (inpHarga) { 
                 inpHarga.value = ""; 
@@ -387,19 +354,16 @@
             if (infoDetail) infoDetail.style.display = 'none';
             const badgeLama = row.querySelector('.badge-wajib-consent');
             if (badgeLama) badgeLama.style.display = 'none';
-            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
             return;
         }
 
-        // =====================================================================
-        // 🔥 SKENARIO 1: TINDAKAN "KUSTOM"
-        // =====================================================================
         if (cleanNamaPilihan.toUpperCase() === "KUSTOM") {
             if (selTindakan && selTindakan.tagName.toLowerCase() === 'select') {
                 const parentCell = selTindakan.parentElement;
                 parentCell.innerHTML = `
                     <div class="wrapper-kustom-input" style="display:flex; width:100%;">
-                        <input type="text" class="sel-nama-tindakan" placeholder="Ketik nama tindakan..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="simpanDraftRME(); periksaKebutuhanConsentUI();" required>
+                        <input type="text" class="sel-nama-tindakan" placeholder="Ketik nama tindakan..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="window.simpanDraftRME(); window.periksaKebutuhanConsentUI();" required>
                     </div>
                 `;
                 setTimeout(() => {
@@ -427,14 +391,11 @@
             const badgeLama = row.querySelector('.badge-wajib-consent');
             if (badgeLama) badgeLama.style.display = 'none';
 
-            if (typeof simpanDraftRME === "function") simpanDraftRME();
-            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            window.simpanDraftRME();
+            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
             return;
         }
 
-        // =====================================================================
-        // 🔥 SKENARIO 2: TINDAKAN DARI DATABASE (RANGE ATAU FIXED)
-        // =====================================================================
         const match = (window.masterTindakanGlobal || []).find(t => {
             const n1 = String(t.nama || "").trim().toLowerCase();
             return n1 === cleanNamaPilihan.toLowerCase();
@@ -468,38 +429,29 @@
                 inpHarga.dispatchEvent(new Event('change'));
             }
             
-            // =====================================================================
-            // 🔥 FIX 2: SUNTIKKAN DATA KATEGORI DAN KETERANGAN KE LABEL HTML
-            // =====================================================================
             const teksKet = String(match.keterangan || "").trim();
             const teksKategori = String(match.kategori || "").trim();
             
             if (lblKeterangan) lblKeterangan.innerText = teksKet;
             
-            // Cek jika kategori ada, cetak huruf besar. Jika tidak, hilangkan background-nya agar rapi.
             if (lblKategori) {
                 if (teksKategori) {
                     lblKategori.innerText = teksKategori.toUpperCase();
                     lblKategori.style.display = 'inline-block';
                 } else {
                     lblKategori.innerText = "";
-                    lblKategori.style.display = 'none'; // Sembunyikan kotaknya jika kategori kosong
+                    lblKategori.style.display = 'none'; 
                 }
             }
             
-            // Tampilkan kontainer detail jika Kategori ATAU Keterangan ada isinya
             if (infoDetail) {
                 infoDetail.style.display = (teksKet || teksKategori) ? 'block' : 'none';
             }
-            // =====================================================================
 
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
         }
 
-        // =====================================================================
-        // 🛡️ PENANGANAN BADGE CONSENT 
-        // =====================================================================
         selTindakan = row.querySelector('.sel-nama-tindakan');
         if (!isWajibConsent && selTindakan && selTindakan.tagName.toLowerCase() === 'select' && selTindakan.selectedIndex >= 0) {
             const optAktif = selTindakan.options[selTindakan.selectedIndex];
@@ -523,48 +475,45 @@
             badge.style.display = "none";
         }
 
-        if (typeof simpanDraftRME === "function") simpanDraftRME();
-        if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+        window.simpanDraftRME();
+        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
     };
 
-    // 🔥 FUNGSI PEMBANTU: Menghubungkan Mic dengan Input Catatan Klinis Dinamis
     window.mulaiDikteInputDinamis = function(rowId) {
         const row = document.getElementById(rowId);
         if (!row) return;
         const inputCatatan = row.querySelector('.inp-catatan-tindakan');
         
-        // Berikan ID sementara khusus pada input catatan agar fungsi dikte kita bisa menguncinya
         const tempId = "temp_mic_" + rowId;
         inputCatatan.id = tempId;
         
-        if (typeof mulaiDikte === "function") {
-            mulaiDikte(tempId);
+        if (typeof window.mulaiDikte === "function") {
+            window.mulaiDikte(tempId);
         }
     };
 
     window.pemicuKoreksiRMEDariTimeline = function(noRM, namaPasien, tanggalDaftar, barisSheet, anamnesa, objektif, diagnosa, perawatan, resep) {
 
-        // 🎯 1. BONGKAR PAKSA STATUS SEMBUNYI KOLOM KIRI (SOLUSI AREA PUTIH POLOS)
-        const kolomKiri = document.getElementById('kolomInputRME'); // 🔥 Ini ID Asli Anda!
+        const kolomKiri = document.getElementById('kolomInputRME'); 
         if (kolomKiri) {
-            kolomKiri.style.display = 'block'; // Memunculkan kembali pembungkus form
+            kolomKiri.style.display = 'block'; 
         }
 
-        const formKiriSplit = document.getElementById('formModalMedisSplit');
+        const formKiriSplit = document.getElementById('formModalMedisSplit') || 
+                              document.getElementById('formModalMedis') || 
+                              document.getElementById('formMedis');
         if (formKiriSplit) {
-            formKiriSplit.style.display = 'block'; // Memastikan form di dalamnya juga muncul
+            formKiriSplit.style.display = 'block'; 
             formKiriSplit.dataset.activeNoRM = noRM;
             formKiriSplit.dataset.tanggalDaftar = tanggalDaftar;
             formKiriSplit.dataset.rowUpdate = barisSheet; 
         }
 
-        // Pastikan modal riwayat utama juga ikut terbuka
         const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
         if (areaKontainerRME) {
             areaKontainerRME.style.display = 'flex';
         }
 
-        // 🎯 2. Suntikkan Identitas & Data Teks Lama ke Form
         const setNilaiDOM = (idUtama, idAlternatif, value) => {
             const el1 = document.getElementById(idUtama);
             if (el1) { el1.value = value; return; }
@@ -578,7 +527,6 @@
         setNilaiDOM('modalDiagnosa', 'txtDiagnosa', diagnosa === "-" ? "" : diagnosa);
         setNilaiDOM('modalResep', 'txtResep', resep === "-" ? "" : resep);
 
-        // 🎯 3. Bongkar data string JSON tindakan medis ke tabel baris dinamis
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = ""; 
@@ -586,23 +534,20 @@
                 let arrTindakan = JSON.parse(perawatan);
                 if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                     arrTindakan.forEach(t => {
-                        if (typeof tambahBarisTindakan === "function") {
-                            tambahBarisTindakan({
-                                namaTindakan: t.namaTindakan,
-                                hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
-                                catatanKlinis: t.catatanKlinis || ""
-                            });
-                        }
+                        window.tambahBarisTindakan({
+                            namaTindakan: t.namaTindakan,
+                            hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                            catatanKlinis: t.catatanKlinis || ""
+                        });
                     });
                 }
             } catch(e) {
-                if (perawatan && perawatan !== "-" && perawatan !== "" && typeof tambahBarisTindakan === "function") {
-                    tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: perawatan });
+                if (perawatan && perawatan !== "-" && perawatan !== "") {
+                    window.tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: perawatan });
                 }
             }
         }
 
-        // 🎯 4. Perbarui Teks Tombol Simpan
         const btnSubmit = formKiriSplit ? formKiriSplit.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
         if (btnSubmit) {
             btnSubmit.disabled = false;
@@ -610,22 +555,21 @@
             btnSubmit.style.background = "#e67e22";
         }
         
-        // Munculkan tombol batal edit jika ada
         const btnBatal = document.getElementById('btnBatalEdit');
         if (btnBatal) {
             btnBatal.style.display = 'block';
         }
 
-        if (typeof switchTabRME === "function") {
-            switchTabRME('form');
+        if (typeof window.switchTabRME === "function") {
+            window.switchTabRME('form');
         }
     };
 
-    // 🔥 MENGGUNAKAN ID BARU AGAR TIDAK BENTROK DENGAN FORM LAMA
     // =========================================================================
     // 🎯 UNIFIKASI AMAN: FORM SUBMIT RME MULTI-ID DENGAN PERLINDUNGAN GANJAL
     // =========================================================================
-    window.addEventListener('load', function() {
+    // 🔥 PERBAIKAN: Diubah menjadi DOMContentLoaded agar form ditangkap di awal
+    window.addEventListener('DOMContentLoaded', function() {
         const formAktifRme = document.getElementById('formModalMedisSplit') || 
                              document.getElementById('formModalMedis') || 
                              document.getElementById('formMedis');
@@ -634,7 +578,7 @@
             formAktifRme.addEventListener('submit', async function(e) { 
                 e.preventDefault(); 
                 
-                if (typeof validasiSebelumSimpanRME === "function" && !validasiSebelumSimpanRME()) {
+                if (typeof window.validasiSebelumSimpanRME === "function" && !window.validasiSebelumSimpanRME()) {
                     return; 
                 }
 
@@ -644,8 +588,7 @@
                     submitBtn.innerText = "⏳ Menyimpan Perubahan...";
                 }
 
-                // 🔥 PANGGIL LAYAR HITAM LOADING DI SINI (Diletakkan sebelum baca file karena baca gambar butuh waktu)
-                if (typeof tampilkanLoading === "function") tampilkanLoading("⏳ Mengenkripsi & Menyimpan Rekam Medis...");
+                if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Mengenkripsi & Menyimpan Rekam Medis...");
 
                 const sessionData    = JSON.parse(localStorage.getItem('anvaya_session'));
                 const idDokterAktif  = sessionData ? sessionData.idUser : "USR-000"; 
@@ -654,8 +597,8 @@
 
                 const idInputFile = document.getElementById('modalFileFoto') ? 'modalFileFoto' : 'txtFileFoto';
                 let dataFileModal = null;
-                if (typeof bacaFileKeBase64 === "function") {
-                    dataFileModal = await bacaFileKeBase64(idInputFile);
+                if (typeof window.bacaFileKeBase64 === "function") {
+                    dataFileModal = await window.bacaFileKeBase64(idInputFile);
                 }
 
                 const dapatkanNilaiDOM = (idUtama, idAlternatif) => {
@@ -698,14 +641,9 @@
                     window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
                 }
 
-                // =====================================================================
-                // 🔥 SATPAM PENDETEKSI PERUBAHAN KATA (STATE COMPARISON)
-                // Mengecek apakah dokter HANYA mengubah spasi/koma, atau tidak mengubah sama sekali
-                // =====================================================================
                 if (window.originalRmeSnapshot) {
                     const normalisasiTeks = (teks) => (teks || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
                     
-                    // Ambil semua isi form saat ini dan buang spasi/koma nya
                     const currentSnapshot = 
                         normalisasiTeks(dapatkanNilaiDOM('modalAnamnesa', 'txtAnamnesa')) +
                         normalisasiTeks(dapatkanNilaiDOM('modalObjektif', 'txtObjektif')) +
@@ -716,9 +654,8 @@
                         normalisasiTeks(dapatkanNilaiDOM('modalProKontrol', 'txtProKontrol')) +
                         normalisasiTeks(dapatkanNilaiDOM('modalTanggalKontrol', 'tanggalKontrol'));
 
-                    // Jika kata dan angkanya 100% SAMA PERSIS dengan saat awal tombol Edit diklik:
                     if (currentSnapshot === window.originalRmeSnapshot) {
-                        if (typeof sembunyikanLoading === "function") sembunyikanLoading(); // Matikan layar loading
+                        if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading(); 
                         
                         alert("⚠️ Tidak ada perubahan kalimat/kata yang terdeteksi.\n(Hanya mengubah spasi atau tanda baca tidak dihitung).\n\nPenyimpanan dibatalkan untuk mencegah duplikasi database.");
                         
@@ -726,7 +663,7 @@
                             submitBtn.disabled = false; 
                             submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan";
                         }
-                        return; // 🚫 HENTIKAN PROSES! Jangan fetch ke server sama sekali.
+                        return; 
                     }
                 }
 
@@ -754,10 +691,10 @@
                     fileBaru: dataFileModal 
                 };
 
-                fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+                fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
                 .then(response => response.json())
                 .then(res => {
-                    if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+                    if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
 
                     if (submitBtn) {
                         submitBtn.disabled = false; 
@@ -768,32 +705,27 @@
                         alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
                         
                         window.tokenRmeUnik = null; 
-                        if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
+                        if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
                         
-                        // =================================================================
-                        // 🔥 PASUKAN PEMBERSIH MEMORI (CLEANUP CREW)
-                        // Menghapus total draf & consent agar tidak nyasar ke kunjungan berikutnya
-                        // =================================================================
                         const currentRM = data.noRM;
                         if(currentRM) {
                             const rmTrim = String(currentRM).trim();
                             localStorage.removeItem('draft_rme_' + rmTrim);
                             localStorage.removeItem('ttd_consent_' + rmTrim);
                             localStorage.removeItem('tujuan_consent_' + rmTrim);
-                            localStorage.removeItem('pdf_url_consent_' + rmTrim); // Bersihkan info kasir
+                            localStorage.removeItem('pdf_url_consent_' + rmTrim); 
                         }
                         
                         const modalFull = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
                         if(modalFull) modalFull.style.display = 'none'; 
                         
-                        if (typeof switchTab === "function") switchTab('antrean');
-                        if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
+                        if (typeof window.switchTab === "function") window.switchTab('antrean');
+                        if (typeof window.muatAntreanHariIni === "function") window.muatAntreanHariIni(); 
                     } else { 
                         alert("❌ Gagal menyimpan: " + (res.message || "Terjadi kesalahan server.")); 
                     }
                 }).catch(err => {
-                    // 🔥 MATIKAN LAYAR HITAM LOADING JIKA ERROR
-                    if (typeof sembunyikanLoading === "function") sembunyikanLoading();
+                    if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
 
                     console.error(err);
                     if (submitBtn) submitBtn.innerText = "Koneksi Terputus...";
@@ -803,8 +735,8 @@
                     const modalFull = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
                     if(modalFull) modalFull.style.display = 'none'; 
                     
-                    if (typeof switchTab === "function") switchTab('antrean');
-                    if (typeof muatAntreanHariIni === "function") muatAntreanHariIni(); 
+                    if (typeof window.switchTab === "function") window.switchTab('antrean');
+                    if (typeof window.muatAntreanHariIni === "function") window.muatAntreanHariIni(); 
                     
                     setTimeout(() => {
                         if (submitBtn) {
@@ -815,7 +747,7 @@
                 });
             });
         }
-    })();
+    });
 
     window.pemicuEditCatatanMulai = function(barisSheet, isHariIni) {
         if (!window.currentHistoryData) {
@@ -823,59 +755,43 @@
             return;
         }
         
-        // 🎯 FIX DINAMIS UTAMA: Dobrak paksa status sembunyi akibat fungsi logout (Anti-Putih Polos)
         const kolomKiri = document.getElementById('kolomInputRME');
         if (kolomKiri) {
             kolomKiri.style.setProperty('display', 'block', 'important');
         }
 
-        // Deteksi form aktif secara paralel (Mendukung ID lama dan layout baru split)
         const formAktif = document.getElementById('formModalMedisSplit') || 
                         document.getElementById('formModalMedis') || 
                         document.getElementById('formMedis');
         
         if (formAktif) {
             formAktif.style.setProperty('display', 'block', 'important');
-            
-            // Pastikan seluruh form-group pembungkus teks input di dalamnya ikut terurai muncul
             formAktif.querySelectorAll('.form-group').forEach(el => {
                 el.style.setProperty('display', 'block', 'important');
             });
         }
 
-        // Cari data utuh langsung dari registry objek memori browser
         const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
         
         if (dataTerpilih) {
-            
-            // =====================================================================
-            // 🔥 PISAU BEDAH REGEX V2: Lebih Kuat & Tahan Banting
-            // =====================================================================
             let proKontrolMentah = dataTerpilih.proKontrol || "";
             let extractedDate = "";
             let pureCatatan = proKontrolMentah;
 
-            // Memburu pola tanggal dengan toleransi format (menangkap YYYY-MM-DD atau DD-MM-YYYY)
             const regexTgl = /Tgl Kontrol:\s*([0-9]{2,4}-[0-9]{2}-[0-9]{2,4})/i;
             const matchTgl = proKontrolMentah.match(regexTgl);
             
             if (matchTgl && matchTgl[1]) {
                 extractedDate = matchTgl[1].trim();
-                
-                // Jika format yang tertangkap adalah DD-MM-YYYY, balik menjadi YYYY-MM-DD (Syarat mutlak kalender HTML)
                 if (extractedDate.match(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/)) {
                     let p = extractedDate.split('-');
-                    extractedDate = `${p[2]}-${p[1]}-${p[0]}`; // Posisi 2 adalah Tahun, 1 Bulan, 0 Tanggal
+                    extractedDate = `${p[2]}-${p[1]}-${p[0]}`; 
                 }
-
-                // Cuci bersih teksnya agar murni sisa catatannya saja
                 pureCatatan = proKontrolMentah.replace(/🗓️ Tgl Kontrol:.*?\n📝 Catatan:\s*/g, "").trim();
                 pureCatatan = pureCatatan.replace(/🗓️ Tgl Kontrol:.*?\n/g, "").trim(); 
             }
-            // =====================================================================
 
-            // Teruskan data asli murni ke fungsi bawaan Anda (Catatan sudah bersih)
-            salinAtauEditRME(
+            window.salinAtauEditRME(
                 isHariIni,
                 dataTerpilih.barisSheet,
                 dataTerpilih.anamnesa,
@@ -887,10 +803,6 @@
                 pureCatatan 
             );
 
-            // =====================================================================
-            // 🔥 FITUR BARU: SNAPSHOT (FOTO COPY) DATA ASLI (ANTI-SPAM DATABASE)
-            // Menggabungkan semua teks, lalu membuang SEMUA spasi, enter, dan tanda baca!
-            // =====================================================================
             const normalisasiTeks = (teks) => (teks || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
             
             window.originalRmeSnapshot = 
@@ -902,9 +814,7 @@
                 normalisasiTeks(dataTerpilih.proPerawatan) +
                 normalisasiTeks(pureCatatan) +
                 normalisasiTeks(extractedDate);
-            // =====================================================================
 
-            // 🔥 KUNCI PERBAIKAN: Tembakkan Tanggal SETELAH Form Di-reset!
             setTimeout(() => {
                 const elTgl1 = document.getElementById('modalTanggalKontrol');
                 const elTgl2 = document.getElementById('tanggalKontrol');
@@ -919,15 +829,11 @@
             alert("⚠️ Data rekam medis tidak ditemukan di dalam memori.");
         }
 
-        // 🔥 TAMBAHAN DINAMIS: Beri jeda 300ms agar DOM selesai dimuat, lalu paksa periksa consent!
         setTimeout(() => {
-            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
         }, 300);
     };
 
-    // =========================================================================
-    // ✏️ FUNGSI EDIT & SALIN RME (DENGAN SMART DATE EXTRACTOR + PROTEKSI UI)
-    // =========================================================================
     window.salinAtauEditRME = function(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
         const kolomKiri = document.getElementById('kolomInputRME');
         if(kolomKiri) kolomKiri.style.display = 'block';
@@ -940,41 +846,32 @@
         setNilaiAman('modalAnamnesa', anam);
         setNilaiAman('modalObjektif', obj);
         setNilaiAman('modalDiagnosa', diag);
-        if (typeof sinkronisasiChipDiagnosa === "function") sinkronisasiChipDiagnosa();
+        if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
         setNilaiAman('modalResep', res);
         setNilaiAman('modalProPerawatan', proPer);
-        
-        // 🔥 REGEX LAMA TELAH DIHAPUS (CLEAN UP)
-        // Pemisahan tanggal sudah ditangani dengan sangat cerdas oleh fungsi "pemicuEditCatatanMulai", 
-        // jadi data `proKon` yang masuk ke sini sudah bersih dari tanggal. Kita langsung set saja:
         setNilaiAman('modalProKontrol', proKon); 
 
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = ""; 
-            
             try {
                 let arrTindakan = JSON.parse(per);
                 if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                     arrTindakan.forEach(t => {
-                        if (typeof tambahBarisTindakan === "function") {
-                            tambahBarisTindakan({
-                                namaTindakan: t.namaTindakan,
-                                hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
-                                catatanKlinis: t.catatanKlinis
-                            });
-                        }
+                        window.tambahBarisTindakan({
+                            namaTindakan: t.namaTindakan,
+                            hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                            catatanKlinis: t.catatanKlinis
+                        });
                     });
                 }
             } catch(e) {
                 if (per && per !== "-" && per !== "") {
-                    if (typeof tambahBarisTindakan === "function") {
-                        tambahBarisTindakan({
-                            namaTindakan: "KUSTOM",
-                            hargaDiinput: 0,
-                            catatanKlinis: per
-                        });
-                    }
+                    window.tambahBarisTindakan({
+                        namaTindakan: "KUSTOM",
+                        hargaDiinput: 0,
+                        catatanKlinis: per
+                    });
                 }
             }
         }
@@ -982,9 +879,6 @@
         const btnSimpan = document.getElementById('btnSimpanRME');
         const hiddenRow = document.getElementById('modalRowUpdate');
 
-        // =====================================================================
-        // 🔥 SINKRONISASI LOGIKA UI & BACKEND (MODE KOREKSI / AUDIT TRAIL)
-        // =====================================================================
         if (isHariIni === true || isHariIni === "true") {
             if(hiddenRow) hiddenRow.value = barisSheet;
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
@@ -992,17 +886,12 @@
         } else {
             if(hiddenRow) hiddenRow.value = barisSheet; 
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
-            // 🎯 Teks Peringatan Diperbarui Sesuai Keinginan Owner
             alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU.\n\nSistem TIDAK AKAN menghapus data asli, melainkan membuat BARIS KOREKSI BARU sebagai rekam jejak audit (Audit Trail) untuk Owner.");
         }
-        // =====================================================================
 
         const btnBatal = document.getElementById('btnBatalEdit');
         if(btnBatal) btnBatal.style.display = 'block';
 
-        // =====================================================================
-        // 🔥 FITUR PROTEKSI UI - KUNCI SEMUA TOMBOL DI HISTORI
-        // =====================================================================
         const wrapperHistori = document.getElementById('wrapperRiwayatFull');
         if (wrapperHistori) {
             const tombolHistori = wrapperHistori.querySelectorAll('button');
@@ -1015,76 +904,53 @@
             });
         }
         
-        if (typeof simpanDraftRME === "function") {
-            simpanDraftRME();
-        }
+        window.simpanDraftRME();
     };
 
-    // 🔥 FUNGSI BARU: Mengamankan form jika dokter membatalkan proses edit
     window.batalEditRME = function() {
-        // 🔥 1. OBAT BIUS (SABUK PENGAMAN TAMBAHAN): 
         window.isRestoringDraft = true; 
 
-        // 2. Kosongkan isian dan memori form untuk keamanan
         const formSplit = document.getElementById('formModalMedisSplit');
         if (formSplit) formSplit.reset();
         
         const rowUpdate = document.getElementById('modalRowUpdate');
         if (rowUpdate) rowUpdate.value = "";
 
-        if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
+        if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
         
-        // 3. Sembunyikan tombol batal dan kembalikan teks tombol simpan
         const btnBatal = document.getElementById('btnBatalEdit');
         if (btnBatal) btnBatal.style.display = 'none';
         
         const btnSimpan = document.getElementById('btnSimpanRME');
         if (btnSimpan) btnSimpan.innerHTML = "💾 Simpan & Selesaikan Kunjungan";
         
-        // 4. Sembunyikan (tutup) kolom input kiri sepenuhnya
         const kolomInput = document.getElementById('kolomInputRME');
         if (kolomInput) kolomInput.style.display = 'none';
 
-        // 5. Sapu bersih baris tindakan
         const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
-        if (kontainerTindakan) {
-            kontainerTindakan.innerHTML = "";
-        }
+        if (kontainerTindakan) kontainerTindakan.innerHTML = "";
 
-        // =====================================================================
-        // 🔥 FITUR BARU: PROTEKSI UI - BUKA KEMBALI KUNCI TOMBOL HISTORI
-        // =====================================================================
         const wrapperHistori = document.getElementById('wrapperRiwayatFull');
         if (wrapperHistori) {
-            // Cari hanya tombol yang tadi kita stempel 'disabled-by-edit'
             const tombolHistori = wrapperHistori.querySelectorAll('button.disabled-by-edit');
             tombolHistori.forEach(btn => {
-                btn.classList.remove('disabled-by-edit'); // Hapus stempel
-                btn.disabled = false; // Buka kuncinya
-                btn.style.opacity = '1'; // Kembalikan warna terang
-                btn.style.cursor = 'pointer'; // Kembalikan kursor normal
+                btn.classList.remove('disabled-by-edit'); 
+                btn.disabled = false; 
+                btn.style.opacity = '1'; 
+                btn.style.cursor = 'pointer'; 
                 btn.title = ""; 
             });
         }
-        // =====================================================================
         
-        // 🔥 6. BANGUNKAN KEMBALI AUTO-SAVE: 
-        setTimeout(() => { 
-            window.isRestoringDraft = false; 
-        }, 200);
-
+        setTimeout(() => { window.isRestoringDraft = false; }, 200);
         alert("Mode edit dibatalkan. Formulir telah dibersihkan.");
     };
 
-    // =========================================================================
-    // 🛡️ JARING PENGAMAN (LANGKAH 3): VALIDASI INFORMED CONSENT SEBELUM SIMPAN RME
-    // =========================================================================
     window.validasiSebelumSimpanRME = function() {
         const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
 
-        // Ambil data master tindakan yang sudah dimuat dari server
         const masterData = window.masterTindakanGlobal || [];
 
         barisTindakan.forEach(row => {
@@ -1093,19 +959,16 @@
 
             const namaTerpilih = selNama.value.trim().toLowerCase();
 
-            // 1. Cek dari atribut DOM HTML (jika ada badge atau atribut data)
             let isWajib = row.getAttribute('data-butuh-consent') == "1" || 
                         (selNama.getAttribute('data-butuh-consent') == "1") ||
                         row.querySelector('.badge-consent');
 
-            // 2. 🔥 DEEP MATCH DARI DATABASE SERVER: Cocokkan nama tindakan dengan masterData
             if (!isWajib && masterData.length > 0) {
                 const itemMaster = masterData.find(item => {
                     const namaMaster = (item.nama || item.namaTindakan || "").trim().toLowerCase();
                     return namaMaster === namaTerpilih;
                 });
 
-                // Cek apakah properti butuhConsent bernilai 1 / true (yang dikirim dari Kode.gs baru)
                 if (itemMaster && (itemMaster.butuhConsent == 1 || itemMaster.butuhConsent === true)) {
                     isWajib = true;
                 }
@@ -1117,28 +980,22 @@
             }
         });
 
-        // 🔥 JIKA ADA TINDAKAN BERISIKO & CONSENT BELUM DISIMPAN HARI INI -> TAHAN PROSES!
         if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
             alert(`⚠️ TINDAKAN MEDIS BERISIKO TERDETEKSI!\n\nTindakan: "${namaTindakanBerisiko.join(', ')}"\n\nSesuai SOP Medico-Legal Klinik Anvaya, Anda wajib membuat Informed Consent dan meminta tanda tangan pasien/wali terlebih dahulu sebelum menutup rekam medis ini.`);
             
-            // Panggil trigger buka modal consent secara otomatis
-            if (typeof triggerInformedConsentDariRME === "function") {
-                triggerInformedConsentDariRME();
-            } else if (typeof bukaModalConsent === "function") {
+            if (typeof window.triggerInformedConsentDariRME === "function") {
+                window.triggerInformedConsentDariRME();
+            } else if (typeof window.bukaModalConsent === "function") {
                 const noRM = document.getElementById('modalNoRM')?.value || "-";
                 const nama = document.getElementById('modalNama')?.value || "-";
-                bukaModalConsent(noRM, nama, namaTindakanBerisiko.join(', '));
+                window.bukaModalConsent(noRM, nama, namaTindakanBerisiko.join(', '));
             }
-            return false; // ⛔ Batalkan proses simpan RME mutlak!
+            return false; 
         }
 
-        return true; // Lanjut simpan RME jika aman / tidak butuh consent
+        return true; 
     };
 
-    // ==========================================
-    // FUNGSI BUKA MODAL RME
-    // ==========================================
-    // 🔥 UPGRADE: Tambahkan parameter tanggalDaftarLangsung di akhir
     window.bukaModalRiwayatFull = function(noRM, namaPasien, mode = 'input', tanggalDaftarLangsung = "", rowNumberTarget = "") {
         const cleanNoRM = String(noRM || "").trim();
         if (!cleanNoRM || cleanNoRM === "-" || cleanNoRM === "undefined") {
@@ -1147,11 +1004,11 @@
         }
 
         let dataPasienObj = null;
-        if (typeof dataAntreanGlobal !== 'undefined' && dataAntreanGlobal !== null) {
+        if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
             if (rowNumberTarget !== "") {
-                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === cleanNoRM && String(p.rowNumber) === String(rowNumberTarget));
+                dataPasienObj = window.dataAntreanGlobal.find(p => p.noRM === cleanNoRM && String(p.rowNumber) === String(rowNumberTarget));
             } else {
-                dataPasienObj = dataAntreanGlobal.find(p => p.noRM === cleanNoRM);
+                dataPasienObj = window.dataAntreanGlobal.find(p => p.noRM === cleanNoRM);
             }
         }
 
@@ -1174,8 +1031,8 @@
 
         document.getElementById('modalRiwayatFull').style.display = 'flex'; 
 
-        if (typeof muatKamusDikte === "function") muatKamusDikte();
-        if (typeof muatMasterTindakan === "function" && (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0)) muatMasterTindakan();
+        if (typeof window.muatKamusDikte === "function") window.muatKamusDikte();
+        if (typeof window.muatMasterTindakan === "function" && (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0)) window.muatMasterTindakan();
         
         const kolomKiri = document.getElementById('kolomInputRME');
         const formSplit = document.getElementById('formModalMedisSplit');
@@ -1207,16 +1064,8 @@
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
 
-        // =====================================================================
-        // 🔥 RESET SENSOR SNAPSHOT (ANTI-BOCOR ANTAR PASIEN)
-        // Memastikan pasien baru tidak terblokir oleh sensor Edit pasien sebelumnya
-        // =====================================================================
         window.originalRmeSnapshot = null;
-        // =====================================================================
 
-        // =========================================================================
-        // 🔥 SATPAM PENJAGA TANGGAL DRAF (ANTI-GHOSTING)
-        // =========================================================================
         const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
         let draftValidObj = null;
 
@@ -1224,26 +1073,21 @@
             try {
                 const tempDraft = JSON.parse(savedDraft);
                 
-                // 🔥 PERBAIKAN LOGIKA: 
-                // Jika draf TIDAK PUNYA TANGGAL (draf usang sebelum update) ATAU tanggalnya beda, BUANG!
                 if (!tempDraft.visitDate || tempDraft.visitDate !== window.tanggalKunjunganAktif) {
                     console.log("🗑️ Draf usang atau dari kunjungan lama terdeteksi. Melakukan pembersihan otomatis...");
                     localStorage.removeItem('draft_rme_' + cleanNoRM);
                     localStorage.removeItem('ttd_consent_' + cleanNoRM);
                     localStorage.removeItem('tujuan_consent_' + cleanNoRM);
                 } else {
-                    draftValidObj = tempDraft; // Draf terbukti sah untuk hari ini
+                    draftValidObj = tempDraft; 
                 }
             } catch(e) {
                 console.error("Format draf rusak", e);
-                localStorage.removeItem('draft_rme_' + cleanNoRM); // Bersihkan juga jika formatnya rusak
+                localStorage.removeItem('draft_rme_' + cleanNoRM); 
             }
         }
         
-        // =========================================================================
-        // 🔥 SENSOR RESTORASI CONSENT 
-        // =========================================================================
-        if (typeof resetStatusConsentUI === "function") resetStatusConsentUI();
+        if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
         window.consentSudahDisimpanHariIni = false;
         window.urlFotoConsentAktif = "";
         window.tujuanConsentAktif = "";
@@ -1283,9 +1127,6 @@
             infoLunas.style.display = window.isPasienLunasAktif ? 'block' : 'none';
         }
 
-        // =========================================================================
-        // 💾 RESTORASI DRAF RME (HANYA DIEKSEKUSI JIKA DRAF SAH)
-        // =========================================================================
         if (draftValidObj) { 
             const eksekusiRestorasi = () => {
                 if (!window.masterTindakanGlobal || window.masterTindakanGlobal.length === 0) {
@@ -1320,7 +1161,7 @@
 
                     if (draftObj.tindakanDinamis && Array.isArray(draftObj.tindakanDinamis) && draftObj.tindakanDinamis.length > 0) {
                         draftObj.tindakanDinamis.forEach(t => {
-                            if (typeof tambahBarisTindakan === "function") tambahBarisTindakan(t);
+                            window.tambahBarisTindakan(t);
                         });
                         
                         setTimeout(() => {
@@ -1344,11 +1185,11 @@
                                 }
                             });
                             
-                            if (typeof simpanDraftRME === "function") simpanDraftRME();
-                            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+                            window.simpanDraftRME();
+                            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
                         }, 150);
                     } else {
-                        if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+                        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
                     }
                 } catch(e) {
                     console.error("Gagal merestorasi data draf RME:", e);
@@ -1356,7 +1197,7 @@
             };
             eksekusiRestorasi();
         } else {
-            if (typeof periksaKebutuhanConsentUI === "function") periksaKebutuhanConsentUI();
+            if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
         }
 
         setTimeout(() => { window.isRestoringDraft = false; }, 200);
@@ -1367,12 +1208,12 @@
         const bannerMedis = document.getElementById('bannerPeringatanMedis');
         if (bannerMedis) bannerMedis.style.display = 'none';
 
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: cleanNoRM }) })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
             if(res.result === "success" && res.data) {
                 window.pasienRMEAktif = res.data;
-                let umur = typeof hitungUmur === "function" ? hitungUmur(res.data.tanggalLahir) : "-";
+                let umur = typeof window.hitungUmur === "function" ? window.hitungUmur(res.data.tanggalLahir) : "-";
                 document.getElementById('lblProfilNama').innerText = res.data.nama || namaPasien || "-";
                 document.getElementById('lblProfilRM').innerText = res.data.noRM || cleanNoRM || "-";
                 document.getElementById('lblProfilUmur').innerText = `${res.data.tempatLahir || '-'}, ${res.data.tanggalLahir || '-'} (${umur} Thn)`;
@@ -1400,7 +1241,7 @@
         })
         .catch(err => console.error("Gagal muat profil medis:", err));
 
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: cleanNoRM }) })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getAllRiwayatMedis", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
             if (!timelineContainer) return;
@@ -1416,7 +1257,7 @@
                     let tombolEditRMEHtml = '';
                     if (perms.editRME === 1 && mode !== 'input') { 
                         tombolEditRMEHtml = `
-                            <button onclick="pemicuEditCatatanMulai('${r.barisSheet}', ${r.isHariIni})" 
+                            <button onclick="window.pemicuEditCatatanMulai('${r.barisSheet}', ${r.isHariIni})" 
                                     style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">
                                 📝 Edit / Salin Catatan
                             </button>
@@ -1455,10 +1296,10 @@
                                 tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}<br>`;
                             });
                         } else {
-                            tampilanTindakanHtml = typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.perawatan) : r.perawatan;
+                            tampilanTindakanHtml = typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.perawatan) : r.perawatan;
                         }
                     } catch(e) {
-                        tampilanTindakanHtml = typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.perawatan) : (r.perawatan || "-"); 
+                        tampilanTindakanHtml = typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.perawatan) : (r.perawatan || "-"); 
                     }
 
                     const card = document.createElement('div');
@@ -1475,15 +1316,15 @@
                             <div>${tombolEditRMEHtml}</div>
                         </div>
                         <div style="font-size:13px; padding:5px 15px 15px 15px;">
-                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.anamnesa) : (r.anamnesa || '-')}</span></div>
-                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.objektif) : (r.objektif || '-')}</span></div>
-                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.diagnosa) : (r.diagnosa || '-')}</span></div>
+                            <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.anamnesa) : (r.anamnesa || '-')}</span></div>
+                            <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.objektif) : (r.objektif || '-')}</span></div>
+                            <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.diagnosa) : (r.diagnosa || '-')}</span></div>
                             <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${tampilanTindakanHtml || '-'}</span></div>
                             
-                            <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> <br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.proPerawatan) : (r.proPerawatan || '-')}</span></div>
-                            <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.proKontrol) : (r.proKontrol || '-')}</span></div>
+                            <div style="margin-bottom:8px; color:#2980b9;"><strong>📋 Pro Perawatan:</strong> <br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.proPerawatan) : (r.proPerawatan || '-')}</span></div>
+                            <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.proKontrol) : (r.proKontrol || '-')}</span></div>
                             
-                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${typeof formatKeBulletPoin === "function" ? formatKeBulletPoin(r.resep) : (r.resep || '-')}</span></div>
+                            <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.resep) : (r.resep || '-')}</span></div>
                             ${linkFotoHtml}
                         </div>
                     `;
@@ -1499,16 +1340,14 @@
         });
     };
 
-    // --- INTEGRASI FORM RME (VERSI 2 TERKONSOLIDASI) ---
     window.bukaInputRME = function(noRM, namaPasien, tanggalDaftar) { 
-        // 🔥 FIX MUTLAK: Ambil form aktif secara dinamis (Anti-Crash Relogin)
         const formAktifRme = document.getElementById('formModalMedisSplit') || 
                             document.getElementById('formModalMedis') || 
                             document.getElementById('formMedis');
 
         const kolomKiri = document.getElementById('kolomInputRME');
         if (kolomKiri) {
-            kolomKiri.style.display = 'block'; // Pastikan pembungkus utama langsung mencuat
+            kolomKiri.style.display = 'block'; 
         }
 
         if (formAktifRme) {
@@ -1522,7 +1361,6 @@
         const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
         if (areaKontainerRME) areaKontainerRME.style.display = 'flex';
 
-        // Peta pengisian data pasien aman anti-null
         const setNilaiDOM = (idUtama, idAlternatif, value) => {
             const el1 = document.getElementById(idUtama);
             if (el1) { el1.value = value; return; }
@@ -1541,8 +1379,7 @@
         const tbodyRiwayat = document.getElementById('tabelRiwayatBody');
         if (tbodyRiwayat) tbodyRiwayat.innerHTML = '<tr><td colspan="6" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
         
-        // Request data ke Apps Script
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'getRekamMedisPasien', noRM: noRM, tanggal: tanggalDaftar })
         })
@@ -1568,18 +1405,16 @@
                             let arrTindakan = JSON.parse(data.hariIni.perawatan);
                             if (Array.isArray(arrTindakan)) {
                                 arrTindakan.forEach(t => {
-                                    if (typeof tambahBarisTindakan === "function") {
-                                        tambahBarisTindakan({
-                                            namaTindakan: t.namaTindakan,
-                                            hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
-                                            catatanKlinis: t.catatanKlinis || ""
-                                        });
-                                    }
+                                    window.tambahBarisTindakan({
+                                        namaTindakan: t.namaTindakan,
+                                        hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0,
+                                        catatanKlinis: t.catatanKlinis || ""
+                                    });
                                 });
                             }
                         } catch(e) {
-                            if (data.hariIni.perawatan && typeof tambahBarisTindakan === "function") {
-                                tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: data.hariIni.perawatan });
+                            if (data.hariIni.perawatan) {
+                                window.tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: data.hariIni.perawatan });
                             }
                         }
                     }
@@ -1593,9 +1428,11 @@
         }).catch(err => { if (btnSubmit) btnSubmit.disabled = false; });
     };
 
-    // 🔥 BARU: Fungsi untuk menutup jendela pop-up RME
     window.tutupInputRME = function() {
-        document.getElementById('sectionRME').style.display = 'none';
+        const sectionRME = document.getElementById('sectionRME');
+        const modalRiwayatFull = document.getElementById('modalRiwayatFull');
+        if (sectionRME) sectionRME.style.display = 'none';
+        if (modalRiwayatFull) modalRiwayatFull.style.display = 'none';
     };
 
 })();
