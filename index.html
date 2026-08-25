@@ -641,12 +641,12 @@
     <!-- 1. TOP NAVBAR (Selalu ada di atas, tipis, berisi Burger Menu & Profil) -->
     <div class="top-navbar" style="display: none;">
         <div class="navbar-left">
-            <button class="burger-btn" onclick="toggleSidebar()">☰</button>
+            <button class="burger-btn" onclick="window.toggleSidebar()">☰</button>
             <span class="brand-logo">🏥 Klinik Anvaya</span>
         </div>
         <div class="navbar-right">
             <span id="txtUserStatus" class="user-info"></span>
-            <button class="btn-logout" onclick="logout()">Logout</button>
+            <button class="btn-logout" onclick="window.logout()">Logout</button>
         </div>
     </div>
 
@@ -655,31 +655,31 @@
         <div class="sidebar-menu">
             <span class="sidebar-category">OPERASIONAL</span>
             <!-- PENTING: ID tombol tetap sama agar mesin RBAC / God Mode tetap bekerja -->
-            <button id="tabBerandaBtn" class="tab-link" onclick="switchTab('beranda')">🏠 Beranda Utama</button>
-            <button id="tabDokterBtn" class="tab-link" onclick="switchTab('dokter')" style="font-weight: bold; color: #03A9F4;">📅 Kalender Praktik</button>
-            <button id="tabPendaftaranBtn" class="tab-link" onclick="switchTab('pendaftaran')">📝 Form Pendaftaran</button>
-            <button id="tabAntreanBtn" class="tab-link" onclick="switchTab('antrean')">👥 Antrian Pasien</button>
-            <button id="tabRiwayatMedisBtn" class="tab-link" onclick="switchTab('riwayatMedis')">🗂️ Riwayat Medis</button>
-            <button id="tabDaftarPasienBtn" class="tab-link" onclick="switchTab('daftarPasien')">📂 Database Pasien</button>
-            <button id="tabPengingatKontrolBtn" class="tab-link" onclick="switchTab('pengingatKontrol')">🔔 Worklist Kontrol</button>
+            <button id="tabBerandaBtn" class="tab-link" onclick="window.switchTab('beranda')">🏠 Beranda Utama</button>
+            <button id="tabDokterBtn" class="tab-link" onclick="window.switchTab('dokter')" style="font-weight: bold; color: #03A9F4;">📅 Kalender Praktik</button>
+            <button id="tabPendaftaranBtn" class="tab-link" onclick="window.switchTab('pendaftaran')">📝 Form Pendaftaran</button>
+            <button id="tabAntreanBtn" class="tab-link" onclick="window.switchTab('antrean')">👥 Antrian Pasien</button>
+            <button id="tabRiwayatMedisBtn" class="tab-link" onclick="window.switchTab('riwayatMedis')">🗂️ Riwayat Medis</button>
+            <button id="tabDaftarPasienBtn" class="tab-link" onclick="window.switchTab('daftarPasien')">📂 Database Pasien</button>
+            <button id="tabPengingatKontrolBtn" class="tab-link" onclick="window.switchTab('pengingatKontrol')">🔔 Worklist Kontrol</button>
             
             <span class="sidebar-category">KEUANGAN & ANALISIS</span>
-            <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="switchTab('analisisBisnis')" style="font-weight: bold; color: #ffeb3b;">📈 Analisis Bisnis</button>
-            <button id="tabKasirBtn" class="tab-link" onclick="switchTab('kasir')" style="font-weight: bold; color: #32ac36;">💰 Kasir & Billing</button>
+            <button id="tabAnalisisBisnisBtn" class="tab-link" onclick="window.switchTab('analisisBisnis')" style="font-weight: bold; color: #ffeb3b;">📈 Analisis Bisnis</button>
+            <button id="tabKasirBtn" class="tab-link" onclick="window.switchTab('kasir')" style="font-weight: bold; color: #32ac36;">💰 Kasir & Billing</button>
             <!-- Tombol Menu Pendapatan Dokter -->
-            <button id="tabPendapatanDokterBtn" class="tab-link" onclick="switchTab('pendapatanDokter'); initPendapatanDokter();" style="display: none; font-weight: bold; color: #D662A1;">💰 Pendapatan Saya</button>
+            <button id="tabPendapatanDokterBtn" class="tab-link" onclick="window.switchTab('pendapatanDokter'); window.initPendapatanDokter();" style="display: none; font-weight: bold; color: #D662A1;">💰 Pendapatan Saya</button>
             
             <!-- 🔥 MENU BARU DITAMBAHKAN DI SINI -->
-            <button id="tabTagihanLabBtn" class="tab-link" onclick="switchTab('tagihanLab'); muatAntreanLab();" style="display: none; font-weight: bold; color: #e67e22;">🧪 Tagihan Eksternal / Lab</button>
+            <button id="tabTagihanLabBtn" class="tab-link" onclick="window.switchTab('tagihanLab'); window.muatAntreanLab();" style="display: none; font-weight: bold; color: #e67e22;">🧪 Tagihan Eksternal / Lab</button>
             
             <span class="sidebar-category">SISTEM KAMI</span>
-            <button id="tabKamusDikteBtn" class="tab-link" onclick="switchTab('kamusDikte')">📖 Kamus Dikte</button>
-            <button id="tabBackendBtn" class="tab-link" onclick="switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
+            <button id="tabKamusDikteBtn" class="tab-link" onclick="window.switchTab('kamusDikte')">📖 Kamus Dikte</button>
+            <button id="tabBackendBtn" class="tab-link" onclick="window.switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
         </div>
     </div>
 
     <!-- Overlay Gelap (Muncul saat sidebar terbuka di HP) -->
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="window.toggleSidebar()"></div>
 
     <div id="mainPage" class="container">
 
@@ -765,14 +765,14 @@
             <form id="formPasien">
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">Jenis Pasien:</label>
-                    <label><input type="radio" name="tipePasien" value="baru" onclick="aturTipePasien('baru')"> Pasien Baru</label> &nbsp;&nbsp;
-                    <label><input type="radio" name="tipePasien" value="lama" onclick="aturTipePasien('lama')"> Pasien Lama</label>
+                    <label><input type="radio" name="tipePasien" value="baru" onclick="window.aturTipePasien('baru')"> Pasien Baru</label> &nbsp;&nbsp;
+                    <label><input type="radio" name="tipePasien" value="lama" onclick="window.aturTipePasien('lama')"> Pasien Lama</label>
                 </div>
 
                 <!-- 🔥 UPGRADE: Ganti Datalist yang lambat dengan Tombol Pemanggil Modal Instan -->
                 <div id="boxPasienLama" style="display: none; background: #e8f4f8; padding: 15px; border-radius: 8px; border: 1px dashed #2a5298; margin-bottom: 15px; text-align: center;">
                     <p style="margin: 0 0 10px 0; color: #1e3c72; font-weight: bold;">Pasien sudah pernah berobat sebelumnya?</p>
-                    <button type="button" onclick="bukaModalCariPasien()" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">
+                    <button type="button" onclick="window.bukaModalCariPasien()" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">
                         🔍 Klik untuk Cari & Pilih Pasien Lama (Zero-Lag)
                     </button>
                     <small style="display: block; color: #555; margin-top: 8px;">⚡ Database pasien dimuat ke memori lokal untuk pencarian super cepat tanpa loading.</small>
@@ -905,12 +905,12 @@
                 <!-- Header Modal -->
                 <div style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; font-size: 18px;">🔍 Cari & Pilih Pasien Lama</h3>
-                    <button type="button" onclick="tutupModalPasien()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+                    <button type="button" onclick="window.tutupModalPasien()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
                 </div>
 
                 <!-- Body Modal: Kotak Pencarian -->
                 <div style="padding: 20px; background-color: #f8f9fa; border-bottom: 1px solid #eee;">
-                    <input type="text" id="inputCariModalPasien" oninput="filterPasienDariCache()" placeholder="⚡ Ketik Nama Pasien, No. RM, atau No. WhatsApp..." style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #2a5298; border-radius: 8px; outline: none;">
+                    <input type="text" id="inputCariModalPasien" oninput="window.filterPasienDariCache()" placeholder="⚡ Ketik Nama Pasien, No. RM, atau No. WhatsApp..." style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #2a5298; border-radius: 8px; outline: none;">
                     <small style="color: #666; display: block; margin-top: 6px;">💡 Tips: Ketik minimal 2 huruf. Hasil pencarian dimuat instan dari memori lokal (Zero-Lag).</small>
                 </div>
 
@@ -941,7 +941,7 @@
 
                 <!-- Footer Modal -->
                 <div style="background-color: #f1f2f6; padding: 12px 24px; text-align: right; border-top: 1px solid #ddd;">
-                    <button type="button" onclick="tutupModalPasien()" style="background-color: #7f8c8d; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">Tutup</button>
+                    <button type="button" onclick="window.tutupModalPasien()" style="background-color: #7f8c8d; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">Tutup</button>
                 </div>
             </div>
         </div>
@@ -972,15 +972,15 @@
                 <div class="filter-group">
                     <label style="font-size: 13px; font-weight: bold;">Periode Tanggal:</label>
                     <div class="date-range-inputs">
-                        <input type="date" id="filterTanggalMulai" onchange="muatAntreanHariIni(1)">
+                        <input type="date" id="filterTanggalMulai" onchange="window.muatAntreanHariIni(1)">
                         <span>s/d</span>
-                        <input type="date" id="filterTanggalAkhir" onchange="muatAntreanHariIni(1)">
+                        <input type="date" id="filterTanggalAkhir" onchange="window.muatAntreanHariIni(1)">
                     </div>
                 </div>
         
                 <div class="filter-group">
                     <label style="font-size: 13px; font-weight: bold;">Filter Status:</label>
-                    <select id="filterStatusAntrean" onchange="filterAntreanLokal()">
+                    <select id="filterStatusAntrean" onchange="window.filterAntreanLokal()">
                         <option value="Semua">📋 Semua Status</option>
                         <option value="Belum Diperiksa">🟡 Belum Diperiksa</option>
                         <option value="Sedang Diperiksa">🟠 Sedang Diperiksa</option>
@@ -992,7 +992,7 @@
 
                 <!-- 🔥 TOMBOL EXPORT YANG KINI KEMBALI DAN BERADA DI POSISI YANG TEPAT -->
                 <div class="filter-group" style="display: flex; align-items: flex-end;">
-                    <button type="button" onclick="unduhLaporanAntrean()" style="background-color: #16a34a; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s;">
+                    <button type="button" onclick="window.unduhLaporanAntrean()" style="background-color: #16a34a; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s;">
                         📥 Export ke Excel/CSV
                     </button>
                 </div>
@@ -1036,20 +1036,21 @@
                 </div>
                 <div style="display:flex; gap:10px; align-items:center; background:#f8f9fa; padding:10px 15px; border-radius:6px; border:1px solid #e0e0e0; flex-wrap:wrap;">
                     <label style="font-weight:bold; color:#2c3e50; font-size:14px; white-space:nowrap;">Pilih Bulan:</label>
-                    <input type="month" id="filterBulanPendapatanDokter" onchange="renderUIKinerjaDokter()" style="padding:8px; border:2px solid #3498db; border-radius:4px; font-weight:bold; font-size:15px; color:#2980b9; cursor:pointer; width:100%; max-width:200px;">
+                    <input type="month" id="filterBulanPendapatanDokter" onchange="window.renderUIKinerjaDokter()" style="padding:8px; border:2px solid #3498db; border-radius:4px; font-weight:bold; font-size:15px; color:#2980b9; cursor:pointer; width:100%; max-width:200px;">
                 </div>
             </div>
 
             <!-- Banner Status Slip (Otomatis berubah via JS jika sudah dikunci) -->
-            <div id="bannerStatusSlip" style="margin-bottom:20px; padding:15px 20px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; background:#e8f8f5; border-left:5px solid #27ae60;">
+            <div id="bannerStatusSlip" style="display:none; margin-bottom:20px; padding:15px 20px; border-radius:6px; justify-content:space-between; align-items:center; background:#e8f8f5; border-left:5px solid #27ae60;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <span style="font-size:24px;">✅</span>
                     <div>
-                        <h4 style="margin:0; color:#27ae60; font-size:16px;">Slip Gaji Telah Diterbitkan!</h4>
-                        <p style="margin:2px 0 0 0; color:#2c3e50; font-size:13px;">Data bulan ini sudah di-ACC oleh Manajemen dan bersifat final.</p>
+                        <h4 style="margin:0; color:#27ae60; font-size:16px;">Memeriksa Status Slip...</h4>
+                        <p style="margin:2px 0 0 0; color:#2c3e50; font-size:13px;">Sedang menyinkronkan data dengan server.</p>
                     </div>
                 </div>
-                <button onclick="lihatArsipSlipDokter()" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);">📄 Lihat Slip PDF Final</button>
+                <!-- onclick dihapus, diganti menjadi disabled sementara -->
+                <button disabled style="background:#95a5a6; color:white; border:none; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:not-allowed;">⏳ Memuat...</button>
             </div>
 
             <!-- Info Cards (Summary) -->
@@ -1118,7 +1119,7 @@
                     <label for="txtCariRiwayatGlobal" style="font-weight: bold; margin-bottom: 8px; display: block;">Masukkan Nama / Nomor RM Pasien:</label>
                     <input type="text" id="txtCariRiwayatGlobal" placeholder="Ketik nama atau No. RM di sini...">
                 </div>
-                <button type="button" onclick="cariPasienGlobal()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔍 Cari</button>
+                <button type="button" onclick="window.cariPasienGlobal()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔍 Cari</button>
             </div>
         
             <!-- Tabel Daftar Pasien (Hasil Pencarian) -->
@@ -1147,9 +1148,9 @@
                         <span style="font-size: 14px; color: #555;">Menampilkan <strong id="lblTotalDataTampilRiwayat">0</strong> data dari <strong id="lblTotalDataMasterRiwayat">0</strong> total pasien</span>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <button id="btnPrevRiwayat" onclick="halamanSebelumnyaRiwayat()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">◀ Sebelum</button>
+                        <button id="btnPrevRiwayat" onclick="window.halamanSebelumnyaRiwayat()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">◀ Sebelum</button>
                         <span id="lblHalamanRiwayat" style="font-weight: bold; font-size: 14px; color: #2c3e50;">Halaman 1 dari 1</span>
-                        <button id="btnNextRiwayat" onclick="halamanBerikutnyaRiwayat()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">Berikut ▶</button>
+                        <button id="btnNextRiwayat" onclick="window.halamanBerikutnyaRiwayat()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">Berikut ▶</button>
                     </div>
                 </div>
             </div>
@@ -1162,20 +1163,20 @@
             <div class="form-group" style="background: white; padding: 20px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; align-items: flex-end;">
                 <div style="flex-grow: 1;">
                     <label for="txtCariDaftar" style="font-weight: bold; margin-bottom: 8px; display: block;">Cari Berdasarkan Nama / Nomor RM:</label>
-                    <input type="text" id="txtCariDaftar" placeholder="Ketik nama atau No. RM di sini..." onkeypress="if(event.key === 'Enter') cariDaftarPasien()">
+                    <input type="text" id="txtCariDaftar" placeholder="Ketik nama atau No. RM di sini..." onkeypress="if(event.key === 'Enter') window.cariDaftarPasien()">
                 </div>
                 
                 <div style="width: 160px;">
                     <label for="filterStatusPasien" style="font-weight: bold; margin-bottom: 8px; display: block;">Status Akun:</label>
-                    <select id="filterStatusPasien" onchange="cariDaftarPasien()" style="height: 42px; width: 100%; border-radius: 4px; border: 1px solid #ccc; padding: 0 10px; font-weight: bold; cursor: pointer;">
+                    <select id="filterStatusPasien" onchange="window.cariDaftarPasien()" style="height: 42px; width: 100%; border-radius: 4px; border: 1px solid #ccc; padding: 0 10px; font-weight: bold; cursor: pointer;">
                         <option value="aktif">🟢 Aktif</option>
                         <option value="nonaktif">🔴 Nonaktif</option>
                         <option value="semua">📋 Semua</option>
                     </select>
                 </div>
             
-                <button type="button" onclick="cariDaftarPasien()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔍 Cari</button>
-                <button type="button" onclick="resetDaftarPasien()" style="background-color: #95a5a6; color: white; border-radius: 5px;">🔄 Reset</button>
+                <button type="button" onclick="window.cariDaftarPasien()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔍 Cari</button>
+                <button type="button" onclick="window.resetDaftarPasien()" style="background-color: #95a5a6; color: white; border-radius: 5px;">🔄 Reset</button>
             </div>
 
             <div class="table-responsive" style="margin-top: 25px;">
@@ -1199,9 +1200,9 @@
                         <span style="font-size: 14px; color: #555;">Menampilkan <strong id="lblTotalDataTampil">0</strong> data dari <strong id="lblTotalDataMaster">0</strong> total pasien</span>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <button id="btnPrevPasien" onclick="halamanSebelumnyaPasien()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">◀ Sebelum</button>
+                        <button id="btnPrevPasien" onclick="window.halamanSebelumnyaPasien()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">◀ Sebelum</button>
                         <span id="lblHalamanPasien" style="font-weight: bold; font-size: 14px; color: #2c3e50;">Halaman 1 dari 1</span>
-                        <button id="btnNextPasien" onclick="halamanBerikutnyaPasien()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">Berikut ▶</button>
+                        <button id="btnNextPasien" onclick="window.halamanBerikutnyaPasien()" style="padding: 6px 12px; cursor: pointer; background-color:#fff; border:1px solid #ccc; border-radius:4px;">Berikut ▶</button>
                     </div>
                 </div>
                 
@@ -1219,7 +1220,7 @@
             <div class="form-group" style="background: white; padding: 20px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; align-items: flex-end;">
                 <div style="flex-grow: 1;">
                     <label for="filterWaktuKontrol" style="font-weight: bold; margin-bottom: 8px; display: block;">Tampilkan Jadwal (Waktu Target):</label>
-                    <select id="filterWaktuKontrol" onchange="muatDataPengingat()" style="height: 42px; width: 100%; max-width: 400px; border-radius: 4px; border: 1px solid #ccc; padding: 0 10px; font-weight: bold; cursor: pointer;">
+                    <select id="filterWaktuKontrol" onchange="window.renderTabelPengingat()" style="height: 42px; width: 100%; max-width: 400px; border-radius: 4px; border: 1px solid #ccc; padding: 0 10px; font-weight: bold; cursor: pointer;">
                         <option value="hari_ini">🔴 Mendesak: Jadwal Hari Ini (H-0)</option>
                         <option value="besok">🟡 Persiapan: Jadwal Besok (H-1)</option>
                         <option value="minggu_depan">🟢 7 Hari Kedepan</option>
@@ -1228,7 +1229,7 @@
                     </select>
                 </div>
                 
-                <button type="button" onclick="muatDataPengingat()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔄 Refresh Data</button>
+                <button type="button" onclick="window.muatDataPengingat()" style="background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 42px;">🔄 Refresh Data</button>
             </div>
 
             <div class="table-responsive" style="margin-top: 25px;">
@@ -1257,7 +1258,7 @@
             <div class="form-v">
                 <input type="text" id="inputSalah" placeholder="Kata Salah (e.g. skeling)">
                 <input type="text" id="inputBenar" placeholder="Kata Perbaikan (e.g. scaling)">
-                <button onclick="tambahKamus()">Tambah Data</button>
+                <button onclick="window.tambahKamus()">Tambah Data</button>
             </div>
             
             <table id="tabelKamus" border="1" width="100%">
@@ -1269,9 +1270,9 @@
         
             <!-- 🔥 BARU: Kontrol Pagination di bawah tabel -->
             <div id="paginationControls" style="margin-top: 15px; text-align: center; display: none;">
-                <button id="btnPrev" onclick="ubahHalaman(-1)">⬅️ Sebelumnya</button>
+                <button id="btnPrev" onclick="window.ubahHalaman(-1)">⬅️ Sebelumnya</button>
                 <span id="pageInfo" style="margin: 0 15px; font-weight: bold;">Halaman 1 dari 1</span>
-                <button id="btnNext" onclick="ubahHalaman(1)">Selanjutnya ➡️</button>
+                <button id="btnNext" onclick="window.ubahHalaman(1)">Selanjutnya ➡️</button>
             </div>
         </div>
 
@@ -1291,11 +1292,11 @@
                     </div>
                     
                     <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                        <button type="button" onclick="navigasiBulanKalender(-1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
+                        <button type="button" onclick="window.navigasiBulanKalender(-1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
                             ◀ Bulan Lalu
                         </button>
                         
-                        <button type="button" onclick="resetKeBulanIni()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; color: #475569;">
+                        <button type="button" onclick="window.resetKeBulanIni()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; color: #475569;">
                             📍 Hari Ini
                         </button>
 
@@ -1303,7 +1304,7 @@
                             Juli 2026
                         </strong>
 
-                        <button type="button" onclick="navigasiBulanKalender(1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
+                        <button type="button" onclick="window.navigasiBulanKalender(1)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s;">
                             Bulan Depan ▶
                         </button>
                     </div>
@@ -1340,11 +1341,11 @@
             
             <!-- Navigasi Sub-Tab -->
             <div class="nav-tabs" style="margin-bottom: 20px; background-color: #f1f1f1; padding: 10px; border-radius: 5px;">
-                <button id="subTabUserBtn" onclick="bukaSubTab('manajemenUser')" class="tab-link active" style="margin-right: 10px; font-weight: bold;">👥 Manajemen Pengguna</button>
-                <button id="subTabAksesBtn" onclick="bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
-                <button id="subTabJadwalBtn" onclick="bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
-                <button id="subTabLogBtn" onclick="bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
-                <button id="subTabMasterTindakanBtn" onclick="bukaSubTab('masterTindakan')" class="tab-link" style="font-weight:bold;">📋 Master Tindakan</button>
+                <button id="subTabUserBtn" onclick="window.bukaSubTab('manajemenUser')" class="tab-link active" style="margin-right: 10px; font-weight: bold;">👥 Manajemen Pengguna</button>
+                <button id="subTabAksesBtn" onclick="window.bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
+                <button id="subTabJadwalBtn" onclick="window.bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
+                <button id="subTabLogBtn" onclick="window.bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
+                <button id="subTabMasterTindakanBtn" onclick="window.bukaSubTab('masterTindakan')" class="tab-link" style="font-weight:bold;">📋 Master Tindakan</button>
             </div>
 
             <!-- ========================================== -->
@@ -1361,7 +1362,7 @@
                     <select id="inputRoleBaru" style="margin-right: 10px;">
                         <option value="">-- Pilih Role --</option>
                     </select>
-                    <button onclick="tambahUserBaru()" style="background-color: #28a745; color: white;">Simpan User</button>
+                    <button onclick="window.tambahUserBaru()" style="background-color: #28a745; color: white;">Simpan User</button>
                 </div>
 
                 <!-- Form Edit User (Awalnya disembunyikan) -->
@@ -1389,8 +1390,8 @@
                         </select>
                         
                         <div class="modal-action-buttons">
-                            <button onclick="batalEditUser()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
-                            <button onclick="simpanEditUser()" style="background-color: #ffc107; color: black; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Perubahan</button>
+                            <button onclick="window.batalEditUser()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
+                            <button onclick="window.simpanEditUser()" style="background-color: #ffc107; color: black; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Perubahan</button>
                         </div>
                     </div>
                 </div>
@@ -1420,7 +1421,7 @@
                     <h4 style="margin-top: 0; margin-bottom: 10px;">➕ Buat Jabatan / Role Baru</h4>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="inputNamaRoleBaru" placeholder="Masukkan nama role (cth: Digital Marketing, Manager)" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <button onclick="prosesTambahRoleBaru()" style="background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                        <button onclick="window.prosesTambahRoleBaru()" style="background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
                             Tambah Role
                         </button>
                     </div>
@@ -1441,7 +1442,7 @@
                 </div>
                 
                 <div style="text-align: right;">
-                    <button id="btnSimpanAkses" onclick="simpanMatriksAkses()" style="background-color: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;">
+                    <button id="btnSimpanAkses" onclick="window.simpanMatriksAkses()" style="background-color: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;">
                         💾 Simpan Perubahan Hak Akses
                     </button>
                 </div>
@@ -1453,21 +1454,21 @@
             <div id="manajemenJadwal" class="sub-tab-content" style="display:none;">
                 <h3>Manajemen Jadwal Praktik Dokter</h3>
             
-                <button onclick="bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
+                <button onclick="window.bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
                     ➕ Tambah Jadwal Praktik Baru
                 </button>
             
                 <div class="antrean-filter-wrapper" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                     <div style="flex: 1; min-width: 200px;">
                         <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Dokter:</label>
-                        <select id="filterJadwalDokter" onchange="aplikasikanFilterDanSortJadwal()">
+                        <select id="filterJadwalDokter" onchange="window.aplikasikanFilterDanSortJadwal()">
                             <option value="">⏳ Memuat daftar dokter...</option>
                         </select>
                     </div>
                     
                     <div style="width: 130px;">
                         <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Hari:</label>
-                        <select id="filterJadwalHari" onchange="aplikasikanFilterDanSortJadwal()">
+                        <select id="filterJadwalHari" onchange="window.aplikasikanFilterDanSortJadwal()">
                             <option value="">Semua Hari</option>
                             <option value="Senin">Senin</option>
                             <option value="Selasa">Selasa</option>
@@ -1480,7 +1481,7 @@
             
                     <div style="width: 140px;">
                         <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Slot:</label>
-                        <select id="filterJadwalSlot" onchange="aplikasikanFilterDanSortJadwal()">
+                        <select id="filterJadwalSlot" onchange="window.aplikasikanFilterDanSortJadwal()">
                             <option value="">Semua Slot</option>
                             <option value="Siang">Siang</option>
                             <option value="Sore/Malam">Sore/Malam</option>
@@ -1489,7 +1490,7 @@
             
                     <div style="width: 180px;">
                         <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Urutkan Berdasarkan:</label>
-                        <select id="urutJadwalMaster" onchange="aplikasikanFilterDanSortJadwal()">
+                        <select id="urutJadwalMaster" onchange="window.aplikasikanFilterDanSortJadwal()">
                             <option value="default">Default (Baris Sheet)</option>
                             <option value="namaAZ">Nama Dokter (A - Z)</option>
                             <option value="namaZA">Nama Dokter (Z - A)</option>
@@ -1545,8 +1546,8 @@
                         </select>
                         
                         <div class="modal-action-buttons" style="text-align: right; margin-top: 15px;">
-                            <button onclick="tutupModalJadwal()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
-                            <button onclick="simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Jadwal</button>
+                            <button onclick="window.tutupModalJadwal()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
+                            <button onclick="window.simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Jadwal</button>
                         </div>
                     </div>
                 </div> 
@@ -1578,7 +1579,7 @@
                 </p>
                 
                 <div style="background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; overflow-x: auto;">
-                    <button onclick="muatLogAktivitas(1)" style="margin-bottom: 15px; background-color: #17a2b8; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    <button onclick="window.muatLogAktivitas(1)" style="margin-bottom: 15px; background-color: #17a2b8; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
                         🔄 Refresh Log Terbaru
                     </button>
                     
@@ -1614,19 +1615,19 @@
                 
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #ecf0f1; padding-bottom:15px; margin-bottom:15px;">
                     <h2 style="margin:0; color:#2c3e50; font-size:20px;">Manajemen Master Tindakan</h2>
-                    <button onclick="bukaModalTindakan('')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(39, 174, 96, 0.3);">+ Tambah Tindakan Baru</button>
+                    <button onclick="window.bukaModalTindakan('')" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(39, 174, 96, 0.3);">+ Tambah Tindakan Baru</button>
                 </div>
 
-            <!-- Filter, Pencarian & Tombol Segarkan (Ditambahkan Tombol Refresh Cache) -->
-            <div style="display:flex; gap:10px; margin-bottom:15px; background:#f8f9fa; padding:15px; border-radius:6px;">
-                    <input type="text" id="cariTindakan" placeholder="🔍 Cari nama atau kategori..." onkeyup="renderTabelMasterTindakan(true)" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px;">
-                    <select id="filterStatusTindakan" onchange="renderTabelMasterTindakan(true)" style="padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px; width:150px;">
+                <!-- Filter, Pencarian & Tombol Segarkan (Ditambahkan Tombol Refresh Cache) -->
+                <div style="display:flex; gap:10px; margin-bottom:15px; background:#f8f9fa; padding:15px; border-radius:6px;">
+                    <input type="text" id="cariTindakan" placeholder="🔍 Cari nama atau kategori..." onkeyup="window.renderTabelMasterTindakan(true)" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px;">
+                    <select id="filterStatusTindakan" onchange="window.renderTabelMasterTindakan(true)" style="padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:14px; width:150px;">
                         <option value="Semua">Semua Status</option>
                         <option value="Aktif" selected>Hanya Aktif</option>
                         <option value="Nonaktif">Non-Aktif (Arsip)</option>
                     </select>
                     <!-- Tombol Paksa Unduh Ulang dari Server -->
-                    <button onclick="initMasterTindakan(true)" style="background:#3498db; color:white; border:none; padding:10px 15px; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Tarik data terbaru dari server">🔄 Segarkan</button>
+                    <button onclick="window.initMasterTindakan(true)" style="background:#3498db; color:white; border:none; padding:10px 15px; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Tarik data terbaru dari server">🔄 Segarkan</button>
                 </div>
 
                 <!-- Tabel Master (Tingginya disesuaikan untuk 50 baris) -->
@@ -1653,9 +1654,9 @@
 
                 <!-- 🔥 KONTROL PAGINATION (HALAMAN) DITAMBAHKAN DI SINI -->
                 <div id="paginationControlsTindakan" style="margin-top: 15px; text-align: center; display: none; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ecf0f1;">
-                    <button id="btnPrevTindakan" onclick="ubahHalamanTindakan(-1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">⬅️ Sebelumnya</button>
+                    <button id="btnPrevTindakan" onclick="window.ubahHalamanTindakan(-1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">⬅️ Sebelumnya</button>
                     <span id="pageInfoTindakan" style="margin: 0 20px; font-weight: bold; color: #2c3e50;">Halaman 1 dari 1</span>
-                    <button id="btnNextTindakan" onclick="ubahHalamanTindakan(1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">Selanjutnya ➡️</button>
+                    <button id="btnNextTindakan" onclick="window.ubahHalamanTindakan(1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">Selanjutnya ➡️</button>
                 </div>
             </div>
 
@@ -1686,11 +1687,11 @@
                         <div style="display:flex; gap:15px; margin-bottom:12px;">
                             <div style="flex:1;">
                                 <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Harga Dasar (Rp) *</label>
-                                <input type="text" id="inpTindakanHarga" oninput="formatRibuanTindakan(this)" placeholder="0" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
+                                <input type="text" id="inpTindakanHarga" oninput="window.formatRibuanTindakan(this)" placeholder="0" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
                             </div>
                             <div style="flex:1;">
                                 <label style="display:block; font-size:13px; font-weight:bold; color:#34495e; margin-bottom:5px;">Harga Maks (Rp)</label>
-                                <input type="text" id="inpTindakanMaks" oninput="formatRibuanTindakan(this)" placeholder="0" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
+                                <input type="text" id="inpTindakanMaks" oninput="window.formatRibuanTindakan(this)" placeholder="0" style="width:100%; padding:10px; border:1px solid #bdc3c7; border-radius:4px; box-sizing:border-box;">
                             </div>
                         </div>
 
@@ -1722,8 +1723,10 @@
                     </div>
                     
                     <div style="padding:15px 20px; background:#f8f9fa; text-align:right; border-top:1px solid #ecf0f1;">
-                        <button onclick="document.getElementById('modalMasterTindakan').style.display='none'" style="background:white; border:1px solid #bdc3c7; padding:10px 20px; border-radius:4px; cursor:pointer; margin-right:10px; color:#2c3e50;">Batal</button>
-                        <button id="btnSimpanTindakan" onclick="simpanMasterTindakan()" style="background:#2980b9; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Data</button>
+                        <!-- Perhatikan bagian onclick pada tombol Batal di bawah ini -->
+                        <button type="button" onclick="window.tutupModalTindakan()" style="background:white; border:1px solid #bdc3c7; padding:10px 20px; border-radius:4px; cursor:pointer; margin-right:10px; color:#2c3e50;">Batal</button>
+                        
+                        <button type="button" id="btnSimpanTindakan" onclick="window.simpanMasterTindakan()" style="background:#2980b9; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Data</button>
                     </div>
                 </div>
             </div>
@@ -1736,10 +1739,10 @@
         
             <!-- 🔥 1. NAVIGASI SUB-TAB UTAMA -->
             <div class="sub-tab-container">
-                <button class="sub-tab-btn active" onclick="switchSubTabAnalisis('operasional', this)">📊 Operasional & Demografi</button>
+                <button class="sub-tab-btn active" onclick="window.switchSubTabAnalisis('operasional', this)">📊 Operasional & Demografi</button>
                 
                 <!-- Tombol ini nanti akan dikunci oleh mesin Hak Akses Role -->
-                <button class="sub-tab-btn" id="btnSubTabFinansial" onclick="switchSubTabAnalisis('finansial', this)" style="display: none;">💰 Kokpit Finansial 🔒</button>
+                <button class="sub-tab-btn" id="btnSubTabFinansial" onclick="window.switchSubTabAnalisis('finansial', this)" style="display: none;">💰 Kokpit Finansial 🔒</button>
             </div>
 
             <!-- ========================================================= -->
@@ -1819,10 +1822,10 @@
                             </div>
                             
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
-                                <button id="btnRefreshUlangTahun" onclick="muatDataUlangTahun()" style="background: #0ea5e9; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 13px; white-space: nowrap;">
+                                <button id="btnRefreshUlangTahun" onclick="window.muatDataUlangTahun()" style="background: #0ea5e9; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 13px; white-space: nowrap;">
                                     🔄 Refresh Data
                                 </button>
-                                <button id="btnEksporUlangTahun" onclick="eksporUlangTahunCSV()" style="background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 13px; white-space: nowrap;">
+                                <button id="btnEksporUlangTahun" onclick="window.eksporUlangTahunCSV()" style="background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 13px; white-space: nowrap;">
                                     📥 Download CSV
                                 </button>
                             </div>
@@ -1867,17 +1870,17 @@
                         <input type="date" id="tglMulaiFinansial" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif;">
                         <span style="color: #7f8c8d;">sampai</span>
                         <input type="date" id="tglAkhirFinansial" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif;">
-                        <button onclick="muatDataFinansial(); muatDataBagiHasil();" style="padding: 8px 20px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Terapkan Filter</button>
-                        <button onclick="resetFilterFinansial()" style="padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" title="Tampilkan Semua Waktu">🔄 Reset</button>
+                        <button onclick="window.muatDataFinansial(); window.muatDataBagiHasil();" style="padding: 8px 20px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Terapkan Filter</button>
+                        <button onclick="window.resetFilterFinansial()" style="padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" title="Tampilkan Semua Waktu">🔄 Reset</button>
                     </div>
                     
                     <!-- 🔥 Tombol Preset Cepat -->
                     <div class="preset-dates">
                         <span style="font-size: 12px; color: #95a5a6; margin-right: 8px;">Pilih Cepat:</span>
-                        <button class="preset-btn" onclick="setPresetTanggal('hariIni')">Hari Ini</button>
-                        <button class="preset-btn" onclick="setPresetTanggal('mingguIni')">Minggu Ini</button>
-                        <button class="preset-btn" onclick="setPresetTanggal('bulanIni')">Bulan Ini</button>
-                        <button class="preset-btn" onclick="setPresetTanggal('tahunIni')">Tahun Ini</button>
+                        <button class="preset-btn" onclick="window.setPresetTanggal('hariIni')">Hari Ini</button>
+                        <button class="preset-btn" onclick="window.setPresetTanggal('mingguIni')">Minggu Ini</button>
+                        <button class="preset-btn" onclick="window.setPresetTanggal('bulanIni')">Bulan Ini</button>
+                        <button class="preset-btn" onclick="window.setPresetTanggal('tahunIni')">Tahun Ini</button>
                     </div>
                 </div>
 
@@ -1904,9 +1907,9 @@
 
                 <!-- C. Kapsul Navigasi Laporan (Pills) -->
                 <div class="pills-container">
-                    <button class="pill-btn active" onclick="switchPillFinansial('grafik', this)">📈 Tren Omzet & Layanan</button>
-                    <button class="pill-btn" onclick="switchPillFinansial('kinerja', this)">👨‍⚕️ Laporan Bagi Hasil Dokter</button>
-                    <button class="pill-btn" onclick="switchPillFinansial('tabel', this)">📋 Detail Tabel Transaksi</button>
+                    <button class="pill-btn active" onclick="window.switchPillFinansial('grafik', this)">📈 Tren Omzet & Layanan</button>
+                    <button class="pill-btn" onclick="window.switchPillFinansial('kinerja', this)">👨‍⚕️ Laporan Bagi Hasil Dokter</button>
+                    <button class="pill-btn" onclick="window.switchPillFinansial('tabel', this)">📋 Detail Tabel Transaksi</button>
                 </div>
 
                 <!-- D. Area Konten Kapsul Laporan -->
@@ -1948,26 +1951,26 @@
                         
                         <!-- Area Kiri: Filter -->
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1;">
-                            <input type="text" id="inputCariFinansial" onkeyup="cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 200px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
+                            <input type="text" id="inputCariFinansial" onkeyup="window.cariTabelFinansial()" placeholder="🔍 Cari No. Nota atau Nama Pasien..." style="padding: 10px; width: 100%; max-width: 200px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;">
                             
-                            <select id="filterSelectDokter" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
+                            <select id="filterSelectDokter" onchange="window.cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
                                 <option value="">👨‍⚕️ Semua Dokter</option>
                             </select>
                             
-                            <select id="filterSelectTindakan" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
+                            <select id="filterSelectTindakan" onchange="window.cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
                                 <option value="">🩺 Semua Tindakan</option>
                             </select>
 
-                            <select id="filterSelectPembayaran" onchange="cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
+                            <select id="filterSelectPembayaran" onchange="window.cariTabelFinansial()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: white; min-width: 140px;">
                                 <option value="">💳 Semua Pembayaran</option>
                             </select>
                         </div>
 
                         <!-- 🔥 Area Kanan: Tombol Export (BARU) -->
                         <div style="display: flex; gap: 10px;">
-                            <button onclick="exportKeCSV()" style="background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📥 Excel / CSV</button>
+                            <button onclick="window.exportKeCSV()" style="background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📥 Excel / CSV</button>
                             
-                            <button onclick="cetakTabelPDF()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🖨️ Cetak / PDF</button>
+                            <button onclick="window.cetakTabelPDF()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🖨️ Cetak / PDF</button>
                         </div>
 
                     </div>
@@ -2005,7 +2008,7 @@
         <div id="kasir" class="tab-content" style="display: none; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
                 <h2 style="margin: 0; color: #2c3e50;">💰 Menu Kasir & Billing Klinik Anvaya</h2>
-                <button class="btn-primary" onclick="typeof muatAntreanKasir === 'function' && muatAntreanKasir()" style="padding: 8px 15px; border-radius:4px; border:none; background-color:#3498db; color:white; font-weight:bold; cursor:pointer;">🔄 Segarkan Antrean</button>
+                <button class="btn-primary" onclick="typeof muatAntreanKasir === 'function' && window.muatAntreanKasir()" style="padding: 8px 15px; border-radius:4px; border:none; background-color:#3498db; color:white; font-weight:bold; cursor:pointer;">🔄 Segarkan Antrean</button>
             </div>
         
             <div style="background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); padding: 20px; border: 1px solid #dee2e6;">
@@ -2043,7 +2046,7 @@
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #2c3e50;">🧾 Rincian Billing & Kuitansi Pembayaran</h3>
-                    <button type="button" onclick="tutupModalBilling()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #95a5a6;">✕</button>
+                    <button type="button" onclick="window.tutupModalBilling()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #95a5a6;">✕</button>
                 </div>
         
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
@@ -2076,7 +2079,7 @@
         
                     <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center;">
                         <span style="color: #7f8c8d; font-size: 14px;">Potongan Diskon (Rp):</span>
-                        <input type="text" id="inpBillDiskon" placeholder="0" oninput="hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; text-align: right; font-weight: bold;">
+                        <input type="text" id="inpBillDiskon" placeholder="0" oninput="window.hitungGrandTotalBillingRealtime()" style="width: 140px; padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; text-align: right; font-weight: bold;">
                     </div>
         
                     <div style="display: flex; width: 100%; max-width: 380px; justify-content: space-between; align-items: center; margin-top: 5px;">
@@ -2095,18 +2098,18 @@
                 </div>
         
                 <div style="display: flex; gap: 10px; margin-top: 25px; justify-content: flex-end;">
-                    <button type="button" onclick="tutupModalBilling()" style="background-color: #95a5a6; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">❌ Batal</button>
+                    <button type="button" onclick="window.tutupModalBilling()" style="background-color: #95a5a6; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">❌ Batal</button>
                     
                     <!-- Tombol 1: Simpan Saja (Cepat) -->
                     <button type="button" id="btnKunciSaja" 
-                            onclick="eksekusiKunciPembayaranResmi()" 
+                            onclick="window.eksekusiKunciPembayaranResmi()" 
                             style="background-color: #f39c12; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px;">
                         💾 Kunci Pembukuan Saja
                     </button>
 
                     <!-- Tombol 2: Simpan & Generate PDF Resmi -->
                     <button type="button" id="btnKunciCetak" 
-                            onclick="eksekusiFinalBilling(document.getElementById('billNoRM').innerText)" 
+                            onclick="window.eksekusiFinalBilling(document.getElementById('billNoRM').innerText)" 
                             style="background-color: #27ae60; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px;">
                         🖨️ Kunci & Cetak Kuitansi PDF
                     </button>
@@ -2120,7 +2123,7 @@
         <div id="tagihanLab" class="tab-content" style="display:none; padding:20px;">
             <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span>🧪 Antrean Tagihan Lab & Vendor</span>
-                <button onclick="muatAntreanLab()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; display: flex; align-items: center; gap: 5px;">
+                <button onclick="window.muatAntreanLab()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; display: flex; align-items: center; gap: 5px;">
                     🔄 Refresh Antrean
                 </button>
             </h2>
@@ -2154,13 +2157,13 @@
                     <p style="margin:5px 0; display:none;"><strong>Dokter:</strong> <span id="lblLabDokter"></span></p>
                 </div>
                 
-                <form onsubmit="simpanTagihanLabDinamis(event)">
+                <form onsubmit="window.simpanTagihanLabDinamis(event)">
                     <input type="hidden" id="hdnLabInvoice">
                     <input type="hidden" id="hdnLabDokter">
                     
                     <div style="margin:20px 0;">
                         <label style="font-weight:bold; font-size:13px; display:block; margin-bottom:5px;">Harga Tagihan Asli (Rp):</label>
-                        <input type="text" id="inpLabHargaDinamis" required placeholder="Contoh: 1,500,000" oninput="formatRupiahRealtime(this)" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:4px; font-weight:bold; font-size:16px; color:#e74c3c; box-sizing:border-box;">
+                        <input type="text" id="inpLabHargaDinamis" required placeholder="Contoh: 1,500,000" oninput="window.formatRupiahRealtime(this)" style="width:100%; padding:12px; border:2px solid #bdc3c7; border-radius:4px; font-weight:bold; font-size:16px; color:#e74c3c; box-sizing:border-box;">
                         
                         <!-- FITUR MELIHAT POTONGAN DOKTER SECARA REALTIME -->
                         <div style="margin-top:8px; padding:8px; background:#fce4d6; border-radius:4px; border-left:4px solid #e74c3c;">
@@ -2170,7 +2173,7 @@
                     </div>
 
                     <div style="display:flex; gap:10px;">
-                        <button type="button" onclick="document.getElementById('modalInputLab').style.display='none'" style="flex:1; background:#95a5a6; color:white; padding:10px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batalkan</button>
+                        <button type="button" onclick="window.tutupModalInputLab()" style="flex:1; background:#95a5a6; color:white; padding:10px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batalkan</button>
                         <button type="submit" id="btnSimpanLabDinamis" style="flex:1; background:#27ae60; color:white; padding:10px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Simpan Lab</button>
                     </div>
                 </form>
@@ -2207,7 +2210,7 @@
                 <!-- Footer & Tombol Aksi -->
                 <div style="padding:15px 20px; background:#f8f9fa; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
                     <button onclick="document.getElementById('modalPreviewSlip').style.display='none'" style="padding:10px 20px; background:#95a5a6; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">❌ Batal / Ada Revisi</button>
-                    <button id="btnKunciSlip" onclick="kunciDanSimpanSlip()" style="padding:10px 20px; background:#27ae60; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);">🔒 KUNCI & TERBITKAN SLIP</button>
+                    <button id="btnKunciSlip" onclick="window.kunciDanSimpanSlip()" style="padding:10px 20px; background:#27ae60; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);">🔒 KUNCI & TERBITKAN SLIP</button>
                 </div>
             </div>
         </div>
@@ -2218,7 +2221,7 @@
                 
                 <div class="modal-custom-header">
                     <h2>👁️ Rekam Medis Elektronik (RME)</h2>
-                    <button type="button" onclick="simpanDraftRME(); document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
+                    <button type="button" onclick="window.simpanDraftRME(); document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
                 </div>
 
                 <div style="background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #3498db; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px;">
@@ -2242,7 +2245,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom:10px; margin-bottom: 15px;">
                             <h3 style="margin:0; color:#2c3e50;">📝 Input Tindakan Hari Ini</h3>
                             <!-- 🔥 TOMBOL HIDE/SHOW HISTORI -->
-                            <button type="button" id="btnToggleHistori" onclick="toggleHistoriRME()" style="background-color: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">
+                            <button type="button" id="btnToggleHistori" onclick="window.toggleHistoriRME()" style="background-color: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">
                                 👁️ Sembunyikan Histori
                             </button>
                         </div>
@@ -2254,11 +2257,11 @@
                             <input type="hidden" id="modalLinkFoto">
 
                             <div class="form-group">
-                                <label>💬 Anamnesa / Keluhan Pasien <button type="button" class="btn-mic" onclick="mulaiDikte('modalAnamnesa')">🎙️</button></label>
+                                <label>💬 Anamnesa / Keluhan Pasien <button type="button" class="btn-mic" onclick="window.mulaiDikte('modalAnamnesa')">🎙️</button></label>
                                 <textarea id="modalAnamnesa" rows="3"  required></textarea>
                             </div>
                             <div class="form-group">
-                                <label>🔍 Pemeriksaan Fisik & Objektif (O) <button type="button" class="btn-mic" onclick="mulaiDikte('modalObjektif')">🎙️</button></label>
+                                <label>🔍 Pemeriksaan Fisik & Objektif (O) <button type="button" class="btn-mic" onclick="window.mulaiDikte('modalObjektif')">🎙️</button></label>
                                 <textarea id="modalObjektif" rows="3"  required></textarea>
                             </div>
                         
@@ -2266,24 +2269,24 @@
                             <!-- 🔥 UPGRADE: MULTIPLE DIAGNOSES DENGAN UI CHIP (KAPSUL) -->
                             <!-- ======================================================= -->
                             <div class="form-group" style="position: relative;">
-                                <label>📌 Diagnosa / Penyakit Primer & Sekunder <button type="button" class="btn-mic" onclick="mulaiDikte('inputCariDiagnosa')">🎙️</button></label>
+                                <label>📌 Diagnosa / Penyakit Primer & Sekunder <button type="button" class="btn-mic" onclick="window.mulaiDikte('inputCariDiagnosa')">🎙️</button></label>
                                 
-                                <!-- Tombol Quick Pick -->
+                                <!-- Tombol Quick Pick (DITAMBAHKAN WINDOW.) -->
                                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-                                    <button type="button" onclick="pilihICD('K02.9 - Dental caries, unspecified')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Karies</button>
-                                    <button type="button" onclick="pilihICD('K04.0 - Pulpitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Pulpitis</button>
-                                    <button type="button" onclick="pilihICD('K05.0 - Acute gingivitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Gingivitis</button>
-                                    <button type="button" onclick="pilihICD('K04.1 - Necrosis of pulp')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Nekrosis Pulpa</button>
-                                    <button type="button" onclick="pilihICD('K01.1 - Impacted teeth')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Impaksi</button>
+                                    <button type="button" onclick="window.pilihICD('K02.9 - Dental caries, unspecified')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Karies</button>
+                                    <button type="button" onclick="window.pilihICD('K04.0 - Pulpitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Pulpitis</button>
+                                    <button type="button" onclick="window.pilihICD('K05.0 - Acute gingivitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Gingivitis</button>
+                                    <button type="button" onclick="window.pilihICD('K04.1 - Necrosis of pulp')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Nekrosis Pulpa</button>
+                                    <button type="button" onclick="window.pilihICD('K01.1 - Impacted teeth')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Impaksi</button>
                                 </div>
-
-                                <!-- 🔥 AREA CHIP DIAGNOSA TERPILIH (Visual list dengan tombol X akan muncul di sini) -->
+                            
+                                <!-- AREA CHIP DIAGNOSA TERPILIH -->
                                 <div id="tempatChipDiagnosa" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
-
-                                <!-- 🔥 INPUT PENCARIAN & DIKTE (Dokter mengetik di sini, setelah dipilih, teksnya akan pindah ke atas menjadi Chip) -->
-                                <input type="text" id="inputCariDiagnosa" autocomplete="off" placeholder="Ketik nama penyakit lalu klik hasilnya... (Atau ketik bebas & tekan Enter)" style="border: 1px dashed #3498db; background: #f9fcff; margin-bottom: 0;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); if(this.value.trim() !== '') pilihICD(this.value.trim()); }">
+                            
+                                <!-- 🔥 INPUT PENCARIAN & DIKTE (DITAMBAHKAN WINDOW. PADA EVENT ENTER) -->
+                                <input type="text" id="inputCariDiagnosa" autocomplete="off" placeholder="Ketik nama penyakit lalu klik hasilnya... (Atau ketik bebas & tekan Enter)" style="border: 1px dashed #3498db; background: #f9fcff; margin-bottom: 0;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); if(this.value.trim() !== '') window.pilihICD(this.value.trim()); }">
                                 
-                                <!-- 🔥 TEXTAREA ASLI (Disembunyikan! Berfungsi sebagai jembatan untuk menyimpan & mengirim data ke Google Sheets) -->
+                                <!-- TEXTAREA ASLI -->
                                 <textarea id="modalDiagnosa" required style="display: none;"></textarea>
                                 
                                 <!-- Kontainer Dropdown -->
@@ -2299,30 +2302,30 @@
                             
                             <!-- 🔥 UPGRADE DINAMIS: Kontainer Tombol Sejajar (Side-by-Side Horizontal) -->
                             <div class="kontainer-tombol-aksi-tindakan" style="display: flex; flex-direction: row; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dcdde1;">
-                                    <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 0 18px; height: 40px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="tambahBarisTindakan()">
+                                    <button type="button" id="btnTambahTindakan" class="btn-action" style="background-color: #2ecc71; color: white; border: none; padding: 0 18px; height: 40px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.tambahBarisTindakan()">
                                         ➕ Tambah Item Tindakan
                                     </button>
 
                                     <!-- Tombol Informed Consent berdampingan sejajar di sebelahnya dengan tinggi sama -->
-                                    <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 0 18px; height: 40px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="triggerInformedConsentDariRME()">
+                                    <button type="button" id="btnBuatConsent" class="btn-action" style="background-color: #e67e22; color: white; border: none; padding: 0 18px; height: 40px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.triggerInformedConsentDariRME()">
                                         ✍️ Buat Informed Consent
                                     </button>
                                 </div>
 
                             </div>
                             <div class="form-group">
-                                <label>💊 Resep Obat <button type="button" class="btn-mic" onclick="mulaiDikte('modalResep')">🎙️</button></label>
+                                <label>💊 Resep Obat <button type="button" class="btn-mic" onclick="window.mulaiDikte('modalResep')">🎙️</button></label>
                                 <textarea id="modalResep" rows="3"  style="font-family: monospace;"></textarea>
                             </div>
                             <div style="display:flex; gap:10px;">
                                 <div class="form-group" style="flex:1;">
-                                    <label>📋 Pro Perawatan<button type="button" class="btn-mic" onclick="mulaiDikte('modalProPerawatan')">🎙️</button></label>
+                                    <label>📋 Pro Perawatan<button type="button" class="btn-mic" onclick="window.mulaiDikte('modalProPerawatan')">🎙️</button></label>
                                     <textarea id="modalProPerawatan" rows="3"  style="font-family: monospace;"></textarea>
                                 </div>
                                 <div class="form-group" style="flex:1;">
                                     <label style="display:flex; justify-content:space-between; align-items:center;">
                                         <span>🔁 Pro Kontrol Kembali</span>
-                                        <button type="button" class="btn-mic" onclick="mulaiDikte('modalProKontrol')">🎙️</button>
+                                        <button type="button" class="btn-mic" onclick="window.mulaiDikte('modalProKontrol')">🎙️</button>
                                     </label>
                                     <div style="display: flex; gap: 10px;">
                                         <div style="flex: 0 0 140px;">
@@ -2343,7 +2346,7 @@
                             </div>
 
                             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button type="button" id="btnBatalEdit" class="btn-action" style="display: none; background-color: #e74c3c; color: white; padding: 15px; font-size: 15px; font-weight: bold; flex: 1; border: none; border-radius: 4px; cursor: pointer;" onclick="batalEditRME()">
+                                <button type="button" id="btnBatalEdit" class="btn-action" style="display: none; background-color: #e74c3c; color: white; padding: 15px; font-size: 15px; font-weight: bold; flex: 1; border: none; border-radius: 4px; cursor: pointer;" onclick="window.batalEditRME()">
                                     ❌ Batal Edit
                                 </button>
                                 <button type="submit" id="btnSimpanRME" class="btn-primary" style="flex: 2; padding: 15px; font-size: 15px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
@@ -2387,12 +2390,12 @@
                 
                 <div style="margin-bottom:12px;">
                     <label style="font-weight:bold; font-size:13px; color:#34495e;">Tanggal Daftar:</label>
-                    <input type="date" id="editTanggalInput" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                    <input type="date" id="editTanggalInput" onchange="window.triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
                 </div>
 
                 <div style="margin-bottom:12px;">
                     <label style="font-weight:bold; font-size:13px; color:#34495e;">Waktu Kunjungan:</label>
-                    <select id="editJamSelect" onchange="triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
+                    <select id="editJamSelect" onchange="window.triggerMuatDokterTersedia()" style="width:100%; padding:8px; margin-top:5px; border:1px solid #bdc3c7; border-radius:4px; box-sizing: border-box;">
                         <option value="11:00">11:00</option>
                         <option value="11:30">11:30</option>
                         <option value="12:00">12:00</option>
@@ -2434,8 +2437,8 @@
                 </div>
                 
                 <div style="display:flex; justify-content:end; gap:8px;">
-                    <button onclick="tutupModalEdit()" style="padding:8px 14px; background:#7f8c8d; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batal</button>
-                    <button onclick="simpanEditAntrean()" style="padding:8px 14px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Simpan</button>
+                    <button onclick="window.tutupModalEdit()" style="padding:8px 14px; background:#7f8c8d; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Batal</button>
+                    <button onclick="window.simpanEditAntrean()" style="padding:8px 14px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Simpan</button>
                 </div>
             </div>
         </div>
@@ -2451,7 +2454,7 @@
                     <h3 style="margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
                         📋 Resume Singkat Janji Temu
                     </h3>
-                    <button onclick="tutupModalKalender()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+                    <button onclick="window.tutupModalKalender()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
                 </div>
 
                 <!-- Body Modal (Isi Data Pasien) -->
@@ -2486,7 +2489,7 @@
 
                 <!-- Footer Modal (Tombol Aksi) -->
                 <div style="background: #f1f5f9; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0;">
-                    <button onclick="tutupModalKalender()" style="background: #e2e8f0; color: #475569; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                    <button onclick="window.tutupModalKalender()" style="background: #e2e8f0; color: #475569; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">
                         Tutup
                     </button>
                     <button id="btnModKalLihatRME" style="background: #10b981; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); display: flex; align-items: center; gap: 6px; transition: 0.2s;">
@@ -2506,7 +2509,7 @@
                 <!-- Header Modal -->
                 <div style="border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; color: #2c3e50;">📋 Persetujuan Tindakan Medis (Informed Consent)</h3>
-                    <button onclick="tutupModalConsent()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: #888;">&times;</button>
+                    <button onclick="window.tutupModalConsent()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: #888;">&times;</button>
                 </div>
 
                 <!-- Ringkasan Pasien & Tindakan -->
@@ -2520,7 +2523,7 @@
                     <label style="display: block; font-weight: bold; color: #7f8c8d; font-size: 12px; margin-bottom: 5px;">
                         🎯 Tujuan Tindakan / Rencana Klinis:
                     </label>
-                    <select id="selTujuanConsent" onchange="toggleTujuanKustomConsent(this.value)" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 13px; background-color: white; font-weight: 500;">
+                    <select id="selTujuanConsent" onchange="window.toggleTujuanKustomConsent(this.value)" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 13px; background-color: white; font-weight: 500;">
                         <option value="Eliminasi fokus infeksi, abses, dan rasa sakit (Kuratif)">1. Eliminasi fokus infeksi, abses, dan rasa sakit (Kuratif)</option>
                         <option value="Perbaikan fungsi pengunyahan (Mastikasi) & bicara (Fonetik)">2. Perbaikan fungsi pengunyahan (Mastikasi) & bicara (Fonetik)</option>
                         <option value="Persiapan & penunjang perawatan Ortodonti / Kawat Gigi">3. Persiapan & penunjang perawatan Ortodonti / Kawat Gigi</option>
@@ -2556,7 +2559,7 @@
                 <div style="margin-bottom: 15px; text-align: center;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                         <label style="font-weight: bold; font-size: 14px;">✍️ Tanda Tangan Pasien / Wali:</label>
-                        <button type="button" onclick="bersihkanTTD()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🗑️ Ulangi / Hapus</button>
+                        <button type="button" onclick="window.bersihkanTTD()" style="background: #6c757d; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🗑️ Ulangi / Hapus</button>
                     </div>
                     <!-- 🔥 BANNER PRATINJAU TTD (Muncul otomatis saat melihat mode pratinjau/revisi) -->
                     <div id="bannerPratinjauTTD" style="display: none; margin-bottom: 12px; padding: 12px; background-color: #e8f4f8; border: 1px dashed #2980b9; border-radius: 6px; text-align: center;">
@@ -2578,10 +2581,10 @@
 
                 <!-- Tombol Aksi -->
                 <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 15px;">
-                    <button type="button" onclick="tutupModalConsent()" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Batal</button>
-                    <button type="button" id="btnSimpanConsent" onclick="kirimDataConsent()" style="background: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Simpan Persetujuan</button>
+                    <button type="button" onclick="window.tutupModalConsent()" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Batal</button>
+                    <button type="button" id="btnSimpanConsent" onclick="window.kirimDataConsent()" style="background: #28a745; color: white; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer;">💾 Simpan Persetujuan</button>
                     <!-- 🔥 TOMBOL CETAK PDF (Muncul saat consent sudah tersimpan/mode pratinjau) -->
-                    <button type="button" id="btnCetakConsentPDF" onclick="cetakInformedConsentPDF()" style="display: none; background-color: #2980b9; color: white; border: none; padding: 10px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                    <button type="button" id="btnCetakConsentPDF" onclick="window.cetakInformedConsentPDF()" style="display: none; background-color: #2980b9; color: white; border: none; padding: 10px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
                         🖨️ Cetak / Unduh PDF Resmi
                     </button>
                 </div>
@@ -2614,5 +2617,24 @@
     </div>
     <script src="app.js"></script>
     <script src="kamus-dikte.js"></script>
+    <script src="input-rme.js"></script>
+    <script src="user.js"></script>
+    <script src="role-user.js"></script>
+    <script src="antrean.js"></script>
+    <script src="jadwal-dokter.js"></script>
+    <script src="pendaftaran.js"></script>
+    <script src="log-aktivitas.js"></script>
+    <script src="kasir.js"></script>
+    <script src="database-pasien.js"></script>
+    <script src="consent-pasien.js"></script>
+    <script src="dashboard-laporan-finansial.js"></script>
+    <script src="pendapatan-dokter.js"></script>
+    <script src="icd-10.js"></script>
+    <script src="kalendar-praktik.js"></script>
+    <script src="antrian-lab.js"></script>
+    <script src="master-tindakan.js"></script>
+    <script src="Target-Campaign.js"></script>
+    <script src="worklist-kontrol.js"></script>
+
 </body>
 </html>
