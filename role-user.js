@@ -3,10 +3,6 @@
 // =========================================================================
 (function() {
 
-    // ==========================================
-    // 1. KONFIGURASI MASTER MENU (DINAMIS - PRIVAT)
-    // Cukup tambahkan/edit di sini jika ada menu baru di masa depan
-    // ==========================================
     const DAFTAR_MENU_AKSES = [
         { key: 'pendaftaran', label: 'Pendaftaran', class: 'chk-daftar' },
         { key: 'rekamMedis', label: 'Rekam Medis', class: 'chk-rm' },
@@ -32,26 +28,26 @@
         { key: 'masterTindakan', label: 'Master Tindakan', class: 'chk-master-tindakan', fallbackKeys: ['aksesMasterTindakan'] }
     ];
 
-    // =========================================================================
-    // 🔒 MATRIKS PENGATURAN HAK AKSES ROLE (SUPER DINAMIS & ANTI-TABRAKAN)
-    // =========================================================================
     window.aplikasikanHakAkses = function(perms) {
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         
-        // 🔥 JARING PENGAMAN: Jika perms kosong, tarik dari localStorage
-        if (!perms) {
-            perms = sessionData.permissions || null;
-            if (!perms) return; // Jika tetap kosong, batalkan proses
-        }
-
         const roleId = sessionData && sessionData.role ? String(sessionData.role).toLowerCase().trim() : "";
         const roleName = sessionData && sessionData.namaRole ? String(sessionData.namaRole).toLowerCase().trim() : "";
         
+        // 🔥 FIX UTAMA: Pengecekan Super Admin dipindah ke paling atas!
         const isSuperAdmin = roleId === "rol-01" || roleName === "super admin" || roleName === "owner" || roleId === "owner";
         const isDokter = roleId === "rol-03" || roleName.includes("dokter") || roleName.includes("dr");
         
+        // 🔥 JARING PENGAMAN: Jika bukan Super Admin, baru cek permission
+        if (!isSuperAdmin) {
+            if (!perms) perms = sessionData.permissions || null;
+            if (!perms) return; // Jika staff biasa dan perms kosong, hentikan proses!
+        }
+
         const cekIzin = (kataKunci) => {
-            if (isSuperAdmin) return true;
+            if (isSuperAdmin) return true; // Owner langsung tembus tanpa cek perms
+            if (!perms) return false;
+            
             const kunciDicari = kataKunci.toLowerCase();
             for (let key in perms) {
                 const keyAsli = key.toLowerCase().replace(/[^a-z0-9]/g, ''); 
@@ -70,7 +66,6 @@
             if (el) el.style.display = cekIzin(kataKunci) ? 'block' : 'none';
         };
 
-        // === 1. KONTROL AKSES TAB MENU UTAMA ===
         setMenuDisplay('tabPendaftaranBtn', 'pendaftaran');
         setMenuDisplay('tabRiwayatMedisBtn', 'rekammedis');
         setMenuDisplay('tabDaftarPasienBtn', 'databasepasien');
@@ -82,19 +77,16 @@
         setMenuDisplay('tabTagihanLabBtn', 'tagihanlab');
         setMenuDisplay('tabPendapatanDokterBtn', 'pendapatandokter');
 
-        // 🔥 KONTROL AKSES KALENDER PRAKTIK
         const elKalenderBtn = document.getElementById('tabDokterBtn') || document.getElementById('tabKalenderBtn');
         if (elKalenderBtn) {
             const punyaAksesKalender = isSuperAdmin || isDokter || cekIzin('kalenderpraktik') || cekIzin('kalender');
             elKalenderBtn.style.display = punyaAksesKalender ? 'block' : 'none';
         }
 
-        // AKSES GANDA UNTUK TAB ANALISIS BISNIS
         const punyaAksesAnalisis = cekIzin('analisisbisnis') || cekIzin('kokpitfinansial');
         const elAnalisisBtn = document.getElementById('tabAnalisisBisnisBtn');
         if (elAnalisisBtn) elAnalisisBtn.style.display = punyaAksesAnalisis ? 'block' : 'none';
 
-        // === 2. KONTROL AKSES KARTU BERANDA ===
         setCardDisplay('menuPendaftaranCard', 'pendaftaran');
         setCardDisplay('menuAntreanCard', 'antrian');
         setCardDisplay('menuRiwayatCard', 'rekammedis');
@@ -105,7 +97,6 @@
             menuKalenderCard.style.display = (isSuperAdmin || isDokter || cekIzin('kalenderpraktik') || cekIzin('kalender')) ? 'block' : 'none';
         }
 
-        // === 3. KONTROL AKSES GRANULAR SUB-TAB ===
         const punyaAksesUser = cekIzin('manajemenuser');
         const elUserBtn = document.getElementById('subTabUserBtn');
         const elAksesBtn = document.getElementById('subTabAksesBtn');
@@ -128,7 +119,6 @@
         const elMasterTindakanBtn = document.getElementById('subTabMasterTindakanBtn'); 
         if (elMasterTindakanBtn) elMasterTindakanBtn.style.display = punyaAksesMasterTindakan ? 'inline-block' : 'none';
         
-        // === 4. AUTO-ROUTING CERDAS SUB-TAB ===
         setTimeout(() => {
             if (cekIzin('pengaturan')) {
                 if (punyaAksesUser) {
@@ -141,7 +131,7 @@
     };
 
     window.muatPilihanRole = function() {
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getRoles" })
         })
@@ -166,9 +156,6 @@
         .catch(err => console.error("Gagal muat dropdown role:", err));
     };
 
-    // ==========================================
-    // 2. FUNGSI MUAT MATRIKS (AUTOMATIC RENDERING)
-    // ==========================================
     window.muatMatriksAkses = function() {
         const thead = document.getElementById('headMatriksAkses');
         const tbody = document.getElementById('bodyMatriksAkses');
@@ -185,7 +172,7 @@
 
         tbody.innerHTML = `<tr><td colspan="${totalKolom}" style="text-align:center; color: #555; padding: 15px;">⏳ Memuat konfigurasi hak akses dari database...</td></tr>`;
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getMatrixRole" })
         })
@@ -224,7 +211,7 @@
                     if (isRoleInti) {
                         btnHapus = `<button disabled style="background-color: #e0e0e0; color: #888; border: 1px solid #ccc; padding: 5px 10px; border-radius: 4px; cursor: not-allowed; font-size: 12px;">Bawaan Sistem</button>`;
                     } else {
-                        btnHapus = `<button onclick="hapusRole('${role.idRole}', '${role.namaRole}')" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>`;
+                        btnHapus = `<button onclick="window.hapusRole('${role.idRole}', '${role.namaRole}')" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>`;
                     }
 
                     let row = `<tr class="baris-akses-role" data-baris="${role.barisSheet}" style="border-bottom: 1px solid #eee;">
@@ -245,9 +232,6 @@
         });
     };
 
-    // ==========================================
-    // 3. FUNGSI SIMPAN MATRIKS (AUTOMATIC PAYLOAD)
-    // ==========================================
     window.simpanMatriksAkses = function() {
         const btn = document.getElementById('btnSimpanAkses');
         if (btn) {
@@ -270,7 +254,7 @@
             matrixPayload.push(rowData);
         });
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
                 action: "simpanMatrixRole",
@@ -313,10 +297,8 @@
             window.tokenTambahRole = "ROL-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
         }
 
-        // Fix Deteksi Tombol yang Aman
         let btn = (window.event && window.event.target) ? window.event.target : null;
         if (!btn || btn.tagName !== 'BUTTON') {
-            // Jika klik meleset, cari tombol secara spesifik berdasarkan DOM sekitar
             btn = inputRole.parentElement.querySelector('button'); 
         }
 
@@ -326,7 +308,7 @@
             btn.disabled = true;
         }
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
                 action: "tambahRole",
@@ -362,9 +344,6 @@
         });
     };
 
-    // ==========================================
-    // 🔥 FITUR HAPUS ROLE (DELETE)
-    // ==========================================
     window.hapusRole = function(idRole, namaRole) {
         const roleInti = ["rol-01", "rol-02", "rol-03", "rol-04", "rol-05", "rol-06", "rol-07"];
         if (roleInti.includes(idRole.toLowerCase())) {
@@ -376,10 +355,9 @@
             return;
         }
 
-        // Panggil layar loading global jika ada
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("Menghapus Role...");
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "hapusRole", idRole: idRole })
         })

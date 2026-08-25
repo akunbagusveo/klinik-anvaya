@@ -17,7 +17,7 @@
         if (tbodyKasus) tbodyKasus.innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 15px;">⏳ Mengkalkulasi data medis...</td></tr>`;
         if (tbodyJam) tbodyJam.innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 15px;">⏳ Memetakan kepadatan jam...</td></tr>`;
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getDashboardStats" })
         })
@@ -93,7 +93,7 @@
         if (tbodyZonasi) tbodyZonasi.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:15px;">⏳ Mengelompokkan alamat...</td></tr>`;
         if (tbodyHari) tbodyHari.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:15px;">⏳ Menghitung kepadatan hari...</td></tr>`;
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getMarketingAnalytics" })
         })
@@ -321,7 +321,7 @@
 
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menarik Data Laporan Finansial...");
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ 
                 action: "getLaporanFinansial", 

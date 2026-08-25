@@ -51,7 +51,7 @@
             limit: 500 
         };
 
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(response => response.json())
         .then(data => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
