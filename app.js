@@ -430,9 +430,11 @@
                     if (data && data.result === "success") {
                         window.currentRole = data.role;
                         
+                        // 🔥 FITUR BARU: Menyimpan identitas ganda (username untuk mesin, namaLengkap untuk layar)
                         const dataSesi = { 
                             idUser: data.idUser, 
                             username: data.username, 
+                            namaLengkap: data.namaLengkap || data.username, 
                             role: data.role,
                             namaRole: data.namaRole || data.role, 
                             permissions: data.permissions 
@@ -444,7 +446,8 @@
                         if (topNav) topNav.style.display = 'flex'; 
                         if (sidebar) sidebar.style.display = 'block';
                         
-                        try { window.bukaAplikasi(data.role, data.username); } catch (e) { console.error("Error UI bukaAplikasi:", e); }
+                        // 🔥 FITUR BARU: Melempar "namaLengkap" ke fungsi bukaAplikasi agar tampil di pojok kanan atas & ucapan selamat datang
+                        try { window.bukaAplikasi(data.role, dataSesi.namaLengkap); } catch (e) { console.error("Error UI bukaAplikasi:", e); }
                         try { if(typeof window.aplikasikanHakAkses === "function") window.aplikasikanHakAkses(data.permissions); } catch (e) { console.error("Error hak akses:", e); }
 
                     } else { 
