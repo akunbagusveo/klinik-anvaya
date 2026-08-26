@@ -1335,6 +1335,12 @@
                     setNilaiDOM('modalResep', 'txtResep', data.hariIni.resep || "");
                     setNilaiDOM('modalLinkFoto', 'txtLinkFoto', data.hariIni.linkFoto || "");
                     
+                    const elTgl1 = document.getElementById('modalTanggalKontrol');
+                    const elTgl2 = document.getElementById('tanggalKontrol');
+
+                    if (elTgl1) elTgl1.value = data.hariIni.tanggalKontrol || "";
+                    if (elTgl2) elTgl2.value = data.hariIni.tanggalKontrol || "";
+                    
                     if (formAktifRme) formAktifRme.dataset.rowUpdate = data.rowHariIni;
                     
                     const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
