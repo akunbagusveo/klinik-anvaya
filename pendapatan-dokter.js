@@ -118,20 +118,30 @@
         let bulanTerpilih = inpBulan.value; 
         if (!bulanTerpilih) return;
 
-        let namaDokterAktif = "Dian"; 
-        if (window.currentUser && window.currentUser.nama) {
-            namaDokterAktif = window.currentUser.nama;
-        } else {
-            let bodyText = document.body.innerText;
-            let match = bodyText.match(/User:\s*([A-Za-z0-9\s]+)/);
-            if (match && match[1]) {
-                namaDokterAktif = match[1].trim().split('\n')[0].trim();
-            }
-        }
+        // 🔥 FIX DINAMIS BARU: Deteksi Nama Multi-Identitas
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+        const namaLengkapDokter = (sessionData.namaLengkap || "").toLowerCase().trim();
+        const usernameDokter = (sessionData.username || "").toLowerCase().trim();
+
+        // 🧠 MESIN PENCOCOK NAMA CERDAS (ANTI-MISMATCH)
+        // Bisa mengenali bahwa "Aldila" di database adalah milik "dr. Aldila Rahma Putri"
+        const isNamaMatch = (namaDatabase) => {
+            if (!namaDatabase) return false;
+            let dbName = String(namaDatabase).toLowerCase().trim();
+            
+            // 1. Cek kecocokan persis
+            if (dbName === namaLengkapDokter || dbName === usernameDokter) return true;
+            // 2. Cek irisan kata dengan Nama Lengkap (Misal: "Aldila" ada di dalam "dr. aldila rahma putri")
+            if (namaLengkapDokter && dbName && (namaLengkapDokter.includes(dbName) || dbName.includes(namaLengkapDokter))) return true;
+            // 3. Cek irisan kata dengan Username (Misal: "dila")
+            if (usernameDokter && dbName && (usernameDokter.includes(dbName) || dbName.includes(usernameDokter))) return true;
+
+            return false;
+        };
 
         let dataArsip = null;
         if (window.arsipGajiTerkunci) {
-            dataArsip = window.arsipGajiTerkunci.find(x => x.namaDokter.toLowerCase() === namaDokterAktif.toLowerCase() && x.periode === bulanTerpilih);
+            dataArsip = window.arsipGajiTerkunci.find(x => isNamaMatch(x.namaDokter) && x.periode === bulanTerpilih);
         }
 
         let banner = document.getElementById('bannerStatusSlip');
@@ -234,7 +244,8 @@
 
             let rincianDokter = [];
             dataTerfilter.forEach(item => {
-                if (item.jenis !== "LAB" && item.dokterPelaksana.trim().toLowerCase() === namaDokterAktif.toLowerCase()) {
+                // 🔥 PENERAPAN MESIN PENCARIAN CERDAS
+                if (item.jenis !== "LAB" && isNamaMatch(item.dokterPelaksana)) {
                     let inv = invoiceMap[item.invoice];
                     let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
                     let diskonProrataItem = rasio * inv.diskon;
@@ -247,7 +258,8 @@
             });
 
             dataTerfilter.forEach(item => {
-                if (item.jenis === "LAB" && item.dokterPelaksana.trim().toLowerCase() === namaDokterAktif.toLowerCase()) {
+                // 🔥 PENERAPAN MESIN PENCARIAN CERDAS
+                if (item.jenis === "LAB" && isNamaMatch(item.dokterPelaksana)) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = rincianDokter.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
                     if (match) match.hargaLabVendor += (item.bebanPotongan / 0.4);
