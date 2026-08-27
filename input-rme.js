@@ -702,6 +702,15 @@
     };
 
     window.validasiSebelumSimpanRME = function() {
+        // 🔥 FITUR BARU: Validasi Diagnosa Manual (Karena textarea HTML di-hidden)
+        const diagVal = document.getElementById('modalDiagnosa') ? document.getElementById('modalDiagnosa').value.trim() : "";
+        if (diagVal === "") {
+            alert("⚠️ Kolom Diagnosa masih kosong!\n\nSilakan pilih penyakit dari tombol cepat atau ketik dan tekan Enter pada kolom pencarian Diagnosa.");
+            const inputCari = document.getElementById('inputCariDiagnosa');
+            if (inputCari) inputCari.focus(); // Arahkan kursor ke kotak pencarian
+            return false; // Batalkan simpan
+        }
+
         const barisTindakan = document.querySelectorAll('#kontainerTindakanDinamis .baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
