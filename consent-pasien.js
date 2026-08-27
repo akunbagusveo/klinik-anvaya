@@ -3,13 +3,9 @@
 // =========================================================================
 (function() {
 
-    // 1. Variabel Privat untuk Engine Tanda Tangan Digital
     let isDrawing = false;
     let canvas, ctx;
 
-    // =====================================================================
-    // 2. INISIALISASI & KONTROL CANVAS TANDA TANGAN
-    // =====================================================================
     window.initSignaturePad = function() {
         canvas = document.getElementById('canvasTTD');
         if (!canvas) return;
@@ -19,13 +15,11 @@
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
-        // Event untuk Mouse (PC)
         canvas.addEventListener('mousedown', mulaiGambar);
         canvas.addEventListener('mousemove', gambar);
         canvas.addEventListener('mouseup', stopGambar);
         canvas.addEventListener('mouseout', stopGambar);
 
-        // Event untuk Layar Sentuh (Tablet/HP)
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
@@ -97,11 +91,11 @@
         const inpKustom = document.getElementById('inpTujuanKustomConsent');
         if (selTujuan) selTujuan.disabled = false;
         if (inpKustom) inpKustom.disabled = false;
+        
+        const chkSetuju = document.getElementById('chkSayaSetuju');
+        if (chkSetuju) chkSetuju.disabled = false;
     };
 
-    // =====================================================================
-    // 3. PEMBUKA MODAL CONSENT (ISOLASI PER PASIEN)
-    // =====================================================================
     window.bukaModalConsent = function(noRM, namaPasien, tindakan) {
         let rawRM = noRM;
         if (!rawRM || rawRM === "-" || rawRM === "undefined") {
@@ -152,7 +146,8 @@
                 let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
                 if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) {
                     chk.checked = savedRisiko.includes(label) || savedRisiko.includes(chk.value);
-                    chk.disabled = true;
+                    // 🔥 FIX: JANGAN di-disable agar dokter bisa revisi centangnya!
+                    chk.disabled = false; 
                 }
             });
 
@@ -174,17 +169,17 @@
                     if (inpKustom) {
                         inpKustom.style.display = 'block';
                         inpKustom.value = savedTujuan;
-                        inpKustom.disabled = true;
+                        inpKustom.disabled = false; // 🔥 FIX: Buka gembok revisi
                     }
                 } else if (inpKustom) {
                     inpKustom.style.display = 'none';
                 }
-                selTujuan.disabled = true;
+                selTujuan.disabled = false; // 🔥 FIX: Buka gembok revisi
             }
 
             if (chkSetuju) {
                 chkSetuju.checked = true;
-                chkSetuju.disabled = true;
+                chkSetuju.disabled = false; // 🔥 FIX: Buka gembok revisi
             }
             
             if (btnCetak) {
@@ -260,9 +255,6 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // =====================================================================
-    // 4. PENYIMPANAN DATA KE BACKEND
-    // =====================================================================
     window.kirimDataConsent = function() {
         const chkSetuju = document.getElementById('chkSayaSetuju');
         if (!chkSetuju || !chkSetuju.checked) {
@@ -355,15 +347,16 @@
                     if (window.tujuanConsentAktif) {
                         localStorage.setItem('tujuan_consent_' + cleanRM, window.tujuanConsentAktif);
                     }
+
+                    // 🔥 FIX PDF REVISI: Hancurkan cache PDF lama agar sistem DIPAKSA bikin PDF baru dengan TTD dan Risiko terbaru!
+                    localStorage.removeItem('pdf_url_consent_' + cleanRM);
+                    window.pdfConsentAktif = null;
                 }
                 
                 window.consentSudahDisimpanHariIni = true;
                 if (res.urlFoto || res.linkFoto) window.urlFotoConsentAktif = res.urlFoto || res.linkFoto;
 
-                if (typeof window.simpanDraftRME === "function") {
-                    window.simpanDraftRME();
-                }
-
+                if (typeof window.simpanDraftRME === "function") window.simpanDraftRME();
                 if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
 
                 if (typeof window.cetakInformedConsentPDF === "function") {
@@ -381,14 +374,10 @@
                 btn.disabled = false;
                 btn.innerText = teksAsli;
             }
-            console.error("Error consent:", err);
             alert("⚠️ Terjadi kesalahan koneksi sistem saat mengirim data.");
         });
     };
 
-    // =====================================================================
-    // 5. TRIGGER & SENSOR PERUBAHAN UI KEBUTUHAN CONSENT
-    // =====================================================================
     window.triggerInformedConsentDariRME = function() {
         const elNoRM = document.getElementById('modalNoRM');
         const elNama = document.getElementById('modalNama');
@@ -530,7 +519,7 @@
     };
 
     // =====================================================================
-    // 6. ENGINE PENCETAK PDF CONSENT (DENGAN SMART DOCTOR EXTRACTOR)
+    // 6. ENGINE PENCETAK PDF CONSENT (ANTI DATA TERTUKAR)
     // =====================================================================
     window.cetakInformedConsentPDF = function(isSilent = false) {
         const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
@@ -559,8 +548,11 @@
         
         const diagnosa = document.getElementById('modalDiagnosa')?.value || document.getElementById('inputDiagnosaAktif')?.value || "Sesuai rekam medis aktif";
         
-        // 🔥 FITUR BARU: Menarik Nama Dokter Asli dari Data Antrean / RME, BUKAN dari Sesi Login
-        const pAktif = window.pasienRMEAktif || {};
+        // 🔥 FIX DATA PASIEN TERTUKAR: 
+        // Memastikan variabel global hanya digunakan JIKA nomor RM-nya 100% cocok dengan pasien ini!
+        const pAktifRaw = window.pasienRMEAktif || {};
+        const pAktif = (pAktifRaw.noRM === noRM) ? pAktifRaw : {}; 
+
         let detailAntrean = null;
         if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
             detailAntrean = window.dataAntreanGlobal.find(p => p.noRM === noRM);
@@ -569,7 +561,6 @@
         let namaDokterDariData = detailAntrean ? detailAntrean.namaDokter : (pAktif.namaDokter || "");
         let namaDokterDinamis = namaDokterDariData || sessionData.namaLengkap || sessionData.username || document.getElementById('selDokter')?.value || "Dokter Klinik Anvaya";
         
-        // 🔥 FITUR BARU: Mencegah Gelar Dobel "Dr. dr." dan Menyuntikkan gelar jika belum ada
         if (!namaDokterDinamis.toLowerCase().includes("dr.") && !namaDokterDinamis.toLowerCase().includes("dr ") && namaDokterDinamis !== "Dokter Klinik Anvaya") {
             namaDokterDinamis = "dr. " + namaDokterDinamis.replace(/\b\w/g, l => l.toUpperCase());
         }
@@ -580,13 +571,28 @@
         } else if (detailAntrean && detailAntrean.tanggalLahir && typeof window.hitungUmur === "function") {
             umurTeks = `${window.hitungUmur(detailAntrean.tanggalLahir)} Thn`;
         } else {
-            const domUmur = document.getElementById('lblProfilUmur')?.innerText || "";
-            const match = domUmur.match(/\((.*?)\)/);
-            umurTeks = match ? match[1] : (domUmur !== "-" ? domUmur : "-");
+            // 🔥 Ambil dari UI hanya jika profil yang tampil di latar belakang benar-benar milik pasien ini
+            const uiRm = document.getElementById('lblProfilRM')?.innerText || "";
+            if (uiRm === noRM) {
+                const domUmur = document.getElementById('lblProfilUmur')?.innerText || "";
+                const match = domUmur.match(/\((.*?)\)/);
+                umurTeks = match ? match[1] : (domUmur !== "-" ? domUmur : "-");
+            }
         }
 
         let jenisKelamin = pAktif.jenisKelamin || detailAntrean?.jenisKelamin || "-";
-        let alamat = pAktif.alamat || document.getElementById('lblProfilDomisili')?.innerText || detailAntrean?.alamat || "-";
+        
+        let alamat = "-";
+        if (pAktif.alamat) {
+            alamat = pAktif.alamat;
+        } else if (detailAntrean && detailAntrean.alamat) {
+            alamat = detailAntrean.alamat;
+        } else {
+            const uiRm = document.getElementById('lblProfilRM')?.innerText || "";
+            if (uiRm === noRM) {
+                alamat = document.getElementById('lblProfilDomisili')?.innerText || "-";
+            }
+        }
 
         let daftarRisiko = [];
         document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked').forEach(chk => {
@@ -659,9 +665,6 @@
         });
     };
 
-    // =====================================================================
-    // 7. FUNGSI HELPER / UTILITAS CONSENT
-    // =====================================================================
     window.toggleTujuanKustomConsent = function(value) {
         const inpKustom = document.getElementById('inpTujuanKustomConsent');
         if (inpKustom) {
