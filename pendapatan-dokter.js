@@ -6,15 +6,22 @@
     // 1. Variabel Privat Modul
     let rawDataBagiHasil = [];
     
-    // Variabel yang perlu diakses global (dibagikan antar modul)
     window.dataBagiHasilGlobal = []; 
     window.periodeBagiHasilGlobal = ""; 
+
+    // 🔥 HELPER GLOBAL: Mesin Pendeteksi Kepribadian Ganda (Anti-Split)
+    window.isDokterMatchGlobal = function(namaA, namaB) {
+        if (!namaA || !namaB) return false;
+        let a = String(namaA).toLowerCase().replace(/^(dr\.|dr |drg\.|drg )/i, '').trim();
+        let b = String(namaB).toLowerCase().replace(/^(dr\.|dr |drg\.|drg )/i, '').trim();
+        if (a === "" || b === "") return false;
+        return a === b || a.includes(b) || b.includes(a);
+    };
 
     // =====================================================================
     // 🩺 FUNGSI 1: MENGUNDUH DATA SEBELUM MENGGAMBAR LAYAR (MODE DOKTER)
     // =====================================================================
     window.initPendapatanDokter = function() {
-        // 🔥 JALUR: SATPAM PENDETEKSI OWNER (CLONING DARI GOD MODE)
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const roleId = sessionData && sessionData.role ? String(sessionData.role).toLowerCase().trim() : "";
         const roleName = sessionData && sessionData.namaRole ? String(sessionData.namaRole).toLowerCase().trim() : "";
@@ -59,9 +66,6 @@
             return; 
         }
 
-        // ==========================================================
-        // KODE ASLI UNTUK DOKTER (Sapu Bersih & Fetch Data)
-        // ==========================================================
         let inpBulan = document.getElementById('filterBulanPendapatanDokter');
         if(!inpBulan) return;
         
@@ -87,11 +91,11 @@
 
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Mengunduh Data Pendapatan & Kalkulasi Slip Gaji...");
 
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) })
         .then(res => res.json())
         .then(resArsip => {
             window.arsipGajiTerkunci = (resArsip.result === "success") ? resArsip.data : [];
-            return fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) });
+            return fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) });
         })
         .then(resTrx => resTrx.json())
         .then(resTrx => {
@@ -102,7 +106,6 @@
         })
         .catch(err => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-            console.error("Gagal menarik data dari server:", err);
             setVal('cardDokFeePokok', "⚠️ Gagal Koneksi");
             if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px; color:#e74c3c; font-size:14px; font-weight:bold;">❌ Gagal menghubungi server. Silakan muat ulang.</td></tr>`;
         });
@@ -118,24 +121,16 @@
         let bulanTerpilih = inpBulan.value; 
         if (!bulanTerpilih) return;
 
-        // 🔥 FIX DINAMIS BARU: Deteksi Nama Multi-Identitas
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const namaLengkapDokter = (sessionData.namaLengkap || "").toLowerCase().trim();
         const usernameDokter = (sessionData.username || "").toLowerCase().trim();
 
-        // 🧠 MESIN PENCOCOK NAMA CERDAS (ANTI-MISMATCH)
-        // Bisa mengenali bahwa "Aldila" di database adalah milik "dr. Aldila Rahma Putri"
         const isNamaMatch = (namaDatabase) => {
             if (!namaDatabase) return false;
             let dbName = String(namaDatabase).toLowerCase().trim();
-            
-            // 1. Cek kecocokan persis
             if (dbName === namaLengkapDokter || dbName === usernameDokter) return true;
-            // 2. Cek irisan kata dengan Nama Lengkap (Misal: "Aldila" ada di dalam "dr. aldila rahma putri")
             if (namaLengkapDokter && dbName && (namaLengkapDokter.includes(dbName) || dbName.includes(namaLengkapDokter))) return true;
-            // 3. Cek irisan kata dengan Username (Misal: "dila")
             if (usernameDokter && dbName && (usernameDokter.includes(dbName) || dbName.includes(usernameDokter))) return true;
-
             return false;
         };
 
@@ -147,7 +142,6 @@
         let banner = document.getElementById('bannerStatusSlip');
 
         if (dataArsip) {
-            // --- MODE SLIP TERKUNCI (HIJAU) ---
             if (banner) {
                 banner.style.display = 'flex';
                 banner.style.background = '#e8f8f5';
@@ -196,7 +190,6 @@
             window.renderTabelRincianDokter(rincianJson);
 
         } else {
-            // --- MODE LIVE TRACKING (ORANYE) ---
             if (banner) {
                 banner.style.display = 'flex';
                 banner.style.background = '#fff3cd';
@@ -244,7 +237,6 @@
 
             let rincianDokter = [];
             dataTerfilter.forEach(item => {
-                // 🔥 PENERAPAN MESIN PENCARIAN CERDAS
                 if (item.jenis !== "LAB" && isNamaMatch(item.dokterPelaksana)) {
                     let inv = invoiceMap[item.invoice];
                     let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
@@ -258,7 +250,6 @@
             });
 
             dataTerfilter.forEach(item => {
-                // 🔥 PENERAPAN MESIN PENCARIAN CERDAS
                 if (item.jenis === "LAB" && isNamaMatch(item.dokterPelaksana)) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = rincianDokter.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
@@ -285,7 +276,7 @@
     window.tampilkanSlipGajiDokter = function(nama, periode) {
         if (!window.arsipGajiTerkunci) return alert("Data arsip tidak ditemukan!");
         
-        let dataArsip = window.arsipGajiTerkunci.find(x => x.namaDokter.toLowerCase() === nama.toLowerCase() && x.periode === periode);
+        let dataArsip = window.arsipGajiTerkunci.find(x => window.isDokterMatchGlobal(x.namaDokter, nama) && x.periode === periode);
         if (!dataArsip) return alert("Slip belum diterbitkan untuk bulan ini.");
 
         let rincianArr = [];
@@ -324,7 +315,7 @@
                     </div>
 
                     <table style="width:100%; margin-bottom:20px; font-size:14px; color:#34495e;">
-                        <tr><td style="width:150px; font-weight:bold; padding:5px 0;">Nama Dokter</td><td style="width:10px;">:</td><td style="font-weight:bold; color:#2980b9; font-size:16px;">dr. ${dataArsip.namaDokter}</td></tr>
+                        <tr><td style="width:150px; font-weight:bold; padding:5px 0;">Nama Dokter</td><td style="width:10px;">:</td><td style="font-weight:bold; color:#2980b9; font-size:16px;">dr. ${dataArsip.namaDokter.replace(/^(dr\.|dr |drg\.|drg )/i, '')}</td></tr>
                         <tr><td style="font-weight:bold; padding:5px 0;">Periode Kinerja</td><td>:</td><td>Bulan ${periode}</td></tr>
                         <tr><td style="font-weight:bold; padding:5px 0;">Total Tindakan</td><td>:</td><td>${jmlTindakan} Pasien</td></tr>
                     </table>
@@ -361,7 +352,7 @@
                     <div style="display:flex; justify-content:space-between; margin-top:40px; font-size:14px; color:#2c3e50;">
                         <div style="text-align:center;">
                             <p style="margin-bottom:60px;">Penerima,</p>
-                            <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">dr. ${dataArsip.namaDokter}</p>
+                            <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">dr. ${dataArsip.namaDokter.replace(/^(dr\.|dr |drg\.|drg )/i, '')}</p>
                         </div>
                         <div style="text-align:center;">
                             <p style="margin-bottom:60px;">Manajemen / Keuangan,</p>
@@ -431,13 +422,13 @@
     };
 
     // =====================================================================
-    // 💼 3. FUNGSI SILENT MODE: TARIK DATA KOKPIT MANAJEMEN
+    // 💼 3. FUNGSI SILENT MODE: TARIK DATA KOKPIT MANAJEMEN (OWNER VIEW)
     // =====================================================================
     window.muatDataBagiHasil = function() {
         const area = document.getElementById('areaBagiHasil');
         if (area) area.innerHTML = '<h4 style="text-align:center; padding:20px;">Memuat Kalkulasi Bagi Hasil... ⏳</h4>';
         
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getBagiHasilDokter" }) })
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
@@ -460,7 +451,7 @@
 
         if (!window.arsipGajiTerkunci) {
             try {
-                let req = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) });
+                let req = await fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDaftarSlipTerkunci" }) });
                 let res = await req.json();
                 window.arsipGajiTerkunci = (res.result === "success") ? res.data : [];
             } catch (err) {
@@ -481,16 +472,48 @@
             }
         });
 
+        // 🔥 MESIN PENYATU IDENTITAS DOKTER (ANTI SPLIT)
         let doctorMap = {};
+        
+        const getDoctorKeyAndFormalize = (rawName) => {
+            if (!rawName || rawName === "-") return { key: "umum", formal: "Umum" };
+            let clean = rawName.toLowerCase().replace(/^(dr\.|dr |drg\.|drg )/i, '').trim();
+            
+            let matchedKey = clean;
+            for (let existingKey in doctorMap) {
+                if (existingKey === clean || existingKey.includes(clean) || clean.includes(existingKey)) {
+                    matchedKey = existingKey;
+                    break;
+                }
+            }
+
+            let formal = rawName.trim();
+            if (!formal.toLowerCase().includes("dr.") && !formal.toLowerCase().includes("dr ") && formal.toLowerCase() !== "umum") {
+                formal = "dr. " + formal.replace(/\b\w/g, l => l.toUpperCase());
+            }
+
+            return { key: matchedKey, formal: formal };
+        };
+
         dataTerfilter.forEach(item => {
             if (item.jenis !== "LAB") {
-                if (!doctorMap[item.dokterPelaksana]) doctorMap[item.dokterPelaksana] = { nama: item.dokterPelaksana, jmlTindakan: 0, totalBagiHasil: 0, rincian: [] };
+                let docInfo = getDoctorKeyAndFormalize(item.dokterPelaksana);
+                
+                if (!doctorMap[docInfo.key]) {
+                    doctorMap[docInfo.key] = { nama: docInfo.formal, jmlTindakan: 0, totalBagiHasil: 0, rincian: [] };
+                } else {
+                    // Update ke nama terpanjang/paling formal jika ada yg lebih lengkap
+                    if (docInfo.formal.length > doctorMap[docInfo.key].nama.length) {
+                        doctorMap[docInfo.key].nama = docInfo.formal;
+                    }
+                }
+                
                 let inv = invoiceMap[item.invoice];
                 let rasio = inv.subtotal > 0 ? (item.hargaAsli / inv.subtotal) : 0;
                 let diskonProrataItem = rasio * inv.diskon;
                 
-                doctorMap[item.dokterPelaksana].jmlTindakan++;
-                doctorMap[item.dokterPelaksana].rincian.push({
+                doctorMap[docInfo.key].jmlTindakan++;
+                doctorMap[docInfo.key].rincian.push({
                     tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, tindakan: item.namaTindakan,
                     hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
                 });
@@ -499,7 +522,8 @@
 
         dataTerfilter.forEach(item => {
             if (item.jenis === "LAB") {
-                let doc = doctorMap[item.dokterPelaksana];
+                let docInfo = getDoctorKeyAndFormalize(item.dokterPelaksana);
+                let doc = doctorMap[docInfo.key];
                 if (doc) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = doc.rincian.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
@@ -531,7 +555,7 @@
         let totalPotonganTerkunci = 0;
         if (window.arsipGajiTerkunci) {
             arrayDokter.forEach(d => {
-                let dataTerkunci = window.arsipGajiTerkunci.find(x => x.namaDokter === d.nama && x.periode === defaultBulanFilter);
+                let dataTerkunci = window.arsipGajiTerkunci.find(x => window.isDokterMatchGlobal(x.namaDokter, d.nama) && x.periode === defaultBulanFilter);
                 if (dataTerkunci) {
                     totalBonusTerkunci += dataTerkunci.bonus;
                     totalPotonganTerkunci += dataTerkunci.potongan;
@@ -582,7 +606,7 @@
             
             let dataTerkunci = null;
             if (window.arsipGajiTerkunci) {
-                dataTerkunci = window.arsipGajiTerkunci.find(x => x.namaDokter === d.nama && x.periode === defaultBulanFilter);
+                dataTerkunci = window.arsipGajiTerkunci.find(x => window.isDokterMatchGlobal(x.namaDokter, d.nama) && x.periode === defaultBulanFilter);
             }
             
             let isLocked = !!dataTerkunci;
@@ -604,12 +628,10 @@
                 }
             }
 
-            // 🔥 FIX: Prefix window.bukaPreviewSlip ditambahkan
             let btnCetakHtml = isLocked 
                 ? `<button id="btnCekSlip_${idx}" onclick="window.bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:none;">✅ Terkunci (${defaultBulanFilter})</button>`
                 : `<button id="btnCekSlip_${idx}" onclick="window.bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>`;
             
-            // 🔥 FIX: Prefix window.toggleDetailDokter ditambahkan
             htmlContent += `
                 <tr style="border-bottom:1px solid #ecf0f1;">
                     <td style="padding:15px; font-weight:bold; color:#2980b9; font-size:15px; cursor:pointer;" onclick="window.toggleDetailDokter('${rowId}', '${chevronId}')">
@@ -935,7 +957,7 @@
             return; 
         }
 
-        let isAlreadyLocked = window.arsipGajiTerkunci && window.arsipGajiTerkunci.some(x => x.namaDokter === dataDokter.nama && x.periode === bulanGaji);
+        let isAlreadyLocked = window.arsipGajiTerkunci && window.arsipGajiTerkunci.some(x => window.isDokterMatchGlobal(x.namaDokter, dataDokter.nama) && x.periode === bulanGaji);
         if (isAlreadyLocked) {
             let konfirmasi = confirm(`⚠️ PERHATIAN!\nSlip Gaji periode ${bulanGaji} untuk dr. ${dataDokter.nama} SUDAH PERNAH DITERBITKAN.\n\nApakah Anda yakin ingin MEREVISI (menimpa) data lama dengan angka yang baru ini?`);
             if (!konfirmasi) return; 
@@ -960,7 +982,7 @@
             rincianJson: JSON.stringify(dataDokter.rincian) 
         };
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify(payload)
         })
@@ -977,7 +999,8 @@
                 if (mod) mod.style.display = 'none';
                 
                 if (!window.arsipGajiTerkunci) window.arsipGajiTerkunci = [];
-                window.arsipGajiTerkunci = window.arsipGajiTerkunci.filter(x => !(x.namaDokter === dataDokter.nama && x.periode === bulanGaji));
+                // Hapus arsip lama yang namanya mirip untuk menimpa
+                window.arsipGajiTerkunci = window.arsipGajiTerkunci.filter(x => !(window.isDokterMatchGlobal(x.namaDokter, dataDokter.nama) && x.periode === bulanGaji));
                 window.arsipGajiTerkunci.push({ namaDokter: dataDokter.nama, periode: bulanGaji });
                 
                 let btnCek = document.getElementById('btnCekSlip_' + window.currentPreviewIdx);
@@ -1031,7 +1054,7 @@
 
         const dataDokter = window.dataBagiHasilGlobal[index];
         
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
                 action: "cetakSlipBagiHasil",
