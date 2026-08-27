@@ -697,6 +697,15 @@
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
         if (timelineContainer) timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
 
+        // 🧹 FIX: SAPU BERSIH BANNER DARI PASIEN SEBELUMNYA (ANTI-BOCOR MEMORI)
+        const bannerMedis = document.getElementById('bannerPeringatanMedis');
+        const elAlergi = document.getElementById('kontenAlergiRME');
+        const elObat = document.getElementById('kontenObatRME');
+        
+        if (bannerMedis) bannerMedis.style.display = 'none';
+        if (elAlergi) { elAlergi.innerHTML = ''; elAlergi.style.display = 'none'; }
+        if (elObat) { elObat.innerHTML = ''; elObat.style.display = 'none'; }
+
         fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "getDetailPasien", noRM: cleanNoRM }) })
         .then(res => res.json())
         .then(res => {
@@ -716,15 +725,27 @@
                 let alergi = res.data.alergi ? res.data.alergi.trim() : "-";
                 let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
                 let bannerTampil = false;
-                let bannerMedis = document.getElementById('bannerPeringatanMedis');
 
-                if(alergi !== "-" && alergi.toLowerCase() !== "tidak ada") {
-                    document.getElementById('kontenAlergiRME').innerHTML = `⚠️ <strong>ALERGI:</strong> ${alergi}`; bannerTampil = true;
+                // 🔥 PENULISAN ULANG DATA JIKA PASIEN BARU MEMANG PUNYA ALERGI
+                if(alergi !== "-" && alergi !== "" && alergi.toLowerCase() !== "tidak ada") {
+                    if(elAlergi) {
+                        elAlergi.innerHTML = `⚠️ <strong>ALERGI:</strong> ${alergi}`;
+                        elAlergi.style.display = 'block';
+                    }
+                    bannerTampil = true;
                 }
-                if(obatRutin !== "-" && obatRutin.toLowerCase() !== "tidak ada") {
-                    document.getElementById('kontenObatRME').innerHTML = `💊 <strong>OBAT RUTIN:</strong> ${obatRutin}`; bannerTampil = true;
+                
+                if(obatRutin !== "-" && obatRutin !== "" && obatRutin.toLowerCase() !== "tidak ada") {
+                    if(elObat) {
+                        elObat.innerHTML = `💊 <strong>OBAT RUTIN:</strong> ${obatRutin}`;
+                        elObat.style.display = 'block';
+                    }
+                    bannerTampil = true;
                 }
-                if(bannerTampil && bannerMedis) bannerMedis.style.display = 'block';
+                
+                if(bannerTampil && bannerMedis) {
+                    bannerMedis.style.display = 'block';
+                }
             }
         });
 

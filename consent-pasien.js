@@ -510,9 +510,16 @@
         const btnConsent = document.getElementById('btnBuatConsent');
         if (btnConsent) {
             btnConsent.classList.remove('btn-consent-wajib');
-            btnConsent.style.backgroundColor = "#e67e22"; 
+            
+            // 🔥 FIX: Kembalikan ke mode Abu-abu (Terkunci & Redup) sebagai default saat form kosong
+            btnConsent.disabled = true;
+            btnConsent.style.cursor = "not-allowed"; 
+            btnConsent.style.opacity = "0.5"; 
+            btnConsent.style.backgroundColor = "#95a5a6"; 
             btnConsent.innerHTML = "✍️ Buat Informed Consent";
-            btnConsent.disabled = false;
+            btnConsent.style.boxShadow = "none";
+            btnConsent.style.border = "none";
+            btnConsent.style.fontWeight = "normal";
         }
 
         document.querySelectorAll('.badge-consent').forEach(el => el.remove());
