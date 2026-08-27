@@ -1079,7 +1079,7 @@
                                 ${teksTanggalKunjungan}<br>
                                 ${teksWaktuInput}
                                 ${infoEditan}
-                                <div style="margin-top: 5px; color: #2c3e50; font-size: 12px;">🩺 <strong>Dr. ${r.namaDokter || r.idDokter || "Tidak Diketahui"}</strong></div>
+                                <div style="margin-top: 5px; color: #2c3e50; font-size: 12px;">🩺 <strong> ${r.namaDokter || r.idDokter || "Tidak Diketahui"}</strong></div>
                             </div>
                             <div>${tombolEditRMEHtml}</div>
                         </div>
