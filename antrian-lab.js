@@ -12,16 +12,14 @@
         
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">⏳ Menyinkronkan mesin pelacak dengan Kasir...</td></tr>';
         
-        // 🔥 UPGRADE: Menyalakan Layar Hitam Loading
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Memeriksa Tagihan Lab Menggantung...");
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getAntreanLab" })
         })
         .then(res => res.json())
         .then(res => {
-            // 🔥 MATIKAN Layar Hitam Loading
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
 
             if (res.result === "success") {
@@ -55,7 +53,6 @@
             let tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid #ecf0f1";
             
-            // 🔥 UPGRADE KESELAMATAN: Escape tanda kutip tunggal agar tombol onclick tidak Error
             let amanInvoice = (item.invoice || "").replace(/'/g, "\\'");
             let amanPasien = (item.namaPasien || "").replace(/'/g, "\\'");
             let amanTindakan = (item.namaTindakan || "").replace(/'/g, "\\'");
@@ -96,11 +93,9 @@
         const modal = document.getElementById('modalInputLab');
         if (modal) modal.style.display = 'flex';
         
-        // Auto-focus ke kotak input agar perawat bisa langsung mengetik
         setTimeout(() => { if (inpHarga) inpHarga.focus(); }, 100);
     };
 
-    // 🔥 FITUR BARU: Menutup Jendela Modal
     window.tutupModalInputLab = function() {
         const modal = document.getElementById('modalInputLab');
         if (modal) modal.style.display = 'none';
@@ -110,16 +105,12 @@
     // 4. MESIN KALKULASI REAL-TIME & FORMAT RUPIAH
     // =====================================================================
     window.formatRupiahRealtime = function(input) {
-        // Hapus semua karakter selain angka
         let angkaMurni = input.value.replace(/[^0-9]/g, '');
-        
-        // 🔥 UPGRADE: Menyamakan standar format Rupiah menggunakan titik (id-ID)
         if (angkaMurni) {
             input.value = Number(angkaMurni).toLocaleString('id-ID'); 
         } else {
             input.value = '';
         }
-        
         window.hitungRealtimePotonganLab();
     };
 
@@ -129,7 +120,7 @@
 
         let strHarga = inpHarga.value.replace(/[^0-9]/g, '');
         let harga = Number(strHarga) || 0;
-        let beban = harga * 0.4; // 40% ditanggung dokter
+        let beban = harga * 0.4; 
         
         let lblPotongan = document.getElementById('lblPotonganDokter');
         if (lblPotongan) lblPotongan.innerText = "- Rp " + beban.toLocaleString('id-ID');
@@ -141,7 +132,6 @@
     window.simpanTagihanLabDinamis = function(e) {
         e.preventDefault();
         
-        // Tangkap tombol secara aman
         let btn = (e.target && e.target.querySelector('button[type="submit"]')) || document.getElementById('btnSimpanLabDinamis');
         
         const invoice = document.getElementById('hdnLabInvoice').value;
@@ -149,7 +139,6 @@
         const tindakan = document.getElementById('lblLabTindakan').innerText;
         const dokter = document.getElementById('hdnLabDokter').value;
         
-        // Bersihkan titik format rupiah sebelum dikirim ke Database
         let strHarga = document.getElementById('inpLabHargaDinamis').value.replace(/[^0-9]/g, '');
         const harga = Number(strHarga);
         
@@ -158,7 +147,7 @@
             return;
         }
 
-        let beban = harga * 0.4; // 40%
+        let beban = harga * 0.4; 
 
         if (btn) {
             btn.disabled = true;
@@ -170,13 +159,13 @@
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const operatorName = sessionData.username || "Perawat";
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
                 action: "simpanDataLab", 
                 noKuitansi: invoice,
                 tanggalBayar: new Date().toISOString().split('T')[0],
-                hargaLab: harga, // Angka murni tanpa titik
+                hargaLab: harga, 
                 pasien: pasien,
                 perawatanLab: tindakan,
                 operator: operatorName
@@ -193,24 +182,27 @@
 
             if(res.result === "success") {
                 window.tutupModalInputLab();
-                
-                // Cetak Struk Mini
                 window.cetakStrukLabInternal(invoice, pasien, tindakan, dokter, harga, beban);
-                
-                // Segarkan Tabel Antrean
                 window.muatAntreanLab(); 
             } else {
                 alert("❌ Gagal menyimpan: " + res.message);
             }
         })
         .catch(err => {
+            // 🔥 UPDATE DINAMIS: AUTO-RECOVERY UNTUK GHOST TIMEOUT
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
             if (btn) {
                 btn.disabled = false;
                 btn.innerText = "💾 Simpan Lab";
             }
             console.error("Error simpan Lab:", err);
-            alert("⚠️ Gangguan jaringan. Mohon periksa koneksi internet Anda.");
+            
+            // Beritahu user dengan pesan yang menenangkan
+            alert("⚠️ KONEKSI TERPUTUS SAAT MENYIMPAN!\n\nJangan panik. Data tagihan lab Anda kemungkinan besar sudah berhasil dicatat oleh sistem di latar belakang.\n\nSistem akan otomatis menutup jendela ini dan menyegarkan antrean untuk memastikannya.");
+            
+            // Tutup Pop-Up dan paksa Refresh tabel
+            window.tutupModalInputLab();
+            window.muatAntreanLab();
         });
     };
 
@@ -264,7 +256,6 @@
         jendelaCetak.document.close();
         jendelaCetak.focus();
         
-        // Delay sedikit agar browser merender struknya sebelum memunculkan popup print
         setTimeout(() => {
             jendelaCetak.print();
         }, 500);
