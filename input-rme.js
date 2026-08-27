@@ -1,10 +1,16 @@
 // =========================================================================
-// 🩺 MODUL INPUT REKAM MEDIS ELEKTRONIK (RME)
+// 🩺 MODUL INPUT REKAM MEDIS ELEKTRONIK (RME) - KODE ULTIMATE
 // =========================================================================
 (function() { 
  
     window.masterTindakanGlobal = [];
     window.consentSudahDisimpanHariIni = false;
+
+    // 🔥 HELPER BARU: Sinkronisasi Kapsul/Chip Diagnosa Anti-Bocor
+    window.triggerSyncDiagnosa = function() {
+        if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
+        if (typeof window.renderChipDiagnosa === "function") window.renderChipDiagnosa();
+    };
 
     window.addEventListener('DOMContentLoaded', function() {
         const textareas = document.querySelectorAll('.auto-bullet');
@@ -40,7 +46,6 @@
         const noRM = elNoRM.value ? elNoRM.value.trim() : (elNoRM.innerText ? elNoRM.innerText.trim() : "");
         if (!noRM || noRM === "-" || noRM === "undefined") return;
 
-        // 🔥 FIX 1: Pencari Nilai Aman untuk Draft
         const ambilNilaiDualId = (idUtama, idAlternatif) => {
             let val = "";
             const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
@@ -95,7 +100,6 @@
     };
 
     window.tambahBarisTindakan = function(dataAwal = null) {
-        // 🔥 FIX 2: Mencari kontainer dari form yang sedang aktif
         const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         const kontainer = formAktif ? formAktif.querySelector('#kontainerTindakanDinamis') : document.getElementById('kontainerTindakanDinamis');
         if (!kontainer) return;
@@ -439,20 +443,21 @@
         const kolomKiri = document.getElementById('kolomInputRME');
         if(kolomKiri) kolomKiri.style.display = 'block';
         
-        // 🔥 FIX 3: Pastikan semua elemen dengan ID tersebut terisi (Mengatasi tabrakan Split & Modal)
         const setNilaiAman = (idElement, nilai) => {
             document.querySelectorAll('#' + idElement).forEach(el => el.value = nilai || "");
         };
 
         setNilaiAman('modalAnamnesa', anam); setNilaiAman('txtAnamnesa', anam);
         setNilaiAman('modalObjektif', obj); setNilaiAman('txtObjektif', obj);
+        
+        // 🔥 FIX SINKRONISASI KAPSUL DIAGNOSA
         setNilaiAman('modalDiagnosa', diag); setNilaiAman('txtDiagnosa', diag);
-        if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
+        window.triggerSyncDiagnosa();
+
         setNilaiAman('modalResep', res); setNilaiAman('txtResep', res);
         setNilaiAman('modalProPerawatan', proPer); setNilaiAman('txtProPerawatan', proPer);
         setNilaiAman('modalProKontrol', proKon); setNilaiAman('txtProKontrol', proKon);
 
-        // Cari wadah tindakan di Form yang AKTIF saja
         const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         const kontainerTindakan = formAktif ? formAktif.querySelector('#kontainerTindakanDinamis') : document.getElementById('kontainerTindakanDinamis');
         
@@ -498,6 +503,10 @@
         const formSplit = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         if (formSplit) formSplit.reset();
         
+        // 🔥 FIX PEMBERSIH KAPSUL SAAT DIBATALKAN
+        document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
+        window.triggerSyncDiagnosa();
+
         if (document.getElementById('modalRowUpdate')) document.getElementById('modalRowUpdate').value = "";
         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
         
@@ -527,7 +536,6 @@
     };
 
     window.validasiSebelumSimpanRME = function() {
-        // 🔥 FITUR BARU: Validasi Diagnosa Manual (Karena textarea HTML di-hidden)
         let diagVal = "";
         const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         if (formAktif) {
@@ -616,6 +624,10 @@
         
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
+        
+        // 🔥 FIX PEMBERSIH KAPSUL SAAT BUKA PASIEN BARU
+        document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
+        window.triggerSyncDiagnosa();
 
         window.originalRmeSnapshot = null;
 
@@ -644,7 +656,6 @@
             if (btnConsent) { btnConsent.style.backgroundColor = "#27ae60"; btnConsent.innerHTML = "✅ Informed Consent Tersimpan"; }
         }
         
-        // 🔥 FIX 4: Pastikan wadah tindakan hanya dikosongkan di form yang sedang aktif
         const kontainerTindakan = formSplit ? formSplit.querySelector('#kontainerTindakanDinamis') : document.getElementById('kontainerTindakanDinamis');
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
@@ -671,7 +682,11 @@
                     
                     pasokNilai('modalAnamnesa', 'txtAnamnesa', draftObj.anamnesa);
                     pasokNilai('modalObjektif', 'txtObjektif', draftObj.objektif);
+                    
+                    // 🔥 FIX RESTORASI KAPSUL DARI DRAFT
                     pasokNilai('modalDiagnosa', 'txtDiagnosa', draftObj.diagnosa);
+                    window.triggerSyncDiagnosa();
+
                     pasokNilai('modalPerawatan', 'txtPerawatan', draftObj.perawatan);
                     pasokNilai('resep', 'modalResep', draftObj.resep);
                     pasokNilai('proPerawatan', 'modalProPerawatan', draftObj.proPerawatan);
@@ -697,11 +712,9 @@
         const timelineContainer = document.getElementById('wrapperRiwayatFull');
         if (timelineContainer) timelineContainer.innerHTML = '<p style="text-align:center; padding:20px; font-weight:bold; color:#555;">Mengambil riwayat & profil medis... ⏳</p>';
 
-        // 🧹 FIX: SAPU BERSIH BANNER DARI PASIEN SEBELUMNYA (ANTI-BOCOR MEMORI)
         const bannerMedis = document.getElementById('bannerPeringatanMedis');
         const elAlergi = document.getElementById('kontenAlergiRME');
         const elObat = document.getElementById('kontenObatRME');
-        
         if (bannerMedis) bannerMedis.style.display = 'none';
         if (elAlergi) { elAlergi.innerHTML = ''; elAlergi.style.display = 'none'; }
         if (elObat) { elObat.innerHTML = ''; elObat.style.display = 'none'; }
@@ -726,26 +739,15 @@
                 let obatRutin = res.data.obatRutin ? res.data.obatRutin.trim() : "-";
                 let bannerTampil = false;
 
-                // 🔥 PENULISAN ULANG DATA JIKA PASIEN BARU MEMANG PUNYA ALERGI
                 if(alergi !== "-" && alergi !== "" && alergi.toLowerCase() !== "tidak ada") {
-                    if(elAlergi) {
-                        elAlergi.innerHTML = `⚠️ <strong>ALERGI:</strong> ${alergi}`;
-                        elAlergi.style.display = 'block';
-                    }
+                    if(elAlergi) { elAlergi.innerHTML = `⚠️ <strong>ALERGI:</strong> ${alergi}`; elAlergi.style.display = 'block'; }
                     bannerTampil = true;
                 }
-                
                 if(obatRutin !== "-" && obatRutin !== "" && obatRutin.toLowerCase() !== "tidak ada") {
-                    if(elObat) {
-                        elObat.innerHTML = `💊 <strong>OBAT RUTIN:</strong> ${obatRutin}`;
-                        elObat.style.display = 'block';
-                    }
+                    if(elObat) { elObat.innerHTML = `💊 <strong>OBAT RUTIN:</strong> ${obatRutin}`; elObat.style.display = 'block'; }
                     bannerTampil = true;
                 }
-                
-                if(bannerTampil && bannerMedis) {
-                    bannerMedis.style.display = 'block';
-                }
+                if(bannerTampil && bannerMedis) bannerMedis.style.display = 'block';
             }
         });
 
@@ -829,15 +831,110 @@
         });
     };
 
+    window.bukaInputRME = function(noRM, namaPasien, tanggalDaftar) { 
+        const formAktifRme = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
+        const kolomKiri = document.getElementById('kolomInputRME');
+        if (kolomKiri) kolomKiri.style.display = 'block'; 
+
+        if (formAktifRme) {
+            formAktifRme.style.display = 'block';
+            formAktifRme.reset();
+            
+            // 🔥 FIX: Bersihkan Kapsul Saat Pop-Up Terbuka
+            document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
+            window.triggerSyncDiagnosa();
+
+            delete formAktifRme.dataset.rowUpdate;
+            formAktifRme.dataset.activeNoRM = noRM;
+            formAktifRme.dataset.tanggalDaftar = tanggalDaftar;
+        }
+
+        const areaKontainerRME = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
+        if (areaKontainerRME) areaKontainerRME.style.display = 'flex';
+
+        const setNilaiDOM = (idUtama, idAlternatif, value) => {
+            const el1 = document.getElementById(idUtama);
+            if (el1) { el1.value = value; return; }
+            const el2 = document.getElementById(idAlternatif);
+            if (el2) el2.value = value;
+        };
+
+        setNilaiDOM('modalNama', 'namaPasien', namaPasien);
+
+        const alertBox = document.getElementById('alertMedisFormRME');
+        if (alertBox) alertBox.style.display = 'none';
+        
+        const btnSubmit = formAktifRme ? formAktifRme.querySelector('button[type="submit"]') : document.getElementById('btnSubmitRME');
+        if (btnSubmit) { btnSubmit.innerText = "⏳ Memuat Data..."; btnSubmit.disabled = true; }
+
+        const tbodyRiwayat = document.getElementById('tabelRiwayatBody');
+        if (tbodyRiwayat) tbodyRiwayat.innerHTML = '<tr><td colspan="6" style="text-align:center;">Mencari riwayat rekam medis di server...</td></tr>';
+        
+        fetch(window.WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getRekamMedisPasien', noRM: noRM, tanggal: tanggalDaftar })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (btnSubmit) btnSubmit.disabled = false;
+            if (data.result === 'success') {
+                if (data.hariIni) {
+                    setNilaiDOM('modalAnamnesa', 'txtAnamnesa', data.hariIni.anamnesa || "");
+                    setNilaiDOM('modalObjektif', 'txtObjektif', data.hariIni.objektif || "");
+                    
+                    // 🔥 FIX: Render Kapsul Diagnosa jika pasien ini sedang lanjut berobat di hari yang sama
+                    setNilaiDOM('modalDiagnosa', 'txtDiagnosa', data.hariIni.diagnosa || "");
+                    window.triggerSyncDiagnosa();
+
+                    setNilaiDOM('modalProPerawatan', 'txtProPerawatan', data.hariIni.proPerawatan || "");
+                    setNilaiDOM('modalProKontrol', 'txtProKontrol', data.hariIni.proKontrol || "");
+                    setNilaiDOM('modalResep', 'txtResep', data.hariIni.resep || "");
+                    setNilaiDOM('modalLinkFoto', 'txtLinkFoto', data.hariIni.linkFoto || "");
+                    
+                    const elTgl1 = document.getElementById('modalTanggalKontrol');
+                    const elTgl2 = document.getElementById('tanggalKontrol');
+
+                    if (elTgl1) elTgl1.value = data.hariIni.tanggalKontrol || "";
+                    if (elTgl2) elTgl2.value = data.hariIni.tanggalKontrol || "";
+                    
+                    if (formAktifRme) formAktifRme.dataset.rowUpdate = data.rowHariIni;
+                    
+                    const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+                    if (kontainerTindakan) {
+                        kontainerTindakan.innerHTML = "";
+                        try {
+                            let arrTindakan = JSON.parse(data.hariIni.perawatan);
+                            if (Array.isArray(arrTindakan)) {
+                                arrTindakan.forEach(t => { window.tambahBarisTindakan({ namaTindakan: t.namaTindakan, hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, catatanKlinis: t.catatanKlinis || "" }); });
+                            }
+                        } catch(e) {
+                            if (data.hariIni.perawatan) { window.tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: data.hariIni.perawatan }); }
+                        }
+                    }
+                    if (btnSubmit) { btnSubmit.innerText = "🔄 Update Catatan Rekam Medis"; btnSubmit.style.background = "#e67e22"; }
+                } else {
+                    if (btnSubmit) { btnSubmit.innerText = "💾 Simpan Catatan Medis Baru"; btnSubmit.style.background = "#9b59b6"; }
+                    const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+                    if (kontainerTindakan) kontainerTindakan.innerHTML = "";
+                }
+            }
+        }).catch(err => { if (btnSubmit) btnSubmit.disabled = false; });
+    };
+
+    window.tutupInputRME = function() {
+        const sectionRME = document.getElementById('sectionRME');
+        const modalRiwayatFull = document.getElementById('modalRiwayatFull');
+        if (sectionRME) sectionRME.style.display = 'none';
+        if (modalRiwayatFull) modalRiwayatFull.style.display = 'none';
+    };
+
     window.addEventListener('DOMContentLoaded', function() {
         const semuaFormMedis = document.querySelectorAll('form[id*="Medis"]');
         semuaFormMedis.forEach(formAktifRme => {
             formAktifRme.addEventListener('submit', async function(e) { 
                 e.preventDefault(); 
                 
-                if (typeof window.validasiSebelumSimpanRME === "function" && !window.validasiSebelumSimpanRME()) {
-                    return; 
-                }
+                if (typeof window.validasiSebelumSimpanRME === "function" && !window.validasiSebelumSimpanRME()) return; 
 
                 const submitBtn = e.target.querySelector('button[type="submit"]');
                 if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "⏳ Menyimpan Perubahan..."; }
@@ -853,7 +950,6 @@
                     dataFileModal = await window.bacaFileKeBase64(document.getElementById('modalFileFoto') ? 'modalFileFoto' : 'txtFileFoto');
                 }
 
-                // 🔥 FIX 5: Mesin Pencari Ekstra Kuat untuk Submit
                 const dapatkanNilaiDOM = (idUtama, idAlternatif) => {
                     let val = "";
                     formAktifRme.querySelectorAll(`#${idUtama}, [name="${idUtama}"]`).forEach(el => { if(el.value.trim() !== "") val = el.value; });
@@ -864,7 +960,6 @@
                     return val;
                 };
 
-                // 🔥 FIX 6: Hanya tarik tindakan dari kotak yang aktif disubmit!
                 const barisTindakan = formAktifRme.querySelectorAll('.baris-tindakan-item');
                 let listTindakanDipilih = [];
 
