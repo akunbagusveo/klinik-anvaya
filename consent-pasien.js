@@ -103,7 +103,6 @@
     // 3. PEMBUKA MODAL CONSENT (ISOLASI PER PASIEN)
     // =====================================================================
     window.bukaModalConsent = function(noRM, namaPasien, tindakan) {
-        // SMART RM FALLBACK
         let rawRM = noRM;
         if (!rawRM || rawRM === "-" || rawRM === "undefined") {
             rawRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
@@ -115,7 +114,6 @@
         if (lblRM) lblRM.innerText = cleanNoRM;
         if (lblNama) lblNama.innerText = namaPasien || document.getElementById('modalNama')?.value || "-";
         
-        // SMART ACTION EXTRACTOR
         let daftarTindakanBersih = [];
         const elemenTindakan = document.querySelectorAll('#kontainerTindakanDinamis .sel-nama-tindakan, #kontainerTindakanDinamis input[type="text"]');
         
@@ -140,12 +138,10 @@
         const imgTTD = document.getElementById('imgPratinjauTTD');
         const btnCetak = document.getElementById('btnCetakConsentPDF');
 
-        // GEMBOK ISOLASI PASIEN
         const urlFotoLokalRMIni = localStorage.getItem('ttd_consent_' + cleanNoRM);
         const isConsentPasienIniAda = (urlFotoLokalRMIni && urlFotoLokalRMIni !== "-" && urlFotoLokalRMIni !== "undefined");
 
         if (isConsentPasienIniAda) {
-            // --- MODE PRATINJAU / REVISI ---
             if (btnSimpan) {
                 btnSimpan.style.backgroundColor = "#e67e22";
                 btnSimpan.innerHTML = "🔄 Simpan Ulang / Revisi Consent";
@@ -222,7 +218,6 @@
             }
             
         } else {
-            // --- MODE INPUT BARU ---
             if (typeof window.bersihkanTTD === "function") window.bersihkanTTD();
             
             if (btnSimpan) {
@@ -281,7 +276,6 @@
             return;
         }
 
-        // Cek apakah canvas kosong
         const blankCanvas = document.createElement('canvas');
         blankCanvas.width = canvasTepat.width;
         blankCanvas.height = canvasTepat.height;
@@ -306,7 +300,6 @@
             risikoTerpilih.push(el.value);
         });
 
-        // 🔥 FIX EVENT TARGET DENGAN AMAN
         let btn = (window.event && window.event.target) ? window.event.target : null;
         if (!btn || btn.tagName !== 'BUTTON') {
             btn = document.getElementById('btnSimpanConsent');
@@ -330,7 +323,7 @@
             ttdBase64: ttdBase64Data 
         };
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify(payload)
         })
@@ -367,7 +360,6 @@
                 window.consentSudahDisimpanHariIni = true;
                 if (res.urlFoto || res.linkFoto) window.urlFotoConsentAktif = res.urlFoto || res.linkFoto;
 
-                // --- INTEGRASI MODUL LAIN SECARA AMAN ---
                 if (typeof window.simpanDraftRME === "function") {
                     window.simpanDraftRME();
                 }
@@ -375,7 +367,7 @@
                 if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
 
                 if (typeof window.cetakInformedConsentPDF === "function") {
-                    window.cetakInformedConsentPDF(true); // Silent mode untuk PDF di background
+                    window.cetakInformedConsentPDF(true); 
                 }
 
                 window.tutupModalConsent();
@@ -515,7 +507,6 @@
         }
     };
 
-    // Sensor Perubahan Otomatis
     window.addEventListener('load', function() {
         document.addEventListener('change', function(e) {
             if (e.target && e.target.classList.contains('sel-nama-tindakan')) {
@@ -539,7 +530,7 @@
     };
 
     // =====================================================================
-    // 6. ENGINE PENCETAK PDF CONSENT
+    // 6. ENGINE PENCETAK PDF CONSENT (DENGAN SMART DOCTOR EXTRACTOR)
     // =====================================================================
     window.cetakInformedConsentPDF = function(isSilent = false) {
         const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
@@ -567,12 +558,20 @@
         const tindakan = document.getElementById('lblConsentTindakan')?.innerText || "-";
         
         const diagnosa = document.getElementById('modalDiagnosa')?.value || document.getElementById('inputDiagnosaAktif')?.value || "Sesuai rekam medis aktif";
-        const namaDokterDinamis = sessionData.username || document.getElementById('selDokter')?.value || document.getElementById('lblNamaDokter')?.innerText || "Dokter Klinik Anvaya";
-
+        
+        // 🔥 FITUR BARU: Menarik Nama Dokter Asli dari Data Antrean / RME, BUKAN dari Sesi Login
         const pAktif = window.pasienRMEAktif || {};
         let detailAntrean = null;
         if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
             detailAntrean = window.dataAntreanGlobal.find(p => p.noRM === noRM);
+        }
+
+        let namaDokterDariData = detailAntrean ? detailAntrean.namaDokter : (pAktif.namaDokter || "");
+        let namaDokterDinamis = namaDokterDariData || sessionData.namaLengkap || sessionData.username || document.getElementById('selDokter')?.value || "Dokter Klinik Anvaya";
+        
+        // 🔥 FITUR BARU: Mencegah Gelar Dobel "Dr. dr." dan Menyuntikkan gelar jika belum ada
+        if (!namaDokterDinamis.toLowerCase().includes("dr.") && !namaDokterDinamis.toLowerCase().includes("dr ") && namaDokterDinamis !== "Dokter Klinik Anvaya") {
+            namaDokterDinamis = "dr. " + namaDokterDinamis.replace(/\b\w/g, l => l.toUpperCase());
         }
 
         let umurTeks = "-";
@@ -626,7 +625,7 @@
             window.tampilkanLoading("⏳ Merakit Dokumen PDF...");
         }
 
-        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
             if (typeof window.sembunyikanLoading === "function" && !isSilent) window.sembunyikanLoading();

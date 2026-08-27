@@ -18,7 +18,7 @@
 
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menarik Data Antrean Kasir dari Server...");
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getAntreanKasir" })
         })
@@ -41,7 +41,6 @@
             window.currentKasirQueueData = res.data;
 
             res.data.forEach(p => {
-                // 🔥 ENGINE RINGKASAN & RADAR CONSENT
                 let htmlTindakanRingkas = "-";
                 let butuhConsent = false;
                 
@@ -94,7 +93,6 @@
                 let btnCetakConsentHtml = "";
                 const serverPdf = p.pdfConsentUrl || ""; 
                 
-                // 🔥 FIX: Prefix window. ditambahkan pada fungsi cetak, ping, dan billing
                 if (butuhConsent || serverPdf !== "") {
                     btnCetakConsentHtml = `
                         <button onclick="window.cetakConsentKasir('${p.noRM}', '${serverPdf}')" 
@@ -107,13 +105,19 @@
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = "1px solid #dee2e6";
 
+                // 🔥 FITUR BARU: Mencegah cetak "Dr. dr. Aldila"
+                let namaDokterTampil = String(p.namaDokter || "").trim();
+                if (!namaDokterTampil.toLowerCase().includes("dr.") && !namaDokterTampil.toLowerCase().includes("dr ")) {
+                    namaDokterTampil = "dr. " + namaDokterTampil;
+                }
+
                 tr.innerHTML = `
                     <td style="padding: 12px 10px; font-weight: bold; color: #2980b9; vertical-align: middle;">${p.noRM}</td>
                     <td style="padding: 12px 10px; font-weight: 600; vertical-align: middle; line-height: 1.4;">
                         ${p.namaPasien}
                     </td>
                     <td style="padding: 12px 10px; color: #7f8c8d; vertical-align: middle;">${p.tanggalDaftar}</td>
-                    <td style="padding: 12px 10px; vertical-align: middle;">🩺 Dr. ${p.namaDokter}</td>
+                    <td style="padding: 12px 10px; vertical-align: middle;">🩺 ${namaDokterTampil}</td>
                     <td style="padding: 12px 10px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;" title="Klik Proses Bayar untuk detail lengkap">
                         ${htmlTindakanRingkas}
                     </td>
@@ -202,12 +206,18 @@
                     const hargaMurniItem = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
                     window.totalTindakanAktifKasir += hargaMurniItem;
                     
+                    // 🔥 FITUR BARU: Mencegah cetak "Dr. dr. Aldila" di rincian tindakan
+                    let namaDokterTindakan = String(t.dokterPelaksana || 'Umum').trim();
+                    if (namaDokterTindakan !== 'Umum' && !namaDokterTindakan.toLowerCase().includes("dr.") && !namaDokterTindakan.toLowerCase().includes("dr ")) {
+                        namaDokterTindakan = "dr. " + namaDokterTindakan;
+                    }
+
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
                     tr.innerHTML = `
                         <td style="padding: 8px; font-weight: 600; color: #34495e;">
                             ${t.namaTindakan} <br>
-                            <span style="font-size:10px; color:#16a085; font-weight: bold;">👨‍⚕️ Dr. ${t.dokterPelaksana || 'Umum'}</span>
+                            <span style="font-size:10px; color:#16a085; font-weight: bold;">👨‍⚕️ ${namaDokterTindakan}</span>
                         </td>
                         <td style="padding: 8px; color: #7f8c8d; font-style: italic;">${t.catatanKlinis || '-'}</td>
                         <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${hargaMurniItem.toLocaleString('id-ID')}</td>
@@ -262,8 +272,10 @@
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const usernameAktif = sessionData ? sessionData.username : "Kasir";
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+        
+        // 🔥 FITUR BARU: Menggunakan Nama Lengkap untuk Nama Kasir yang bertugas mencetak Kuitansi
+        const usernameAktif = sessionData.namaLengkap || sessionData.username || "Staf Kasir";
 
         if (!barisPendaftaran) {
             alert("⚠️ Gagal memproses, indeks baris antrean terputus. Silakan muat ulang halaman.");
@@ -305,10 +317,10 @@
             sisaPiutang: 0,     
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
-            kasirOperator: usernameAktif
+            kasirOperator: usernameAktif // 🔥 Terkirim ke PDF sebagai Nama Lengkap
         };
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify(payload)
         })
@@ -363,8 +375,8 @@
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
-        const usernameAktif = sessionData ? sessionData.username : "Kasir";
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+        const usernameAktif = sessionData.namaLengkap || sessionData.username || "Staf Kasir";
 
         if (!barisPendaftaran) {
             alert("⚠️ Gagal memproses, indeks baris antrean terputus. Silakan muat ulang halaman.");
@@ -397,7 +409,7 @@
             operator: usernameAktif
         };
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify(payload)
         })
@@ -433,7 +445,7 @@
         console.log("🚀 RADAR PING AKTIF: Berjalan senyap di latar belakang...");
 
         function periksaNotifikasiMasuk() {
-            fetch(WEB_APP_URL, {
+            fetch(window.WEB_APP_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'cekPing' })
             })
@@ -488,7 +500,6 @@
         const targetContainer = document.getElementById('mainPage') || document.body;
         targetContainer.appendChild(toast);
 
-        // BEEP AUDIO API
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
@@ -519,7 +530,7 @@
     window.kirimPingAsisten = function(namaPasien) {
         if(!confirm(`Kirim notifikasi ke Ruang Dokter untuk segera menginput RME pasien ${namaPasien}?`)) return;
 
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ 
                 action: "kirimPing", 
