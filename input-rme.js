@@ -638,7 +638,11 @@
             try {
                 const tempDraft = JSON.parse(savedDraft);
                 if (!tempDraft.visitDate || tempDraft.visitDate !== window.tanggalKunjunganAktif) {
-                    localStorage.removeItem('draft_rme_' + cleanNoRM); localStorage.removeItem('ttd_consent_' + cleanNoRM); localStorage.removeItem('tujuan_consent_' + cleanNoRM);
+                    localStorage.removeItem('draft_rme_' + cleanNoRM); 
+                    localStorage.removeItem('ttd_consent_' + cleanNoRM); 
+                    localStorage.removeItem('tujuan_consent_' + cleanNoRM);
+                    localStorage.removeItem('risiko_consent_' + cleanNoRM); 
+                    localStorage.removeItem('pdf_url_consent_' + cleanNoRM);
                 } else { draftValidObj = tempDraft; }
             } catch(e) { localStorage.removeItem('draft_rme_' + cleanNoRM); }
         }
@@ -1025,7 +1029,11 @@
                         const currentRM = data.noRM;
                         if(currentRM) {
                             const rmTrim = String(currentRM).trim();
-                            localStorage.removeItem('draft_rme_' + rmTrim); localStorage.removeItem('ttd_consent_' + rmTrim); localStorage.removeItem('tujuan_consent_' + rmTrim); localStorage.removeItem('pdf_url_consent_' + rmTrim); 
+                            localStorage.removeItem('draft_rme_' + rmTrim); 
+                            localStorage.removeItem('ttd_consent_' + rmTrim); 
+                            localStorage.removeItem('tujuan_consent_' + rmTrim); 
+                            localStorage.removeItem('pdf_url_consent_' + rmTrim); 
+                            localStorage.removeItem('risiko_consent_' + rmTrim);
                         }
                         
                         const modalFull = document.getElementById('modalRiwayatFull') || document.getElementById('sectionRME');
