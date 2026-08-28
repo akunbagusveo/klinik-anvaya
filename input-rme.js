@@ -1,23 +1,31 @@
 // =========================================================================
-// 🩺 MODUL INPUT REKAM MEDIS ELEKTRONIK (RME) - KODE ULTIMATE
+// 🩺 MODUL INPUT REKAM MEDIS ELEKTRONIK (RME) - KODE ULTIMATE VISUAL RADAR
 // =========================================================================
 (function() { 
  
     window.masterTindakanGlobal = [];
     window.consentSudahDisimpanHariIni = false;
 
-    // 🔥 HELPER BARU: Sinkronisasi Kapsul/Chip Diagnosa Anti-Bocor
     window.triggerSyncDiagnosa = function() {
         if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
         if (typeof window.renderChipDiagnosa === "function") window.renderChipDiagnosa();
     };
 
+    // 🔥 RADAR OPTIK: Pendeteksi Elemen yang Tampil di Layar Monitor
+    const isVisible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+
+    const getVisibleContainer = () => {
+        let visibleEl = null;
+        document.querySelectorAll('#kontainerTindakanDinamis').forEach(el => {
+            if (isVisible(el)) visibleEl = el;
+        });
+        return visibleEl || document.getElementById('kontainerTindakanDinamis');
+    };
+
     window.addEventListener('DOMContentLoaded', function() {
         const textareas = document.querySelectorAll('.auto-bullet');
         textareas.forEach(ta => {
-            ta.addEventListener('focus', function() {
-                if (this.value.trim() === '') this.value = '• ';
-            });
+            ta.addEventListener('focus', function() { if (this.value.trim() === '') this.value = '• '; });
             ta.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -59,11 +67,12 @@
             return val;
         };
 
-        const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
-        const barisTindakan = formAktif ? formAktif.querySelectorAll('.baris-tindakan-item') : document.querySelectorAll('.baris-tindakan-item');
-        
+        // 🔥 FIX: Tarik SEMUA tindakan yang terlihat di layar!
+        const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
         let listTindakanDraft = [];
+        
         barisTindakan.forEach(row => {
+            if (!isVisible(row)) return; // Abaikan yang tersembunyi
             const selNama = row.querySelector('.sel-nama-tindakan');
             const inpHarga = row.querySelector('.inp-harga-tindakan');
             const inpCatatan = row.querySelector('.inp-catatan-tindakan');
@@ -95,13 +104,12 @@
             tanggalKontrol: ambilNilaiDualId('modalTanggalKontrol', 'tanggalKontrol'),
             savedTTD: localStorage.getItem('ttd_consent_' + noRM) || ""
         };
-        
         localStorage.setItem('draft_rme_' + noRM, JSON.stringify(draft));
     };
 
     window.tambahBarisTindakan = function(dataAwal = null) {
-        const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
-        const kontainer = formAktif ? formAktif.querySelector('#kontainerTindakanDinamis') : document.getElementById('kontainerTindakanDinamis');
+        // 🔥 FIX: Dapatkan kontainer yang TAMPIL di layar
+        const kontainer = getVisibleContainer();
         if (!kontainer) return;
 
         const rowId = "tindakan_row_" + Date.now() + Math.floor(Math.random() * 100);
@@ -184,7 +192,8 @@
                 rowWrapper.querySelector('.sel-nama-tindakan').innerHTML += `<option value="KUSTOM">KUSTOM</option>`;
                 rowWrapper.querySelector('.sel-nama-tindakan').value = "KUSTOM";
                 window.pilihTindakanDinamis(rowId, "KUSTOM");
-                rowWrapper.querySelector('.sel-nama-tindakan').value = dataAwal.catatanKlinis || ""; 
+                rowWrapper.querySelector('.sel-catatan-tindakan') ? rowWrapper.querySelector('.sel-catatan-tindakan').value = dataAwal.catatanKlinis || "" : null;
+                if (rowWrapper.querySelector('.inp-catatan-tindakan')) rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
             }
         }
 
@@ -450,7 +459,6 @@
         setNilaiAman('modalAnamnesa', anam); setNilaiAman('txtAnamnesa', anam);
         setNilaiAman('modalObjektif', obj); setNilaiAman('txtObjektif', obj);
         
-        // 🔥 FIX SINKRONISASI KAPSUL DIAGNOSA
         setNilaiAman('modalDiagnosa', diag); setNilaiAman('txtDiagnosa', diag);
         window.triggerSyncDiagnosa();
 
@@ -458,8 +466,8 @@
         setNilaiAman('modalProPerawatan', proPer); setNilaiAman('txtProPerawatan', proPer);
         setNilaiAman('modalProKontrol', proKon); setNilaiAman('txtProKontrol', proKon);
 
-        const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
-        const kontainerTindakan = formAktif ? formAktif.querySelector('#kontainerTindakanDinamis') : document.getElementById('kontainerTindakanDinamis');
+        // 🔥 FIX: Kosongkan hanya wadah yang terlihat di layar
+        const kontainerTindakan = getVisibleContainer();
         
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = ""; 
@@ -503,7 +511,6 @@
         const formSplit = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         if (formSplit) formSplit.reset();
         
-        // 🔥 FIX PEMBERSIH KAPSUL SAAT DIBATALKAN
         document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
         window.triggerSyncDiagnosa();
 
@@ -522,7 +529,8 @@
         const kolomHistori = document.getElementById('kolomHistoriRME');
         if (kolomHistori) kolomHistori.style.setProperty('display', 'block', 'important');
 
-        const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+        // 🔥 FIX: Bersihkan wadah yang TAMPIL di layar
+        const kontainerTindakan = getVisibleContainer();
         if (kontainerTindakan) kontainerTindakan.innerHTML = "";
 
         const wrapperHistori = document.getElementById('wrapperRiwayatFull');
@@ -547,11 +555,14 @@
             return false; 
         }
 
-        const barisTindakan = formAktif ? formAktif.querySelectorAll('.baris-tindakan-item') : document.querySelectorAll('.baris-tindakan-item');
+        // 🔥 FIX: Validasi SEMUA tindakan yang TAMPIL di layar!
+        const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
 
         barisTindakan.forEach(row => {
+            if (!isVisible(row)) return; // Abaikan yang tidak tampil
+
             const selNama = row.querySelector('.sel-nama-tindakan');
             if (!selNama || !selNama.value) return;
 
@@ -625,7 +636,6 @@
         window.isRestoringDraft = true; 
         if (formSplit) formSplit.reset();
         
-        // 🔥 FIX PEMBERSIH KAPSUL SAAT BUKA PASIEN BARU
         document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
         window.triggerSyncDiagnosa();
 
@@ -641,8 +651,6 @@
                     localStorage.removeItem('draft_rme_' + cleanNoRM); 
                     localStorage.removeItem('ttd_consent_' + cleanNoRM); 
                     localStorage.removeItem('tujuan_consent_' + cleanNoRM);
-                    localStorage.removeItem('risiko_consent_' + cleanNoRM); 
-                    localStorage.removeItem('pdf_url_consent_' + cleanNoRM);
                 } else { draftValidObj = tempDraft; }
             } catch(e) { localStorage.removeItem('draft_rme_' + cleanNoRM); }
         }
@@ -660,7 +668,8 @@
             if (btnConsent) { btnConsent.style.backgroundColor = "#27ae60"; btnConsent.innerHTML = "✅ Informed Consent Tersimpan"; }
         }
         
-        const kontainerTindakan = formSplit ? formSplit.querySelector('#kontainerTindakanDinamis') : document.getElementById('kontainerTindakanDinamis');
+        // 🔥 FIX: Bersihkan wadah yang TAMPIL di layar
+        const kontainerTindakan = getVisibleContainer();
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = "";
             let infoLunas = document.getElementById('infoLunasRME');
@@ -687,7 +696,6 @@
                     pasokNilai('modalAnamnesa', 'txtAnamnesa', draftObj.anamnesa);
                     pasokNilai('modalObjektif', 'txtObjektif', draftObj.objektif);
                     
-                    // 🔥 FIX RESTORASI KAPSUL DARI DRAFT
                     pasokNilai('modalDiagnosa', 'txtDiagnosa', draftObj.diagnosa);
                     window.triggerSyncDiagnosa();
 
@@ -844,7 +852,6 @@
             formAktifRme.style.display = 'block';
             formAktifRme.reset();
             
-            // 🔥 FIX: Bersihkan Kapsul Saat Pop-Up Terbuka
             document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
             window.triggerSyncDiagnosa();
 
@@ -886,7 +893,6 @@
                     setNilaiDOM('modalAnamnesa', 'txtAnamnesa', data.hariIni.anamnesa || "");
                     setNilaiDOM('modalObjektif', 'txtObjektif', data.hariIni.objektif || "");
                     
-                    // 🔥 FIX: Render Kapsul Diagnosa jika pasien ini sedang lanjut berobat di hari yang sama
                     setNilaiDOM('modalDiagnosa', 'txtDiagnosa', data.hariIni.diagnosa || "");
                     window.triggerSyncDiagnosa();
 
@@ -903,7 +909,8 @@
                     
                     if (formAktifRme) formAktifRme.dataset.rowUpdate = data.rowHariIni;
                     
-                    const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+                    // 🔥 FIX: Kosongkan wadah yang TAMPIL di layar
+                    const kontainerTindakan = getVisibleContainer();
                     if (kontainerTindakan) {
                         kontainerTindakan.innerHTML = "";
                         try {
@@ -918,7 +925,7 @@
                     if (btnSubmit) { btnSubmit.innerText = "🔄 Update Catatan Rekam Medis"; btnSubmit.style.background = "#e67e22"; }
                 } else {
                     if (btnSubmit) { btnSubmit.innerText = "💾 Simpan Catatan Medis Baru"; btnSubmit.style.background = "#9b59b6"; }
-                    const kontainerTindakan = document.getElementById('kontainerTindakanDinamis');
+                    const kontainerTindakan = getVisibleContainer();
                     if (kontainerTindakan) kontainerTindakan.innerHTML = "";
                 }
             }
@@ -964,10 +971,13 @@
                     return val;
                 };
 
-                const barisTindakan = formAktifRme.querySelectorAll('.baris-tindakan-item');
+                // 🔥 FIX: Tarik SEMUA tindakan yang terlihat di layar secara harfiah!
+                const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
                 let listTindakanDipilih = [];
 
                 barisTindakan.forEach(row => {
+                    if (!isVisible(row)) return; // Abaikan yang tidak tampil/tersembunyi!
+
                     const selNama = row.querySelector('.sel-nama-tindakan');
                     const inpHarga = row.querySelector('.inp-harga-tindakan');
                     const inpCatatan = row.querySelector('.inp-catatan-tindakan');
