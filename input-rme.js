@@ -11,6 +11,9 @@
     window.dokterPemilikRM = null;
     window.namaDokterPemilikRM = null;
 
+    // 🔥 KACAMATA RADAR (KEMBALIKAN FUNGSI YANG HILANG INI)
+    const isVisible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+
     window.triggerSyncDiagnosa = function() {
         if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
         if (typeof window.renderChipDiagnosa === "function") window.renderChipDiagnosa();
