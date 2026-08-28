@@ -2639,6 +2639,57 @@
     <script src="master-tindakan.js"></script>
     <script src="Target-Campaign.js"></script>
     <script src="worklist-kontrol.js"></script>
+    <!-- ======================================================= -->
+    <!-- 🛡️ FITUR KEAMANAN: AUTO-LOGOUT JIKA IDLE (TIDAK AKTIF) -->
+    <!-- ======================================================= -->
+    <script>
+        (function() {
+            // ⚙️ PENGATURAN DINAMIS: Ubah angka ini untuk mengatur batas waktu (dalam Menit)
+            const WAKTU_IDLE_MENIT = 15; 
+            
+            let idleTimer;
+            
+            function resetIdleTimer() {
+                // Jangan jalankan hitung mundur jika sedang di halaman Login
+                const loginPage = document.getElementById('loginPage');
+                if (loginPage && (loginPage.style.display === 'block' || loginPage.style.display === '')) {
+                    clearTimeout(idleTimer);
+                    return;
+                }
+    
+                clearTimeout(idleTimer);
+                // Set timer (Menit * 60 detik * 1000 milidetik)
+                idleTimer = setTimeout(keluarOtomatis, WAKTU_IDLE_MENIT * 60 * 1000);
+            }
+    
+            function keluarOtomatis() {
+                const sesi = localStorage.getItem('anvaya_session');
+                if (sesi) {
+                    alert(`⚠️ SESI KEAMANAN BERAKHIR!\n\nAnda tidak melakukan aktivitas sentuhan/mouse selama ${WAKTU_IDLE_MENIT} menit.\nDemi melindungi privasi Rekam Medis Pasien, sistem telah mengeluarkan Anda secara otomatis.`);
+                    
+                    // Panggil fungsi logout bawaan sistem Anda secara dinamis
+                    if (typeof window.logout === 'function') {
+                        window.logout();
+                    } else {
+                        // Fallback darurat jika fungsi tidak terbaca
+                        localStorage.removeItem('anvaya_session');
+                        location.reload();
+                    }
+                }
+            }
+    
+            // 📡 RADAR DETEKSI AKTIVITAS USER
+            // Sistem ini menggunakan .addEventListener agar TIDAK menimpa klik/scroll milik fungsi lain
+            const eventAktivitas = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+            
+            eventAktivitas.forEach(event => {
+                document.addEventListener(event, resetIdleTimer, true);
+            });
+    
+            // Jalankan radar pertama kali saat sistem dimuat
+            resetIdleTimer();
+        })();
+        </script>
 
 </body>
 </html>
