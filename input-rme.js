@@ -6,13 +6,16 @@
     window.masterTindakanGlobal = [];
     window.consentSudahDisimpanHariIni = false;
     window.barisRekamMedisTarget = null; 
+    
+    // 🔥 VARIABEL BARU: Pengunci Hak Milik Dokter
+    window.dokterPemilikRM = null;
+    window.namaDokterPemilikRM = null;
 
     window.triggerSyncDiagnosa = function() {
         if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
         if (typeof window.renderChipDiagnosa === "function") window.renderChipDiagnosa();
     };
 
-    // 🔥 FIX 1: PENCARI WADAH SPESIFIK (ANTI-TABRAKAN FORM SPLIT & MODAL)
     const getVisibleContainer = () => {
         const split = document.getElementById('formModalMedisSplit');
         const modal = document.getElementById('formModalMedis');
@@ -409,6 +412,10 @@
         const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
         
         if (dataTerpilih) {
+            // 🔥 MENGUNCI HAK MILIK DOKTER ASLI SAAT DI-EDIT
+            window.dokterPemilikRM = dataTerpilih.idDokter;
+            window.namaDokterPemilikRM = dataTerpilih.namaDokter;
+
             let proKontrolMentah = dataTerpilih.proKontrol || "";
             let extractedDate = "";
             let pureCatatan = proKontrolMentah;
@@ -507,6 +514,8 @@
         window.triggerSyncDiagnosa();
 
         window.barisRekamMedisTarget = null;
+        window.dokterPemilikRM = null; // Bersihkan memori pemilik
+        window.namaDokterPemilikRM = null; 
         
         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
         
@@ -553,6 +562,7 @@
         let namaTindakanBerisiko = [];
 
         barisTindakan.forEach(row => {
+            if (!isVisible(row)) return; 
             const selNama = row.querySelector('.sel-nama-tindakan');
             if (!selNama || !selNama.value) return;
 
@@ -586,6 +596,14 @@
         if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
             if (rowNumberTarget !== "") dataPasienObj = window.dataAntreanGlobal.find(p => p.noRM === cleanNoRM && String(p.rowNumber) === String(rowNumberTarget));
             else dataPasienObj = window.dataAntreanGlobal.find(p => p.noRM === cleanNoRM);
+        }
+
+        // 🔥 MENGUNCI HAK MILIK SAAT PASIEN DIBUKA DARI ANTREAN
+        window.dokterPemilikRM = null;
+        window.namaDokterPemilikRM = null;
+        if (dataPasienObj) {
+            window.dokterPemilikRM = dataPasienObj.idDokter || dataPasienObj.id_dokter || null;
+            window.namaDokterPemilikRM = dataPasienObj.dokter || dataPasienObj.namaDokter || null;
         }
 
         window.tanggalKunjunganAktif = tanggalDaftarLangsung || (dataPasienObj ? dataPasienObj.tanggalDaftar : "");
@@ -833,7 +851,6 @@
     };
 
     window.bukaInputRME = function(noRM, namaPasien, tanggalDaftar) { 
-        // 🔥 FIX 2: Mencegah tombol dari luar mencemari ID milik RM
         const formAktifRme = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         const kolomKiri = document.getElementById('kolomInputRME');
         if (kolomKiri) kolomKiri.style.display = 'block'; 
@@ -862,6 +879,17 @@
 
         setNilaiDOM('modalNama', 'namaPasien', namaPasien);
         window.barisRekamMedisTarget = null; 
+
+        // 🔥 MENGUNCI HAK MILIK SAAT PASIEN DIBUKA DARI DAFTAR TUNGGU
+        window.dokterPemilikRM = null;
+        window.namaDokterPemilikRM = null;
+        if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
+            let dataPasienObj = window.dataAntreanGlobal.find(p => p.noRM === noRM);
+            if (dataPasienObj) {
+                window.dokterPemilikRM = dataPasienObj.idDokter || dataPasienObj.id_dokter || null;
+                window.namaDokterPemilikRM = dataPasienObj.dokter || dataPasienObj.namaDokter || null;
+            }
+        }
 
         const alertBox = document.getElementById('alertMedisFormRME');
         if (alertBox) alertBox.style.display = 'none';
@@ -928,6 +956,8 @@
 
     window.tutupInputRME = function() {
         window.barisRekamMedisTarget = null; 
+        window.dokterPemilikRM = null; // Bersihkan memori pemilik
+        window.namaDokterPemilikRM = null; 
         const sectionRME = document.getElementById('sectionRME');
         const modalRiwayatFull = document.getElementById('modalRiwayatFull');
         if (sectionRME) sectionRME.style.display = 'none';
@@ -966,10 +996,11 @@
                     return val;
                 };
 
-                const barisTindakan = formAktifRme.querySelectorAll('.baris-tindakan-item');
+                const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
                 let listTindakanDipilih = [];
 
                 barisTindakan.forEach(row => {
+                    if (!isVisible(row)) return; 
                     const selNama = row.querySelector('.sel-nama-tindakan');
                     const inpHarga = row.querySelector('.inp-harga-tindakan');
                     const inpCatatan = row.querySelector('.inp-catatan-tindakan');
@@ -993,6 +1024,10 @@
 
                 if (!window.tokenRmeUnik) window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
 
+                // 🔥 PAYLOAD AMAN: Tetap gunakan Nama Dokter Asli, tapi catat Owner/Admin sebagai "Operator"
+                const finalIdDokter = window.dokterPemilikRM || idDokterAktif;
+                const finalNamaDokter = window.namaDokterPemilikRM || usernameAktif;
+
                 const data = {
                     action: "submitRekamMedis",
                     targetSheet: "RekamMedis",
@@ -1010,8 +1045,9 @@
                     tanggalKontrolTarget: dapatkanNilaiDOM('modalTanggalKontrol', 'tanggalKontrol'),     
                     resep: dapatkanNilaiDOM('modalResep', 'txtResep'),
                     tanggalKunjungan: window.tanggalKunjunganAktif || (typeof window.formatTanggalIndo === "function" ? new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-                    idDokter: idDokterAktif,
-                    namaDokter: usernameAktif,
+                    
+                    idDokter: finalIdDokter,       // 🔥 KUNCI HAK MILIK!
+                    namaDokter: finalNamaDokter,   // 🔥 KUNCI HAK MILIK!
                     operatorUsername: usernameAktif, 
                     operatorRole: roleAktif,         
                     linkFoto: dapatkanNilaiDOM('modalLinkFoto', 'txtLinkFoto') || "-",
