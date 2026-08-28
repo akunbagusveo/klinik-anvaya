@@ -1,25 +1,27 @@
 // =========================================================================
-// 🩺 MODUL INPUT REKAM MEDIS ELEKTRONIK (RME) - KABEL TERPISAH
+// 🩺 MODUL INPUT REKAM MEDIS ELEKTRONIK (RME) - KODE ULTIMATE
 // =========================================================================
 (function() { 
  
     window.masterTindakanGlobal = [];
     window.consentSudahDisimpanHariIni = false;
-    window.barisRekamMedisTarget = null; // 🔥 KABEL BARU KHUSUS REKAM MEDIS
+    window.barisRekamMedisTarget = null; 
 
     window.triggerSyncDiagnosa = function() {
         if (typeof window.sinkronisasiChipDiagnosa === "function") window.sinkronisasiChipDiagnosa();
         if (typeof window.renderChipDiagnosa === "function") window.renderChipDiagnosa();
     };
 
-    const isVisible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-
+    // 🔥 FIX 1: PENCARI WADAH SPESIFIK (ANTI-TABRAKAN FORM SPLIT & MODAL)
     const getVisibleContainer = () => {
-        let visibleEl = null;
-        document.querySelectorAll('#kontainerTindakanDinamis').forEach(el => {
-            if (isVisible(el)) visibleEl = el;
-        });
-        return visibleEl || document.getElementById('kontainerTindakanDinamis');
+        const split = document.getElementById('formModalMedisSplit');
+        const modal = document.getElementById('formModalMedis');
+        let activeForm = document;
+        
+        if (split && split.offsetWidth > 0) activeForm = split;
+        else if (modal && modal.offsetWidth > 0) activeForm = modal;
+        
+        return activeForm.querySelector('#kontainerTindakanDinamis') || document.getElementById('kontainerTindakanDinamis');
     };
 
     window.addEventListener('DOMContentLoaded', function() {
@@ -67,11 +69,11 @@
             return val;
         };
 
-        const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
+        const formAktif = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis') || document;
+        const barisTindakan = formAktif.querySelectorAll('.baris-tindakan-item');
         let listTindakanDraft = [];
         
         barisTindakan.forEach(row => {
-            if (!isVisible(row)) return; 
             const selNama = row.querySelector('.sel-nama-tindakan');
             const inpHarga = row.querySelector('.inp-harga-tindakan');
             const inpCatatan = row.querySelector('.inp-catatan-tindakan');
@@ -187,7 +189,6 @@
                 rowWrapper.querySelector('.sel-nama-tindakan').innerHTML += `<option value="KUSTOM">KUSTOM</option>`;
                 rowWrapper.querySelector('.sel-nama-tindakan').value = "KUSTOM";
                 window.pilihTindakanDinamis(rowId, "KUSTOM");
-                if (rowWrapper.querySelector('.sel-catatan-tindakan')) rowWrapper.querySelector('.sel-catatan-tindakan').value = dataAwal.catatanKlinis || "";
                 if (rowWrapper.querySelector('.inp-catatan-tindakan')) rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
             }
         }
@@ -460,7 +461,6 @@
         setNilaiAman('modalProPerawatan', proPer); setNilaiAman('txtProPerawatan', proPer);
         setNilaiAman('modalProKontrol', proKon); setNilaiAman('txtProKontrol', proKon);
 
-        // 🔥 KABEL TERPISAH: Simpan ID Rekam Medis ke variabel khusus, JANGAN timpa modalRowUpdate milik Antrean!
         window.barisRekamMedisTarget = barisSheet;
 
         const kontainerTindakan = getVisibleContainer();
@@ -506,7 +506,6 @@
         document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
         window.triggerSyncDiagnosa();
 
-        // 🔥 BERSIHKAN KABEL REKAM MEDIS
         window.barisRekamMedisTarget = null;
         
         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
@@ -548,12 +547,12 @@
             return false; 
         }
 
-        const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
+        const formPencari = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis') || document;
+        const barisTindakan = formPencari.querySelectorAll('.baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
 
         barisTindakan.forEach(row => {
-            if (!isVisible(row)) return; 
             const selNama = row.querySelector('.sel-nama-tindakan');
             if (!selNama || !selNama.value) return;
 
@@ -630,7 +629,7 @@
         window.triggerSyncDiagnosa();
 
         window.originalRmeSnapshot = null;
-        window.barisRekamMedisTarget = null; // 🔥 BERSIHKAN KABEL REKAM MEDIS SAAT BUKA
+        window.barisRekamMedisTarget = null; 
 
         const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
         let draftValidObj = null;
@@ -834,6 +833,7 @@
     };
 
     window.bukaInputRME = function(noRM, namaPasien, tanggalDaftar) { 
+        // 🔥 FIX 2: Mencegah tombol dari luar mencemari ID milik RM
         const formAktifRme = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         const kolomKiri = document.getElementById('kolomInputRME');
         if (kolomKiri) kolomKiri.style.display = 'block'; 
@@ -861,7 +861,7 @@
         };
 
         setNilaiDOM('modalNama', 'namaPasien', namaPasien);
-        window.barisRekamMedisTarget = null; // 🔥 BERSIHKAN KABEL REKAM MEDIS SAAT BUKA BARU
+        window.barisRekamMedisTarget = null; 
 
         const alertBox = document.getElementById('alertMedisFormRME');
         if (alertBox) alertBox.style.display = 'none';
@@ -902,7 +902,6 @@
                     if (elTgl1) elTgl1.value = data.hariIni.tanggalKontrol || "";
                     if (elTgl2) elTgl2.value = data.hariIni.tanggalKontrol || "";
                     
-                    // 🔥 HANYA HUBUNGKAN ID REKAM MEDIS JIKA ADA DATA
                     if (data.rowHariIni) window.barisRekamMedisTarget = data.rowHariIni;
                     
                     const kontainerTindakan = getVisibleContainer();
@@ -928,7 +927,7 @@
     };
 
     window.tutupInputRME = function() {
-        window.barisRekamMedisTarget = null; // 🔥 BERSIHKAN KABEL REKAM MEDIS
+        window.barisRekamMedisTarget = null; 
         const sectionRME = document.getElementById('sectionRME');
         const modalRiwayatFull = document.getElementById('modalRiwayatFull');
         if (sectionRME) sectionRME.style.display = 'none';
@@ -967,11 +966,10 @@
                     return val;
                 };
 
-                const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
+                const barisTindakan = formAktifRme.querySelectorAll('.baris-tindakan-item');
                 let listTindakanDipilih = [];
 
                 barisTindakan.forEach(row => {
-                    if (!isVisible(row)) return; 
                     const selNama = row.querySelector('.sel-nama-tindakan');
                     const inpHarga = row.querySelector('.inp-harga-tindakan');
                     const inpCatatan = row.querySelector('.inp-catatan-tindakan');
@@ -995,14 +993,13 @@
 
                 if (!window.tokenRmeUnik) window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
 
-                // 🔥 PAYLOAD YANG SUDAH 100% AMAN DARI CROSS-WIRING
                 const data = {
                     action: "submitRekamMedis",
                     targetSheet: "RekamMedis",
                     tokenId: window.tokenRmeUnik, 
                     noRM: dapatkanNilaiDOM('modalNoRM', 'billNoRM') || formAktifRme.dataset.activeNoRM || "",
-                    rowUpdate: dapatkanNilaiDOM('modalRowUpdate', 'txtRowUpdate') || formAktifRme.dataset.rowUpdate || "", // HANYA MILIK PENDAFTARAN
-                    rowRekamMedisTarget: window.barisRekamMedisTarget || "", // 🔥 HANYA MILIK REKAM MEDIS
+                    rowUpdate: dapatkanNilaiDOM('modalRowUpdate', 'txtRowUpdate') || formAktifRme.dataset.rowUpdate || "", 
+                    rowRekamMedisTarget: window.barisRekamMedisTarget || "", 
                     namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
                     anamnesa: dapatkanNilaiDOM('modalAnamnesa', 'txtAnamnesa'),
                     objektif: dapatkanNilaiDOM('modalObjektif', 'txtObjektif'),
@@ -1030,7 +1027,7 @@
                     if(res.result === "success") {
                         alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
                         window.tokenRmeUnik = null; 
-                        window.barisRekamMedisTarget = null; // Bersihkan kabel
+                        window.barisRekamMedisTarget = null; 
                         
                         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
                         
