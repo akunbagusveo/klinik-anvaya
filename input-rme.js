@@ -415,7 +415,7 @@
         const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
         
         if (dataTerpilih) {
-            // 🔥 MENGUNCI HAK MILIK DOKTER ASLI SAAT DI-EDIT
+            // 🔥 MENGUNCI HAK MILIK DOKTER ASLI SAAT DI-EDIT OLEH OWNER/ADMIN
             window.dokterPemilikRM = dataTerpilih.idDokter;
             window.namaDokterPemilikRM = dataTerpilih.namaDokter;
 
