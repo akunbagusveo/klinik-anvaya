@@ -382,23 +382,30 @@
         const elNoRM = document.getElementById('modalNoRM');
         const elNama = document.getElementById('modalNama');
         const noRM = elNoRM ? elNoRM.value || "-" : "-";
+        const cleanNoRM = String(noRM).trim();
         const namaPasien = elNama ? elNama.value || "-" : "-";
 
-        const kontainer = document.getElementById('kontainerTindakanDinamis');
+        // 🔥 LOGIKA BARU: Jika PDF ada, langsung buka tab PDF! Jangan buka Pop-up!
+        const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM) || window.pdfConsentAktif;
+        if (savedPdf && savedPdf !== "-" && savedPdf !== "undefined") {
+            window.open(savedPdf, '_blank');
+            return; 
+        }
+
+        const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
         let daftarTindakan = [];
 
-        if (kontainer) {
-            const inputTindakan = kontainer.querySelectorAll('input[type="text"], select, textarea');
-            inputTindakan.forEach(el => {
-                if (el.value && el.value.trim() !== "") {
-                    daftarTindakan.push(el.value.trim());
-                }
-            });
-        }
+        barisTindakan.forEach(row => {
+            if (!(row.offsetWidth || row.offsetHeight || row.getClientRects().length)) return; 
+            const selNama = row.querySelector('.sel-nama-tindakan');
+            if (selNama && selNama.value && selNama.value.trim() !== "") {
+                daftarTindakan.push(selNama.value.trim());
+            }
+        });
 
         let teksTindakan = daftarTindakan.join(", ");
         if (daftarTindakan.length === 0) {
-            teksTindakan = prompt("⚠️ Belum ada tindakan yang dipilih di form. Silakan ketik nama tindakan medis untuk persetujuan ini:", "Odontektomi / Tindakan Bedah Minor");
+            teksTindakan = prompt("⚠️ Belum ada tindakan yang dipilih. Silakan ketik nama tindakan medis untuk persetujuan ini:", "Odontektomi / Tindakan Bedah");
             if (!teksTindakan) return; 
         }
 
@@ -412,17 +419,32 @@
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
 
+        // 🔥 CEK APAKAH FILE PDF SUDAH ADA DI SERVER
+        const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM) || window.pdfConsentAktif;
+        if (savedPdf && savedPdf !== "-" && savedPdf !== "undefined") {
+            window.consentSudahDisimpanHariIni = true;
+            btnConsent.disabled = false;
+            btnConsent.style.cursor = "pointer";
+            btnConsent.style.opacity = "1";
+            btnConsent.style.backgroundColor = "#2980b9"; // Berubah Biru Elegan
+            btnConsent.innerHTML = "📄 Lihat PDF Consent Resmi";
+            btnConsent.style.display = "inline-flex";
+            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+            btnConsent.style.border = "none";
+            return; 
+        }
+
+        // Cek Draft TTD sementara (belum PDF)
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM) || window.urlFotoConsentAktif;
         const savedRisiko = localStorage.getItem('risiko_consent_' + cleanNoRM);
         
         if ((savedTTD && savedTTD !== "-" && savedTTD !== "undefined") || (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null)) {
             window.consentSudahDisimpanHariIni = true;
             if (savedTTD) window.urlFotoConsentAktif = savedTTD;
-            
             btnConsent.disabled = false;
             btnConsent.style.cursor = "pointer";
             btnConsent.style.opacity = "1";
-            btnConsent.style.backgroundColor = "#27ae60"; 
+            btnConsent.style.backgroundColor = "#27ae60"; // Hijau jika baru draft
             btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             btnConsent.style.display = "inline-flex";
             btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
@@ -433,51 +455,37 @@
         window.consentSudahDisimpanHariIni = false;
         let butuhConsent = false;
 
-        const semuaInputTindakan = document.querySelectorAll('#kontainerTindakanDinamis .sel-nama-tindakan, #kontainerTindakanDinamis input[type="text"]');
-        
+        const semuaInputTindakan = document.querySelectorAll('.baris-tindakan-item .sel-nama-tindakan');
         semuaInputTindakan.forEach(el => {
-            if (el.classList.contains('inp-harga-tindakan') || el.classList.contains('inp-catatan-tindakan')) return;
+            if (!el || !el.value) return;
+            // Deteksi visibilitas agar tidak salah tarik dari elemen sembunyi
+            if (!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)) return; 
+            
+            const teks = String(el.value).trim().toLowerCase();
+            let isBerisiko = false;
 
-            if (el && el.value) {
-                const teks = String(el.value).trim().toLowerCase();
-                let isBerisiko = false;
-
-                if (el.tagName.toLowerCase() === 'select' && el.selectedIndex >= 0) {
-                    const opt = el.options[el.selectedIndex];
-                    if (opt && opt.getAttribute('data-butuh-consent') === "1") isBerisiko = true;
-                }
-
-                if (!isBerisiko) {
-                    const masterArray = window.masterTindakanGlobal || [];
-                    const foundItem = masterArray.find(item => {
-                        const namaItem = String(item.nama || item["Nama Tindakan"] || "").trim().toLowerCase();
-                        return namaItem === teks;
-                    });
-                    if (foundItem) {
-                        const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || foundItem[6] || 0;
-                        if (String(valConsent) === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true") isBerisiko = true;
-                    }
-                }
-
-                if (!isBerisiko) {
-                    if (teks.includes("odontektomi") || teks.includes("exo") || teks.includes("cabut") || 
-                        teks.includes("implan") || teks.includes("bedah") || teks.includes("insisi") || 
-                        teks.includes("gingiv") || teks.includes("frenektomi") || teks.includes("alveol") || 
-                        teks.includes("operkul") || teks.includes("kista") || teks.includes("graft") || 
-                        teks.includes("sinus") || teks.includes("valplas") || teks.includes("crown")) {
-                        isBerisiko = true;
-                    }
-                }
-
-                if (isBerisiko) butuhConsent = true;
+            if (el.tagName.toLowerCase() === 'select' && el.selectedIndex >= 0) {
+                const opt = el.options[el.selectedIndex];
+                if (opt && opt.getAttribute('data-butuh-consent') === "1") isBerisiko = true;
             }
+
+            if (!isBerisiko) {
+                const masterArray = window.masterTindakanGlobal || [];
+                const foundItem = masterArray.find(item => String(item.nama || item["Nama Tindakan"] || "").trim().toLowerCase() === teks);
+                if (foundItem) {
+                    const valConsent = foundItem.Butuh_Consent || foundItem.butuhConsent || foundItem[6] || 0;
+                    if (String(valConsent) === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true") isBerisiko = true;
+                }
+            }
+
+            if (isBerisiko) butuhConsent = true;
         });
 
         if (butuhConsent) {
             btnConsent.disabled = false;
             btnConsent.style.cursor = "pointer";
             btnConsent.style.opacity = "1"; 
-            btnConsent.style.backgroundColor = "#e67e22"; 
+            btnConsent.style.backgroundColor = "#e67e22"; // Oranye Peringatan
             btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
             btnConsent.style.display = "inline-flex";
             btnConsent.style.boxShadow = "0 0 12px rgba(230, 126, 34, 0.85)";

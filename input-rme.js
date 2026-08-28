@@ -775,6 +775,7 @@
                 
                 dataRiwayat.forEach(r => {
                     let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="display:inline-block; margin-top:8px; color:#2980b9; font-weight:bold;">🖼️ Lihat Lampiran Foto</a>` : '';
+                    let linkPdfHtml = r.pdfUrl && r.pdfUrl !== "-" ? `<a href="${r.pdfUrl}" target="_blank" style="display:inline-block; margin-top:8px; margin-left:15px; color:#e74c3c; font-weight:bold;">📄 Lihat PDF Consent</a>` : '';
                     let tombolEditRMEHtml = '';
                     if (perms.editRME === 1 && mode !== 'input') { 
                         tombolEditRMEHtml = `<button onclick="window.pemicuEditCatatanMulai('${r.barisSheet}', ${r.isHariIni})" style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">📝 Edit / Salin Catatan</button>`;
@@ -833,6 +834,7 @@
                             <div style="margin-bottom:8px; color:#8e44ad;"><strong>🔁 Pro Kontrol:</strong> <br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.proKontrol) : (r.proKontrol || '-')}</span></div>
                             <div style="margin-bottom:8px; font-family:monospace; font-weight:bold;"><strong>💊 Resep:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.resep) : (r.resep || '-')}</span></div>
                             ${linkFotoHtml}
+                            ${linkPdfHtml}
                         </div>
                     `;
                     timelineContainer.appendChild(card);
@@ -900,6 +902,12 @@
                     setNilaiDOM('modalProKontrol', 'txtProKontrol', data.hariIni.proKontrol || "");
                     setNilaiDOM('modalResep', 'txtResep', data.hariIni.resep || "");
                     setNilaiDOM('modalLinkFoto', 'txtLinkFoto', data.hariIni.linkFoto || "");
+                    // 🔥 SIMPAN PDF KE MEMORI SAAT DIBUKA
+                    if (data.hariIni.pdfUrl) {
+                        window.pdfConsentAktif = data.hariIni.pdfUrl;
+                        localStorage.setItem('pdf_url_consent_' + noRM, data.hariIni.pdfUrl);
+                    }
+
                     
                     const elTgl1 = document.getElementById('modalTanggalKontrol');
                     const elTgl2 = document.getElementById('tanggalKontrol');
