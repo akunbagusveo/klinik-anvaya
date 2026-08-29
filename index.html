@@ -552,12 +552,74 @@
             position: relative;
         }
 
-        /* Adaptasi otomatis saat dibuka di HP (< 768px) */
+        /* =========================================================
+        🔥 FIX RESPONSIVE: KALENDER JADI "AGENDA VIEW" DI HP
+        ========================================================= */
         @media screen and (max-width: 768px) {
             #dokter h2 { font-size: 18px !important; }
             #dokter .header-kalender { flex-direction: column; align-items: stretch !important; text-align: center; }
             #labelBulanTahunKalender { margin: 10px 0 !important; display: block; }
-            .kartu-pasien-kalender { font-size: 10px; padding: 4px; white-space: normal; }
+            
+            /* 1. Matikan mode tabel/geser menyamping */
+            .kalender-container-scroll {
+                overflow-x: hidden !important;
+                padding-bottom: 0 !important;
+            }
+
+            /* 2. Ubah Grid 7 Kolom menjadi List Vertikal (Tumpuk Bawah ala Google Calendar) */
+            #gridKalenderBody {
+                display: flex !important;
+                flex-direction: column !important;
+                min-width: 100% !important; /* Batalkan paksaan lebar 800px */
+                gap: 12px !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            /* 3. Desain Ulang Setiap Kotak Tanggal menjadi "Kartu Agenda" */
+            #gridKalenderBody > div {
+                width: 100% !important;
+                min-height: auto !important;
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 8px !important;
+                padding: 15px !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+                text-align: left !important;
+                display: block !important;
+            }
+
+            /* 4. Sembunyikan 7 Kotak Pertama (Header Nama Hari: Senin-Minggu) agar tidak mengganggu list */
+            #gridKalenderBody > div:nth-child(-n+7) {
+                display: none !important;
+            }
+
+            /* 5. Sembunyikan kotak filler awal bulan yang benar-benar kosong */
+            #gridKalenderBody > div:empty {
+                display: none !important;
+            }
+
+            /* 6. Desain Kompak untuk Hari yang Kosong (Tidak ada jadwal pasien) */
+            #gridKalenderBody > div:not(:has(.kartu-pasien-kalender)) {
+                padding: 10px 15px !important;
+                opacity: 0.6; /* Dibuat agak memudar agar dokter fokus ke hari sibuk */
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #f8fafc !important;
+            }
+
+            /* 7. Perbesar Kartu Janji Temu agar mudah di-tap dengan jempol */
+            .kartu-pasien-kalender { 
+                font-size: 13px !important; 
+                padding: 12px !important; 
+                white-space: normal !important; 
+                margin-top: 10px !important;
+                border-radius: 6px !important;
+                border-left: 4px solid rgba(0,0,0,0.2) !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            }
         }
 
         @keyframes modalMuncul {
