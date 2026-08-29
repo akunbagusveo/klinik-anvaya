@@ -430,14 +430,17 @@
                     if (data && data.result === "success") {
                         window.currentRole = data.role;
                         
-                        // 🔥 FITUR BARU: Menyimpan identitas ganda (username untuk mesin, namaLengkap untuk layar)
+                        // 🔥 FITUR BARU: Menangkap idleTimeout dari server (Default 15 menit jika server gagal)
+                        const durasiIdleServer = data.idleTimeout ? parseInt(data.idleTimeout) : 15;
+
                         const dataSesi = { 
                             idUser: data.idUser, 
                             username: data.username, 
                             namaLengkap: data.namaLengkap || data.username, 
                             role: data.role,
                             namaRole: data.namaRole || data.role, 
-                            permissions: data.permissions 
+                            permissions: data.permissions,
+                            idleTimeout: durasiIdleServer // ⏳ Simpan durasi ke brankas lokal
                         };
                         localStorage.setItem('anvaya_session', JSON.stringify(dataSesi));
 
@@ -446,9 +449,11 @@
                         if (topNav) topNav.style.display = 'flex'; 
                         if (sidebar) sidebar.style.display = 'block';
                         
-                        // 🔥 FITUR BARU: Melempar "namaLengkap" ke fungsi bukaAplikasi agar tampil di pojok kanan atas & ucapan selamat datang
                         try { window.bukaAplikasi(data.role, dataSesi.namaLengkap); } catch (e) { console.error("Error UI bukaAplikasi:", e); }
                         try { if(typeof window.aplikasikanHakAkses === "function") window.aplikasikanHakAkses(data.permissions); } catch (e) { console.error("Error hak akses:", e); }
+
+                        // 📡 NYALAKAN RADAR IDLE SETELAH LOGIN SUKSES
+                        window.jalankanRadarIdle();
 
                     } else { 
                         let pesanEror = data.message || data.error || data.pesan || "Format dari server tidak sesuai.";
@@ -461,6 +466,58 @@
                     alert("⚠️ Sistem Gagal Terhubung. Detail Error: " + err.message);
                 });
             });
+        }
+    });
+
+    // =========================================================================
+    // 🛡️ FITUR KEAMANAN: RADAR AUTO-LOGOUT (DINAMIS DARI SERVER)
+    // =========================================================================
+    let idleTimer; // Variabel mesin hitung mundur
+
+    window.jalankanRadarIdle = function() {
+        const sesi = localStorage.getItem('anvaya_session');
+        if (!sesi) return; // Jangan nyala jika belum login
+
+        let durasiMenit = 15; // Default aman
+        try {
+            const parsedSesi = JSON.parse(sesi);
+            if (parsedSesi.idleTimeout) durasiMenit = parseInt(parsedSesi.idleTimeout);
+        } catch(e) {}
+
+        const resetIdle = () => {
+            const loginPage = document.getElementById('loginPage');
+            // Matikan radar jika sedang di halaman login
+            if (loginPage && (loginPage.style.display === 'block' || loginPage.style.display === '')) {
+                clearTimeout(idleTimer);
+                return;
+            }
+            
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                alert(`⚠️ SESI KEAMANAN BERAKHIR!\n\nAnda tidak melakukan aktivitas sentuhan/mouse selama ${durasiMenit} menit.\nDemi melindungi privasi Rekam Medis Pasien, sistem telah mengeluarkan Anda secara otomatis.`);
+                if (typeof window.logout === 'function') {
+                    window.logout();
+                } else {
+                    localStorage.removeItem('anvaya_session');
+                    location.reload();
+                }
+            }, durasiMenit * 60 * 1000); // Konversi menit ke milidetik
+        };
+
+        // Pasang sensor gerak di seluruh layar
+        const eventAktivitas = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+        eventAktivitas.forEach(event => {
+            document.removeEventListener(event, resetIdle, true); // Bersihkan sensor lama (jika ada)
+            document.addEventListener(event, resetIdle, true);    // Pasang sensor baru
+        });
+
+        resetIdle(); // Mulai hitung mundur pertama kali
+    };
+
+    // (Opsional) Nyalakan radar otomatis jika user melakukan Refresh (F5) tapi masih dalam status login
+    window.addEventListener("DOMContentLoaded", function() {
+        if (localStorage.getItem('anvaya_session')) {
+            setTimeout(window.jalankanRadarIdle, 1000);
         }
     });
 
