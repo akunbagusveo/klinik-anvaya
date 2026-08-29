@@ -673,6 +673,15 @@
             border-bottom: none;
         }
 
+        /* 7. Membebaskan tinggi modal agar histori panjang tidak terpotong */
+        #modalRiwayatFull .modal-content-box {
+            height: auto !important;        /* Biarkan tinggi menyesuaikan isinya */
+            min-height: 100vh !important;   /* Minimal setinggi layar HP penuh */
+            margin: 0 !important;           /* Hilangkan jarak tepi agar terasa seperti native app */
+            border-radius: 0 !important;    /* Hilangkan sudut melengkung di layar penuh */
+            max-width: 100% !important;
+        }
+
     </style>
 </head>
 <body>
