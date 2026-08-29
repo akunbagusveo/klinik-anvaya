@@ -658,6 +658,21 @@
             }
         }
 
+        /* 6. Penjinak Grid Profil Pasien agar tidak meluber */
+        #gridProfilRME {
+            grid-template-columns: 1fr !important; /* Ubah dari 4 kolom menjadi 1 baris ke bawah */
+            gap: 8px !important;
+        }
+        #gridProfilRME > div {
+            grid-column: span 1 !important; /* Matikan paksaan lebar ganda pada domisili */
+            word-wrap: break-word !important; /* Paksa teks NIK/Alamat panjang untuk turun baris */
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 5px;
+        }
+        #gridProfilRME > div:last-child {
+            border-bottom: none;
+        }
+
     </style>
 </head>
 <body>
@@ -2294,7 +2309,7 @@
                     <button type="button" onclick="window.simpanDraftRME(); document.getElementById('modalRiwayatFull').style.display='none'" class="btn-close-modal">Tutup ✖</button>
                 </div>
 
-                <div style="background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #3498db; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px;">
+                <div id="gridProfilRME" style="background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #3498db; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px;">
                     <div><strong>👤 Nama:</strong> <span id="lblProfilNama" style="color:#2980b9; font-weight:bold;">-</span></div>
                     <div><strong>🏷️ No. RM:</strong> <span id="lblProfilRM">-</span></div>
                     <div><strong>🎂 TTL (Umur):</strong> <span id="lblProfilUmur">-</span></div>
