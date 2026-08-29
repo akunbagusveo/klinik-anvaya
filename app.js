@@ -734,12 +734,14 @@
         const btnJadwal = document.getElementById('subTabJadwalBtn');
         const btnLog = document.getElementById('subTabLogBtn');
         const btnMaster = document.getElementById('subTabMasterTindakanBtn');
+        const btnUmum = document.getElementById('subTabUmumBtn'); // 🔥 Tombol Baru
 
         if (btnUser) btnUser.style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
         if (btnAkses) btnAkses.style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
         if (btnJadwal) btnJadwal.style.backgroundColor = (subTabId === 'manajemenJadwal') ? '#ddd' : '';
         if (btnLog) btnLog.style.backgroundColor = (subTabId === 'manajemenLog') ? '#ddd' : '';
         if (btnMaster) btnMaster.style.backgroundColor = (subTabId === 'masterTindakan') ? '#ddd' : '';
+        if (btnUmum) btnUmum.style.backgroundColor = (subTabId === 'pengaturanUmum') ? '#ddd' : '';
 
         if (subTabId === 'manajemenUser') {
             if (typeof window.muatDataUser === "function") window.muatDataUser();
@@ -754,7 +756,56 @@
         } else if (subTabId === 'masterTindakan') {
             if (tabMaster) tabMaster.style.display = 'block'; 
             if (typeof window.initMasterTindakan === "function") window.initMasterTindakan(); 
+        } else if (subTabId === 'pengaturanUmum') {
+            window.muatPengaturanUmum(); // 🔥 Tarik data saat tab dibuka
         }
     };
 
+    // =========================================================================
+    // 8. FUNGSI PENGATURAN UMUM (AUTO-LOGOUT)
+    // =========================================================================
+    window.muatPengaturanUmum = function() {
+        const inpIdle = document.getElementById('inpPengaturanIdle');
+        if (inpIdle) inpIdle.value = "⏳";
+        
+        fetch(window.WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getPengaturanUmum' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.result === 'success' && inpIdle) {
+                inpIdle.value = data.idleTimeout || 15;
+            } else if (inpIdle) inpIdle.value = "";
+        }).catch(err => { if (inpIdle) inpIdle.value = ""; });
+    };
+
+    window.simpanPengaturanUmum = function() {
+        const durasi = document.getElementById('inpPengaturanIdle').value;
+        if (!durasi || durasi < 1) { alert("⚠️ Durasi tidak boleh kosong atau kurang dari 1 menit."); return; }
+        
+        window.tampilkanLoading("💾 Menyimpan Pengaturan Sistem...");
+        
+        fetch(window.WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'simpanPengaturanUmum', idleTimeout: durasi })
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.sembunyikanLoading();
+            if (data.result === 'success') {
+                alert("✅ Pengaturan berhasil disimpan!\nPerubahan akan berlaku pada login berikutnya untuk semua user.");
+                
+                // Update brankas lokal agar berefek instan ke Anda yang sedang login
+                const sesi = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+                sesi.idleTimeout = durasi;
+                localStorage.setItem('anvaya_session', JSON.stringify(sesi));
+                if (typeof window.jalankanRadarIdle === 'function') window.jalankanRadarIdle();
+                
+            } else { alert("❌ Gagal menyimpan: " + data.message); }
+        }).catch(err => {
+            window.sembunyikanLoading();
+            alert("⚠️ Terjadi kesalahan jaringan.");
+        });
+    };
 })();

@@ -1346,6 +1346,7 @@
                 <button id="subTabJadwalBtn" onclick="window.bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
                 <button id="subTabLogBtn" onclick="window.bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
                 <button id="subTabMasterTindakanBtn" onclick="window.bukaSubTab('masterTindakan')" class="tab-link" style="font-weight:bold;">📋 Master Tindakan</button>
+                <button id="subTabUmumBtn" onclick="window.bukaSubTab('pengaturanUmum')" class="tab-link" style="font-weight:bold;">⚙️ Pengaturan Umum</button>
             </div>
 
             <!-- ========================================== -->
@@ -1661,6 +1662,31 @@
                     <button id="btnPrevTindakan" onclick="window.ubahHalamanTindakan(-1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">⬅️ Sebelumnya</button>
                     <span id="pageInfoTindakan" style="margin: 0 20px; font-weight: bold; color: #2c3e50;">Halaman 1 dari 1</span>
                     <button id="btnNextTindakan" onclick="window.ubahHalamanTindakan(1)" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #bdc3c7; background: white; font-weight: bold;">Selanjutnya ➡️</button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- SUB-TAB 6: PENGATURAN UMUM SISTEM          -->
+            <!-- ========================================== -->
+            <div id="pengaturanUmum" class="sub-tab-content" style="display:none; padding: 20px;">
+                <h3 style="color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;">⚙️ Pengaturan Umum Sistem</h3>
+                
+                <div style="background-color: #f9f9f9; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; margin-top: 15px; max-width: 550px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                    <h4 style="margin-top: 0; color: #e74c3c; display: flex; align-items: center; gap: 8px;">
+                        🛡️ Keamanan: Auto-Logout (Idle Timeout)
+                    </h4>
+                    <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 15px; line-height: 1.5;">
+                        Tentukan batas waktu maksimal (dalam menit) sebelum sistem otomatis mengeluarkan pengguna yang tidak aktif. Ini wajib untuk melindungi privasi Rekam Medis pasien.
+                    </p>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="number" id="inpPengaturanIdle" min="1" max="120" placeholder="Misal: 15" style="width: 120px; padding: 10px; border: 2px solid #bdc3c7; border-radius: 6px; font-weight: bold; font-size: 16px; text-align: center; color: #2c3e50;">
+                        <span style="font-weight: bold; color: #34495e; font-size: 15px;">Menit</span>
+                    </div>
+                    
+                    <button onclick="window.simpanPengaturanUmum()" style="background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.2);">
+                        💾 Simpan Pengaturan
+                    </button>
                 </div>
             </div>
 
