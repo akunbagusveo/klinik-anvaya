@@ -402,6 +402,77 @@
             .rme-card.expanded .rme-card-header::after {
                 transform: translateY(-50%) rotate(90deg);
             }
+
+            /* =========================================================
+               📱 KHUSUS HP (< 768px): SPLIT VIEW RME JADI KARTU
+               ========================================================= */
+            /* 1. Background Modal Utama menjadi abu-abu agar kartu putih menonjol */
+            #layoutSplitRME {
+                flex-direction: column !important;
+                overflow-y: auto !important; 
+                background-color: #f8fafc !important; /* Warna abu-abu sangat terang */
+                padding: 15px !important; /* Jarak aman dari tepi layar HP */
+                gap: 20px !important; /* Jarak antar kartu Input dan Histori */
+                box-sizing: border-box !important;
+            }
+            
+            /* 2. Kartu Utama: Form Input Tindakan RME */
+            #kolomInputRME {
+                flex: none !important;
+                width: 100% !important;
+                background: #ffffff !important; /* Warna putih solid */
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 16px !important; /* Sudut membulat elegan */
+                box-shadow: 0 4px 8px rgba(0,0,0,0.04) !important;
+                padding: 20px 15px !important;
+                box-sizing: border-box !important;
+                border-right: none !important; /* Hapus garis pembatas PC */
+                border-bottom: none !important; 
+                overflow-y: visible !important; 
+            }
+            
+            /* 3. Area Histori RME (Transparan, biarkan isi riwayatnya yang jadi kartu) */
+            #kolomHistoriRME {
+                flex: none !important;
+                width: 100% !important;
+                background: transparent !important; 
+                border: none !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                overflow-y: visible !important;
+            }
+            
+            /* 4. Percantik Judul "Histori Rekam Medis" agar seperti Label Kartu */
+            #kolomHistoriRME > h2, 
+            #kolomHistoriRME > h3 {
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 12px !important;
+                padding: 12px 15px !important;
+                margin-top: 0 !important;
+                margin-bottom: 15px !important;
+                text-align: center !important;
+                font-size: 15px !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+            }
+            
+            /* 5. Lepas kunci tinggi pada kotak kartu histori dan sembunyikan tombol PC */
+            #wrapperRiwayatFull {
+                max-height: none !important; 
+                overflow-y: visible !important;
+            }
+            #btnToggleHistori {
+                display: none !important;
+            }
+            
+            /* 6. Pastikan Jendela Modal Full Screen di HP agar leluasa */
+            #modalRiwayatFull .modal-content-box {
+                height: auto !important;
+                min-height: 100vh !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+            }
         
         } /* <--- PENUTUP @media screen and (max-width: 768px) */
 
