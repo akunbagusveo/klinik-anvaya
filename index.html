@@ -473,6 +473,46 @@
                 border-radius: 0 !important;
                 max-width: 100% !important;
             }
+
+            /* =========================================================
+               🔥 FIX RESPONSIVE: FORM INPUT TINDAKAN (ANTI LUBER)
+               ========================================================= */
+            /* 1. Paksa SEMUA elemen di dalam Form RME untuk patuh pada garis batas */
+            #formModalMedisSplit *, #formModalMedis * {
+                box-sizing: border-box !important;
+                max-width: 100% !important;
+            }
+            
+            /* 2. Jinakkan baris tindakan (yang awalnya berjejer ke samping, paksa tumpuk ke bawah) */
+            .baris-tindakan-item > div:first-child {
+                flex-direction: column !important;
+                gap: 10px !important;
+            }
+            
+            /* 3. Batalkan paksaan lebar (min-width: 180px/200px) bawaan dari JavaScript */
+            .baris-tindakan-item > div:first-child > div {
+                width: 100% !important;
+                min-width: 100% !important; /* Paksa memenuhi lebar kartunya saja */
+                flex: none !important;
+            }
+            
+            /* 4. Pengecualian Khusus: Kolom Catatan dan Tombol Mic biarkan tetap berjejer sejajar */
+            .baris-tindakan-item > div:first-child > div:nth-child(4) {
+                display: flex !important;
+                flex-direction: row !important; /* Biarkan menyamping */
+                align-items: center !important;
+            }
+            
+            /* 5. Tombol Hapus (Tong Sampah): Lebarkan menjadi tombol raksasa di bawah agar mudah di-tap jempol */
+            .baris-tindakan-item > div:first-child > div:last-child {
+                margin-top: 5px !important;
+            }
+            .baris-tindakan-item > div:first-child > div:last-child button {
+                width: 100% !important;
+                justify-content: center !important;
+                padding: 10px !important;
+                border-radius: 8px !important;
+            }
         
         } /* <--- PENUTUP @media screen and (max-width: 768px) */
 
