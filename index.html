@@ -886,37 +886,7 @@
         /* =========================================================
             🌟 DESAIN BARU: PROFIL PASIEN JADI KARTU PINTAR (MINI CARDS)
             ========================================================= */
-            #gridProfilRME {
-            grid-template-columns: 1fr 1fr !important; /* Bagi layar jadi 2 kolom presisi */
-            gap: 10px !important;
-            background: transparent !important; /* Hapus background abu-abu bawaan */
-            border: none !important; 
-            padding: 5px 0 15px 0 !important;
-        }
-        
-        #gridProfilRME > div {
-            background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 10px !important; /* Sudut melengkung elegan */
-            padding: 10px 12px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important; /* Bayangan sangat halus */
-            word-wrap: break-word !important;
-            border-bottom: 1px solid #e2e8f0 !important; /* Matikan garis putus-putus */
-            font-size: 12px !important;
-            line-height: 1.5 !important;
-            display: flex;
-            flex-direction: column; /* Ikon/Label dan Isi agak dirapatkan */
-            justify-content: center;
-        }
-        
-        /* JURUS RAHASIA: 
-            Kolom 3 (TTL), 4 (NIK), dan 7 (Domisili) teksnya panjang. 
-            Kita paksa mereka mengambil 2 kolom penuh (Span 2) agar tidak terpotong! */
-        #gridProfilRME > div:nth-child(3), 
-        #gridProfilRME > div:nth-child(4), 
-        #gridProfilRME > div:nth-child(7) {
-            grid-column: span 2 !important; 
-        }
+            
 
         /* 7. Membebaskan tinggi modal agar histori panjang tidak terpotong */
         #modalRiwayatFull .modal-content-box {
@@ -925,6 +895,68 @@
             margin: 0 !important;           /* Hilangkan jarak tepi agar terasa seperti native app */
             border-radius: 0 !important;    /* Hilangkan sudut melengkung di layar penuh */
             max-width: 100% !important;
+        }
+
+        /* =========================================================
+           📱 KHUSUS HP (< 768px): PROFIL JADI KARTU PINTAR (MINI CARDS)
+           ========================================================= */
+           @media screen and (max-width: 768px) {
+            #gridProfilRME {
+                grid-template-columns: 1fr 1fr !important; /* Bagi layar jadi 2 kolom */
+                gap: 10px !important;
+                background: transparent !important;
+                border: none !important; 
+                padding: 5px 0 15px 0 !important;
+            }
+            #gridProfilRME > div {
+                background: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 10px !important; 
+                padding: 10px 12px !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
+                word-wrap: break-word !important;
+                border-bottom: none !important;
+                font-size: 12px !important;
+                line-height: 1.5 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+            /* Elemen panjang ambil 2 kolom penuh */
+            #gridProfilRME > div:nth-child(3), 
+            #gridProfilRME > div:nth-child(4), 
+            #gridProfilRME > div:nth-child(7) {
+                grid-column: span 2 !important; 
+            }
+        }
+
+        /* =========================================================
+           💻 KHUSUS PC (> 769px): KEMBALIKAN KE 4 KOLOM KLASIK
+           ========================================================= */
+        @media screen and (min-width: 769px) {
+            #gridProfilRME {
+                grid-template-columns: repeat(4, 1fr) !important; /* Paksa 4 kolom di PC */
+                background-color: #f8f9fa !important;
+                padding: 15px !important;
+                border-bottom: 3px solid #3498db !important;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                gap: 10px !important;
+            }
+            #gridProfilRME > div {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+            /* Matikan bentangan 2 kolom di PC */
+            #gridProfilRME > div:nth-child(3), 
+            #gridProfilRME > div:nth-child(4), 
+            #gridProfilRME > div:nth-child(7) {
+                grid-column: span 1 !important; 
+            }
         }
 
     </style>
