@@ -351,6 +351,49 @@
             .col-aksi { grid-area: aksi; margin-top: 5px; }
             .col-aksi div { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
             .col-aksi .btn-action { flex: 1; min-width: calc(50% - 8px); text-align: center; justify-content: center; padding: 10px; font-size: 12px; box-sizing: border-box; }
+            
+            /* =========================================================
+               🔥 FIX RESPONSIVE: HISTORI RME JADI CARD ACCORDION
+               ========================================================= */
+               .rme-card {
+                position: relative !important;
+                box-sizing: border-box !important;
+                cursor: pointer;
+            }
+            
+            /* Sembunyikan Laci Detail secara default di HP */
+            .rme-card .detail-mobile-rme {
+                display: none !important;
+            }
+            
+            /* Tampilkan saat kartu diklik (expand) */
+            .rme-card.expanded .detail-mobile-rme {
+                display: block !important;
+                border-top: 2px dashed #ecf0f1;
+            }
+            
+            /* Panah Indikator > */
+            .rme-card::after {
+                content: '❯';
+                position: absolute;
+                right: 15px;
+                top: 28px; 
+                font-size: 16px;
+                color: #7f8c8d;
+                transition: transform 0.3s ease;
+                pointer-events: none; /* Agar tidak menghalangi area klik di bawahnya */
+            }
+            
+            /* Putar panah ke bawah jika terbuka */
+            .rme-card.expanded::after {
+                transform: rotate(90deg);
+            }
+            
+            /* Amankan posisi tombol Edit agar tidak tertumpuk panah */
+            .rme-action-container {
+                margin-right: 25px; 
+            }
+        
         }
 
         /* =========================================================
@@ -364,6 +407,17 @@
 
         @media screen and (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* =========================================================
+           🛡️ PERLINDUNGAN MODE DESKTOP UNTUK RME
+           ========================================================= */
+        @media screen and (min-width: 769px) {
+            .rme-card .detail-mobile-rme {
+                display: block !important; /* Paksa selalu terbuka di PC/Laptop */
+            }
+            .rme-card { cursor: default !important; } /* Matikan ikon jari (pointer) di PC */
+            .rme-card::after { display: none !important; } /* Sembunyikan panah di PC */
         }
 
         /* Style untuk Latar Belakang Pop-up (Overlay) */

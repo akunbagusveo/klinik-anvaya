@@ -782,11 +782,12 @@
                 window.currentHistoryData = dataRiwayat; 
                 
                 dataRiwayat.forEach(r => {
-                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="display:inline-block; margin-top:8px; color:#2980b9; font-weight:bold;">🖼️ Lihat Lampiran Foto</a>` : '';
-                    let linkPdfHtml = r.pdfUrl && r.pdfUrl !== "-" ? `<a href="${r.pdfUrl}" target="_blank" style="display:inline-block; margin-top:8px; margin-left:15px; color:#e74c3c; font-weight:bold;">📄 Lihat PDF Consent</a>` : '';
+                    let linkFotoHtml = r.linkFoto && r.linkFoto !== "-" ? `<a href="${r.linkFoto}" target="_blank" style="display:inline-block; margin-top:8px; color:#2980b9; font-weight:bold; z-index:10; position:relative;">🖼️ Lihat Lampiran Foto</a>` : '';
+                    let linkPdfHtml = r.pdfUrl && r.pdfUrl !== "-" ? `<a href="${r.pdfUrl}" target="_blank" style="display:inline-block; margin-top:8px; margin-left:15px; color:#e74c3c; font-weight:bold; z-index:10; position:relative;">📄 Lihat PDF Consent</a>` : '';
+                    
                     let tombolEditRMEHtml = '';
                     if (perms.editRME === 1 && mode !== 'input') { 
-                        tombolEditRMEHtml = `<button onclick="window.pemicuEditCatatanMulai('${r.barisSheet}', ${r.isHariIni})" style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">📝 Edit / Salin Catatan</button>`;
+                        tombolEditRMEHtml = `<button onclick="window.pemicuEditCatatanMulai('${r.barisSheet}', ${r.isHariIni})" style="background-color: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; z-index:10; position:relative;">📝 Edit</button>`;
                     }
 
                     let tanggalKunjunganAsli = r.tanggalKunjungan && r.tanggalKunjungan !== "" && r.tanggalKunjungan !== "-" ? r.tanggalKunjungan : (r.tanggal ? r.tanggal.split(" ")[0] : "-"); 
@@ -821,19 +822,22 @@
                         tampilanTindakanHtml = typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.perawatan) : (r.perawatan || "-"); 
                     }
 
+                    // 🔥 PERUBAHAN HYBRID: Penambahan Sensor Accordion dan Class Khusus "detail-mobile-rme"
                     const card = document.createElement('div');
                     card.className = 'rme-card';
-                    card.style.cssText = "border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 15px; background-color: white;";
+                    card.setAttribute('onclick', 'window.toggleCardMobileRME(this, event)'); // 👈 Sensor Sentuh
+                    card.style.cssText = "border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 15px; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
+                    
                     card.innerHTML = `
-                        <div class="rme-card-header" style="background-color:#f9f9f9; padding:10px 15px; border-bottom:1px solid #eee; border-left:4px solid #34495e; margin-bottom:10px; display:flex; justify-content:space-between; align-items: flex-start;">
+                        <div class="rme-card-header" style="background-color:#f9f9f9; padding:12px 15px; border-bottom:1px solid #eee; border-radius: 8px 8px 0 0; display:flex; justify-content:space-between; align-items: flex-start;">
                             <div>
                                 ${teksTanggalKunjungan}<br>${teksWaktuInput}
                                 ${infoEditan}
-                                <div style="margin-top: 5px; color: #2c3e50; font-size: 12px;">🩺 <strong>${r.namaDokter || r.idDokter || "Tidak Diketahui"}</strong></div>
+                                <div style="margin-top: 5px; color: #2c3e50; font-size: 13px;">🩺 <strong>${r.namaDokter || r.idDokter || "Tidak Diketahui"}</strong></div>
                             </div>
-                            <div>${tombolEditRMEHtml}</div>
+                            <div class="rme-action-container">${tombolEditRMEHtml}</div>
                         </div>
-                        <div style="font-size:13px; padding:5px 15px 15px 15px;">
+                        <div class="detail-mobile-rme" style="font-size:13px; padding:15px; background-color: white; border-radius: 0 0 8px 8px;">
                             <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.anamnesa) : (r.anamnesa || '-')}</span></div>
                             <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.objektif) : (r.objektif || '-')}</span></div>
                             <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.diagnosa) : (r.diagnosa || '-')}</span></div>
@@ -1100,5 +1104,16 @@
             });
         });
     });
+
+    // 🔥 FITUR BARU: Sensor Klik Accordion Khusus HP untuk Histori RME
+    window.toggleCardMobileRME = function(element, event) {
+        // PERLINDUNGAN: Cegah kartu membuka/menutup jika user tidak sengaja mengklik Tombol Edit atau Link Foto
+        if (event.target.tagName === 'BUTTON' || event.target.tagName === 'A' || event.target.closest('button') || event.target.closest('a')) return;
+        
+        // Animasi Lipat hanya terjadi di layar HP
+        if (window.innerWidth <= 768) {
+            element.classList.toggle('expanded');
+        }
+    };
 
 })();
