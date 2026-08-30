@@ -8,17 +8,15 @@
     const limitDataPerHalaman = 10; // Anda bisa mengubah angka ini (misal: 10, 20, 50)
 
     // =====================================================================
-    // 1. RENDER TABEL ANTREAN (TAMPILAN UI)
+    // 1. RENDER TABEL ANTREAN (TAMPILAN UI HYBRID: TABEL / KARTU)
     // =====================================================================
     window.renderTabelAntrean = function(filterStatus = "Semua") {
         const tbody = document.getElementById('tabelAntreanBody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        // A. AMBIL DATA HAK AKSES OPERATOR DARI STORAGE
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session'));
         const perms = sessionData ? sessionData.permissions : {};
-        
         const bolehInputRME   = perms.aksesInputRME === 1;
         const bolehEditAntrean = perms.aksesEditAntrean === 1;
 
@@ -29,7 +27,6 @@
             return;
         }
 
-        // 🔥 FILTER DROPDOWN DINAMIS 
         let dataTerfilter = dataGlobal;
         if (filterStatus === "Semua") {
             dataTerfilter = dataGlobal.filter(pasien => !pasien.status.includes("Dibatalkan") && !pasien.status.includes("Tidak Datang"));
@@ -48,9 +45,7 @@
         const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
 
         dataTerfilter.forEach(pasien => {
-            
             let statusEfektif = pasien.status;
-            // PENENTUAN STATUS DINAMIS
             if (pasien.status.includes("Sudah Diperiksa") && !pasien.isRmeFilled) {
                 statusEfektif = "Sedang Diperiksa";
             }
@@ -65,9 +60,7 @@
 
             let tombolAksi = "";
             
-            // LOGIKA TOMBOL DINAMIS & INJEKSI ROW NUMBER
             if (statusEfektif.includes("Belum Diperiksa")) {
-                
                 let btnMulai = bolehInputRME ? `<button class="btn-action btn-start" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">▶️ Mulai</button>` : '';
                 let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="window.bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
                 let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
@@ -75,34 +68,49 @@
 
                 tombolAksi = `<div style="display: flex; gap: 5px; flex-wrap: wrap;">${btnMulai} ${btnEdit} ${btnBatal} ${btnAbsen}</div>`;
                 if (!tombolAksi.trim()) tombolAksi = '<span style="color:#7f8c8d; font-size:12px;">Tidak ada akses</span>';
-
             } else if (statusEfektif.includes("Sedang Diperiksa")) {
                 tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="window.bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
-            
             } else if (statusEfektif.includes("Sudah Diperiksa")) {
                 if (pasien.tanggalDaftar === formatHariIni && perms.editRME === 1) {
                     tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="window.bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">👁️ Buka RME</button>`;
                 } else {
                     tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="window.bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">👁️ Lihat RME</button>`;
                 }
-            }
-            else if (pasien.status.includes("Tidak Datang")) {
-                tombolAksi = bolehEditAntrean ? `<button class="btn-action" style="background-color: #2ecc71; color: white; font-weight: bold;" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Belum Diperiksa')">🔄 Kembalikan ke Antrean</button>` : '-';
+            } else if (pasien.status.includes("Tidak Datang")) {
+                tombolAksi = bolehEditAntrean ? `<button class="btn-action" style="background-color: #2ecc71; color: white; font-weight: bold;" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Belum Diperiksa')">🔄 Kembalikan</button>` : '-';
             }
 
-            tbody.innerHTML += `<tr>
-                <td><strong>${pasien.nama}</strong><br><small>RM: ${pasien.noRM}</small></td>
-                <td>${pasien.tanggalDaftar}</td> 
-                <td>${pasien.waktu}</td>
-                <td>${pasien.tujuan}</td>
-                <td style="font-weight:bold; color:#2c3e50;">${pasien.namaDokter || '-'}</td>
-                <td>
+            // 🔥 PERUBAHAN HYBRID: Pembagian Kelas (Class) Khusus agar bisa dimanipulasi CSS di HP
+            tbody.innerHTML += `<tr class="antrean-row" onclick="window.toggleCardMobile(this, event)">
+                <td class="col-pasien">
+                    <strong>${pasien.nama}</strong>
+                    <span class="rm-txt">RM: ${pasien.noRM}</span>
+                </td>
+                <td class="col-tanggal">${pasien.tanggalDaftar}</td> 
+                <td class="col-waktu">${pasien.waktu}</td>
+                <td class="col-tujuan detail-mobile">
+                    <span class="lbl-mobile">Tujuan Perawatan:</span>
+                    ${pasien.tujuan}
+                </td>
+                <td class="col-dokter" style="font-weight:bold; color:#2c3e50;">${pasien.namaDokter || '-'}</td>
+                <td class="col-status">
                     <span class="badge ${badgeClass}">${statusEfektif}</span> 
                     ${statusEfektif.includes("Sudah Diperiksa") ? rmeStatusIndicator : ""}
                 </td>
-                <td>${tombolAksi}</td>
+                <td class="col-aksi detail-mobile">${tombolAksi}</td>
             </tr>`;
         });
+    };
+
+    // 🔥 FITUR BARU: Sensor Klik Accordion Khusus HP
+    window.toggleCardMobile = function(element, event) {
+        // Cegah kartu membuka/menutup jika user mengklik tombol "Mulai", "Edit", dll
+        if (event.target.tagName === 'BUTTON' || event.target.closest('button')) return;
+        
+        // Hanya aktif di layar HP
+        if (window.innerWidth <= 768) {
+            element.classList.toggle('expanded');
+        }
     };
 
     // =====================================================================

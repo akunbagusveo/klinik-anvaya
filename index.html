@@ -267,6 +267,84 @@
                 -webkit-overflow-scrolling: touch !important;
                 padding: 15px !important; /* Sedikit mengurangi padding agar layar HP lebih lega */
             }
+
+            /* =========================================================
+               🔥 FIX RESPONSIVE: TABEL ANTREAN JADI CARD ACCORDION
+               ========================================================= */
+            /* 1. Matikan Sifat Tabel */
+            #antrean table, #antrean thead, #antrean tbody, #antrean th, #antrean td, #antrean tr {
+                display: block; width: 100%; border: none; padding: 0;
+            }
+            #antrean thead { display: none; } /* Sembunyikan Header Kolom */
+            #tabelAntreanBody { background: transparent !important; }
+            
+            /* 2. Kartu Antrean (Tr) */
+            .antrean-row {
+                display: grid !important;
+                grid-template-columns: 55px 1fr auto;
+                grid-template-areas: 
+                    "pasien pasien tanggal"
+                    "waktu dokter dokter"
+                    "status status status"
+                    "tujuan tujuan tujuan"
+                    "aksi aksi aksi";
+                gap: 12px 10px;
+                background: #fff;
+                border: 1px solid #7f8c8d;
+                border-radius: 20px;
+                margin-bottom: 15px;
+                padding: 15px 20px;
+                position: relative;
+                cursor: pointer;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                transition: all 0.3s ease;
+                align-items: center;
+            }
+            
+            /* 3. Tanda Panah Accordion (Chevron `>`) */
+            .antrean-row::after {
+                content: '❯';
+                position: absolute;
+                right: 20px;
+                top: 48px;
+                font-size: 16px;
+                color: #7f8c8d;
+                transition: transform 0.3s ease;
+            }
+            .antrean-row.expanded::after { transform: rotate(90deg); }
+            
+            /* 4. Pemetaan Sel (Td) ke Grid Sesuai Mockup Anda */
+            .col-pasien { grid-area: pasien; display: flex; align-items: center; gap: 12px; }
+            .col-pasien strong { font-size: 15px; color: #000; }
+            .col-pasien .rm-txt { font-size: 13px; color: #2c3e50; }
+            
+            .col-tanggal { grid-area: tanggal; text-align: right; font-size: 13px; color: #2c3e50; }
+            .col-waktu { grid-area: waktu; font-size: 14px; color: #2c3e50; }
+            .col-dokter { grid-area: dokter; font-size: 14px; color: #2c3e50; }
+            .col-status { grid-area: status; margin-top: 2px; }
+            
+            /* 5. Laci Rahasia (Disembunyikan sebelum panah diklik) */
+            .detail-mobile { display: none !important; }
+            .antrean-row.expanded .detail-mobile { display: block !important; }
+            
+            .col-tujuan { 
+                grid-area: tujuan; border-top: 1px solid #ecf0f1; 
+                padding-top: 12px; font-size: 14px; color: #2c3e50;
+            }
+            .lbl-mobile { display: block; font-size: 12px; color: #7f8c8d; margin-bottom: 5px; }
+            
+            .col-aksi { grid-area: aksi; margin-top: 5px; }
+            .col-aksi div { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
+            /* Membuat tombol menjadi susunan grid 2x2 yang sangat rapi jika tombolnya banyak */
+            .col-aksi .btn-action { flex: 1; min-width: calc(50% - 8px); text-align: center; justify-content: center; padding: 10px; font-size: 13px; }
+
+        }
+
+        /* Perlindungan Mode Desktop */
+        @media screen and (min-width: 769px) {
+            .lbl-mobile { display: none; }
+            .rm-txt { display: block; font-size: 12px; color: #7f8c8d; margin-top: 2px; }
+            .col-pasien { display: table-cell; }
         }
 
         @media screen and (max-width: 480px) {
