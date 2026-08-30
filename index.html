@@ -254,6 +254,19 @@
             .modal-custom-header { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
             .modal-custom-header h2 { font-size: 15px; line-height: 1.4; text-align: left; }
             .btn-close-modal { width: 100%; text-align: center; padding: 10px; }
+
+            /* 8. Penjinak Frame Dashboard Utama (Tabel Tindakan & Jam) */
+            #beranda > div[style*="minmax(350px"] {
+                grid-template-columns: 1fr !important; /* Batalkan paksaan 350px, jadikan 1 kolom penuh */
+                gap: 15px !important;
+            }
+            
+            /* Membuat wadah kartu bisa di-scroll ke samping secara mandiri jika isi tabel sangat panjang */
+            #beranda > div[style*="minmax(350px"] > div {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding: 15px !important; /* Sedikit mengurangi padding agar layar HP lebih lega */
+            }
         }
 
         @media screen and (max-width: 480px) {
