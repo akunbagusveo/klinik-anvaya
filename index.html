@@ -355,7 +355,7 @@
             /* =========================================================
                🔥 FIX RESPONSIVE: HISTORI RME JADI CARD ACCORDION
                ========================================================= */
-               .rme-card {
+            .rme-card {
                 position: relative !important;
                 box-sizing: border-box !important;
                 cursor: pointer;
@@ -372,29 +372,38 @@
                 border-top: 2px dashed #ecf0f1;
             }
             
-            /* Panah Indikator > */
-            .rme-card::after {
+            /* 🌟 DESAIN BARU: Merapikan Header & Tombol Edit agar Sejajar Simetris */
+            .rme-card .rme-card-header {
+                position: relative !important;
+                align-items: center !important; /* Kunci Vertikal di Tengah */
+                padding-right: 35px !important; /* Jarak aman untuk panah di kanan */
+            }
+            
+            /* Merapikan letak Tombol Edit */
+            .rme-action-container {
+                margin-right: 0 !important;
+                margin-left: 10px; /* Jarak aman dari teks kiri */
+            }
+            
+            /* 🌟 DESAIN BARU: Panah Indikator > (Diposisikan mutlak di TENGAH VERTIKAL header) */
+            .rme-card .rme-card-header::after {
                 content: '❯';
                 position: absolute;
                 right: 15px;
-                top: 28px; 
+                top: 50%; /* Tarik ke tengah vertikal... */
+                transform: translateY(-50%); /* ...kunci persis di tengah secara matematis */
                 font-size: 16px;
                 color: #7f8c8d;
                 transition: transform 0.3s ease;
-                pointer-events: none; /* Agar tidak menghalangi area klik di bawahnya */
+                pointer-events: none;
             }
             
             /* Putar panah ke bawah jika terbuka */
-            .rme-card.expanded::after {
-                transform: rotate(90deg);
-            }
-            
-            /* Amankan posisi tombol Edit agar tidak tertumpuk panah */
-            .rme-action-container {
-                margin-right: 25px; 
+            .rme-card.expanded .rme-card-header::after {
+                transform: translateY(-50%) rotate(90deg);
             }
         
-        }
+        } /* <--- PENUTUP @media screen and (max-width: 768px) */
 
         /* =========================================================
            🛡️ PERLINDUNGAN MODE DESKTOP
@@ -417,7 +426,9 @@
                 display: block !important; /* Paksa selalu terbuka di PC/Laptop */
             }
             .rme-card { cursor: default !important; } /* Matikan ikon jari (pointer) di PC */
-            .rme-card::after { display: none !important; } /* Sembunyikan panah di PC */
+            
+            /* Sembunyikan panah di PC (Pembaruan target class ke header) */
+            .rme-card .rme-card-header::after { display: none !important; } 
         }
 
         /* Style untuk Latar Belakang Pop-up (Overlay) */
