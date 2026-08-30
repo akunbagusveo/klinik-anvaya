@@ -225,8 +225,8 @@
         }
         
         /* =========================================================
-           🔥 ATURAN RESPONSIVE UNTUK LAYAR HP & TABLET 🔥
-           ========================================================= */
+        🔥 ATURAN RESPONSIVE UNTUK LAYAR HP & TABLET 🔥
+        ========================================================= */
         @media screen and (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 15px; margin: 10px auto; }
@@ -269,31 +269,43 @@
             }
 
             /* =========================================================
-               🔥 FIX RESPONSIVE: TABEL ANTREAN JADI CARD ACCORDION
+               🔥 FIX RESPONSIVE: TABEL ANTREAN JADI CARD ACCORDION (ANTI LUBER)
                ========================================================= */
-            /* 1. Matikan Sifat Tabel */
+            /* 1. Kunci Pembungkus Utama agar tidak bisa geser menyamping */
+            #antrean .table-responsive {
+                box-sizing: border-box !important;
+                overflow-x: hidden !important; 
+                width: 100% !important;
+                padding: 2px !important;
+            }
+
+            /* 2. Matikan Sifat Tabel & Aktifkan Box-Sizing */
             #antrean table, #antrean thead, #antrean tbody, #antrean th, #antrean td, #antrean tr {
                 display: block; width: 100%; border: none; padding: 0;
+                box-sizing: border-box !important; /* INI KUNCI ANTI-LUBER */
             }
-            #antrean thead { display: none; } /* Sembunyikan Header Kolom */
+            #antrean thead { display: none; } 
             #tabelAntreanBody { background: transparent !important; }
             
-            /* 2. Kartu Antrean (Tr) */
+            /* 3. Kartu Antrean (Tr) */
             .antrean-row {
+                box-sizing: border-box !important;
+                width: 100% !important;
+                max-width: 100% !important;
                 display: grid !important;
-                grid-template-columns: 55px 1fr auto;
+                grid-template-columns: 45px minmax(0, 1fr) auto !important; 
                 grid-template-areas: 
                     "pasien pasien tanggal"
                     "waktu dokter dokter"
                     "status status status"
                     "tujuan tujuan tujuan"
                     "aksi aksi aksi";
-                gap: 12px 10px;
+                gap: 10px 8px;
                 background: #fff;
                 border: 1px solid #7f8c8d;
-                border-radius: 20px;
-                margin-bottom: 15px;
-                padding: 15px 20px;
+                border-radius: 16px;
+                margin-bottom: 12px;
+                padding: 15px 35px 15px 15px !important; 
                 position: relative;
                 cursor: pointer;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -301,46 +313,49 @@
                 align-items: center;
             }
             
-            /* 3. Tanda Panah Accordion (Chevron `>`) */
+            /* 4. Tanda Panah Accordion (Chevron `>`) */
             .antrean-row::after {
                 content: '❯';
                 position: absolute;
-                right: 20px;
-                top: 48px;
+                right: 15px; 
+                top: 35px;   
                 font-size: 16px;
                 color: #7f8c8d;
                 transition: transform 0.3s ease;
             }
             .antrean-row.expanded::after { transform: rotate(90deg); }
             
-            /* 4. Pemetaan Sel (Td) ke Grid Sesuai Mockup Anda */
-            .col-pasien { grid-area: pasien; display: flex; align-items: center; gap: 12px; }
-            .col-pasien strong { font-size: 15px; color: #000; }
-            .col-pasien .rm-txt { font-size: 13px; color: #2c3e50; }
+            /* 5. Pemetaan Sel & Penjinak Teks (Truncate) */
+            .col-pasien { grid-area: pasien; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+            .col-pasien strong { font-size: 14px; color: #000; word-break: break-word; }
+            .col-pasien .rm-txt { font-size: 12px; color: #2c3e50; }
             
-            .col-tanggal { grid-area: tanggal; text-align: right; font-size: 13px; color: #2c3e50; }
-            .col-waktu { grid-area: waktu; font-size: 14px; color: #2c3e50; }
-            .col-dokter { grid-area: dokter; font-size: 14px; color: #2c3e50; }
+            .col-tanggal { grid-area: tanggal; text-align: right; font-size: 12px; color: #2c3e50; }
+            .col-waktu { grid-area: waktu; font-size: 13px; color: #2c3e50; font-weight: bold; }
+            
+            .col-dokter { grid-area: dokter; font-size: 13px; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            
             .col-status { grid-area: status; margin-top: 2px; }
             
-            /* 5. Laci Rahasia (Disembunyikan sebelum panah diklik) */
-            .detail-mobile { display: none !important; }
+            /* 6. Laci Rahasia (Disembunyikan sebelum panah diklik) */
+            .detail-mobile { display: none !important; width: 100%; box-sizing: border-box !important; }
             .antrean-row.expanded .detail-mobile { display: block !important; }
             
             .col-tujuan { 
                 grid-area: tujuan; border-top: 1px solid #ecf0f1; 
-                padding-top: 12px; font-size: 14px; color: #2c3e50;
+                padding-top: 12px; font-size: 13px; color: #2c3e50;
+                word-wrap: break-word;
             }
             .lbl-mobile { display: block; font-size: 12px; color: #7f8c8d; margin-bottom: 5px; }
             
             .col-aksi { grid-area: aksi; margin-top: 5px; }
             .col-aksi div { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
-            /* Membuat tombol menjadi susunan grid 2x2 yang sangat rapi jika tombolnya banyak */
-            .col-aksi .btn-action { flex: 1; min-width: calc(50% - 8px); text-align: center; justify-content: center; padding: 10px; font-size: 13px; }
-
+            .col-aksi .btn-action { flex: 1; min-width: calc(50% - 8px); text-align: center; justify-content: center; padding: 10px; font-size: 12px; box-sizing: border-box; }
         }
 
-        /* Perlindungan Mode Desktop */
+        /* =========================================================
+           🛡️ PERLINDUNGAN MODE DESKTOP
+           ========================================================= */
         @media screen and (min-width: 769px) {
             .lbl-mobile { display: none; }
             .rm-txt { display: block; font-size: 12px; color: #7f8c8d; margin-top: 2px; }
