@@ -883,18 +883,39 @@
         }
 
         /* 6. Penjinak Grid Profil Pasien agar tidak meluber */
-        #gridProfilRME {
-            grid-template-columns: 1fr !important; /* Ubah dari 4 kolom menjadi 1 baris ke bawah */
-            gap: 8px !important;
+        /* =========================================================
+            🌟 DESAIN BARU: PROFIL PASIEN JADI KARTU PINTAR (MINI CARDS)
+            ========================================================= */
+            #gridProfilRME {
+            grid-template-columns: 1fr 1fr !important; /* Bagi layar jadi 2 kolom presisi */
+            gap: 10px !important;
+            background: transparent !important; /* Hapus background abu-abu bawaan */
+            border: none !important; 
+            padding: 5px 0 15px 0 !important;
         }
+        
         #gridProfilRME > div {
-            grid-column: span 1 !important; /* Matikan paksaan lebar ganda pada domisili */
-            word-wrap: break-word !important; /* Paksa teks NIK/Alamat panjang untuk turun baris */
-            border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 5px;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 10px !important; /* Sudut melengkung elegan */
+            padding: 10px 12px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important; /* Bayangan sangat halus */
+            word-wrap: break-word !important;
+            border-bottom: 1px solid #e2e8f0 !important; /* Matikan garis putus-putus */
+            font-size: 12px !important;
+            line-height: 1.5 !important;
+            display: flex;
+            flex-direction: column; /* Ikon/Label dan Isi agak dirapatkan */
+            justify-content: center;
         }
-        #gridProfilRME > div:last-child {
-            border-bottom: none;
+        
+        /* JURUS RAHASIA: 
+            Kolom 3 (TTL), 4 (NIK), dan 7 (Domisili) teksnya panjang. 
+            Kita paksa mereka mengambil 2 kolom penuh (Span 2) agar tidak terpotong! */
+        #gridProfilRME > div:nth-child(3), 
+        #gridProfilRME > div:nth-child(4), 
+        #gridProfilRME > div:nth-child(7) {
+            grid-column: span 2 !important; 
         }
 
         /* 7. Membebaskan tinggi modal agar histori panjang tidak terpotong */
