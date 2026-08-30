@@ -513,6 +513,41 @@
                 padding: 10px !important;
                 border-radius: 8px !important;
             }
+
+            /* =========================================================
+               🔥 FIX RESPONSIVE: AREA PRO KONTROL & TANGGAL
+               ========================================================= */
+            /* 1. Jika ada Grid/Flex 2 kolom di dalam form, paksa jadi 1 kolom bertumpuk */
+            #formModalMedisSplit div[style*="grid"],
+            #formModalMedis div[style*="grid"],
+            #formModalMedisSplit div[style*="display: flex"],
+            #formModalMedis div[style*="display: flex"] {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 2. JURUS SAKTI: Cari div yang memiliki kotak Tanggal, lalu paksa isinya berbaris ke bawah */
+            #formModalMedisSplit div:has(> input[type="date"]),
+            #formModalMedis div:has(> input[type="date"]) {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 10px !important; /* Beri jarak atas-bawah antar kotak */
+            }
+
+            /* 3. Pastikan kotak input Tanggal, Teks, dan Textarea melebar penuh tanpa meluber */
+            #formModalMedisSplit input[type="date"],
+            #formModalMedisSplit input[type="text"],
+            #formModalMedisSplit textarea,
+            #formModalMedis input[type="date"],
+            #formModalMedis input[type="text"],
+            #formModalMedis textarea {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
         
         } /* <--- PENUTUP @media screen and (max-width: 768px) */
 
