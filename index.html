@@ -514,10 +514,10 @@
                 border-radius: 8px !important;
             }
 
-            /* =========================================================
-               🔥 FIX RESPONSIVE: AREA PRO KONTROL & TANGGAL
+           /* =========================================================
+               🔥 FIX RESPONSIVE: AREA PRO KONTROL & TANGGAL (ANTI RENGGANG)
                ========================================================= */
-            /* 1. Jika ada Grid/Flex 2 kolom di dalam form, paksa jadi 1 kolom bertumpuk */
+            /* 1. Paksa jadi 1 kolom bertumpuk dan BATALKAN sisa tinggi dari PC */
             #formModalMedisSplit div[style*="grid"],
             #formModalMedis div[style*="grid"],
             #formModalMedisSplit div[style*="display: flex"],
@@ -526,18 +526,23 @@
                 flex-direction: column !important;
                 width: 100% !important;
                 box-sizing: border-box !important;
+                height: auto !important;      /* Bunuh sisa tinggi dari PC */
+                min-height: auto !important;  /* Bunuh sisa tinggi dari PC */
+                gap: 12px !important;         /* Jarak antar blok yang wajar */
             }
 
-            /* 2. JURUS SAKTI: Cari div yang memiliki kotak Tanggal, lalu paksa isinya berbaris ke bawah */
+            /* 2. Jinakkan div pembungkus Tanggal & Catatan agar merapat ke atas */
             #formModalMedisSplit div:has(> input[type="date"]),
             #formModalMedis div:has(> input[type="date"]) {
                 display: flex !important;
                 flex-direction: column !important;
                 width: 100% !important;
-                gap: 10px !important; /* Beri jarak atas-bawah antar kotak */
+                gap: 8px !important;                    /* Rapatkan jarak antar input */
+                justify-content: flex-start !important; /* Paksa merapat ke atas (hilangkan ruang kosong) */
+                height: auto !important;
             }
 
-            /* 3. Pastikan kotak input Tanggal, Teks, dan Textarea melebar penuh tanpa meluber */
+            /* 3. Pastikan semua input presisi dan tidak meluber */
             #formModalMedisSplit input[type="date"],
             #formModalMedisSplit input[type="text"],
             #formModalMedisSplit textarea,
@@ -547,6 +552,7 @@
                 width: 100% !important;
                 max-width: 100% !important;
                 box-sizing: border-box !important;
+                margin-bottom: 0 !important; 
             }
         
         } /* <--- PENUTUP @media screen and (max-width: 768px) */
