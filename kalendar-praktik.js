@@ -71,7 +71,7 @@
     };
 
     // =====================================================================
-    // 3. MESIN RENDER KALENDER (GAYA GOOGLE SHEET - PRESISI TINGGI)
+    // 3. MESIN RENDER KALENDER (HYBRID: PC GRID & MOBILE AGENDA)
     // =====================================================================
     window.renderKalenderInstan = function() {
         const gridBody = document.getElementById('gridKalenderBody');
@@ -86,20 +86,30 @@
 
         gridBody.innerHTML = ""; 
 
-        const namaHari = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
-        namaHari.forEach((hari, idx) => {
+        // 🔥 INJEKSI OTOMATIS: Membuat Kontainer Agenda Khusus Mobile di Bawah Kalender
+        let agendaContainer = document.getElementById('agendaMobileContainer');
+        if (!agendaContainer) {
+            agendaContainer = document.createElement('div');
+            agendaContainer.id = 'agendaMobileContainer';
+            const scrollContainer = document.querySelector('.kalender-container-scroll');
+            if (scrollContainer) scrollContainer.parentNode.insertBefore(agendaContainer, scrollContainer.nextSibling);
+        }
+        agendaContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">Pilih tanggal untuk melihat jadwal.</div>';
+
+        // Header Hari (Senin - Minggu)
+        const namaHariLengkap = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+        const namaHariSingkat = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+        
+        namaHariLengkap.forEach((hari, idx) => {
             const selHeader = document.createElement('div');
+            selHeader.className = 'header-hari-hybrid';
             selHeader.style.cssText = `
-                background: #1e3c72; 
-                color: white; 
-                font-weight: bold; 
-                padding: 12px 5px; 
-                text-align: center; 
-                font-size: 14px; 
-                ${idx === 5 ? 'color: #fcd34d;' : ''} 
-                ${idx === 6 ? 'color: #fca5a5;' : ''} 
+                background: #1e3c72; color: white; font-weight: bold; padding: 12px 5px; 
+                text-align: center; font-size: 14px; 
+                ${idx === 5 ? 'color: #fcd34d;' : ''} ${idx === 6 ? 'color: #fca5a5;' : ''} 
             `;
-            selHeader.innerText = hari;
+            // Trik Hybrid: Menyimpan 2 teks, CSS yang akan menentukan mana yang tampil
+            selHeader.innerHTML = `<span class="hari-pc">${hari}</span><span class="hari-hp">${namaHariSingkat[idx]}</span>`;
             gridBody.appendChild(selHeader);
         });
 
@@ -110,11 +120,15 @@
         let indexKolomMulai = (hariPertama === 0) ? 6 : hariPertama - 1;
         const totalHariBulanIni = new Date(kalenderTahunAktif, kalenderBulanAktif + 1, 0).getDate();
 
+        // Mengisi kotak kosong sebelum tanggal 1
         for (let i = 0; i < indexKolomMulai; i++) {
             const selKosong = document.createElement('div');
+            selKosong.className = 'sel-kosong-hybrid';
             selKosong.style.cssText = "background: #f8fafc; min-height: 110px; opacity: 0.6;";
             gridBody.appendChild(selKosong);
         }
+
+        let elemenHariIni = null; // Disimpan untuk trigger klik otomatis di HP
 
         for (let tgl = 1; tgl <= totalHariBulanIni; tgl++) {
             const strTgl = `${kalenderTahunAktif}-${String(kalenderBulanAktif + 1).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`;
@@ -123,30 +137,36 @@
             
             const apakahHariIni = (strTgl === formatHariIni);
 
-            const kotakHari = document.createElement('div');
-            kotakHari.style.cssText = `
-                background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; 
-                min-height: 115px; 
-                padding: 6px; 
-                display: flex; 
-                flex-direction: column;
-                ${apakahHariIni ? 'outline: 2px solid #f59e0b; z-index: 2;' : ''}
-            `;
-
-            let htmlKartu = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
-                    <span style="font-weight: bold; font-size: 13px; color: ${apakahHariIni ? '#d97706' : '#334155'};">
-                        ${apakahHariIni ? '📍 ' : ''}${tgl}
-                    </span>
-                </div>
-            `;
-
             const pasienHariIni = cacheDataKalender.filter(p => {
                 const teksPasien = JSON.stringify(p);
                 return teksPasien.includes(strTgl) || teksPasien.includes(tglIndo1) || teksPasien.includes(tglIndo2);
             });
+            const adaPasien = pasienHariIni.length > 0;
 
-            if (pasienHariIni.length > 0) {
+            const kotakHari = document.createElement('div');
+            kotakHari.className = `sel-kalender-hybrid ${apakahHariIni ? 'is-today' : ''}`;
+            
+            // 🔥 Sensor Sentuh Khusus HP
+            kotakHari.setAttribute('onclick', `if(window.innerWidth <= 768) window.pilihTanggalMobile('${strTgl}', this)`);
+            kotakHari.style.cssText = `
+                background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; 
+                min-height: 115px; padding: 6px; display: flex; flex-direction: column; cursor: pointer;
+                ${apakahHariIni ? 'outline: 2px solid #f59e0b; z-index: 2;' : ''}
+            `;
+
+            if (apakahHariIni) elemenHariIni = kotakHari;
+
+            let htmlKartu = `
+                <div class="header-tgl-hybrid" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                    <span class="angka-tgl-hybrid" style="font-weight: bold; font-size: 13px; color: ${apakahHariIni ? '#d97706' : '#334155'};">
+                        <span class="pin-today-pc">${apakahHariIni ? '📍 ' : ''}</span>${tgl}
+                    </span>
+                    <span class="titik-indikator-mobile" style="${adaPasien ? 'display:block;' : 'display:none;'} width:5px; height:5px; background:#10b981; border-radius:50%; margin-top:2px;"></span>
+                </div>
+                <div class="wadah-event-desktop">
+            `;
+
+            if (adaPasien) {
                 pasienHariIni.forEach(p => {
                     const namaPasien = p.nama || p.namaPasien || p[1] || "Pasien";
                     const noRM       = p.noRM || p[0] || "";
@@ -165,10 +185,10 @@
                         bgKartu = "#fef3c7"; teksKartu = "#92400e"; borderKartu = "#f59e0b"; ikon = "🟠"; 
                     }
 
-                    // 🔥 UPGRADE PROTEKSI: namaPasien di-escape (replace) agar kutip tunggal tidak merusak onClick
+                    // Trik event.stopPropagation() agar klik di PC tidak memicu seleksi Mobile
                     htmlKartu += `
                         <div class="kartu-pasien-kalender" 
-                            onclick="window.klikKartuPasienKalender('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', '${idAntrean}')"
+                            onclick="window.klikKartuPasienKalender('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', '${idAntrean}'); event.stopPropagation();"
                             style="background: ${bgKartu}; color: ${teksKartu}; border-left: 3px solid ${borderKartu}; ${dicoret}"
                             title="Klik untuk lihat detail ${namaPasien}">
                             <strong>${ikon} ${jam}</strong><br>
@@ -179,9 +199,89 @@
                 });
             }
 
+            htmlKartu += `</div>`; 
             kotakHari.innerHTML = htmlKartu;
             gridBody.appendChild(kotakHari);
         }
+
+        // Auto-select untuk Mobile (Pilih hari ini, atau tgl 1 jika sedang memantau bulan lain)
+        if (window.innerWidth <= 768) {
+            if (elemenHariIni) {
+                elemenHariIni.click();
+            } else {
+                const kotakPertama = gridBody.querySelectorAll('.sel-kalender-hybrid:not(.sel-kosong-hybrid)')[0];
+                if(kotakPertama) kotakPertama.click();
+            }
+        }
+    };
+
+    // =====================================================================
+    // 🔥 FUNGSI BARU: MESIN PEMBUAT AGENDA MOBILE
+    // =====================================================================
+    window.pilihTanggalMobile = function(strTgl, elemenKotak) {
+        // Hapus penanda dari kotak lain, lalu beri penanda bulat di kotak yang diklik
+        document.querySelectorAll('.sel-kalender-hybrid').forEach(el => el.classList.remove('selected-mobile'));
+        elemenKotak.classList.add('selected-mobile');
+
+        const agendaContainer = document.getElementById('agendaMobileContainer');
+        if (!agendaContainer) return;
+
+        // Ambil data pasien di tanggal yang diklik
+        const formatIndo = strTgl.split('-');
+        const tglIndo1 = `${formatIndo[2]}/${formatIndo[1]}/${formatIndo[0]}`;
+        const tglIndo2 = `${formatIndo[2]}-${formatIndo[1]}-${formatIndo[0]}`;
+        const pasienHariIni = cacheDataKalender.filter(p => JSON.stringify(p).includes(strTgl) || JSON.stringify(p).includes(tglIndo1) || JSON.stringify(p).includes(tglIndo2));
+
+        // Format Judul (Contoh: Senin, 31 Agustus 2026)
+        const tglObj = new Date(strTgl);
+        const namaHariStr = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][tglObj.getDay()];
+        const namaBulanStr = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][tglObj.getMonth()];
+        const headerTgl = `${namaHariStr}, ${tglObj.getDate()} ${namaBulanStr} ${tglObj.getFullYear()}`;
+
+        let htmlAgenda = `
+            <div style="padding: 15px 10px; background: #f8fafc; border-top: 1px solid #e2e8f0; margin-top: 10px;">
+                <h3 style="margin: 0 0 15px 5px; color: #1e3c72; font-size: 15px;">🗓️ ${headerTgl}</h3>
+        `;
+
+        if (pasienHariIni.length === 0) {
+            htmlAgenda += `<div style="text-align: center; color: #94a3b8; padding: 30px 0; font-style: italic;">Tidak ada janji temu hari ini.</div>`;
+        } else {
+            htmlAgenda += `<div style="display:flex; flex-direction:column; gap:12px;">`;
+            pasienHariIni.forEach(p => {
+                const namaPasien = p.nama || p.namaPasien || p[1] || "Pasien";
+                const noRM       = p.noRM || p[0] || "";
+                const idAntrean  = p.idAntrean || p.rowNumber || "";
+                const jam        = p.waktu || p.jam || p[3] || "";
+                const tujuan     = p.tujuan || p.keluhan || p[4] || "Konsultasi";
+                const statusBersih = (p.status || p[6] || "").toString().toLowerCase().trim();
+                
+                let bgKartu = "#ffffff"; let ikon = "🔵"; let dicoret = "";
+                if (statusBersih.includes("sudah") || statusBersih.includes("selesai")) ikon = "🟢";
+                else if (statusBersih.includes("batal") || statusBersih.includes("absen")) { ikon = "🔘"; dicoret = "text-decoration: line-through; opacity: 0.7;"; }
+                else if (strTgl === new Date().toISOString().split('T')[0]) ikon = "🟠"; 
+
+                // Kartu Pasien Mode Mobile
+                htmlAgenda += `
+                    <div onclick="window.klikKartuPasienKalender('${noRM}', '${namaPasien.replace(/'/g, "\\'")}', '${idAntrean}')"
+                        style="background: ${bgKartu}; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03); cursor: pointer; display: flex; align-items:flex-start; gap: 12px; transition: 0.2s; ${dicoret}">
+                        
+                        <div style="font-size: 14px; font-weight: bold; color: #334155; min-width: 50px; text-align: center; border-right: 1px dashed #cbd5e1; padding-right: 12px;">
+                            ${jam}<br><span style="font-size:10px;">${ikon}</span>
+                        </div>
+                        <div style="flex: 1;">
+                            <strong style="font-size:15px; color:#0f172a; display:block; margin-bottom:2px;">${namaPasien}</strong>
+                            <small style="color: #64748b; font-size:12px; display:flex; flex-direction:column; gap:3px;">
+                                <span>🩺 ${tujuan}</span>
+                                <span>🆔 ${noRM}</span>
+                            </small>
+                        </div>
+                    </div>
+                `;
+            });
+            htmlAgenda += `</div>`;
+        }
+        htmlAgenda += `</div>`;
+        agendaContainer.innerHTML = htmlAgenda;
     };
 
     // =====================================================================
