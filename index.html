@@ -237,9 +237,6 @@
             .col-pasien { display: table-cell; }
         }
 
-        @media screen and (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; }
-        }
 
         /* =========================================================
            🛡️ PERLINDUNGAN MODE DESKTOP UNTUK RME
@@ -684,7 +681,30 @@
             /* 1. TATA LETAK DASAR & SIDEBAR */
             body { padding: 10px; }
             .container { padding: 15px; margin: 10px auto; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stats-grid { 
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important; /* Paksa selalu 2 kolom berdampingan */
+                gap: 8px !important; /* Rapatkan jarak antar kotak */
+            }
+            .stat-card { 
+                padding: 12px 8px !important; /* Kurangi ruang kosong dalam kotak */
+                border-radius: 10px !important; 
+                min-height: 75px !important; /* Buat tinggi kotak lebih mungil */
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+            }
+            .stat-card h4 { 
+                font-size: 9px !important; /* Kecilkan judul agar tidak patah/meluber */
+                line-height: 1.3 !important;
+                margin-bottom: 5px !important;
+                letter-spacing: 0 !important;
+            }
+            .stat-card p { 
+                font-size: 20px !important; /* Angka utama disesuaikan */
+                margin: 0 !important; 
+            }
             .form-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
             .header-area { flex-direction: column; align-items: flex-start; gap: 15px; }
