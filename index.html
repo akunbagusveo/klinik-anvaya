@@ -1118,6 +1118,44 @@
             }
         }
 
+        /* =========================================================
+        💻 TATA LETAK DEFAULT UNTUK PC/LAPTOP
+        ========================================================= */
+        .wrapper-pro-kontrol {
+            display: flex;
+            flex-direction: row; /* Berjejer ke samping */
+            gap: 15px;
+            width: 100%;
+            align-items: flex-start;
+        }
+        .wrapper-pro-kontrol .box-tanggal {
+            flex: 0 0 150px; /* Kembalikan paksaan 150px KHUSUS di PC agar rapi */
+        }
+        .wrapper-pro-kontrol .box-catatan {
+            flex: 1; /* Sisa ruang untuk text area */
+        }
+        .wrapper-pro-kontrol .lbl-kontrol {
+            font-size: 11px; 
+            color: #7f8c8d; 
+            margin-bottom: 5px; /* Jarak aman antara judul dan kotak input */
+            margin-top: 4px;
+        }
+
+        /* =========================================================
+        📱 KHUSUS HP (< 768px): Tumpuk Vertikal
+        ========================================================= */
+        @media screen and (max-width: 768px) {
+            .wrapper-pro-kontrol {
+                flex-direction: column !important; /* Paksa tumpuk atas-bawah */
+                gap: 10px !important;
+            }
+            .wrapper-pro-kontrol .box-tanggal,
+            .wrapper-pro-kontrol .box-catatan {
+                flex: none !important; /* Matikan paksaan 150px dari PC */
+                width: 100% !important; /* Lebarkan memenuhi layar HP */
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2857,14 +2895,13 @@
                                         <span>🔁 Pro Kontrol Kembali</span>
                                         <button type="button" class="btn-mic" onclick="window.mulaiDikte('modalProKontrol')">🎙️</button>
                                     </label>
-                                    <div style="display: flex; gap: 10px;">
-                                        <!-- <div style="flex: 0 0 140px;"> -->
-                                        <div>
-                                            <div style="font-size: 11px; color: #7f8c8d; margin-top: 4px; text-align: center;">📅 Tanggal Kontrol</div>
+                                    <div class="wrapper-pro-kontrol">
+                                        <div class="box-tanggal">
+                                            <div class="lbl-kontrol">📅 Tanggal Kontrol</div>
                                             <input type="date" id="tanggalKontrol" onclick="this.min = new Date().toISOString().split('T')[0]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit;">
                                         </div>
-                                        <div style="flex: 1;">
-                                            <div style="font-size: 11px; color: #7f8c8d; margin-top: 4px;">📝 Pesan Pengingat untuk Pasien</div>
+                                        <div class="box-catatan">
+                                            <div class="lbl-kontrol">📝 Pesan Pengingat untuk Pasien</div>
                                             <textarea id="modalProKontrol" rows="2" placeholder="Catatan/Tujuan kontrol (opsional)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical;"></textarea>   
                                         </div>
                                     </div>
