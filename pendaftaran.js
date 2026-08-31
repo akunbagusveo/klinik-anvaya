@@ -426,12 +426,22 @@
         } else {
             if (boxLama) boxLama.style.display = 'none';
             
+            // 🔥 RESET: Matikan centang anak jika ganti ke Pasien Baru
+            const cbAnak = document.getElementById('cbPasienAnak');
+            if (cbAnak) cbAnak.checked = false;
+
             daftarInput.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     if (id !== 'txtNoRM') el.readOnly = false; 
                     el.style.backgroundColor = "#fff";
                     el.value = "";
+
+                    // 🔥 RESET: Kembalikan validasi 16 digit KTP
+                    if (id === 'txtKTP') {
+                        el.setAttribute('pattern', '\\d{16}');
+                        el.setAttribute('maxlength', '16');
+                    }
                 }
             });
             
@@ -439,6 +449,45 @@
             if (rbLaki) rbLaki.checked = true;
 
             window.generateNoRMInstan(); 
+        }
+    };
+
+    // =====================================================================
+    // 🔥 6. FITUR BARU: GENERATOR KTP PASIEN ANAK
+    // =====================================================================
+    window.togglePasienAnak = function(checkbox) {
+        const txtKTP = document.getElementById('txtKTP');
+        if (!txtKTP) return;
+
+        if (checkbox.checked) {
+            // 1. Kunci KTP & ubah warna jadi hijau mint (tanda otomatis)
+            txtKTP.readOnly = true;
+            txtKTP.style.backgroundColor = "#e8f8f5";
+            
+            // 2. Buka gembok validasi (hapus syarat harus angka 16 digit) agar bisa disubmit
+            txtKTP.removeAttribute('pattern');
+            txtKTP.removeAttribute('maxlength');
+            
+            // 3. Generate ID Unik Tak Berulang (ANAK-YYMMDD-HHMMSS)
+            const now = new Date();
+            const timeString = String(now.getFullYear()).slice(-2) + 
+                               String(now.getMonth() + 1).padStart(2, '0') + 
+                               String(now.getDate()).padStart(2, '0') + 
+                               "-" +
+                               String(now.getHours()).padStart(2, '0') + 
+                               String(now.getMinutes()).padStart(2, '0') + 
+                               String(now.getSeconds()).padStart(2, '0');
+            
+            txtKTP.value = "ANAK-" + timeString;
+        } else {
+            // 1. Kembalikan ke mode normal jika centang dicabut
+            txtKTP.readOnly = false;
+            txtKTP.style.backgroundColor = "#fff";
+            txtKTP.value = "";
+            
+            // 2. Kunci kembali wajib 16 digit angka
+            txtKTP.setAttribute('pattern', '\\d{16}');
+            txtKTP.setAttribute('maxlength', '16');
         }
     };
 
