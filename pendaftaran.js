@@ -419,16 +419,26 @@
     window.aturTipePasien = function(tipe) {
         const boxLama = document.getElementById('boxPasienLama');
         const daftarInput = ['txtNoRM', 'nama', 'txtKTP', 'tempatLahir', 'tanggalLahir', 'pekerjaan', 'whatsapp', 'email', 'alamat', 'kecamatan', 'kota'];
+        const cbAnak = document.getElementById('cbPasienAnak');
 
         if (tipe === 'lama') {
             if (boxLama) boxLama.style.display = 'block';
+            
+            // 🔥 FIX: Matikan & Sembunyikan fitur Pasien Anak jika Pasien Lama
+            if (cbAnak) {
+                cbAnak.checked = false;
+                if (cbAnak.parentElement) cbAnak.parentElement.style.display = 'none';
+            }
+
             window.bukaModalCariPasien(); 
         } else {
             if (boxLama) boxLama.style.display = 'none';
             
-            // 🔥 RESET: Matikan centang anak jika ganti ke Pasien Baru
-            const cbAnak = document.getElementById('cbPasienAnak');
-            if (cbAnak) cbAnak.checked = false;
+            // 🔥 RESET: Munculkan dan kembalikan fitur Pasien Anak jika Pasien Baru
+            if (cbAnak) {
+                cbAnak.checked = false;
+                if (cbAnak.parentElement) cbAnak.parentElement.style.display = 'flex';
+            }
 
             daftarInput.forEach(id => {
                 const el = document.getElementById(id);
@@ -453,22 +463,30 @@
     };
 
     // =====================================================================
-    // 🔥 6. FITUR BARU: GENERATOR KTP PASIEN ANAK
+    // 🔥 6. FITUR BARU: GENERATOR KTP PASIEN ANAK (KEBAL CELAH)
     // =====================================================================
     window.togglePasienAnak = function(checkbox) {
         const txtKTP = document.getElementById('txtKTP');
         if (!txtKTP) return;
+
+        // 🔥 SATPAM TAMBAHAN: Tolak eksekusi mutlak jika mode Pasien Lama sedang aktif
+        const radioLama = document.querySelector('input[name="tipePasien"][value="lama"]');
+        if (radioLama && radioLama.checked) {
+            alert("⚠️ Fitur ini hanya digunakan saat mendaftarkan Pasien Baru.");
+            checkbox.checked = false;
+            return;
+        }
 
         if (checkbox.checked) {
             // 1. Kunci KTP & ubah warna jadi hijau mint (tanda otomatis)
             txtKTP.readOnly = true;
             txtKTP.style.backgroundColor = "#e8f8f5";
             
-            // 2. Buka gembok validasi (hapus syarat harus angka 16 digit) agar bisa disubmit
+            // 2. Buka gembok validasi agar format ANAK-... bisa disubmit
             txtKTP.removeAttribute('pattern');
             txtKTP.removeAttribute('maxlength');
             
-            // 3. Generate ID Unik Tak Berulang (ANAK-YYMMDD-HHMMSS)
+            // 3. Generate ID Unik
             const now = new Date();
             const timeString = String(now.getFullYear()).slice(-2) + 
                                String(now.getMonth() + 1).padStart(2, '0') + 
