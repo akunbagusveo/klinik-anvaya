@@ -912,16 +912,23 @@
             /* Sembunyikan Header Kolom (No. RM, Nama, dll) */
             #areaTabelCariPasien thead { display: none !important; }
             
-            /* 2. Sulap Tampilan Saat Kosong (Belum Ngetik) */
+            /* 2. Sulap Tampilan Saat Kosong (Anti Kotak Ganda) */
+            #bodyTabelCariPasien tr:has(td[colspan="6"]) {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin-top: 15px !important;
+            }
             #bodyTabelCariPasien td[colspan="6"] {
                 text-align: center !important;
-                padding: 40px 20px !important;
+                padding: 30px 20px !important;
                 background: #f8fafc !important;
                 border: 2px dashed #cbd5e1 !important;
                 border-radius: 12px !important;
                 color: #64748b !important;
                 font-size: 13px !important;
-                margin-top: 10px !important;
+                margin: 0 !important;
             }
 
             /* 3. Desain Kartu Utama (Setiap Pasien) */
