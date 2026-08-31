@@ -556,68 +556,94 @@
             }
 
             /* =========================================================
-               🔥 HYBRID KALENDER PRAKTIK: KHUSUS MOBILE
+               🔥 HYBRID KALENDER PRAKTIK: KHUSUS MOBILE (FIX GRID 7 KOLOM)
                ========================================================= */
-            /* 1. Buka Kunci Grid agar pas di HP */
+            /* 1. Buka Kunci Pembungkus & Matikan Scroll Samping */
             .kalender-container-scroll {
                 padding-bottom: 0 !important;
-            }
-            #gridKalenderBody {
-                grid-template-columns: repeat(7, 1fr) !important; /* Susutkan jadi 7 kolom mungil */
-                min-width: 100% !important; 
-                gap: 0 !important; /* Hilangkan garis tebal grid */
-                background: #ffffff !important; 
-                border: none !important;
-                box-shadow: none !important;
+                overflow-x: hidden !important; 
             }
             
-            /* 2. Header Hari (Sen, Sel, Rab) */
+            /* 2. JURUS KUNCI: Paksa menjadi Grid 7 Kolom agar tidak memanjang ke bawah! */
+            #gridKalenderBody {
+                display: grid !important; /* Paksa Grid Aktif */
+                grid-template-columns: repeat(7, 1fr) !important; /* 7 Kolom Sejajar */
+                width: 100% !important;
+                min-width: 100% !important; 
+                gap: 5px 0 !important; /* Jarak vertikal antar baris */
+                background: transparent !important; 
+                border: none !important;
+                box-shadow: none !important;
+                padding: 10px 5px !important;
+            }
+            
+            /* 3. Header Hari (Sen, Sel, Rab) */
             .header-hari-hybrid {
                 background: transparent !important;
                 color: #64748b !important;
-                font-size: 11px !important;
-                padding: 10px 0 5px 0 !important;
-                border-bottom: 1px solid #e2e8f0;
+                font-size: 12px !important;
+                padding: 5px 0 !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                text-align: center !important;
             }
             .hari-pc { display: none !important; }
-            .hari-hp { display: inline !important; } /* Tampilkan versi pendek */
+            .hari-hp { display: inline !important; font-weight: 600 !important; }
 
-            /* 3. Kotak Tanggal Jadi Segi Empat Kecil */
+            /* 4. Kotak Tanggal / Sel Kosong */
             .sel-kosong-hybrid, .sel-kalender-hybrid {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
                 min-height: 45px !important;
                 background: transparent !important;
                 border: none !important;
-                padding: 4px !important;
+                padding: 2px !important;
                 outline: none !important;
-                align-items: center !important;
-                justify-content: flex-start !important;
-                gap: 2px !important;
+                cursor: pointer !important;
             }
             
-            /* 4. Sembunyikan Event Block Bawaan PC di HP */
+            /* 5. Sembunyikan Daftar Pasien Bawaan PC */
             .wadah-event-desktop { display: none !important; }
             
-            /* 5. Desain Ulang Lingkaran Tanggal */
+            /* 6. Desain Bulatan Tanggal ala Aplikasi Modern */
             .header-tgl-hybrid { 
-                border-bottom: none !important; margin: 0 !important; padding: 0 !important;
-                flex-direction: column !important; align-items: center !important; justify-content: center !important;
-                width: 32px !important; height: 32px !important;
-                border-radius: 50% !important; transition: 0.2s;
+                display: flex !important;
+                flex-direction: column !important; 
+                align-items: center !important; 
+                justify-content: center !important;
+                width: 35px !important; 
+                height: 35px !important;
+                border-radius: 50% !important; 
+                border-bottom: none !important; 
+                margin: 0 auto !important; 
+                padding: 0 !important;
+                transition: 0.2s;
             }
-            .pin-today-pc { display: none !important; } /* Sembunyikan emoji pin */
+            .pin-today-pc { display: none !important; } 
             .angka-tgl-hybrid { font-size: 14px !important; }
+
+            /* Titik Indikator Pasien (Hijau) */
+            .titik-indikator-mobile {
+                width: 4px !important;
+                height: 4px !important;
+                background: #10b981 !important;
+                border-radius: 50% !important;
+                margin-top: 2px !important;
+            }
             
-            /* 6. Saat Tanggal Diklik (Warna Biru) */
+            /* 7. Efek Visual Saat Tanggal Diklik (Lingkaran Biru) */
             .sel-kalender-hybrid.selected-mobile .header-tgl-hybrid {
-                background: #1e3c72 !important;
+                background: #1e3c72 !important; 
             }
             .sel-kalender-hybrid.selected-mobile .angka-tgl-hybrid {
                 color: #ffffff !important;
             }
 
-            /* 7. Khusus Hari Ini (Oranye) */
+            /* Efek Visual Khusus Hari Ini (Oranye) */
             .sel-kalender-hybrid.is-today .angka-tgl-hybrid {
                 color: #f59e0b !important;
+                font-weight: bold !important;
             }
             .sel-kalender-hybrid.is-today.selected-mobile .header-tgl-hybrid {
                 background: #f59e0b !important;
@@ -626,8 +652,11 @@
                 color: #ffffff !important;
             }
 
-            /* 8. Munculkan Area Agenda Mobile */
-            #agendaMobileContainer { display: block !important; }
+            /* 8. Tampilkan Area Agenda di Bawah Kalender */
+            #agendaMobileContainer { 
+                display: block !important; 
+                margin-top: 5px !important;
+            }
         
         } /* <--- PENUTUP @media screen and (max-width: 768px) */
 
