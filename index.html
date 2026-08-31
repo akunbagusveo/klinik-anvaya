@@ -214,451 +214,9 @@
             background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s;
         }
 
-        /* === RESPONSIVE UNTUK HP & TABLET === */
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); /* Sembunyikan sidebar ke kiri di HP */ }
-            .sidebar.open { transform: translateX(0); /* Munculkan saat burger diklik */ }
-            #mainPage.container { margin-left: 0; /* Konten penuh layar di HP */ }
-            .sidebar-overlay.show { display: block; opacity: 1; }
-            .brand-logo { font-size: 16px; }
-            .user-info { display: none; /* Sembunyikan nama user agar tidak sesak di HP */ }
-        }
         
-        /* =========================================================
-        🔥 ATURAN RESPONSIVE UNTUK LAYAR HP & TABLET 🔥
-        ========================================================= */
-        @media screen and (max-width: 768px) {
-            body { padding: 10px; }
-            .container { padding: 15px; margin: 10px auto; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            .header-area { flex-direction: column; align-items: flex-start; gap: 15px; }
-            
-            .nav-tabs { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; width: 100%; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
-            .tab-link { flex: 0 0 auto; font-size: 13px; padding: 10px 15px; }
-            
-            th, td { font-size: 12px; padding: 8px; }
-            .btn-action { font-size: 11px; padding: 6px 8px; margin-bottom: 5px; width: 100%; display: block; text-align: center; box-sizing: border-box; }
-
-            /* 🔥 FIX RESPONSIVE: Filter Antrean di HP */
-            .antrean-filter-wrapper { flex-direction: column; align-items: stretch; gap: 12px; padding: 10px; }
-            .filter-group { flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
-            .date-range-inputs { width: 100%; justify-content: space-between; }
-            .date-range-inputs input { flex: 1; min-width: 0; } /* Mencegah kotak tanggal meluber */
-            #filterStatusAntrean { width: 100% !important; } /* Dropdown otomatis melebar penuh */
-
-            /* 🔥 FIX RESPONSIVE: Jendela Modal di HP */
-            .modal-backdrop { padding: 8px; }
-            .modal-content-box { max-width: 100%; margin: 10px auto; padding: 15px; }
-            .modal-custom-header { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
-            .modal-custom-header h2 { font-size: 15px; line-height: 1.4; text-align: left; }
-            .btn-close-modal { width: 100%; text-align: center; padding: 10px; }
-
-            /* 8. Penjinak Frame Dashboard Utama (Tabel Tindakan & Jam) */
-            #beranda > div[style*="minmax(350px"] {
-                grid-template-columns: 1fr !important; /* Batalkan paksaan 350px, jadikan 1 kolom penuh */
-                gap: 15px !important;
-            }
-            
-            /* Membuat wadah kartu bisa di-scroll ke samping secara mandiri jika isi tabel sangat panjang */
-            #beranda > div[style*="minmax(350px"] > div {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                padding: 15px !important; /* Sedikit mengurangi padding agar layar HP lebih lega */
-            }
-
-            /* =========================================================
-               🔥 FIX RESPONSIVE: TABEL ANTREAN JADI CARD ACCORDION (ANTI LUBER)
-               ========================================================= */
-            /* 1. Kunci Pembungkus Utama agar tidak bisa geser menyamping */
-            #antrean .table-responsive {
-                box-sizing: border-box !important;
-                overflow-x: hidden !important; 
-                width: 100% !important;
-                padding: 2px !important;
-            }
-
-            /* 2. Matikan Sifat Tabel & Aktifkan Box-Sizing */
-            #antrean table, #antrean thead, #antrean tbody, #antrean th, #antrean td, #antrean tr {
-                display: block; width: 100%; border: none; padding: 0;
-                box-sizing: border-box !important; /* INI KUNCI ANTI-LUBER */
-            }
-            #antrean thead { display: none; } 
-            #tabelAntreanBody { background: transparent !important; }
-            
-            /* 3. Kartu Antrean (Tr) */
-            .antrean-row {
-                box-sizing: border-box !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 45px minmax(0, 1fr) auto !important; 
-                grid-template-areas: 
-                    "pasien pasien tanggal"
-                    "waktu dokter dokter"
-                    "status status status"
-                    "tujuan tujuan tujuan"
-                    "aksi aksi aksi";
-                gap: 10px 8px;
-                background: #fff;
-                border: 1px solid #7f8c8d;
-                border-radius: 16px;
-                margin-bottom: 12px;
-                padding: 15px 35px 15px 15px !important; 
-                position: relative;
-                cursor: pointer;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-                transition: all 0.3s ease;
-                align-items: center;
-            }
-            
-            /* 4. Tanda Panah Accordion (Chevron `>`) */
-            .antrean-row::after {
-                content: '❯';
-                position: absolute;
-                right: 15px; 
-                top: 35px;   
-                font-size: 16px;
-                color: #7f8c8d;
-                transition: transform 0.3s ease;
-            }
-            .antrean-row.expanded::after { transform: rotate(90deg); }
-            
-            /* 5. Pemetaan Sel & Penjinak Teks (Truncate) */
-            .col-pasien { grid-area: pasien; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-            .col-pasien strong { font-size: 14px; color: #000; word-break: break-word; }
-            .col-pasien .rm-txt { font-size: 12px; color: #2c3e50; }
-            
-            .col-tanggal { grid-area: tanggal; text-align: right; font-size: 12px; color: #2c3e50; }
-            .col-waktu { grid-area: waktu; font-size: 13px; color: #2c3e50; font-weight: bold; }
-            
-            .col-dokter { grid-area: dokter; font-size: 13px; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            
-            .col-status { grid-area: status; margin-top: 2px; }
-            
-            /* 6. Laci Rahasia (Disembunyikan sebelum panah diklik) */
-            .detail-mobile { display: none !important; width: 100%; box-sizing: border-box !important; }
-            .antrean-row.expanded .detail-mobile { display: block !important; }
-            
-            .col-tujuan { 
-                grid-area: tujuan; border-top: 1px solid #ecf0f1; 
-                padding-top: 12px; font-size: 13px; color: #2c3e50;
-                word-wrap: break-word;
-            }
-            .lbl-mobile { display: block; font-size: 12px; color: #7f8c8d; margin-bottom: 5px; }
-            
-            .col-aksi { grid-area: aksi; margin-top: 5px; }
-            .col-aksi div { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
-            .col-aksi .btn-action { flex: 1; min-width: calc(50% - 8px); text-align: center; justify-content: center; padding: 10px; font-size: 12px; box-sizing: border-box; }
-            
-            /* =========================================================
-               🔥 FIX RESPONSIVE: HISTORI RME JADI CARD ACCORDION
-               ========================================================= */
-            .rme-card {
-                position: relative !important;
-                box-sizing: border-box !important;
-                cursor: pointer;
-            }
-            
-            /* Sembunyikan Laci Detail secara default di HP */
-            .rme-card .detail-mobile-rme {
-                display: none !important;
-            }
-            
-            /* Tampilkan saat kartu diklik (expand) */
-            .rme-card.expanded .detail-mobile-rme {
-                display: block !important;
-                border-top: 2px dashed #ecf0f1;
-            }
-            
-            /* 🌟 DESAIN BARU: Merapikan Header & Tombol Edit agar Sejajar Simetris */
-            .rme-card .rme-card-header {
-                position: relative !important;
-                align-items: center !important; /* Kunci Vertikal di Tengah */
-                padding-right: 35px !important; /* Jarak aman untuk panah di kanan */
-            }
-            
-            /* Merapikan letak Tombol Edit */
-            .rme-action-container {
-                margin-right: 0 !important;
-                margin-left: 10px; /* Jarak aman dari teks kiri */
-            }
-            
-            /* 🌟 DESAIN BARU: Panah Indikator > (Diposisikan mutlak di TENGAH VERTIKAL header) */
-            .rme-card .rme-card-header::after {
-                content: '❯';
-                position: absolute;
-                right: 15px;
-                top: 50%; /* Tarik ke tengah vertikal... */
-                transform: translateY(-50%); /* ...kunci persis di tengah secara matematis */
-                font-size: 16px;
-                color: #7f8c8d;
-                transition: transform 0.3s ease;
-                pointer-events: none;
-            }
-            
-            /* Putar panah ke bawah jika terbuka */
-            .rme-card.expanded .rme-card-header::after {
-                transform: translateY(-50%) rotate(90deg);
-            }
-
-            /* =========================================================
-               📱 KHUSUS HP (< 768px): SPLIT VIEW RME JADI KARTU
-               ========================================================= */
-            /* 1. Background Modal Utama menjadi abu-abu agar kartu putih menonjol */
-            #layoutSplitRME {
-                flex-direction: column !important;
-                overflow-y: auto !important; 
-                background-color: #f8fafc !important; /* Warna abu-abu sangat terang */
-                padding: 15px !important; /* Jarak aman dari tepi layar HP */
-                gap: 20px !important; /* Jarak antar kartu Input dan Histori */
-                box-sizing: border-box !important;
-            }
-            
-            /* 2. Kartu Utama: Form Input Tindakan RME */
-            #kolomInputRME {
-                flex: none !important;
-                width: 100% !important;
-                background: #ffffff !important; /* Warna putih solid */
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 16px !important; /* Sudut membulat elegan */
-                box-shadow: 0 4px 8px rgba(0,0,0,0.04) !important;
-                padding: 20px 15px !important;
-                box-sizing: border-box !important;
-                border-right: none !important; /* Hapus garis pembatas PC */
-                border-bottom: none !important; 
-                overflow-y: visible !important; 
-            }
-            
-            /* 3. Area Histori RME (Transparan, biarkan isi riwayatnya yang jadi kartu) */
-            #kolomHistoriRME {
-                flex: none !important;
-                width: 100% !important;
-                background: transparent !important; 
-                border: none !important;
-                padding: 0 !important;
-                box-sizing: border-box !important;
-                overflow-y: visible !important;
-            }
-            
-            /* 4. Percantik Judul "Histori Rekam Medis" agar seperti Label Kartu */
-            #kolomHistoriRME > h2, 
-            #kolomHistoriRME > h3 {
-                background: #ffffff !important;
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 12px !important;
-                padding: 12px 15px !important;
-                margin-top: 0 !important;
-                margin-bottom: 15px !important;
-                text-align: center !important;
-                font-size: 15px !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
-            }
-            
-            /* 5. Lepas kunci tinggi pada kotak kartu histori dan sembunyikan tombol PC */
-            #wrapperRiwayatFull {
-                max-height: none !important; 
-                overflow-y: visible !important;
-            }
-            #btnToggleHistori {
-                display: none !important;
-            }
-            
-            /* 6. Pastikan Jendela Modal Full Screen di HP agar leluasa */
-            #modalRiwayatFull .modal-content-box {
-                height: auto !important;
-                min-height: 100vh !important;
-                margin: 0 !important;
-                border-radius: 0 !important;
-                max-width: 100% !important;
-            }
-
-            /* =========================================================
-               🔥 FIX RESPONSIVE: FORM INPUT TINDAKAN (ANTI LUBER)
-               ========================================================= */
-            /* 1. Paksa SEMUA elemen di dalam Form RME untuk patuh pada garis batas */
-            #formModalMedisSplit *, #formModalMedis * {
-                box-sizing: border-box !important;
-                max-width: 100% !important;
-            }
-            
-            /* 2. Jinakkan baris tindakan (yang awalnya berjejer ke samping, paksa tumpuk ke bawah) */
-            .baris-tindakan-item > div:first-child {
-                flex-direction: column !important;
-                gap: 10px !important;
-            }
-            
-            /* 3. Batalkan paksaan lebar (min-width: 180px/200px) bawaan dari JavaScript */
-            .baris-tindakan-item > div:first-child > div {
-                width: 100% !important;
-                min-width: 100% !important; /* Paksa memenuhi lebar kartunya saja */
-                flex: none !important;
-            }
-            
-            /* 4. Pengecualian Khusus: Kolom Catatan dan Tombol Mic biarkan tetap berjejer sejajar */
-            .baris-tindakan-item > div:first-child > div:nth-child(4) {
-                display: flex !important;
-                flex-direction: row !important; /* Biarkan menyamping */
-                align-items: center !important;
-            }
-            
-            /* 5. Tombol Hapus (Tong Sampah): Lebarkan menjadi tombol raksasa di bawah agar mudah di-tap jempol */
-            .baris-tindakan-item > div:first-child > div:last-child {
-                margin-top: 5px !important;
-            }
-            .baris-tindakan-item > div:first-child > div:last-child button {
-                width: 100% !important;
-                justify-content: center !important;
-                padding: 10px !important;
-                border-radius: 8px !important;
-            }
-
-           /* =========================================================
-               🔥 FIX RESPONSIVE: AREA PRO KONTROL & TANGGAL (ANTI RENGGANG)
-               ========================================================= */
-            /* 1. Paksa jadi 1 kolom bertumpuk dan BATALKAN sisa tinggi dari PC */
-            #formModalMedisSplit div[style*="grid"],
-            #formModalMedis div[style*="grid"],
-            #formModalMedisSplit div[style*="display: flex"],
-            #formModalMedis div[style*="display: flex"] {
-                display: flex !important;
-                flex-direction: column !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-                height: auto !important;      /* Bunuh sisa tinggi dari PC */
-                min-height: auto !important;  /* Bunuh sisa tinggi dari PC */
-                gap: 12px !important;         /* Jarak antar blok yang wajar */
-            }
-
-            /* 2. Jinakkan div pembungkus Tanggal & Catatan agar merapat ke atas */
-            #formModalMedisSplit div:has(> input[type="date"]),
-            #formModalMedis div:has(> input[type="date"]) {
-                display: flex !important;
-                flex-direction: column !important;
-                width: 100% !important;
-                gap: 8px !important;                    /* Rapatkan jarak antar input */
-                justify-content: flex-start !important; /* Paksa merapat ke atas (hilangkan ruang kosong) */
-                height: auto !important;
-            }
-
-            /* 3. Pastikan semua input presisi dan tidak meluber */
-            #formModalMedisSplit input[type="date"],
-            #formModalMedisSplit input[type="text"],
-            #formModalMedisSplit textarea,
-            #formModalMedis input[type="date"],
-            #formModalMedis input[type="text"],
-            #formModalMedis textarea {
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                margin-bottom: 0 !important; 
-            }
-
-            /* =========================================================
-               🔥 HYBRID KALENDER PRAKTIK: KHUSUS MOBILE (FIX GRID 7 KOLOM)
-               ========================================================= */
-            /* 1. Buka Kunci Pembungkus & Matikan Scroll Samping */
-            .kalender-container-scroll {
-                padding-bottom: 0 !important;
-                overflow-x: hidden !important; 
-            }
-            
-            /* 2. JURUS KUNCI: Paksa menjadi Grid 7 Kolom agar tidak memanjang ke bawah! */
-            #gridKalenderBody {
-                display: grid !important; /* Paksa Grid Aktif */
-                grid-template-columns: repeat(7, 1fr) !important; /* 7 Kolom Sejajar */
-                width: 100% !important;
-                min-width: 100% !important; 
-                gap: 5px 0 !important; /* Jarak vertikal antar baris */
-                background: transparent !important; 
-                border: none !important;
-                box-shadow: none !important;
-                padding: 10px 5px !important;
-            }
-            
-            /* 3. Header Hari (Sen, Sel, Rab) */
-            .header-hari-hybrid {
-                background: transparent !important;
-                color: #64748b !important;
-                font-size: 12px !important;
-                padding: 5px 0 !important;
-                border-bottom: 1px solid #e2e8f0 !important;
-                text-align: center !important;
-            }
-            .hari-pc { display: none !important; }
-            .hari-hp { display: inline !important; font-weight: 600 !important; }
-
-            /* 4. Kotak Tanggal / Sel Kosong */
-            .sel-kosong-hybrid, .sel-kalender-hybrid {
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: flex-start !important;
-                min-height: 45px !important;
-                background: transparent !important;
-                border: none !important;
-                padding: 2px !important;
-                outline: none !important;
-                cursor: pointer !important;
-            }
-            
-            /* 5. Sembunyikan Daftar Pasien Bawaan PC */
-            .wadah-event-desktop { display: none !important; }
-            
-            /* 6. Desain Bulatan Tanggal ala Aplikasi Modern */
-            .header-tgl-hybrid { 
-                display: flex !important;
-                flex-direction: column !important; 
-                align-items: center !important; 
-                justify-content: center !important;
-                width: 35px !important; 
-                height: 35px !important;
-                border-radius: 50% !important; 
-                border-bottom: none !important; 
-                margin: 0 auto !important; 
-                padding: 0 !important;
-                transition: 0.2s;
-            }
-            .pin-today-pc { display: none !important; } 
-            .angka-tgl-hybrid { font-size: 14px !important; }
-
-            /* Titik Indikator Pasien (Hijau) */
-            .titik-indikator-mobile {
-                width: 4px !important;
-                height: 4px !important;
-                background: #10b981 !important;
-                border-radius: 50% !important;
-                margin-top: 2px !important;
-            }
-            
-            /* 7. Efek Visual Saat Tanggal Diklik (Lingkaran Biru) */
-            .sel-kalender-hybrid.selected-mobile .header-tgl-hybrid {
-                background: #1e3c72 !important; 
-            }
-            .sel-kalender-hybrid.selected-mobile .angka-tgl-hybrid {
-                color: #ffffff !important;
-            }
-
-            /* Efek Visual Khusus Hari Ini (Oranye) */
-            .sel-kalender-hybrid.is-today .angka-tgl-hybrid {
-                color: #f59e0b !important;
-                font-weight: bold !important;
-            }
-            .sel-kalender-hybrid.is-today.selected-mobile .header-tgl-hybrid {
-                background: #f59e0b !important;
-            }
-            .sel-kalender-hybrid.is-today.selected-mobile .angka-tgl-hybrid {
-                color: #ffffff !important;
-            }
-
-            /* 8. Tampilkan Area Agenda di Bawah Kalender */
-            #agendaMobileContainer { 
-                display: block !important; 
-                margin-top: 5px !important;
-            }
         
-        } /* <--- PENUTUP @media screen and (max-width: 768px) */
+        
 
         /* =========================================================
            🛡️ PERLINDUNGAN KALENDER MODE DESKTOP
@@ -988,51 +546,7 @@
             position: relative;
         }
 
-        /* =========================================================
-        🔥 SULAP TABEL ANTREAN MENJADI KARTU DI HP
-        ========================================================= */
-        @media screen and (max-width: 768px) {
-            /* 1. Matikan sifat bawaan tabel */
-            #antrean table, #antrean thead, #antrean tbody, #antrean th, #antrean td, #antrean tr {
-                display: block;
-                width: 100%;
-            }
-            
-            /* 2. Sembunyikan baris judul kolom (Header) */
-            #antrean thead tr {
-                display: none;
-            }
-            
-            /* 3. Ubah setiap baris pasien (tr) menjadi desain Kartu */
-            #antrean tbody tr {
-                background: #fff;
-                border: 1px solid #bdc3c7;
-                border-radius: 12px; /* Sudut membulat seperti desain Anda */
-                margin-bottom: 15px;
-                padding: 15px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-            }
-            
-            /* 4. Rapikan isi sel (td) agar berbaris rapi ke bawah */
-            #antrean tbody td {
-                border: none;
-                padding: 4px 0;
-                text-align: left;
-                font-size: 14px;
-                position: relative;
-            }
-
-            /* 5. Khusus kolom Aksi (Tombol-tombol) taruh di paling bawah */
-            #antrean tbody td:last-child {
-                margin-top: 12px;
-                padding-top: 12px;
-                border-top: 1px dashed #dcdde1;
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-                justify-content: flex-start;
-            }
-        }
+        
 
         @keyframes modalMuncul {
             from { opacity: 0; transform: scale(0.95); }
@@ -1092,60 +606,7 @@
             justify-content: center;
         }
 
-        /* =========================================================
-        🔥 FIX RESPONSIVE: KALENDER JADI "TRUE AGENDA VIEW" DI HP
-        ========================================================= */
-        @media screen and (max-width: 768px) {
-            #dokter h2 { font-size: 18px !important; }
-            #dokter .header-kalender { flex-direction: column; align-items: stretch !important; text-align: center; }
-            #labelBulanTahunKalender { margin: 10px 0 !important; display: block; }
-            
-            /* 1. Matikan mode tabel/geser menyamping */
-            .kalender-container-scroll {
-                overflow-x: hidden !important;
-                padding-bottom: 0 !important;
-            }
-
-            /* 2. Ubah Grid menjadi List Vertikal */
-            #gridKalenderBody {
-                display: flex !important;
-                flex-direction: column !important;
-                min-width: 100% !important; 
-                gap: 12px !important;
-                background: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
-            }
-
-            /* 3. Atur dasar desain semua kotak tanggal */
-            #gridKalenderBody > div {
-                width: 100% !important;
-                min-height: auto !important;
-                background: #ffffff !important;
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 8px !important;
-                padding: 15px !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-                text-align: left !important;
-            }
-
-            /* 4. JURUS PAMUNGKAS: Sembunyikan SEMUA kotak yang tidak ada pasiennya! 
-               (Ini otomatis akan membasmi Header Senin-Minggu, kotak filler, dan hari libur) */
-            #gridKalenderBody > div:not(:has(.kartu-pasien-kalender)) {
-                display: none !important; 
-            }
-
-            /* 5. Perbesar Kartu Janji Temu agar nyaman di-tap jari */
-            .kartu-pasien-kalender { 
-                font-size: 13px !important; 
-                padding: 12px !important; 
-                white-space: normal !important; 
-                margin-top: 10px !important;
-                border-radius: 6px !important;
-                border-left: 4px solid rgba(0,0,0,0.2) !important;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
-            }
-        }
+        
 
         /* 6. Penjinak Grid Profil Pasien agar tidak meluber */
         /* =========================================================
@@ -1162,45 +623,7 @@
             max-width: 100% !important;
         }
 
-        /* =========================================================
-           📱 KHUSUS HP (< 768px): PROFIL JADI KARTU PINTAR (MINI CARDS)
-           ========================================================= */
-        @media screen and (max-width: 768px) {
-            /* 1. Pembungkus Utama disulap menjadi 1 Kartu Solid */
-            #gridProfilRME {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important; /* Isinya dibagi 2 kolom merapat */
-                gap: 12px 10px !important; /* Jarak antar baris teks dirapatkan */
-                background: #ffffff !important; /* Warna putih bersih untuk kartu */
-                border: 1px solid #cbd5e1 !important; /* Satu bingkai utama */
-                border-radius: 12px !important; /* Sudut melengkung elegan */
-                padding: 15px !important;
-                margin: 5px 0 15px 0 !important; /* Jarak aman dengan elemen bawah */
-                box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
-            }
-            
-            /* 2. Isi Profil (Teks) dilepaskan dari kotak-kotak kecil */
-            #gridProfilRME > div {
-                background: transparent !important;
-                border: none !important; /* Hilangkan garis pemisah individual */
-                border-radius: 0 !important; 
-                padding: 0 !important;
-                box-shadow: none !important;
-                word-wrap: break-word !important;
-                font-size: 12px !important;
-                line-height: 1.4 !important;
-                display: flex !important;
-                flex-direction: column !important; /* Ikon di atas, nilai di bawahnya */
-                justify-content: flex-start !important;
-            }
-            
-            /* 3. Teks panjang (TTL, NIK, Domisili) dibiarkan membentang penuh 1 baris */
-            #gridProfilRME > div:nth-child(3), 
-            #gridProfilRME > div:nth-child(4), 
-            #gridProfilRME > div:nth-child(7) {
-                grid-column: span 2 !important; 
-            }
-        }   
+          
 
         /* =========================================================
            💻 KHUSUS PC (> 769px): KEMBALIKAN KE 4 KOLOM KLASIK
@@ -1253,19 +676,155 @@
         }
 
         /* =========================================================
-        📱 KHUSUS HP (< 768px): Tumpuk Vertikal
-        ========================================================= */
-        @media screen and (max-width: 768px) {
-            .wrapper-pro-kontrol {
-                flex-direction: column !important; /* Paksa tumpuk atas-bawah */
-                gap: 10px !important;
+           📱 WADAH RESPONSIVE KHUSUS MOBILE (max-width: 768px)
+           Semua UI cerdas untuk HP disatukan di sini agar tidak konflik!
+           ========================================================= */
+           @media screen and (max-width: 768px) {
+            
+            /* 1. TATA LETAK DASAR & SIDEBAR */
+            body { padding: 10px; }
+            .container { padding: 15px; margin: 10px auto; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .header-area { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .nav-tabs { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; width: 100%; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+            .tab-link { flex: 0 0 auto; font-size: 13px; padding: 10px 15px; }
+            th, td { font-size: 12px; padding: 8px; }
+            .btn-action { font-size: 11px; padding: 6px 8px; margin-bottom: 5px; width: 100%; display: block; text-align: center; box-sizing: border-box; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            #mainPage.container { margin-left: 0; }
+            .sidebar-overlay.show { display: block; opacity: 1; }
+            .brand-logo { font-size: 16px; }
+            .user-info { display: none; }
+
+            /* 2. FILTER ANTREAN & DASHBOARD FRAME */
+            .antrean-filter-wrapper { flex-direction: column; align-items: stretch; gap: 12px; padding: 10px; }
+            .filter-group { flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
+            .date-range-inputs { width: 100%; justify-content: space-between; }
+            .date-range-inputs input { flex: 1; min-width: 0; } 
+            #filterStatusAntrean { width: 100% !important; } 
+            #beranda > div[style*="minmax(350px"] { grid-template-columns: 1fr !important; gap: 15px !important; }
+            #beranda > div[style*="minmax(350px"] > div { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; padding: 15px !important; }
+
+            /* 3. JENDELA MODAL (POP-UP) */
+            .modal-backdrop { padding: 8px; }
+            .modal-content-box { max-width: 100%; margin: 10px auto; padding: 15px; }
+            .modal-custom-header { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+            .modal-custom-header h2 { font-size: 15px; line-height: 1.4; text-align: left; }
+            .btn-close-modal { width: 100%; text-align: center; padding: 10px; }
+
+            /* 4. TABEL ANTREAN JADI CARD ACCORDION */
+            #antrean .table-responsive { box-sizing: border-box !important; overflow-x: hidden !important; width: 100% !important; padding: 2px !important; }
+            #antrean table, #antrean thead, #antrean tbody, #antrean th, #antrean td, #antrean tr { display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; }
+            #antrean thead { display: none; } 
+            #tabelAntreanBody { background: transparent !important; }
+            
+            .antrean-row { box-sizing: border-box !important; width: 100% !important; max-width: 100% !important; display: grid !important; grid-template-columns: 45px minmax(0, 1fr) auto !important; grid-template-areas: "pasien pasien tanggal" "waktu dokter dokter" "status status status" "tujuan tujuan tujuan" "aksi aksi aksi"; gap: 10px 8px; background: #fff; border: 1px solid #7f8c8d; border-radius: 16px; margin-bottom: 12px; padding: 15px 35px 15px 15px !important; position: relative; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease; align-items: center; }
+            .antrean-row::after { content: '❯'; position: absolute; right: 15px; top: 35px; font-size: 16px; color: #7f8c8d; transition: transform 0.3s ease; }
+            .antrean-row.expanded::after { transform: rotate(90deg); }
+            
+            .col-pasien { grid-area: pasien; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+            .col-pasien strong { font-size: 14px; color: #000; word-break: break-word; }
+            .col-pasien .rm-txt { font-size: 12px; color: #2c3e50; }
+            .col-tanggal { grid-area: tanggal; text-align: right; font-size: 12px; color: #2c3e50; }
+            .col-waktu { grid-area: waktu; font-size: 13px; color: #2c3e50; font-weight: bold; }
+            .col-dokter { grid-area: dokter; font-size: 13px; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .col-status { grid-area: status; margin-top: 2px; }
+            
+            .detail-mobile { display: none !important; width: 100%; box-sizing: border-box !important; }
+            .antrean-row.expanded .detail-mobile { display: block !important; }
+            .col-tujuan { grid-area: tujuan; border-top: 1px solid #ecf0f1; padding-top: 12px; font-size: 13px; color: #2c3e50; word-wrap: break-word; }
+            .lbl-mobile { display: block; font-size: 12px; color: #7f8c8d; margin-bottom: 5px; }
+            .col-aksi { grid-area: aksi; margin-top: 5px; }
+            .col-aksi div { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
+            .col-aksi .btn-action { flex: 1; min-width: calc(50% - 8px); text-align: center; justify-content: center; padding: 10px; font-size: 12px; box-sizing: border-box; }
+
+            /* 5. PROFIL PASIEN (MINI CARDS) */
+            #gridProfilRME { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px 10px !important; background: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 12px !important; padding: 15px !important; margin: 5px 0 15px 0 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important; }
+            #gridProfilRME > div { background: transparent !important; border: none !important; border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; word-wrap: break-word !important; font-size: 12px !important; line-height: 1.4 !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; }
+            #gridProfilRME > div:nth-child(3), #gridProfilRME > div:nth-child(4), #gridProfilRME > div:nth-child(7) { grid-column: span 2 !important; }
+
+            /* 6. HISTORI REKAM MEDIS & FORM INPUT (ANTI LUBER) */
+            .rme-card { position: relative !important; box-sizing: border-box !important; cursor: pointer; }
+            .rme-card .detail-mobile-rme { display: none !important; }
+            .rme-card.expanded .detail-mobile-rme { display: block !important; border-top: 2px dashed #ecf0f1; }
+            .rme-card .rme-card-header { position: relative !important; align-items: center !important; padding-right: 35px !important; }
+            .rme-action-container { margin-right: 0 !important; margin-left: 10px; }
+            .rme-card .rme-card-header::after { content: '❯'; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #7f8c8d; transition: transform 0.3s ease; pointer-events: none; }
+            .rme-card.expanded .rme-card-header::after { transform: translateY(-50%) rotate(90deg); }
+
+            #layoutSplitRME { flex-direction: column !important; overflow-y: auto !important; background-color: #f8fafc !important; padding: 15px !important; gap: 20px !important; box-sizing: border-box !important; }
+            #kolomInputRME { flex: none !important; width: 100% !important; background: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 16px !important; box-shadow: 0 4px 8px rgba(0,0,0,0.04) !important; padding: 20px 15px !important; box-sizing: border-box !important; border-right: none !important; border-bottom: none !important; overflow-y: visible !important; }
+            #kolomHistoriRME { flex: none !important; width: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; box-sizing: border-box !important; overflow-y: visible !important; }
+            #kolomHistoriRME > h2, #kolomHistoriRME > h3 { background: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 12px !important; padding: 12px 15px !important; margin-top: 0 !important; margin-bottom: 15px !important; text-align: center !important; font-size: 15px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important; }
+            #wrapperRiwayatFull { max-height: none !important; overflow-y: visible !important; }
+            #btnToggleHistori { display: none !important; }
+            #modalRiwayatFull .modal-content-box { height: auto !important; min-height: 100vh !important; margin: 0 !important; border-radius: 0 !important; max-width: 100% !important; }
+
+            #formModalMedisSplit *, #formModalMedis * { box-sizing: border-box !important; max-width: 100% !important; }
+            .baris-tindakan-item > div:first-child { flex-direction: column !important; gap: 10px !important; }
+            .baris-tindakan-item > div:first-child > div { width: 100% !important; min-width: 100% !important; flex: none !important; }
+            .baris-tindakan-item > div:first-child > div:nth-child(4) { display: flex !important; flex-direction: row !important; align-items: center !important; }
+            .baris-tindakan-item > div:first-child > div:last-child { margin-top: 5px !important; }
+            .baris-tindakan-item > div:first-child > div:last-child button { width: 100% !important; justify-content: center !important; padding: 10px !important; border-radius: 8px !important; }
+
+            .wrapper-pro-kontrol { flex-direction: column !important; gap: 10px !important; }
+            .wrapper-pro-kontrol input[type="date"], .wrapper-pro-kontrol textarea { flex: none !important; width: 100% !important; }
+
+            #formModalMedisSplit div[style*="grid"], #formModalMedis div[style*="grid"], #formModalMedisSplit div[style*="display: flex"], #formModalMedis div[style*="display: flex"] { display: flex !important; flex-direction: column !important; width: 100% !important; box-sizing: border-box !important; height: auto !important; min-height: auto !important; gap: 12px !important; }
+            #formModalMedisSplit div:has(> input[type="date"]), #formModalMedis div:has(> input[type="date"]) { display: flex !important; flex-direction: column !important; width: 100% !important; gap: 8px !important; justify-content: flex-start !important; height: auto !important; }
+            #formModalMedisSplit input[type="date"], #formModalMedisSplit input[type="text"], #formModalMedisSplit textarea, #formModalMedis input[type="date"], #formModalMedis input[type="text"], #formModalMedis textarea { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; margin-bottom: 0 !important; }
+
+            /* 7. KALENDER PRAKTIK (HYBRID BULLDOZER 7 KOLOM) */
+            div.kalender-container-scroll { overflow-x: hidden !important; padding-bottom: 0 !important; width: 100% !important; }
+            div#gridKalenderBody { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; width: 100% !important; min-width: 0 !important; gap: 8px 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; padding: 10px 5px !important; }
+            div#gridKalenderBody > div { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: flex-start !important; width: 100% !important; min-width: 0 !important; min-height: 40px !important; background: transparent !important; border: none !important; padding: 2px !important; box-sizing: border-box !important; margin: 0 !important; box-shadow: none !important; cursor: pointer !important; outline: none !important; }
+            
+            div#gridKalenderBody .wadah-event-desktop { display: none !important; }
+            div#gridKalenderBody > div > div:nth-child(2) { display: none !important; }
+            
+            div#gridKalenderBody .header-hari-hybrid { color: #64748b !important; font-size: 11px !important; padding: 5px 0 !important; border-bottom: 1px solid #e2e8f0 !important; text-align: center !important; }
+            div#gridKalenderBody .hari-pc { display: none !important; }
+            div#gridKalenderBody .hari-hp { display: inline !important; font-weight: 600 !important; }
+            
+            div#gridKalenderBody .header-tgl-hybrid { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; width: 32px !important; height: 32px !important; border-radius: 50% !important; border: none !important; margin: 0 auto !important; padding: 0 !important; transition: 0.2s; }
+            div#gridKalenderBody .pin-today-pc { display: none !important; } 
+            div#gridKalenderBody .angka-tgl-hybrid { font-size: 13px !important; margin: 0 !important; }
+
+            div#gridKalenderBody .titik-indikator-mobile { width: 4px !important; height: 4px !important; background: #10b981 !important; border-radius: 50% !important; margin-top: 2px !important; }
+            
+            div#gridKalenderBody .sel-kalender-hybrid.selected-mobile .header-tgl-hybrid { background: #1e3c72 !important; }
+            div#gridKalenderBody .sel-kalender-hybrid.selected-mobile .angka-tgl-hybrid { color: #ffffff !important; }
+            
+            div#gridKalenderBody .sel-kalender-hybrid.is-today .angka-tgl-hybrid { color: #f59e0b !important; font-weight: bold !important; }
+            div#gridKalenderBody .sel-kalender-hybrid.is-today.selected-mobile .header-tgl-hybrid { background: #f59e0b !important; }
+            div#gridKalenderBody .sel-kalender-hybrid.is-today.selected-mobile .angka-tgl-hybrid { color: #ffffff !important; }
+
+            #agendaMobileContainer { display: block !important; margin-top: 5px !important; }
+
+            .sidebar { transform: translateX(-100%); /* Sembunyikan sidebar ke kiri di HP */ }
+            .sidebar.open { transform: translateX(0); /* Munculkan saat burger diklik */ }
+            #mainPage.container { margin-left: 0; /* Konten penuh layar di HP */ }
+            .sidebar-overlay.show { display: block; opacity: 1; }
+            .brand-logo { font-size: 16px; }
+            .user-info { display: none; /* Sembunyikan nama user agar tidak sesak di HP */ }
+
+             /* 5. Perbesar Kartu Janji Temu agar nyaman di-tap jari */
+            .kartu-pasien-kalender { 
+                font-size: 13px !important; 
+                padding: 12px !important; 
+                white-space: normal !important; 
+                margin-top: 10px !important;
+                border-radius: 6px !important;
+                border-left: 4px solid rgba(0,0,0,0.2) !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
             }
-            .wrapper-pro-kontrol input[type="date"],
-            .wrapper-pro-kontrol textarea {
-                flex: none !important; /* Batalkan kunci lebar 160px dari PC */
-                width: 100% !important; /* Penuhi lebar layar HP */
-            }
-        }
+            
+        } /* <--- PENUTUP @MEDIA SCREEN HP */
+
+        
 
     </style>
 </head>
