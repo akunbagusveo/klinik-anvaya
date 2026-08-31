@@ -278,11 +278,12 @@
         let kec    = p.kecamatan || p[11] || "";
         let kota   = p.kota || p[12] || "";
 
+        const ktpBersih = ktp.toString().replace(/'/g, '').trim();
         const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
         
         setVal('txtNoRM', noRM);
         setVal('nama', nama);
-        setVal('txtKTP', ktp.toString().replace(/'/g, ''));
+        setVal('txtKTP', ktpBersih);
         setVal('tempatLahir', tmpLhr);
         setVal('tanggalLahir', tglLhr);
         setVal('pekerjaan', kerja);
@@ -300,19 +301,44 @@
             rbLaki.checked = true;
         }
 
-        ['txtNoRM', 'nama', 'txtKTP'].forEach(id => {
+        // 🔥 LOGIKA SMART DETECTOR: Cek apakah ID KTP adalah buatan sistem (TEMP- atau ANAK-)
+        const isKtpSementara = ktpBersih.toUpperCase().startsWith('TEMP-') || ktpBersih.toUpperCase().startsWith('ANAK-');
+
+        // Kunci RM dan Nama seperti biasa
+        ['txtNoRM', 'nama'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) {
-                el.readOnly = true;
-                el.style.backgroundColor = "#e9ecef";
-            }
+            if (el) { el.readOnly = true; el.style.backgroundColor = "#e9ecef"; }
         });
+
+        // Tangani kolom KTP secara terpisah
+        const elKTP = document.getElementById('txtKTP');
+        if (elKTP) {
+            if (isKtpSementara) {
+                // BUKA KUNCI KTP agar Resepsionis bisa langsung memperbaruinya
+                elKTP.readOnly = false;
+                elKTP.style.backgroundColor = "#fef3c7"; 
+                elKTP.style.border = "2px solid #f59e0b";
+                elKTP.removeAttribute('pattern'); // Cabut sementara jika masih tetap belum bawa
+                elKTP.removeAttribute('maxlength');
+            } else {
+                // Kunci normal karena KTP sudah valid
+                elKTP.readOnly = true;
+                elKTP.style.backgroundColor = "#e9ecef";
+                elKTP.style.border = "1px solid #ccc";
+                elKTP.setAttribute('pattern', '\\d{16}');
+                elKTP.setAttribute('maxlength', '16');
+            }
+        }
 
         window.tutupModalPasien();
         
-        alert(`✅ Pasien Terpilih:\nNo. RM: ${noRM}\nNama: ${nama}\n\nSilakan lengkapi Rencana Tanggal Kunjungan & Dokter!`);
-        if (document.getElementById('tujuan')) {
-            document.getElementById('tujuan').focus();
+        // Peringatan Berbeda Berdasarkan Status KTP
+        if (isKtpSementara) {
+            alert(`⚠️ PERHATIAN KHUSUS!\n\nPasien atas nama ${nama} ini sebelumnya didaftarkan TANPA KTP ASLI (ID: ${ktpBersih}).\n\nMohon minta pasien menunjukkan KTP/KK sekarang untuk meng-update datanya di kolom KTP!`);
+            if (elKTP) elKTP.focus(); // Langsung arahkan kursor ke kotak KTP
+        } else {
+            alert(`✅ Pasien Terpilih:\nNo. RM: ${noRM}\nNama: ${nama}\n\nSilakan lengkapi Rencana Tanggal Kunjungan & Dokter!`);
+            if (document.getElementById('tujuan')) document.getElementById('tujuan').focus();
         }
     };
 
@@ -463,13 +489,12 @@
     };
 
     // =====================================================================
-    // 🔥 6. FITUR BARU: GENERATOR KTP PASIEN ANAK (KEBAL CELAH)
+    // 🔥 FITUR BARU: GENERATOR KTP SEMENTARA (BYPASS)
     // =====================================================================
     window.togglePasienAnak = function(checkbox) {
         const txtKTP = document.getElementById('txtKTP');
         if (!txtKTP) return;
 
-        // 🔥 SATPAM TAMBAHAN: Tolak eksekusi mutlak jika mode Pasien Lama sedang aktif
         const radioLama = document.querySelector('input[name="tipePasien"][value="lama"]');
         if (radioLama && radioLama.checked) {
             alert("⚠️ Fitur ini hanya digunakan saat mendaftarkan Pasien Baru.");
@@ -478,32 +503,24 @@
         }
 
         if (checkbox.checked) {
-            // 1. Kunci KTP & ubah warna jadi hijau mint (tanda otomatis)
             txtKTP.readOnly = true;
-            txtKTP.style.backgroundColor = "#e8f8f5";
-            
-            // 2. Buka gembok validasi agar format ANAK-... bisa disubmit
+            txtKTP.style.backgroundColor = "#fef3c7"; // Warna kuning peringatan
             txtKTP.removeAttribute('pattern');
             txtKTP.removeAttribute('maxlength');
             
-            // 3. Generate ID Unik
+            // Ubah prefix jadi TEMP- (Temporary/Sementara)
             const now = new Date();
             const timeString = String(now.getFullYear()).slice(-2) + 
                                String(now.getMonth() + 1).padStart(2, '0') + 
                                String(now.getDate()).padStart(2, '0') + 
-                               "-" +
-                               String(now.getHours()).padStart(2, '0') + 
-                               String(now.getMinutes()).padStart(2, '0') + 
-                               String(now.getSeconds()).padStart(2, '0');
+                               "-" + String(now.getHours()).padStart(2, '0') + 
+                               String(now.getMinutes()).padStart(2, '0');
             
-            txtKTP.value = "ANAK-" + timeString;
+            txtKTP.value = "TEMP-" + timeString;
         } else {
-            // 1. Kembalikan ke mode normal jika centang dicabut
             txtKTP.readOnly = false;
             txtKTP.style.backgroundColor = "#fff";
             txtKTP.value = "";
-            
-            // 2. Kunci kembali wajib 16 digit angka
             txtKTP.setAttribute('pattern', '\\d{16}');
             txtKTP.setAttribute('maxlength', '16');
         }
