@@ -1119,26 +1119,24 @@
         }
 
         /* =========================================================
-        💻 TATA LETAK DEFAULT UNTUK PC/LAPTOP
+        💻 PC/LAPTOP: TATA LETAK PRO KONTROL (TANPA LABEL)
         ========================================================= */
         .wrapper-pro-kontrol {
             display: flex;
-            flex-direction: row; /* Berjejer ke samping */
+            flex-direction: row; /* Berjejer ke samping di PC */
             gap: 15px;
             width: 100%;
-            align-items: flex-start;
+            align-items: stretch; /* Memastikan tinggi kotak tanggal & catatan sejajar */
         }
-        .wrapper-pro-kontrol .box-tanggal {
-            flex: 0 0 150px; /* Kembalikan paksaan 150px KHUSUS di PC agar rapi */
+
+        /* Kunci lebar kalender di PC agar tidak melar */
+        .wrapper-pro-kontrol input[type="date"] {
+            flex: 0 0 160px; 
         }
-        .wrapper-pro-kontrol .box-catatan {
-            flex: 1; /* Sisa ruang untuk text area */
-        }
-        .wrapper-pro-kontrol .lbl-kontrol {
-            font-size: 11px; 
-            color: #7f8c8d; 
-            margin-bottom: 5px; /* Jarak aman antara judul dan kotak input */
-            margin-top: 4px;
+
+        /* Biarkan catatan mengisi sisa ruang di PC */
+        .wrapper-pro-kontrol textarea {
+            flex: 1; 
         }
 
         /* =========================================================
@@ -1149,10 +1147,10 @@
                 flex-direction: column !important; /* Paksa tumpuk atas-bawah */
                 gap: 10px !important;
             }
-            .wrapper-pro-kontrol .box-tanggal,
-            .wrapper-pro-kontrol .box-catatan {
-                flex: none !important; /* Matikan paksaan 150px dari PC */
-                width: 100% !important; /* Lebarkan memenuhi layar HP */
+            .wrapper-pro-kontrol input[type="date"],
+            .wrapper-pro-kontrol textarea {
+                flex: none !important; /* Batalkan kunci lebar 160px dari PC */
+                width: 100% !important; /* Penuhi lebar layar HP */
             }
         }
 
@@ -2896,14 +2894,11 @@
                                         <button type="button" class="btn-mic" onclick="window.mulaiDikte('modalProKontrol')">🎙️</button>
                                     </label>
                                     <div class="wrapper-pro-kontrol">
-                                        <div class="box-tanggal">
-                                            <div class="lbl-kontrol">📅 Tanggal Kontrol</div>
-                                            <input type="date" id="tanggalKontrol" onclick="this.min = new Date().toISOString().split('T')[0]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit;">
-                                        </div>
-                                        <div class="box-catatan">
-                                            <div class="lbl-kontrol">📝 Pesan Pengingat untuk Pasien</div>
-                                            <textarea id="modalProKontrol" rows="2" placeholder="Catatan/Tujuan kontrol (opsional)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical;"></textarea>   
-                                        </div>
+                                        <!-- Kotak Tanggal (Tanpa Judul) -->
+                                        <input type="date" id="tanggalKontrol" title="Tanggal Kontrol" onclick="this.min = new Date().toISOString().split('T')[0]" style="width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit;">
+                                        
+                                        <!-- Kotak Catatan (Judul & Emoji pindah ke dalam placeholder) -->
+                                        <textarea id="modalProKontrol" rows="2" placeholder="📝 Pesan pengingat / tujuan kontrol pasien (opsional)..." style="width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; box-sizing: border-box; resize: vertical;"></textarea>   
                                     </div>
                                 </div>
                             </div>
