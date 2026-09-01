@@ -1185,21 +1185,57 @@
         }
     });
 
-    // Mesin Penggerak Pindah Tab
+    // =====================================================================
+    // 🔥 MESIN PENGGERAK STEPPER (Versi Upgrade Tahan Banting Mode Edit)
+    // =====================================================================
     window.ubahStepRME = function(stepTujuan) {
         const formRME = document.getElementById('formModalMedisSplit');
         if(!formRME) return;
 
         formRME.setAttribute('data-active-step', stepTujuan);
 
+        // 1. Update warna tombol navigasi
         document.querySelectorAll('.step-btn').forEach((btn, index) => {
-            if(index + 1 === parseInt(stepTujuan)) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if(index + 1 === parseInt(stepTujuan)) btn.classList.add('active');
+            else btn.classList.remove('active');
         });
+
+        // 2. 🔥 JURUS PEMBERSIH: Hapus paksaan "display: block !important" dari fungsi Edit
+        if (window.innerWidth <= 768) {
+            Array.from(formRME.children).forEach(child => {
+                if(child.style.display === 'block') child.style.removeProperty('display');
+            });
+            formRME.querySelectorAll('.form-group').forEach(el => {
+                if(el.style.display === 'block') el.style.removeProperty('display');
+            });
+        }
     };
+
+    // =====================================================================
+    // 🔥 AUTO-RESET STEPPER: Paksa ke Step 1 setiap Buka / Edit Pasien
+    // =====================================================================
+    
+    // A. Saat Mode Edit Riwayat
+    const fungsiEditAsli = window.pemicuEditCatatanMulai;
+    if (typeof fungsiEditAsli === "function") {
+        window.pemicuEditCatatanMulai = function(barisSheet, isHariIni) {
+            fungsiEditAsli(barisSheet, isHariIni); // Biarkan sistem Anda bekerja
+            if (window.innerWidth <= 768) {
+                setTimeout(() => { window.ubahStepRME(1); }, 100); // Reset ke Step 1
+            }
+        };
+    }
+
+    // B. Saat Mode Input Pasien Baru
+    const fungsiBukaAsli = window.bukaInputRME;
+    if (typeof fungsiBukaAsli === "function") {
+        window.bukaInputRME = function(noRM, namaPasien, tanggalDaftar) {
+            fungsiBukaAsli(noRM, namaPasien, tanggalDaftar); // Biarkan sistem Anda bekerja
+            if (window.innerWidth <= 768) {
+                setTimeout(() => { window.ubahStepRME(1); }, 100); // Reset ke Step 1
+            }
+        };
+    }
 
     
 
