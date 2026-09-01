@@ -1229,7 +1229,7 @@
                 font-size: 12px !important;
                 margin-left: auto !important;
             }
-            
+
         } /* <--- PENUTUP @MEDIA SCREEN HP */
 
         /* =========================================================
@@ -1264,6 +1264,17 @@
             border-radius: 12px;
             display: inline-block;
             margin-top: 5px;
+        }
+
+        /* =========================================================
+        🔥 UI MODERN: MENU ATAS (NAVBAR) SELALU MENEMPEL (STICKY)
+        ========================================================= */
+        .top-navbar {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1000 !important; /* Kunci terpenting agar menu tidak tertimpa kartu/tabel di bawahnya */
+            background-color: #ffffff !important; /* Pastikan warna solid agar teks di bawahnya tidak tembus pandang */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important; /* Memberi efek melayang saat di-scroll */
         }
 
         
