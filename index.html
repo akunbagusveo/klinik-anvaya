@@ -1210,8 +1210,33 @@
             #tabelSemuaPasienBody td:nth-child(5)::before { content: '📍 Alamat: '; font-weight: 600; display: block; }
 
             /* TOMBOL AKSI (Bisa lebih dari 1 tombol, misal: Edit & Hapus) */
-            #tabelSemuaPasienBody td:nth-child(6) { margin-top: 10px !important; border-top: 1px dashed #cbd5e1 !important; padding-top: 12px !important; display: flex !important; flex-wrap: wrap !important; gap: 8px !important; }
-            #tabelSemuaPasienBody td:nth-child(6) button { flex: 1 !important; padding: 12px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: bold; min-width: 45% !important; display: flex !important; justify-content: center !important; align-items: center !important; }
+            /* TOMBOL AKSI DATABASE (Grid Layout 2-1) */
+            #tabelSemuaPasienBody td:nth-child(6) { 
+                margin-top: 15px !important; 
+                border-top: 1px dashed #cbd5e1 !important; 
+                padding-top: 15px !important; 
+                display: grid !important; 
+                grid-template-columns: 1fr 1fr !important; /* Membagi ruang jadi 2 kolom sama besar */
+                gap: 10px !important; 
+            }
+            
+            #tabelSemuaPasienBody td:nth-child(6) button { 
+                width: 100% !important; 
+                padding: 12px 5px !important; 
+                border-radius: 8px !important; 
+                font-size: 13px !important; 
+                font-weight: bold; 
+                margin: 0 !important; 
+                display: flex !important; 
+                justify-content: center !important; 
+                align-items: center !important; 
+                box-sizing: border-box !important;
+            }
+            
+            /* Tombol Hapus (Ke-3) disendirikan full-width di baris bawah */
+            #tabelSemuaPasienBody td:nth-child(6) button:nth-child(3) {
+                grid-column: span 2 !important;
+            }
             
             /* 1. Sembunyikan Username di Navbar Atas */
             .navbar-right .user-info, 
