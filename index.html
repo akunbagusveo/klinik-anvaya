@@ -1083,6 +1083,82 @@
                 padding-top: 15px !important;
                 border-top: 2px dashed #cbd5e1 !important;
             }
+
+            /* =========================================================
+               🔥 FIX RESPONSIVE: RIWAYAT MEDIS JADI CARD ACCORDION
+               ========================================================= */
+            
+            /* 1. Rapikan Form Pencarian & Pagination */
+            #riwayatMedis .form-group { flex-direction: column !important; align-items: stretch !important; padding: 15px !important; }
+            #riwayatMedis .form-group button { width: 100% !important; margin-top: 5px !important; }
+            #boxDaftarPasienGlobal .pagination-container { flex-direction: column !important; gap: 15px !important; text-align: center !important; }
+
+            /* 2. Matikan Sifat Tabel */
+            #boxDaftarPasienGlobal .table-responsive { box-sizing: border-box !important; overflow-x: hidden !important; width: 100% !important; padding: 2px !important; }
+            #boxDaftarPasienGlobal table, #boxDaftarPasienGlobal thead, #boxDaftarPasienGlobal tbody, #boxDaftarPasienGlobal th, #boxDaftarPasienGlobal td, #boxDaftarPasienGlobal tr { display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; }
+            #boxDaftarPasienGlobal thead { display: none; }
+            
+            /* 3. Desain Kartu Utama */
+            #tabelDaftarPasienBody tr {
+                background: #fff;
+                border: 1px solid #cbd5e1;
+                border-radius: 12px;
+                margin-top: 25px !important; /* Ruang untuk badge RM */
+                margin-bottom: 15px;
+                padding: 20px 35px 15px 15px !important;
+                position: relative;
+                cursor: pointer;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                transition: all 0.3s ease;
+            }
+            
+            /* Panah Hide/Show (Chevron) */
+            #tabelDaftarPasienBody tr::after {
+                content: '❯'; position: absolute; right: 15px; top: 25px; font-size: 16px; color: #7f8c8d; transition: transform 0.3s ease;
+            }
+            #tabelDaftarPasienBody tr.expanded::after { transform: rotate(90deg); }
+            
+            /* Tampilan Saat Loading/Kosong (Anti Kotak Ganda) */
+            #tabelDaftarPasienBody tr:has(td[colspan="6"]) {
+                background: transparent !important; border: none !important; box-shadow: none !important; margin-top: 0 !important; cursor: default;
+            }
+            #tabelDaftarPasienBody tr:has(td[colspan="6"])::after { display: none; }
+            #tabelDaftarPasienBody td[colspan="6"] {
+                text-align: center !important; font-size: 13px !important; color: #64748b !important; background: #f8fafc !important; border: 2px dashed #cbd5e1 !important; padding: 30px 20px !important; border-radius: 12px !important;
+            }
+
+            /* 4. MAPPING HIERARKI KOLOM (1:RM, 2:Nama, 3:Gender, 4:WA, 5:Alamat, 6:Aksi) */
+            
+            /* NO. RM (Tempel Jadi Badge di Atas Kiri) */
+            #tabelDaftarPasienBody td:nth-child(1) {
+                position: absolute !important; top: -12px !important; left: 15px !important; background: #e0f2fe !important; color: #0284c7 !important; padding: 4px 8px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: bold; width: auto !important; border: 1px solid #bae6fd !important;
+            }
+            
+            /* NAMA PASIEN (Besar & Selalu Tampil) */
+            #tabelDaftarPasienBody td:nth-child(2) {
+                font-size: 15px !important; font-weight: bold; color: #0f172a !important; padding-bottom: 5px !important; padding-right: 20px !important;
+            }
+
+            /* LACI RAHASIA: Gender, WA, Alamat (Sembunyi by Default) */
+            #tabelDaftarPasienBody td:nth-child(3),
+            #tabelDaftarPasienBody td:nth-child(4),
+            #tabelDaftarPasienBody td:nth-child(5) {
+                display: none !important; font-size: 13px !important; color: #475569 !important; padding: 4px 0 !important;
+            }
+            #tabelDaftarPasienBody tr.expanded td:nth-child(3),
+            #tabelDaftarPasienBody tr.expanded td:nth-child(4),
+            #tabelDaftarPasienBody tr.expanded td:nth-child(5) {
+                display: block !important;
+            }
+            
+            /* Ikon Keterangan Laci */
+            #tabelDaftarPasienBody td:nth-child(3)::before { content: '🚻 Gender: '; font-weight: 600; }
+            #tabelDaftarPasienBody td:nth-child(4)::before { content: '📱 WA: '; font-weight: 600; }
+            #tabelDaftarPasienBody td:nth-child(5)::before { content: '📍 Alamat: '; font-weight: 600; display: block; }
+
+            /* TOMBOL AKSI (Selalu Tampil di Bawah) */
+            #tabelDaftarPasienBody td:nth-child(6) { margin-top: 10px !important; border-top: 1px dashed #cbd5e1 !important; padding-top: 12px !important; }
+            #tabelDaftarPasienBody td:nth-child(6) button { width: 100% !important; padding: 12px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: bold; display: flex !important; justify-content: center !important; align-items: center !important; }
             
         } /* <--- PENUTUP @MEDIA SCREEN HP */
 
