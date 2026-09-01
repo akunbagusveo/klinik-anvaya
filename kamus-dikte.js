@@ -205,13 +205,18 @@
         const btnMicrophone = event.currentTarget; 
         const originalIcon = "🎙️";
 
+        // 🔥 1. SENSOR MANUAL STOP: Cek jika Dokter sengaja mengklik tombol Stop
         if (window.pengenalSuaraAktif) {
-            window.pengenalSuaraAktif.stop();
+            window.dikteBerhentiManual = true; // Tandai bahwa ini murni keinginan Dokter
+            try { window.pengenalSuaraAktif.stop(); } catch(e) {}
             window.pengenalSuaraAktif = null;
             btnMicrophone.innerText = originalIcon;
             targetInput.placeholder = "";
             return;
         }
+        
+        // 🔥 2. MULAI SESI BARU: Reset sensor
+        window.dikteBerhentiManual = false; 
         
         const recognition = new SpeechRecognition();
         recognition.lang = 'id-ID';
@@ -224,11 +229,13 @@
             targetInput.placeholder = "Mendengarkan suara Anda terus-menerus... (Klik 🛑 untuk berhenti)";
         };
 
+        // (Logika teks Anda yang sudah sempurna tidak diubah sama sekali)
         recognition.onresult = function(event) {
             let hasilText = event.results[event.results.length - 1][0].transcript;
             let textNormal = hasilText.replace(/[\s\u00A0]+/g, " ");
             
-            if (kamusKoreksiDinamis && Object.keys(kamusKoreksiDinamis).length > 0) {
+            // Cek keamanan agar kamus tidak error jika belum dimuat
+            if (typeof kamusKoreksiDinamis !== 'undefined' && kamusKoreksiDinamis && Object.keys(kamusKoreksiDinamis).length > 0) {
                 for (const [salah, benar] of Object.entries(kamusKoreksiDinamis)) {
                     let kataSalahBersih = salah.toString().trim().replace(/[\s\u00A0]+/g, " ");
                     if (kataSalahBersih !== "") {
@@ -257,15 +264,32 @@
 
         recognition.onerror = function(event) {
             console.error("Mic error:", event.error);
-            if(event.error === 'not-allowed') alert("Izin mikrofon diblokir.");
+            // 🔥 3. PROTEKSI LOOPING: Jika Mic tidak diizinkan atau koneksi putus, matikan paksa auto-restart
+            if(event.error === 'not-allowed' || event.error === 'audio-capture' || event.error === 'network') {
+                window.dikteBerhentiManual = true; 
+                if(event.error === 'not-allowed') alert("Izin mikrofon diblokir.");
+            }
             window.pengenalSuaraAktif = null;
             btnMicrophone.innerText = originalIcon;
         };
 
         recognition.onend = function() {
-            window.pengenalSuaraAktif = null;
-            btnMicrophone.innerText = originalIcon; 
-            targetInput.placeholder = "";
+            // 🔥 4. MESIN AUTO-RESTART KHUSUS HP (ANDROID/IOS)
+            if (!window.dikteBerhentiManual) {
+                // Jika sistem HP mati sendiri karena hening, nyalakan lagi secara otomatis!
+                try {
+                    recognition.start();
+                } catch(e) {
+                    window.pengenalSuaraAktif = null;
+                    btnMicrophone.innerText = originalIcon; 
+                    targetInput.placeholder = "";
+                }
+            } else {
+                // Jika Dokter benar-benar memencet tombol Stop
+                window.pengenalSuaraAktif = null;
+                btnMicrophone.innerText = originalIcon; 
+                targetInput.placeholder = "";
+            }
         };
 
         recognition.start();
