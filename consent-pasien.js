@@ -576,8 +576,13 @@
         let namaDokterDariData = detailAntrean ? detailAntrean.namaDokter : (pAktif.namaDokter || "");
         let namaDokterDinamis = namaDokterDariData || sessionData.namaLengkap || sessionData.username || document.getElementById('selDokter')?.value || "Dokter Klinik Anvaya";
         
-        if (!namaDokterDinamis.toLowerCase().includes("dr.") && !namaDokterDinamis.toLowerCase().includes("dr ") && namaDokterDinamis !== "Dokter Klinik Anvaya") {
-            namaDokterDinamis = "dr. " + namaDokterDinamis.replace(/\b\w/g, l => l.toUpperCase());
+        // 1. AUTO-KOREKSI: Deteksi & ubah "dr." atau "dr " menjadi "drg. " jika salah input dari database
+        namaDokterDinamis = namaDokterDinamis.replace(/^dr\.\s*/i, "drg. ").replace(/^dr\s+/i, "drg. ");
+
+        // 2. PENAMBAHAN OTOMATIS: Jika tidak ada gelar drg sama sekali, pasangkan secara otomatis
+        if (!namaDokterDinamis.toLowerCase().includes("drg.") && !namaDokterDinamis.toLowerCase().includes("drg ") && namaDokterDinamis !== "Dokter Klinik Anvaya") {
+            let namaKapital = namaDokterDinamis.replace(/\b\w/g, l => l.toUpperCase());
+            namaDokterDinamis = "drg. " + namaKapital;
         }
 
         let umurTeks = "-";
