@@ -666,19 +666,22 @@
     });
 
     // =====================================================================
-    // 🔥 SENSOR ACCORDION KOMBO (Pencarian Riwayat & Database Pasien)
+    // 🔥 SENSOR ACCORDION SUPER KOMBO (Riwayat, Database, & Worklist)
     // =====================================================================
     document.addEventListener('click', function(e) {
-        // Deteksi apakah yang diklik adalah tabel Riwayat ATAU tabel Database Pasien
+        // Deteksi tabel mana yang sedang disentuh
         const trRiwayat = e.target.closest('#tabelDaftarPasienBody tr');
         const trDatabase = e.target.closest('#tabelSemuaPasienBody tr');
+        const trWorklist = e.target.closest('#tabelPengingatBody tr'); // 👈 Tambahan Sensor Worklist
         
-        // Pilih mana yang sedang aktif disentuh
-        const targetTr = trRiwayat || trDatabase;
+        // Pilih mana yang aktif
+        const targetTr = trRiwayat || trDatabase || trWorklist;
         
         if (!targetTr) return;
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-        if (targetTr.querySelector('td[colspan="6"]')) return; 
+        
+        // Abaikan baris placeholder loading (berapapun jumlah colspan-nya)
+        if (targetTr.querySelector('td[colspan]')) return; 
         
         if (window.innerWidth <= 768) {
             targetTr.classList.toggle('expanded');

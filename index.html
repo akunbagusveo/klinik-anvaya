@@ -1256,6 +1256,56 @@
                 margin-left: auto !important;
             }
 
+            /* =========================================================
+               🔥 UI MOBILE: WORKLIST PENGINGAT KONTROL JADI CARD
+               ========================================================= */
+            
+            /* 1. Rapikan Filter & Tombol */
+            #pengingatKontrol .form-group { flex-direction: column !important; align-items: stretch !important; padding: 15px !important; }
+            #pengingatKontrol .form-group > div { width: 100% !important; margin-bottom: 8px !important; }
+            #pengingatKontrol .form-group button { width: 100% !important; margin-top: 5px !important; height: 42px !important; }
+
+            /* 2. Matikan Sifat Tabel */
+            #pengingatKontrol .table-responsive { box-sizing: border-box !important; overflow-x: hidden !important; width: 100% !important; padding: 2px !important; border: none !important; }
+            #pengingatKontrol table, #pengingatKontrol thead, #pengingatKontrol tbody, #pengingatKontrol th, #pengingatKontrol td, #pengingatKontrol tr { display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; }
+            #pengingatKontrol thead { display: none; }
+
+            /* 3. Desain Kartu Utama */
+            #tabelPengingatBody tr {
+                background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; margin-top: 25px !important; margin-bottom: 15px; padding: 25px 35px 15px 15px !important; position: relative; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease;
+            }
+            #tabelPengingatBody tr::after { content: '❯'; position: absolute; right: 15px; top: 30px; font-size: 16px; color: #7f8c8d; transition: transform 0.3s ease; }
+            #tabelPengingatBody tr.expanded::after { transform: rotate(90deg); }
+
+            /* Anti Kotak Ganda Saat Loading (Colspan 7) */
+            #tabelPengingatBody tr:has(td[colspan="7"]) { background: transparent !important; border: none !important; box-shadow: none !important; margin-top: 0 !important; cursor: default; }
+            #tabelPengingatBody tr:has(td[colspan="7"])::after { display: none; }
+            #tabelPengingatBody td[colspan="7"] { text-align: center !important; font-size: 13px !important; color: #64748b !important; background: #f8fafc !important; border: 2px dashed #cbd5e1 !important; padding: 30px 20px !important; border-radius: 12px !important; }
+
+            /* 4. MAPPING HIERARKI KOLOM (Ada 7 Kolom) */
+            
+            /* COL 2: No. RM (Lencana Kiri Atas) */
+            #tabelPengingatBody td:nth-child(2) { position: absolute !important; top: -12px !important; left: 15px !important; background: #e0f2fe !important; color: #0284c7 !important; padding: 4px 8px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: bold; width: auto !important; border: 1px solid #bae6fd !important; }
+
+            /* COL 1: Tgl Kontrol (Lencana Kanan Atas - Peringatan) */
+            #tabelPengingatBody td:nth-child(1) { position: absolute !important; top: -12px !important; right: 15px !important; background: #fef3c7 !important; color: #d97706 !important; padding: 4px 8px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: bold; width: auto !important; border: 1px solid #fde68a !important; }
+
+            /* COL 3: NAMA PASIEN */
+            #tabelPengingatBody td:nth-child(3) { font-size: 15px !important; font-weight: bold; color: #0f172a !important; padding-bottom: 5px !important; padding-right: 20px !important; }
+
+            /* LACI RAHASIA: WA (4), Pesan (5), Status (6) */
+            #tabelPengingatBody td:nth-child(4), #tabelPengingatBody td:nth-child(5), #tabelPengingatBody td:nth-child(6) { display: none !important; font-size: 13px !important; color: #475569 !important; padding: 4px 0 !important; }
+            #tabelPengingatBody tr.expanded td:nth-child(4), #tabelPengingatBody tr.expanded td:nth-child(5), #tabelPengingatBody tr.expanded td:nth-child(6) { display: block !important; }
+
+            #tabelPengingatBody td:nth-child(4)::before { content: '📱 WA: '; font-weight: 600; }
+            #tabelPengingatBody td:nth-child(5)::before { content: '💬 Pesan: '; font-weight: 600; display: block; margin-top:4px;}
+            #tabelPengingatBody td:nth-child(6)::before { content: '📌 Status: '; font-weight: 600; display: block; margin-top:4px;}
+
+            /* COL 7: AKSI EKSEKUSI (Bawah dengan Grid) */
+            #tabelPengingatBody td:nth-child(7) { margin-top: 15px !important; border-top: 1px dashed #cbd5e1 !important; padding-top: 15px !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+            #tabelPengingatBody td:nth-child(7) button { width: 100% !important; padding: 12px 5px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: bold; margin: 0 !important; display: flex !important; justify-content: center !important; align-items: center !important; box-sizing: border-box !important; }
+            #tabelPengingatBody td:nth-child(7) button:nth-child(3) { grid-column: span 2 !important; }
+
         } /* <--- PENUTUP @MEDIA SCREEN HP */
 
         /* =========================================================
