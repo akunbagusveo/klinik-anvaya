@@ -1307,14 +1307,35 @@
             #tabelPengingatBody td:nth-child(7) button:nth-child(3) { grid-column: span 2 !important; }
 
             /* =========================================================
-               🔥 UI MOBILE: DASHBOARD PENDAPATAN (GAYA MUTASI BANK)
+               🔥 UI MOBILE: DASHBOARD PENDAPATAN (MUTASI BANK FIX)
                ========================================================= */
             
-            /* 1. Rapikan Header & Pangkas Jarak Space Kosong */
-            #pendapatanDokter > div:nth-child(1) { flex-direction: column !important; align-items: flex-start !important; padding: 15px !important; gap: 8px !important; margin-bottom: 15px !important; }
-            #pendapatanDokter > div:nth-child(1) > div:first-child h2 { font-size: 20px !important; }
-            #pendapatanDokter > div:nth-child(1) > div:last-child { width: 100% !important; background: transparent !important; padding: 0 !important; border: none !important; margin: 0 !important; }
-            #filterBulanPendapatanDokter { width: 100% !important; max-width: 100% !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+            /* 1. Hancurkan Space Kosong di Header & Filter */
+            #pendapatanDokter > div:nth-child(1) { 
+                flex-direction: column !important; 
+                align-items: flex-start !important; 
+                padding: 15px !important; 
+                gap: 5px !important; /* Jarak dibuat sangat rapat */
+            }
+            #pendapatanDokter > div:nth-child(1) > div:first-child { 
+                width: 100% !important; flex: none !important; 
+            }
+            /* Sembunyikan teks deskripsi panjang agar header sangat ringkas */
+            #pendapatanDokter > div:nth-child(1) > div:first-child p { 
+                display: none !important; 
+            }
+            /* Buang kotak abu-abu di sekeliling filter bulan */
+            #pendapatanDokter > div:nth-child(1) > div:last-child { 
+                width: 100% !important; 
+                background: transparent !important; 
+                padding: 0 !important; 
+                border: none !important; 
+                margin: 0 !important; 
+            }
+            #filterBulanPendapatanDokter { 
+                width: 100% !important; 
+                max-width: 100% !important; 
+            }
 
             /* 2. Grid Kotak Ringkasan (Tetap dipertahankan) */
             #pendapatanDokter > div:nth-of-type(3) { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
@@ -1323,12 +1344,21 @@
             #cardDokJmlTindakan, #cardDokFeePokok, #cardDokInjeksi { font-size: 20px !important; }
             #cardDokTHP { font-size: 26px !important; }
 
-            /* 3. Reset Sifat Tabel */
-            #pendapatanDokter > div:nth-of-type(4) > div { overflow: visible !important; max-height: none !important; border: none !important; }
-            #pendapatanDokter table, #pendapatanDokter thead, #pendapatanDokter tbody, #pendapatanDokter th, #pendapatanDokter td, #pendapatanDokter tr { display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; }
+            /* 3. OBAT ANTI GESER KANAN-KIRI (Override Inline Style 900px) */
+            #pendapatanDokter > div:nth-of-type(4) > div { 
+                overflow-x: hidden !important; /* Paksa mati scroll horizontal */
+                border: none !important; 
+            }
+            #pendapatanDokter table { 
+                min-width: 0 !important; /* 🔥 INI KUNCINYA: Menghancurkan batas 900px bawaan HTML */
+                width: 100% !important; 
+            }
+            #pendapatanDokter thead, #pendapatanDokter tbody, #pendapatanDokter th, #pendapatanDokter td, #pendapatanDokter tr { 
+                display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; 
+            }
             #pendapatanDokter thead { display: none; }
 
-            /* 4. Gaya "Mutasi Rekening" (List Bersih, Tanpa Accordion) */
+            /* 4. Gaya "Mutasi Rekening" */
             #tabelRincianDokterBody tr {
                 background: #fff; 
                 border-bottom: 1px solid #e2e8f0; 
@@ -1341,38 +1371,38 @@
                 cursor: default;
                 border-radius: 0 !important; margin: 0 !important; box-shadow: none !important;
             }
-            #tabelRincianDokterBody tr::after { display: none !important; } /* Buang panah accordion */
+            #tabelRincianDokterBody tr::after { display: none !important; }
 
-            /* Col 1 (No) -> Disembunyikan */
+            /* Col 1 (No) */
             #tabelRincianDokterBody td:nth-child(1) { display: none !important; }
 
-            /* Col 2 (Tanggal) -> Kiri Atas (Kecil, Abu-abu) */
+            /* Col 2 (Tanggal) -> Kiri Atas */
             #tabelRincianDokterBody td:nth-child(2) { 
                 grid-column: 1; grid-row: 1; 
-                font-size: 11px !important; color: #64748b !important; font-weight: 600;
+                font-size: 11px !important; color: #64748b !important; font-weight: 600; text-align: left !important;
             }
 
-            /* Col 9 (Fee Anda) -> Kanan Atas (Hijau Besar menonjol) */
+            /* Col 9 (Fee Anda) -> Kanan Tengah (Hijau Menonjol) */
             #tabelRincianDokterBody td:nth-child(9) { 
                 grid-column: 2; grid-row: 1 / span 2; 
                 font-size: 16px !important; font-weight: 900 !important; color: #059669 !important; 
-                text-align: right !important; align-self: center !important;
+                text-align: right !important; align-self: center !important; background: transparent !important; padding: 0 !important; border: none !important;
             }
 
-            /* Col 3 (Nama Pasien) -> Kiri Tengah (Hitam Tebal) */
+            /* Col 3 (Nama Pasien) -> Kiri Tengah */
             #tabelRincianDokterBody td:nth-child(3) { 
                 grid-column: 1; grid-row: 2; 
-                font-size: 14px !important; font-weight: bold; color: #0f172a !important; 
+                font-size: 14px !important; font-weight: bold; color: #0f172a !important; text-align: left !important;
             }
 
-            /* Col 4 (Tindakan) -> Kiri Bawah (Abu-abu) */
+            /* Col 4 (Tindakan) -> Bawah */
             #tabelRincianDokterBody td:nth-child(4) { 
                 grid-column: 1 / span 2; grid-row: 3; 
                 font-size: 13px !important; color: #475569 !important; 
-                margin-top: 4px; line-height: 1.4;
+                margin-top: 4px; line-height: 1.4; text-align: left !important; border: none !important; padding-bottom: 0 !important;
             }
 
-            /* Col 5, 6, 7, 8 (Tarif Rincian) -> Disembunyikan untuk estetika Mobile Banking */
+            /* Col 5-8 (Disembunyikan Total) */
             #tabelRincianDokterBody td:nth-child(5), 
             #tabelRincianDokterBody td:nth-child(6), 
             #tabelRincianDokterBody td:nth-child(7), 
