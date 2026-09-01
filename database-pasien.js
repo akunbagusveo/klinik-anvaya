@@ -666,24 +666,22 @@
     });
 
     // =====================================================================
-    // 🔥 SENSOR ACCORDION PENCARIAN RIWAYAT (GLOBAL DELEGATION)
+    // 🔥 SENSOR ACCORDION KOMBO (Pencarian Riwayat & Database Pasien)
     // =====================================================================
     document.addEventListener('click', function(e) {
-        // 1. Cek apakah yang diklik berada di dalam tabel daftar pencarian riwayat
-        const tr = e.target.closest('#tabelDaftarPasienBody tr');
+        // Deteksi apakah yang diklik adalah tabel Riwayat ATAU tabel Database Pasien
+        const trRiwayat = e.target.closest('#tabelDaftarPasienBody tr');
+        const trDatabase = e.target.closest('#tabelSemuaPasienBody tr');
         
-        // Jika bukan area tabel pencarian, hentikan perintah
-        if (!tr) return;
+        // Pilih mana yang sedang aktif disentuh
+        const targetTr = trRiwayat || trDatabase;
         
-        // 2. Abaikan jika yang diklik adalah Tombol Aksi (agar fungsinya aman)
+        if (!targetTr) return;
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        if (targetTr.querySelector('td[colspan="6"]')) return; 
         
-        // 3. Abaikan jika yang diklik adalah teks placeholder "Memuat hasil..."
-        if (tr.querySelector('td[colspan="6"]')) return; 
-        
-        // 4. Buka/Tutup laci informasi hanya jika diakses dari layar HP
         if (window.innerWidth <= 768) {
-            tr.classList.toggle('expanded');
+            targetTr.classList.toggle('expanded');
         }
     });
 

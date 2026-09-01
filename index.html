@@ -1159,6 +1159,58 @@
             /* TOMBOL AKSI (Selalu Tampil di Bawah) */
             #tabelDaftarPasienBody td:nth-child(6) { margin-top: 10px !important; border-top: 1px dashed #cbd5e1 !important; padding-top: 12px !important; }
             #tabelDaftarPasienBody td:nth-child(6) button { width: 100% !important; padding: 12px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: bold; display: flex !important; justify-content: center !important; align-items: center !important; }
+
+            /* =========================================================
+               🔥 FIX RESPONSIVE: DATABASE PASIEN JADI CARD ACCORDION
+               ========================================================= */
+            
+            /* 1. Rapikan Form Pencarian, Filter Status & Tombol */
+            #daftarPasien .form-group { flex-direction: column !important; align-items: stretch !important; padding: 15px !important; }
+            #daftarPasien .form-group > div { width: 100% !important; margin-bottom: 8px !important; }
+            #daftarPasien .form-group button { width: 100% !important; margin-top: 5px !important; height: 42px !important; }
+            
+            /* Rapikan Pagination Bawah */
+            #daftarPasien .pagination-container { flex-direction: column !important; gap: 15px !important; text-align: center !important; }
+            #daftarPasien .pagination-container > div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+
+            /* 2. Matikan Sifat Tabel */
+            #daftarPasien .table-responsive { box-sizing: border-box !important; overflow-x: hidden !important; width: 100% !important; padding: 2px !important; border: none !important; }
+            #daftarPasien table, #daftarPasien thead, #daftarPasien tbody, #daftarPasien th, #daftarPasien td, #daftarPasien tr { display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; }
+            #daftarPasien thead { display: none; }
+            
+            /* 3. Desain Kartu Utama */
+            #tabelSemuaPasienBody tr {
+                background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; margin-top: 25px !important; margin-bottom: 15px; padding: 20px 35px 15px 15px !important; position: relative; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease;
+            }
+            #tabelSemuaPasienBody tr::after {
+                content: '❯'; position: absolute; right: 15px; top: 25px; font-size: 16px; color: #7f8c8d; transition: transform 0.3s ease;
+            }
+            #tabelSemuaPasienBody tr.expanded::after { transform: rotate(90deg); }
+            
+            /* Anti Kotak Ganda Saat Loading */
+            #tabelSemuaPasienBody tr:has(td[colspan="6"]) { background: transparent !important; border: none !important; box-shadow: none !important; margin-top: 0 !important; cursor: default; }
+            #tabelSemuaPasienBody tr:has(td[colspan="6"])::after { display: none; }
+            #tabelSemuaPasienBody td[colspan="6"] { text-align: center !important; font-size: 13px !important; color: #64748b !important; background: #f8fafc !important; border: 2px dashed #cbd5e1 !important; padding: 30px 20px !important; border-radius: 12px !important; }
+
+            /* 4. MAPPING HIERARKI KOLOM DATABASE */
+            
+            /* NO. RM (Lencana Atas Kiri) */
+            #tabelSemuaPasienBody td:nth-child(1) { position: absolute !important; top: -12px !important; left: 15px !important; background: #e0f2fe !important; color: #0284c7 !important; padding: 4px 8px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: bold; width: auto !important; border: 1px solid #bae6fd !important; }
+            
+            /* NAMA PASIEN */
+            #tabelSemuaPasienBody td:nth-child(2) { font-size: 15px !important; font-weight: bold; color: #0f172a !important; padding-bottom: 5px !important; padding-right: 20px !important; }
+
+            /* LACI RAHASIA: Gender, WA, Alamat (Hidden by default) */
+            #tabelSemuaPasienBody td:nth-child(3), #tabelSemuaPasienBody td:nth-child(4), #tabelSemuaPasienBody td:nth-child(5) { display: none !important; font-size: 13px !important; color: #475569 !important; padding: 4px 0 !important; }
+            #tabelSemuaPasienBody tr.expanded td:nth-child(3), #tabelSemuaPasienBody tr.expanded td:nth-child(4), #tabelSemuaPasienBody tr.expanded td:nth-child(5) { display: block !important; }
+            
+            #tabelSemuaPasienBody td:nth-child(3)::before { content: '🚻 Gender: '; font-weight: 600; }
+            #tabelSemuaPasienBody td:nth-child(4)::before { content: '📱 WA: '; font-weight: 600; }
+            #tabelSemuaPasienBody td:nth-child(5)::before { content: '📍 Alamat: '; font-weight: 600; display: block; }
+
+            /* TOMBOL AKSI (Bisa lebih dari 1 tombol, misal: Edit & Hapus) */
+            #tabelSemuaPasienBody td:nth-child(6) { margin-top: 10px !important; border-top: 1px dashed #cbd5e1 !important; padding-top: 12px !important; display: flex !important; flex-wrap: wrap !important; gap: 8px !important; }
+            #tabelSemuaPasienBody td:nth-child(6) button { flex: 1 !important; padding: 12px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: bold; min-width: 45% !important; display: flex !important; justify-content: center !important; align-items: center !important; }
             
         } /* <--- PENUTUP @MEDIA SCREEN HP */
 
