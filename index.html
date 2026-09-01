@@ -1307,63 +1307,78 @@
             #tabelPengingatBody td:nth-child(7) button:nth-child(3) { grid-column: span 2 !important; }
 
             /* =========================================================
-               🔥 UI MOBILE: DASHBOARD PENDAPATAN DOKTER
+               🔥 UI MOBILE: DASHBOARD PENDAPATAN (GAYA MUTASI BANK)
                ========================================================= */
             
-            /* 1. Rapikan Filter Bulan */
-            #pendapatanDokter > div:nth-child(1) { flex-direction: column !important; align-items: stretch !important; padding: 15px !important; }
-            #pendapatanDokter > div:nth-child(1) > div:last-child { width: 100% !important; justify-content: space-between !important; }
-            #filterBulanPendapatanDokter { max-width: 100% !important; flex: 1 !important; }
+            /* 1. Rapikan Header & Pangkas Jarak Space Kosong */
+            #pendapatanDokter > div:nth-child(1) { flex-direction: column !important; align-items: flex-start !important; padding: 15px !important; gap: 8px !important; margin-bottom: 15px !important; }
+            #pendapatanDokter > div:nth-child(1) > div:first-child h2 { font-size: 20px !important; }
+            #pendapatanDokter > div:nth-child(1) > div:last-child { width: 100% !important; background: transparent !important; padding: 0 !important; border: none !important; margin: 0 !important; }
+            #filterBulanPendapatanDokter { width: 100% !important; max-width: 100% !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
 
-            /* 2. Jadikan Kotak Ringkasan Atas Menjadi Grid 2x2 */
+            /* 2. Grid Kotak Ringkasan (Tetap dipertahankan) */
             #pendapatanDokter > div:nth-of-type(3) { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
             #pendapatanDokter > div:nth-of-type(3) > div { min-width: 0 !important; padding: 15px 10px !important; }
-            #pendapatanDokter > div:nth-of-type(3) > div:nth-child(4) { grid-column: span 2 !important; } /* Take Home Pay ukurannya Full */
-            
-            /* Kecilkan sedikit font angka agar tidak luber di layar HP */
+            #pendapatanDokter > div:nth-of-type(3) > div:nth-child(4) { grid-column: span 2 !important; }
             #cardDokJmlTindakan, #cardDokFeePokok, #cardDokInjeksi { font-size: 20px !important; }
             #cardDokTHP { font-size: 26px !important; }
 
-            /* 3. Matikan Sifat Tabel Rincian */
+            /* 3. Reset Sifat Tabel */
             #pendapatanDokter > div:nth-of-type(4) > div { overflow: visible !important; max-height: none !important; border: none !important; }
             #pendapatanDokter table, #pendapatanDokter thead, #pendapatanDokter tbody, #pendapatanDokter th, #pendapatanDokter td, #pendapatanDokter tr { display: block; width: 100%; border: none; padding: 0; box-sizing: border-box !important; }
             #pendapatanDokter thead { display: none; }
 
-            /* 4. Desain Kartu Utama Rincian */
-            #tabelRincianDokterBody tr { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; margin-top: 15px !important; margin-bottom: 15px; padding: 20px 35px 15px 15px !important; position: relative; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease; text-align: left !important; }
-            #tabelRincianDokterBody tr::after { content: '❯'; position: absolute; right: 15px; top: 35px; font-size: 16px; color: #7f8c8d; transition: transform 0.3s ease; }
-            #tabelRincianDokterBody tr.expanded::after { transform: rotate(90deg); }
+            /* 4. Gaya "Mutasi Rekening" (List Bersih, Tanpa Accordion) */
+            #tabelRincianDokterBody tr {
+                background: #fff; 
+                border-bottom: 1px solid #e2e8f0; 
+                padding: 15px 0 !important; 
+                display: grid !important;
+                grid-template-columns: 1fr auto !important; 
+                grid-template-rows: auto auto auto !important;
+                gap: 4px !important;
+                position: relative;
+                cursor: default;
+                border-radius: 0 !important; margin: 0 !important; box-shadow: none !important;
+            }
+            #tabelRincianDokterBody tr::after { display: none !important; } /* Buang panah accordion */
 
-            /* Anti Kotak Ganda Saat Loading */
-            #tabelRincianDokterBody tr:has(td[colspan="9"]) { background: transparent !important; border: none !important; box-shadow: none !important; margin-top: 0 !important; cursor: default; }
-            #tabelRincianDokterBody tr:has(td[colspan="9"])::after { display: none; }
-            #tabelRincianDokterBody td[colspan="9"] { text-align: center !important; font-size: 13px !important; color: #64748b !important; background: #f8fafc !important; border: 2px dashed #cbd5e1 !important; padding: 30px 20px !important; border-radius: 12px !important; }
-
-            /* 5. MAPPING 9 KOLOM KE DALAM KARTU */
-            
-            /* Col 1 (No) -> Disembunyikan karena tidak penting di tampilan kartu */
+            /* Col 1 (No) -> Disembunyikan */
             #tabelRincianDokterBody td:nth-child(1) { display: none !important; }
-            
-            /* Col 2 (Tanggal) -> Lencana Kiri Atas */
-            #tabelRincianDokterBody td:nth-child(2) { position: absolute !important; top: -12px !important; left: 15px !important; background: #e0f2fe !important; color: #0284c7 !important; padding: 4px 8px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: bold; width: auto !important; border: 1px solid #bae6fd !important; text-align: left !important; }
 
-            /* Col 9 (Fee Anda) -> Lencana Hijau Kanan Atas (Gaji Bersih) */
-            #tabelRincianDokterBody td:nth-child(9) { position: absolute !important; top: -12px !important; right: 15px !important; background: #d1fae5 !important; color: #059669 !important; padding: 4px 8px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: bold; width: auto !important; border: 1px solid #6ee7b7 !important; text-align: right !important; }
+            /* Col 2 (Tanggal) -> Kiri Atas (Kecil, Abu-abu) */
+            #tabelRincianDokterBody td:nth-child(2) { 
+                grid-column: 1; grid-row: 1; 
+                font-size: 11px !important; color: #64748b !important; font-weight: 600;
+            }
 
-            /* Col 3 (Nama Pasien) & Col 4 (Tindakan) -> Teks Utama */
-            #tabelRincianDokterBody td:nth-child(3) { font-size: 15px !important; font-weight: bold; color: #0f172a !important; padding-bottom: 2px !important; }
-            #tabelRincianDokterBody td:nth-child(4) { font-size: 13px !important; color: #34495e !important; padding-bottom: 10px !important; font-weight: 600; border-bottom: 1px dashed #cbd5e1 !important; margin-bottom: 10px !important; }
+            /* Col 9 (Fee Anda) -> Kanan Atas (Hijau Besar menonjol) */
+            #tabelRincianDokterBody td:nth-child(9) { 
+                grid-column: 2; grid-row: 1 / span 2; 
+                font-size: 16px !important; font-weight: 900 !important; color: #059669 !important; 
+                text-align: right !important; align-self: center !important;
+            }
 
-            /* Col 5-8 (Tarif, Lab, Diskon, Dasar Fee) -> Masuk Laci Rahasia (Accordion) */
-            #tabelRincianDokterBody td:nth-child(5), #tabelRincianDokterBody td:nth-child(6), #tabelRincianDokterBody td:nth-child(7), #tabelRincianDokterBody td:nth-child(8) { display: none !important; font-size: 12px !important; color: #475569 !important; padding: 4px 0 !important; text-align: right !important; }
-            
-            #tabelRincianDokterBody tr.expanded td:nth-child(5), #tabelRincianDokterBody tr.expanded td:nth-child(6), #tabelRincianDokterBody tr.expanded td:nth-child(7), #tabelRincianDokterBody tr.expanded td:nth-child(8) { display: flex !important; justify-content: space-between !important; }
+            /* Col 3 (Nama Pasien) -> Kiri Tengah (Hitam Tebal) */
+            #tabelRincianDokterBody td:nth-child(3) { 
+                grid-column: 1; grid-row: 2; 
+                font-size: 14px !important; font-weight: bold; color: #0f172a !important; 
+            }
 
-            #tabelRincianDokterBody td:nth-child(5)::before { content: '💰 Tarif Dasar:'; font-weight: normal; color: #7f8c8d; }
-            #tabelRincianDokterBody td:nth-child(6)::before { content: '🧪 Biaya Lab/BHP:'; font-weight: normal; color: #7f8c8d; }
-            #tabelRincianDokterBody td:nth-child(7)::before { content: '🏷️ Diskon Pasien:'; font-weight: normal; color: #7f8c8d; }
-            #tabelRincianDokterBody td:nth-child(8)::before { content: '📊 Dasar Fee (Tarif Bersih):'; font-weight: 600; color: #2980b9;}
-            #tabelRincianDokterBody td:nth-child(8) { font-weight: bold; color: #2980b9 !important; border-top: 1px solid #eee !important; margin-top: 4px !important; padding-top: 6px !important; }
+            /* Col 4 (Tindakan) -> Kiri Bawah (Abu-abu) */
+            #tabelRincianDokterBody td:nth-child(4) { 
+                grid-column: 1 / span 2; grid-row: 3; 
+                font-size: 13px !important; color: #475569 !important; 
+                margin-top: 4px; line-height: 1.4;
+            }
+
+            /* Col 5, 6, 7, 8 (Tarif Rincian) -> Disembunyikan untuk estetika Mobile Banking */
+            #tabelRincianDokterBody td:nth-child(5), 
+            #tabelRincianDokterBody td:nth-child(6), 
+            #tabelRincianDokterBody td:nth-child(7), 
+            #tabelRincianDokterBody td:nth-child(8) { 
+                display: none !important; 
+            }
 
         } /* <--- PENUTUP @MEDIA SCREEN HP */
 
