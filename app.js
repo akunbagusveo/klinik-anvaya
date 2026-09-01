@@ -808,4 +808,45 @@
             alert("⚠️ Terjadi kesalahan jaringan.");
         });
     };
+
+    // =====================================================================
+    // 🔥 CERMIN PROFIL SIDEBAR (MUTATION OBSERVER)
+    // =====================================================================
+    window.addEventListener('DOMContentLoaded', function() {
+        const sidebarMenu = document.querySelector('.sidebar-menu');
+        const targetNode = document.getElementById('txtUserStatus');
+        
+        // 1. Ciptakan Kartu Profil di Sidebar (Injeksi Dinamis)
+        if (sidebarMenu && !document.getElementById('mobileSidebarProfile')) {
+            const profileCard = document.createElement('div');
+            profileCard.id = 'mobileSidebarProfile';
+            profileCard.className = 'sidebar-profile-card';
+            profileCard.innerHTML = `
+                <div class="avatar-icon">👨‍⚕️</div>
+                <div class="username-text" id="sidebarMirrorName">Memuat Data...</div>
+                <div class="role-badge">Klinik Anvaya</div>
+            `;
+            // Sisipkan di posisi teratas sidebar
+            sidebarMenu.insertBefore(profileCard, sidebarMenu.firstChild);
+        }
+
+        const sidebarName = document.getElementById('sidebarMirrorName');
+
+        // 2. Aktifkan Cermin Ajaib (Tanpa merusak sistem Login bawaan)
+        if (targetNode && sidebarName) {
+            // Set nilai awal (jika login sudah selesai sebelum skrip ini jalan)
+            if(targetNode.innerText.trim() !== "") {
+                sidebarName.innerText = targetNode.innerText;
+            }
+
+            // Pantau terus-menerus: Jika sistem merubah nama di topbar, otomatis copy ke sidebar!
+            const config = { characterData: true, childList: true, subtree: true };
+            const observer = new MutationObserver(function(mutationsList) {
+                for(let mutation of mutationsList) {
+                    sidebarName.innerText = targetNode.innerText;
+                }
+            });
+            observer.observe(targetNode, config);
+        }
+    });
 })();
