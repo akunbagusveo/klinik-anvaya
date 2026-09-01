@@ -666,16 +666,17 @@
     });
 
     // =====================================================================
-    // 🔥 SENSOR ACCORDION SUPER KOMBO (Riwayat, Database, & Worklist)
+    // 🔥 SENSOR ACCORDION MEGA KOMBO (Riwayat, Database, Worklist, Pendapatan)
     // =====================================================================
     document.addEventListener('click', function(e) {
         // Deteksi tabel mana yang sedang disentuh
         const trRiwayat = e.target.closest('#tabelDaftarPasienBody tr');
         const trDatabase = e.target.closest('#tabelSemuaPasienBody tr');
-        const trWorklist = e.target.closest('#tabelPengingatBody tr'); // 👈 Tambahan Sensor Worklist
+        const trWorklist = e.target.closest('#tabelPengingatBody tr'); 
+        const trPendapatan = e.target.closest('#tabelRincianDokterBody tr'); // 👈 Tambahan Sensor Pendapatan
         
-        // Pilih mana yang aktif
-        const targetTr = trRiwayat || trDatabase || trWorklist;
+        // Pilih mana yang aktif disentuh
+        const targetTr = trRiwayat || trDatabase || trWorklist || trPendapatan;
         
         if (!targetTr) return;
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
