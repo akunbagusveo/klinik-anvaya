@@ -159,12 +159,13 @@
             padding: 10px 20px;
             height: 60px;
             box-sizing: border-box;
-            position: fixed;
-            top: 0;
             left: 0;
             width: 100%;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1000 !important; /* Kunci terpenting agar menu tidak tertimpa kartu/tabel di bawahnya */
+            background-color: #ffffff !important; /* Pastikan warna solid agar teks di bawahnya tidak tembus pandang */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important; /* Memberi efek melayang saat di-scroll */
         }
         .navbar-left, .navbar-right { display: flex; align-items: center; gap: 15px; }
         .burger-btn {
@@ -1265,19 +1266,6 @@
             display: inline-block;
             margin-top: 5px;
         }
-
-        /* =========================================================
-        🔥 UI MODERN: MENU ATAS (NAVBAR) SELALU MENEMPEL (STICKY)
-        ========================================================= */
-        .top-navbar {
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 1000 !important; /* Kunci terpenting agar menu tidak tertimpa kartu/tabel di bawahnya */
-            background-color: #ffffff !important; /* Pastikan warna solid agar teks di bawahnya tidak tembus pandang */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important; /* Memberi efek melayang saat di-scroll */
-        }
-
-        
 
     </style>
 </head>
