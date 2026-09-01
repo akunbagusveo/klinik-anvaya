@@ -649,6 +649,13 @@
             #gridProfilRME > div:nth-child(7) {
                 grid-column: span 1 !important; 
             }
+
+            /* =========================================================
+                🛡️ PROTEKSI DESKTOP: MATIKAN STEPPER & ACCORDION
+            ========================================================= */
+            .profil-mobile-header { display: none !important; }
+            .rme-stepper-nav-mobile { display: none !important; }
+            #gridProfilRME { height: auto !important; overflow: visible !important; }
         }
 
         /* =========================================================
@@ -676,7 +683,7 @@
            📱 WADAH RESPONSIVE KHUSUS MOBILE (max-width: 768px)
            Semua UI cerdas untuk HP disatukan di sini agar tidak konflik!
            ========================================================= */
-           @media screen and (max-width: 768px) {
+        @media screen and (max-width: 768px) {
             
             /* 1. TATA LETAK DASAR & SIDEBAR */
             body { padding: 10px; }
@@ -1004,6 +1011,77 @@
                 display: flex !important;
                 justify-content: center !important;
                 align-items: center !important;
+            }
+
+            /* =========================================================
+               🔥 UI MOBILE: ACCORDION PROFIL PASIEN
+               ========================================================= */
+               #gridProfilRME {
+                height: 50px !important; /* Hanya setinggi tombol header saat tertutup */
+                overflow: hidden !important;
+                padding-top: 5px !important;
+                padding-bottom: 5px !important;
+                transition: height 0.3s ease !important;
+            }
+            #gridProfilRME.profil-expanded {
+                height: auto !important; /* Melebar saat diklik */
+                padding-bottom: 15px !important;
+            }
+            .profil-mobile-header {
+                grid-column: span 2 !important; /* Membentang penuh */
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 5px;
+                border-bottom: 1px dashed #cbd5e1;
+                margin-bottom: 10px;
+                cursor: pointer;
+            }
+
+            /* =========================================================
+               🔥 UI MOBILE: STEPPER NON-LINEAR FORM RME
+               ========================================================= */
+            .rme-stepper-nav-mobile {
+                display: flex !important;
+                justify-content: space-between;
+                background: #f1f5f9;
+                padding: 6px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                gap: 5px;
+            }
+            .rme-stepper-nav-mobile .step-btn {
+                flex: 1;
+                text-align: center;
+                padding: 10px 5px;
+                font-size: 11px;
+                font-weight: bold;
+                color: #64748b;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: 0.2s;
+            }
+            .rme-stepper-nav-mobile .step-btn.active {
+                background: #3498db;
+                color: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            /* Mesin Penyembunyi Step Otomatis */
+            #formModalMedisSplit[data-active-step="1"] > div[data-step-mobile="2"],
+            #formModalMedisSplit[data-active-step="1"] > div[data-step-mobile="3"],
+            #formModalMedisSplit[data-active-step="2"] > div[data-step-mobile="1"],
+            #formModalMedisSplit[data-active-step="2"] > div[data-step-mobile="3"],
+            #formModalMedisSplit[data-active-step="3"] > div[data-step-mobile="1"],
+            #formModalMedisSplit[data-active-step="3"] > div[data-step-mobile="2"] {
+                display: none !important;
+            }
+            
+            /* Pastikan tombol Simpan selalu lengket di paling bawah form */
+            .step-selalu-muncul {
+                margin-top: 30px !important;
+                padding-top: 15px !important;
+                border-top: 2px dashed #cbd5e1 !important;
             }
             
         } /* <--- PENUTUP @MEDIA SCREEN HP */

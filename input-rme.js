@@ -1116,4 +1116,91 @@
         }
     };
 
+    // =====================================================================
+    // 🔥 FITUR RME MOBILE: STEPPER NON-LINEAR & ACCORDION PROFIL
+    // (Letakkan kode ini di sini, sebelum penutup })(); paling bawah)
+    // =====================================================================
+    window.addEventListener('DOMContentLoaded', function() {
+        
+        // 1. SUNTIK ACCORDION KE PROFIL PASIEN SECARA DINAMIS
+        const profilGrid = document.getElementById('gridProfilRME');
+        if (profilGrid && !document.getElementById('mobileProfilHeader')) {
+            const header = document.createElement('div');
+            header.id = 'mobileProfilHeader';
+            header.className = 'profil-mobile-header';
+            header.innerHTML = '<span style="font-weight:bold; color:#1e3c72; font-size:14px;">👤 Tampilkan Detail Pasien</span> <span class="profil-arrow" style="color:#7f8c8d; transition:0.3s; font-size:16px;">❯</span>';
+            
+            profilGrid.insertBefore(header, profilGrid.firstChild);
+
+            header.addEventListener('click', function() {
+                profilGrid.classList.toggle('profil-expanded');
+                const arrow = this.querySelector('.profil-arrow');
+                if(profilGrid.classList.contains('profil-expanded')) {
+                    arrow.style.transform = 'rotate(90deg)';
+                } else {
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+
+        // 2. SUNTIK STEPPER KE FORM INPUT RME SECARA DINAMIS
+        const formRME = document.getElementById('formModalMedisSplit');
+        if (formRME && !document.getElementById('rmeStepperNav')) {
+            
+            // Buat Navigasi Stepper
+            const nav = document.createElement('div');
+            nav.id = 'rmeStepperNav';
+            nav.className = 'rme-stepper-nav-mobile';
+            nav.innerHTML = `
+                <div class="step-btn active" onclick="window.ubahStepRME(1)">1. Anamnesa</div>
+                <div class="step-btn" onclick="window.ubahStepRME(2)">2. Diagnosa</div>
+                <div class="step-btn" onclick="window.ubahStepRME(3)">3. Tindakan & Obat</div>
+            `;
+            formRME.insertBefore(nav, formRME.firstChild);
+
+            // Klasifikasikan Otomatis Elemen Form tanpa Hardcode Index
+            Array.from(formRME.children).forEach(child => {
+                if(child.tagName === 'INPUT' || child.id === 'rmeStepperNav') return;
+                
+                const html = child.innerHTML.toLowerCase();
+                
+                // Pengecualian mutlak: Tombol Simpan & Batal Edit
+                if(html.includes('btnsimpanrme') || html.includes('batal edit')) {
+                    child.classList.add('step-selalu-muncul');
+                    return; 
+                }
+
+                // Pengelompokan Berbasis Keyword (Dinamis)
+                if (html.includes('anamnesa') || html.includes('objektif')) {
+                    child.setAttribute('data-step-mobile', '1');
+                } else if (html.includes('diagnosa') || html.includes('icd')) {
+                    child.setAttribute('data-step-mobile', '2');
+                } else {
+                    // Semua kotak selain di atas masuk ke step 3 (Tindakan, Resep, File, Pro)
+                    child.setAttribute('data-step-mobile', '3');
+                }
+            });
+
+            formRME.setAttribute('data-active-step', '1');
+        }
+    });
+
+    // Mesin Penggerak Pindah Tab
+    window.ubahStepRME = function(stepTujuan) {
+        const formRME = document.getElementById('formModalMedisSplit');
+        if(!formRME) return;
+
+        formRME.setAttribute('data-active-step', stepTujuan);
+
+        document.querySelectorAll('.step-btn').forEach((btn, index) => {
+            if(index + 1 === parseInt(stepTujuan)) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    };
+
+    
+
 })();
