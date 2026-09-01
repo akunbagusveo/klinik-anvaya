@@ -665,4 +665,26 @@
         }
     });
 
+    // =====================================================================
+    // 🔥 SENSOR ACCORDION PENCARIAN RIWAYAT (GLOBAL DELEGATION)
+    // =====================================================================
+    document.addEventListener('click', function(e) {
+        // 1. Cek apakah yang diklik berada di dalam tabel daftar pencarian riwayat
+        const tr = e.target.closest('#tabelDaftarPasienBody tr');
+        
+        // Jika bukan area tabel pencarian, hentikan perintah
+        if (!tr) return;
+        
+        // 2. Abaikan jika yang diklik adalah Tombol Aksi (agar fungsinya aman)
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        
+        // 3. Abaikan jika yang diklik adalah teks placeholder "Memuat hasil..."
+        if (tr.querySelector('td[colspan="6"]')) return; 
+        
+        // 4. Buka/Tutup laci informasi hanya jika diakses dari layar HP
+        if (window.innerWidth <= 768) {
+            tr.classList.toggle('expanded');
+        }
+    });
+
 })();
