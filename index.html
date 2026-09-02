@@ -3474,6 +3474,30 @@
                     <small style="color: #666; font-size: 11px;">*Gunakan mouse (PC) atau jari/stylus (Tablet/HP) untuk bertanda tangan di dalam kotak.</small>
                 </div>
 
+                <!-- Area Tanda Tangan Dokter (Metode Stempel Digital) -->
+                <div class="digital-stamp-container" style="margin-top: 20px; border: 2px dashed #bdc3c7; padding: 15px; border-radius: 8px; text-align: center; background: #f8f9fa;">
+                    
+                    <!-- Tombol Pemicu Stempel (Ditekan oleh Dokter) -->
+                    <button type="button" id="btnStempelDokter" onclick="window.aktifkanStempelDokter()" style="background-color: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px;">
+                        ✍️ Sahkan dengan Stempel Digital
+                    </button>
+
+                    <!-- Wujud Stempel (Sembunyi sebelum ditekan) -->
+                    <div id="wujudStempelDigital" style="display: none; border: 2px solid #27ae60; background: #eafaf1; padding: 15px; border-radius: 6px; text-align: left;">
+                        <div style="color: #27ae60; font-weight: 900; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">✅</span> DISAHKAN SECARA ELEKTRONIK
+                        </div>
+                        <div style="font-size: 13px; color: #2c3e50; line-height: 1.6;">
+                            <strong>Oleh:</strong> <span id="stampNamaDokter">Memuat...</span><br>
+                            <strong>Waktu:</strong> <span id="stampWaktu"></span><br>
+                            <strong style="color: #7f8c8d; font-size: 11px;">ID Dokumen: <span id="stampID"></span></strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Input Tersembunyi untuk dikirim ke Backend Server -->
+                    <input type="hidden" id="inputStatusStempel" value="Belum">
+                </div>
+
                 <!-- Tombol Aksi -->
                 <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; padding-top: 15px;">
                     <button type="button" onclick="window.tutupModalConsent()" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Batal</button>

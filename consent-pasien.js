@@ -709,4 +709,34 @@
         return sel.value !== "KUSTOM" ? sel.value : "Penyembuhan & perbaikan fungsi klinis kedokteran gigi";
     };
 
+    window.aktifkanStempelDokter = function() {
+        const btn = document.getElementById('btnStempelDokter');
+        const wujud = document.getElementById('wujudStempelDigital');
+        const inputStatus = document.getElementById('inputStatusStempel');
+        
+        // Ambil identitas dokter dari sesi login saat ini
+        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+        let namaDokter = sessionData.namaLengkap || sessionData.username || "Dokter Klinik Anvaya";
+        
+        // Auto-Koreksi Gelar drg.
+        namaDokter = namaDokter.replace(/\bdr\.\s*/gi, "drg. ").replace(/\bdr\s+/gi, "drg. ");
+        if (!namaDokter.toLowerCase().includes("drg.") && namaDokter !== "Dokter Klinik Anvaya") {
+            namaDokter = "drg. " + namaDokter.replace(/\b\w/g, l => l.toUpperCase());
+        }
+    
+        // Waktu Aktual
+        const now = new Date();
+        const waktuFormat = now.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) + ' WIB';
+        
+        // Tulis ke dalam HTML
+        document.getElementById('stampNamaDokter').innerText = namaDokter;
+        document.getElementById('stampWaktu').innerText = waktuFormat;
+        document.getElementById('stampID').innerText = "TX-" + now.getTime();
+        
+        // Ubah Tampilan UI
+        btn.style.display = 'none';
+        wujud.style.display = 'block';
+        inputStatus.value = "Telah Disahkan";
+    };
+
 })();
