@@ -631,6 +631,9 @@
             tujuanTindakan = window.tujuanConsentAktif || localStorage.getItem('tujuan_consent_' + noRM) || document.getElementById('selTujuanConsent')?.value || "Penyembuhan klinis";
         }
 
+        // Ambil status stempel dari kotak tersembunyi yang sudah kita buat sebelumnya
+        const statusStempel = document.getElementById('inputStatusStempel') ? document.getElementById('inputStatusStempel').value : "Belum";
+
         const payload = {
             action: "cetakConsentPDF",
             noRM: noRM,
@@ -644,7 +647,8 @@
             tujuan: tujuanTindakan,
             risiko: daftarRisiko,
             namaPenandatangan: namaPasien,
-            linkFoto: urlFotoTTD
+            linkFoto: urlFotoTTD,
+            statusStempelDokter: statusStempel // 🔥 INI DATA BARU YANG DIKIRIM KE SERVER
         };
 
         if (typeof window.tampilkanLoading === "function" && !isSilent) {
