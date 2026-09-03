@@ -1010,9 +1010,17 @@
                         let arrTindakan = JSON.parse(r.perawatan);
                         if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
                             arrTindakan.forEach(t => {
-                                let labelCatatan = t.catatanKlinis ? ` <span style="color:#7f8c8d; font-style:italic;">(${t.catatanKlinis})</span>` : "";
                                 let hargaAman = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
-                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}<br>`;
+                                
+                                // 🔥 KODE BARU: Desain UI Catatan Klinis yang lebih lega & profesional
+                                // Jika ada catatan, buat baris baru (div) tanpa kurung & tanpa miring.
+                                // Jika tidak ada catatan, cukup beri jeda enter (<br>).
+                                let labelCatatan = t.catatanKlinis 
+                                    ? `<div style="padding-left: 12px; color: #2c3e50; margin-top: 2px; margin-bottom: 8px;">${t.catatanKlinis}</div>` 
+                                    : `<br>`;
+                                
+                                // Gabungkan Nama Tindakan dan Catatannya
+                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}`;
                             });
                         } else {
                             tampilanTindakanHtml = typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.perawatan) : r.perawatan;
