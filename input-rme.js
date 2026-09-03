@@ -120,23 +120,39 @@
                 
                 // Cek apakah ada draft TTD berupa Base64 (Artinya belum pernah jadi PDF/belum dikirim)
                 if (savedTTD && savedTTD.startsWith('data:image')) {
-                    if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menerbitkan PDF Informed Consent...");
+                    if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menerbitkan PDF Informed Consent (Mohon tunggu)...");
                     
-                    let teksTindakanConsent = listTindakanDipilih.map(t => t.namaTindakan).join(", ") || "Tindakan Medis";
-                    
+                    // 🛡️ PERBAIKAN: Tarik data persis dari label Form Consent (Sama seperti fungsi aslinya)
+                    let fixNoRM = document.getElementById('lblConsentRM')?.innerText || noRMFinal || "-";
+                    let fixNama = document.getElementById('lblConsentNama')?.innerText || document.getElementById('lblProfilNama')?.innerText || "-";
+                    let fixTindakan = document.getElementById('lblConsentTindakan')?.innerText || listTindakanDipilih.map(t => t.namaTindakan).join(", ");
+                    if (!fixTindakan || fixTindakan.trim() === "" || fixTindakan === "-") fixTindakan = "Tindakan Medis";
+
                     const payloadConsent = {
                         action: "simpanConsent",
-                        noRM: noRMFinal,
-                        namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
-                        tindakan: teksTindakanConsent,
+                        noRM: fixNoRM,
+                        namaPasien: fixNama,
+                        tindakan: fixTindakan,
                         risikoTerpilih: savedRisikoStr ? JSON.parse(savedRisikoStr) : [],
                         statusTTD: "Digital",
                         ttdBase64: savedTTD 
                     };
 
                     try {
-                        // Kita tunggu (await) sampai server selesai bikin PDF, baru lanjut simpan RME
-                        await fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payloadConsent) });
+                        // Kita tunggu (await) sampai server selesai bikin PDF
+                        let resConsent = await fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payloadConsent) });
+                        let dataConsent = await resConsent.json();
+                        
+                        // 🛡️ PERBAIKAN: Tangkap URL PDF dari server dan simpan agar tombol "Lihat PDF" bisa muncul!
+                        if (dataConsent.result === "success") {
+                            let finalUrl = dataConsent.urlFoto || dataConsent.linkFoto || dataConsent.pdfUrl || savedTTD;
+                            localStorage.setItem('ttd_consent_' + noRMFinal, finalUrl);
+                            
+                            // Jika server mengembalikan link PDF
+                            if (dataConsent.pdfUrl || dataConsent.urlPdf) {
+                                localStorage.setItem('pdf_url_consent_' + noRMFinal, dataConsent.pdfUrl || dataConsent.urlPdf);
+                            }
+                        }
                     } catch (err) {
                         console.error("Gagal generate PDF Consent: ", err);
                     }
