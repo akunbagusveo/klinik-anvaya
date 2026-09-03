@@ -892,7 +892,12 @@
         }
         
         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
-        window.consentSudahDisimpanHariIni = false; window.urlFotoConsentAktif = ""; window.tujuanConsentAktif = "";
+        
+        // 🔥 PEMBERSIHAN EKSTRA SAAT BUKA PASIEN BARU
+        window.consentSudahDisimpanHariIni = false; 
+        window.urlFotoConsentAktif = ""; 
+        window.tujuanConsentAktif = "";
+        window.pdfConsentAktif = ""; // Hapus hantu PDF dari pasien sebelumnya!
 
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
         const savedTujuan = localStorage.getItem('tujuan_consent_' + cleanNoRM);

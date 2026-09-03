@@ -513,13 +513,17 @@
     });
 
     window.resetStatusConsentUI = function() {
+        // 🔥 DETERJEN PEMBERSIH MEMORI GLOBAL (Anti Data-Bleed)
         window.consentSudahDisimpanHariIni = false;
+        window.urlFotoConsentAktif = ""; 
+        window.tujuanConsentAktif = "";
+        window.pdfConsentAktif = ""; 
 
         const btnConsent = document.getElementById('btnBuatConsent');
         if (btnConsent) {
             btnConsent.classList.remove('btn-consent-wajib');
             
-            // 🔥 FIX: Kembalikan ke mode Abu-abu (Terkunci & Redup) sebagai default saat form kosong
+            // Kembalikan ke mode Abu-abu (Terkunci & Redup) sebagai default saat form kosong
             btnConsent.disabled = true;
             btnConsent.style.cursor = "not-allowed"; 
             btnConsent.style.opacity = "0.5"; 
