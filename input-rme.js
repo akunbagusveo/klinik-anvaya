@@ -113,16 +113,15 @@
 
                 if (!window.tokenRmeUnik) window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
 
-                // 🔥 LOGIKA BARU: Tembak Data Consent ke Server untuk cetak PDF SEBELUM RME disimpan
+                // 🔥 LOGIKA BARU: Tembak Data Consent ke Server (Upload TTD + Cetak PDF) SEBELUM RME disimpan
                 const noRMFinal = dapatkanNilaiDOM('modalNoRM', 'billNoRM') || formAktifRme.dataset.activeNoRM || "";
                 const savedTTD = localStorage.getItem('ttd_consent_' + noRMFinal);
                 const savedRisikoStr = localStorage.getItem('risiko_consent_' + noRMFinal);
                 
                 // Cek apakah ada draft TTD berupa Base64 (Artinya belum pernah jadi PDF/belum dikirim)
                 if (savedTTD && savedTTD.startsWith('data:image')) {
-                    if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menerbitkan PDF Informed Consent (Mohon tunggu)...");
+                    if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Mengamankan Tanda Tangan & Menerbitkan PDF Consent...");
                     
-                    // 🛡️ PERBAIKAN: Tarik data persis dari label Form Consent (Sama seperti fungsi aslinya)
                     let fixNoRM = document.getElementById('lblConsentRM')?.innerText || noRMFinal || "-";
                     let fixNama = document.getElementById('lblConsentNama')?.innerText || document.getElementById('lblProfilNama')?.innerText || "-";
                     let fixTindakan = document.getElementById('lblConsentTindakan')?.innerText || listTindakanDipilih.map(t => t.namaTindakan).join(", ");
@@ -139,18 +138,21 @@
                     };
 
                     try {
-                        // Kita tunggu (await) sampai server selesai bikin PDF
+                        // 1. Tembak simpanConsent untuk upload TTD ke Drive dan insert baris LogConsent
                         let resConsent = await fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payloadConsent) });
                         let dataConsent = await resConsent.json();
                         
-                        // 🛡️ PERBAIKAN: Tangkap URL PDF dari server dan simpan agar tombol "Lihat PDF" bisa muncul!
                         if (dataConsent.result === "success") {
+                            // Tangkap URL gambar TTD asli dari server (Google Drive)
                             let finalUrl = dataConsent.urlFoto || dataConsent.linkFoto || dataConsent.pdfUrl || savedTTD;
-                            localStorage.setItem('ttd_consent_' + noRMFinal, finalUrl);
                             
-                            // Jika server mengembalikan link PDF
-                            if (dataConsent.pdfUrl || dataConsent.urlPdf) {
-                                localStorage.setItem('pdf_url_consent_' + noRMFinal, dataConsent.pdfUrl || dataConsent.urlPdf);
+                            // Timpa Base64 di LocalStorage dengan URL asli agar lebih ringan
+                            localStorage.setItem('ttd_consent_' + noRMFinal, finalUrl); 
+                            window.urlFotoConsentAktif = finalUrl;
+                            
+                            // 2. SETELAH TTD TERSIMPAN, SEGERA PANGGIL MESIN PEMBUAT PDF SECARA HEADLESS!
+                            if (typeof window.cetakInformedConsentPDF === "function") {
+                                await window.cetakInformedConsentPDF(true); 
                             }
                         }
                     } catch (err) {
