@@ -323,25 +323,24 @@
         rowWrapper.className = 'baris-tindakan-item';
         rowWrapper.style = "display: flex; flex-direction: column; background: white; padding: 15px; border: 1px solid #ebd3c7; border-radius: 4px; border-left: 4px solid #3498db; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
 
-        let setKategori = new Set();
+        // 🔥 UPGRADE: Siapkan data Autocomplete untuk SEMUA tindakan sekaligus!
+        let htmlOpsiTindakan = "";
         if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
-            window.masterTindakanGlobal.forEach(t => { if (t.kategori) setKategori.add(t.kategori.trim()); });
+            window.masterTindakanGlobal.forEach(t => { 
+                const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
+                htmlOpsiTindakan += `<option value="${namaBersih}">`; 
+            });
         }
+        htmlOpsiTindakan += `<option value="KUSTOM">`;
 
-        let opsiKategoriHtml = `<option value="">-- Pilih Kategori / Spesialis --</option>`;
-        setKategori.forEach(kat => { opsiKategoriHtml += `<option value="${kat}">${kat.toUpperCase()}</option>`; });
-
+        // 🔥 UPGRADE UI DIAGNOSA: Dropdown Kategori dihapus, diganti 1 Kotak Pencarian Pintar
         rowWrapper.innerHTML = `
             <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
-                <div style="flex: 1.2; min-width: 180px;">
-                    <select class="sel-kategori-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="window.filterTindakanPerKategori('${rowId}', this.value)" required>
-                        ${opsiKategoriHtml}
-                    </select>
-                </div>
-                <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-start;">
-                    <!-- 🔥 UPGRADE: Mengubah Select menjadi Input Autocomplete (Datalist) -->
-                    <input list="list_tindakan_${rowId}" class="sel-nama-tindakan" placeholder="🔍 Ketik untuk mencari tindakan..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" autocomplete="off" disabled required>
-                    <datalist id="list_tindakan_${rowId}"></datalist>
+                <div style="flex: 3; min-width: 250px; display: flex; flex-direction: column; justify-content: flex-start;">
+                    <input list="list_tindakan_${rowId}" class="sel-nama-tindakan" placeholder="🔍 Ketik nama tindakan... (misal: Cabut Gigi)" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: white; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" autocomplete="off" required>
+                    <datalist id="list_tindakan_${rowId}">
+                        ${htmlOpsiTindakan}
+                    </datalist>
                 </div>
                 <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa; height: 38px; box-sizing: border-box;" class="box-harga-container">
                     <span style="color: #7f8c8d; font-weight: bold; font-size: 13px; margin-right: 5px;">Rp</span>
@@ -363,13 +362,16 @@
 
         kontainer.appendChild(rowWrapper);
 
-        const elemenKategori = rowWrapper.querySelector('.sel-kategori-tindakan');
         const elemenTindakan = rowWrapper.querySelector('.sel-nama-tindakan');
         const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
         const elemenCatatan = rowWrapper.querySelector('.inp-catatan-tindakan');
 
-        if (elemenKategori) elemenKategori.addEventListener('change', window.simpanDraftRME);
         if (elemenTindakan) {
+            // Deteksi cerdas: jika dokter klik pilihan dari dropdown, langsung proses harganya
+            elemenTindakan.addEventListener('input', function() {
+                const isMatch = Array.from(document.getElementById('list_tindakan_' + rowId).options).some(opt => opt.value === this.value);
+                if (isMatch) window.pilihTindakanDinamis(rowId, this.value);
+            });
             elemenTindakan.addEventListener('change', () => { window.simpanDraftRME(); if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI(); });
         }
         if (elemenHarga) {
@@ -378,28 +380,17 @@
         }
         if (elemenCatatan) elemenCatatan.addEventListener('input', window.simpanDraftRME);
 
+        // Load data jika sedang mengedit/membuka draft RME lama
         if (dataAwal) {
-            const matchTindakan = window.masterTindakanGlobal.find(t => t.nama === dataAwal.namaTindakan);
-            if (matchTindakan) {
-                rowWrapper.querySelector('.sel-kategori-tindakan').value = matchTindakan.kategori;
-                window.filterTindakanPerKategori(rowId, matchTindakan.kategori);
-                rowWrapper.querySelector('.sel-nama-tindakan').value = dataAwal.namaTindakan;
-                window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan);
-                
-                const inpHarga = rowWrapper.querySelector('.inp-harga-tindakan');
-                inpHarga.value = Number(dataAwal.hargaDiinput).toLocaleString('en-US');
-                rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
-            } else if (dataAwal.namaTindakan === "KUSTOM") {
-                window.filterTindakanPerKategori(rowId, "");
-                rowWrapper.querySelector('.sel-nama-tindakan').innerHTML += `<option value="KUSTOM">KUSTOM</option>`;
-                rowWrapper.querySelector('.sel-nama-tindakan').value = "KUSTOM";
-                window.pilihTindakanDinamis(rowId, "KUSTOM");
-                if (rowWrapper.querySelector('.inp-catatan-tindakan')) rowWrapper.querySelector('.inp-catatan-tindakan').value = dataAwal.catatanKlinis || "";
-            }
+            elemenTindakan.value = dataAwal.namaTindakan || "";
+            window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "");
+            
+            if (elemenHarga) elemenHarga.value = Number(dataAwal.hargaDiinput || 0).toLocaleString('en-US');
+            if (elemenCatatan) elemenCatatan.value = dataAwal.catatanKlinis || "";
         }
 
+        // Kunci input jika tagihan sudah dilunasi di kasir
         if (window.isPasienLunasAktif) {
-            if (elemenKategori) { elemenKategori.disabled = true; elemenKategori.style.backgroundColor = "#e9ecef"; }
             if (elemenTindakan) { elemenTindakan.disabled = true; elemenTindakan.style.backgroundColor = "#e9ecef"; }
             if (elemenHarga) { elemenHarga.readOnly = true; elemenHarga.style.backgroundColor = "#e9ecef"; }
             rowWrapper.querySelectorAll('button, [class*="hapus"]').forEach(tombol => tombol.style.display = 'none');
@@ -414,63 +405,63 @@
         if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
     };
 
-    window.filterTindakanPerKategori = function(rowId, kategoriTerpilih) {
-        const row = document.getElementById(rowId);
-        if (!row) return;
+    // window.filterTindakanPerKategori = function(rowId, kategoriTerpilih) {
+    //     const row = document.getElementById(rowId);
+    //     if (!row) return;
 
-        // Pada arsitektur baru (Datalist), elemen utama selalu berupa <input>
-        const inputTindakan = row.querySelector('.sel-nama-tindakan');
-        const datalist = document.getElementById('list_tindakan_' + rowId);
+    //     // Pada arsitektur baru (Datalist), elemen utama selalu berupa <input>
+    //     const inputTindakan = row.querySelector('.sel-nama-tindakan');
+    //     const datalist = document.getElementById('list_tindakan_' + rowId);
         
-        const inpHarga = row.querySelector('.inp-harga-tindakan');
-        const boxHarga = row.querySelector('.box-harga-container');
-        const divInfo = row.querySelector('.info-tindakan-detail');
-        const badgeConsent = row.querySelector('.badge-wajib-consent');
+    //     const inpHarga = row.querySelector('.inp-harga-tindakan');
+    //     const boxHarga = row.querySelector('.box-harga-container');
+    //     const divInfo = row.querySelector('.info-tindakan-detail');
+    //     const badgeConsent = row.querySelector('.badge-wajib-consent');
 
-        if (!inputTindakan || !datalist) return;
+    //     if (!inputTindakan || !datalist) return;
 
-        // 1. Lakukan Reset Visual (Membawa logika dari kode lama Anda)
-        if (badgeConsent) badgeConsent.style.display = "none";
-        if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
-        if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa";
-        if (divInfo) divInfo.style.display = "none";
+    //     // 1. Lakukan Reset Visual (Membawa logika dari kode lama Anda)
+    //     if (badgeConsent) badgeConsent.style.display = "none";
+    //     if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
+    //     if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa";
+    //     if (divInfo) divInfo.style.display = "none";
         
-        // Kosongkan teks yang sedang diketik dokter
-        inputTindakan.value = ""; 
+    //     // Kosongkan teks yang sedang diketik dokter
+    //     inputTindakan.value = ""; 
 
-        // 2. Cek Jika Kategori Kosong / Belum Dipilih
-        const cleanKat = String(kategoriTerpilih || "").trim().toLowerCase();
-        if (!cleanKat) {
-            inputTindakan.disabled = true; 
-            inputTindakan.style.backgroundColor = "#f5f6fa";
-            inputTindakan.placeholder = "-- Pilih Kategori Dahulu --";
-            datalist.innerHTML = "";
-            return;
-        }
+    //     // 2. Cek Jika Kategori Kosong / Belum Dipilih
+    //     const cleanKat = String(kategoriTerpilih || "").trim().toLowerCase();
+    //     if (!cleanKat) {
+    //         inputTindakan.disabled = true; 
+    //         inputTindakan.style.backgroundColor = "#f5f6fa";
+    //         inputTindakan.placeholder = "-- Pilih Kategori Dahulu --";
+    //         datalist.innerHTML = "";
+    //         return;
+    //     }
 
-        // 3. Buka Gembok Input & Persiapkan Pencarian
-        inputTindakan.disabled = false; 
-        inputTindakan.style.backgroundColor = "white";
-        inputTindakan.placeholder = "🔍 Ketik nama tindakan...";
+    //     // 3. Buka Gembok Input & Persiapkan Pencarian
+    //     inputTindakan.disabled = false; 
+    //     inputTindakan.style.backgroundColor = "white";
+    //     inputTindakan.placeholder = "🔍 Ketik nama tindakan...";
 
-        // 4. Susun Daftar Sugesti (Autocomplete) ke dalam Datalist
-        let htmlOpsi = "";
-        const masterList = window.masterTindakanGlobal || [];
+    //     // 4. Susun Daftar Sugesti (Autocomplete) ke dalam Datalist
+    //     let htmlOpsi = "";
+    //     const masterList = window.masterTindakanGlobal || [];
         
-        masterList.forEach(t => {
-            if (String(t.kategori || t.Kategori || "").trim().toLowerCase() === cleanKat) {
-                const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
-                // Catatan: data-butuh-consent tidak perlu ditaruh di <option> lagi,
-                // karena pilihTindakanDinamis sudah cerdas mencarinya langsung dari masterList
-                htmlOpsi += `<option value="${namaBersih}">`;
-            }
-        });
+    //     masterList.forEach(t => {
+    //         if (String(t.kategori || t.Kategori || "").trim().toLowerCase() === cleanKat) {
+    //             const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
+    //             // Catatan: data-butuh-consent tidak perlu ditaruh di <option> lagi,
+    //             // karena pilihTindakanDinamis sudah cerdas mencarinya langsung dari masterList
+    //             htmlOpsi += `<option value="${namaBersih}">`;
+    //         }
+    //     });
 
-        // 5. Tetap sediakan opsi KUSTOM untuk kompatibilitas
-        htmlOpsi += `<option value="KUSTOM">`;
+    //     // 5. Tetap sediakan opsi KUSTOM untuk kompatibilitas
+    //     htmlOpsi += `<option value="KUSTOM">`;
         
-        datalist.innerHTML = htmlOpsi;
-    };
+    //     datalist.innerHTML = htmlOpsi;
+    // };
 
     window.pilihTindakanDinamis = function(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
