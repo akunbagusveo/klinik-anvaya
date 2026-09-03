@@ -282,11 +282,14 @@
             const selNama = row.querySelector('.sel-nama-tindakan');
             const inpHarga = row.querySelector('.inp-harga-tindakan');
             const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+            const inpQty = row.querySelector('.inp-qty-tindakan'); // 🔥 Menangkap elemen Qty
+
             if (selNama && selNama.value && selNama.value.trim() !== "") {
                 listTindakanDraft.push({
                     namaTindakan: selNama.value,
                     hargaDiinput: inpHarga ? inpHarga.value : "0",
-                    catatanKlinis: inpCatatan ? inpCatatan.value : ""
+                    catatanKlinis: inpCatatan ? inpCatatan.value : "",
+                    qty: inpQty ? parseInt(inpQty.value) || 1 : 1 // 🔥 Menyimpan nilai Qty ke database
                 });
             }
         });
@@ -331,6 +334,12 @@
                     
                     <!-- 📦 Kontainer Custom Dropdown yang Rapi ke Bawah -->
                     <div id="drop_tindakan_${rowId}" style="display: none; position: absolute; top: 40px; left: 0; right: 0; background: white; border: 1px solid #bdc3c7; border-top: none; border-radius: 0 0 6px 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.15); max-height: 250px; overflow-y: auto; z-index: 9999;"></div>
+                </div>
+
+                <!-- 🔥 KOTAK QTY (Jumlah Gigi) -->
+                <div style="flex: 0.5; min-width: 70px; max-width: 90px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 8px; background-color: white; height: 38px; box-sizing: border-box;">
+                    <span style="color: #7f8c8d; font-weight: bold; font-size: 12px; margin-right: 4px;">Qty</span>
+                    <input type="number" class="inp-qty-tindakan" value="1" min="1" style="border: none; outline: none; width: 100%; padding: 4px; background: transparent; height: 36px; text-align: center; font-weight: bold; color: #2c3e50;" required>
                 </div>
                 
                 <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa; height: 38px; box-sizing: border-box;" class="box-harga-container">
@@ -418,6 +427,8 @@
 
         if (dataAwal) {
             elemenTindakan.value = dataAwal.namaTindakan || "";
+            const elemenQty = rowWrapper.querySelector('.inp-qty-tindakan');
+            if (elemenQty) elemenQty.value = dataAwal.qty || 1;
             window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "");
             
             // 🔥 PERBAIKAN BUG NaN: Bersihkan dari koma/titik sebelum dijadikan format angka
@@ -443,69 +454,12 @@
         if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
     };
 
-    // window.filterTindakanPerKategori = function(rowId, kategoriTerpilih) {
-    //     const row = document.getElementById(rowId);
-    //     if (!row) return;
-
-    //     // Pada arsitektur baru (Datalist), elemen utama selalu berupa <input>
-    //     const inputTindakan = row.querySelector('.sel-nama-tindakan');
-    //     const datalist = document.getElementById('list_tindakan_' + rowId);
-        
-    //     const inpHarga = row.querySelector('.inp-harga-tindakan');
-    //     const boxHarga = row.querySelector('.box-harga-container');
-    //     const divInfo = row.querySelector('.info-tindakan-detail');
-    //     const badgeConsent = row.querySelector('.badge-wajib-consent');
-
-    //     if (!inputTindakan || !datalist) return;
-
-    //     // 1. Lakukan Reset Visual (Membawa logika dari kode lama Anda)
-    //     if (badgeConsent) badgeConsent.style.display = "none";
-    //     if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
-    //     if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa";
-    //     if (divInfo) divInfo.style.display = "none";
-        
-    //     // Kosongkan teks yang sedang diketik dokter
-    //     inputTindakan.value = ""; 
-
-    //     // 2. Cek Jika Kategori Kosong / Belum Dipilih
-    //     const cleanKat = String(kategoriTerpilih || "").trim().toLowerCase();
-    //     if (!cleanKat) {
-    //         inputTindakan.disabled = true; 
-    //         inputTindakan.style.backgroundColor = "#f5f6fa";
-    //         inputTindakan.placeholder = "-- Pilih Kategori Dahulu --";
-    //         datalist.innerHTML = "";
-    //         return;
-    //     }
-
-    //     // 3. Buka Gembok Input & Persiapkan Pencarian
-    //     inputTindakan.disabled = false; 
-    //     inputTindakan.style.backgroundColor = "white";
-    //     inputTindakan.placeholder = "🔍 Ketik nama tindakan...";
-
-    //     // 4. Susun Daftar Sugesti (Autocomplete) ke dalam Datalist
-    //     let htmlOpsi = "";
-    //     const masterList = window.masterTindakanGlobal || [];
-        
-    //     masterList.forEach(t => {
-    //         if (String(t.kategori || t.Kategori || "").trim().toLowerCase() === cleanKat) {
-    //             const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
-    //             // Catatan: data-butuh-consent tidak perlu ditaruh di <option> lagi,
-    //             // karena pilihTindakanDinamis sudah cerdas mencarinya langsung dari masterList
-    //             htmlOpsi += `<option value="${namaBersih}">`;
-    //         }
-    //     });
-
-    //     // 5. Tetap sediakan opsi KUSTOM untuk kompatibilitas
-    //     htmlOpsi += `<option value="KUSTOM">`;
-        
-    //     datalist.innerHTML = htmlOpsi;
-    // };
-
     window.pilihTindakanDinamis = function(rowId, namaTindakan) {
         const row = document.getElementById(rowId);
         if (!row) return;
 
         const inpHarga = row.querySelector('.inp-harga-tindakan');
+        const inpQty = row.querySelector('.inp-qty-tindakan'); // 🔥 Elemen Qty
         const boxHarga = row.querySelector('.box-harga-container');
         const lblKeterangan = row.querySelector('.lbl-keterangan');
         const lblKategori = row.querySelector('.lbl-kategori'); 
@@ -514,16 +468,22 @@
 
         const cleanNamaPilihan = String(namaTindakan || "").trim();
 
+        // 🔥 LOGIKA VALIDASI RANGE HARGA DINAMIS (Dikalikan Qty)
         const pasangAutoFormatHarga = (minHarga = 0, maxHarga = 0) => {
             if (!inpHarga) return;
             inpHarga.oninput = function() {
                 let valMurni = this.value.replace(/[^0-9]/g, '');
+                let currentQty = inpQty ? parseInt(inpQty.value) || 1 : 1;
+                
                 if (valMurni) {
                     this.value = Number(valMurni).toLocaleString('en-US');
                     if (maxHarga > 0) {
                         const angkaInput = Number(valMurni);
-                        if (angkaInput < minHarga || angkaInput > maxHarga) {
-                            this.setCustomValidity(`Harga harus di antara Rp ${minHarga.toLocaleString('en-US')} - Rp ${maxHarga.toLocaleString('en-US')}`); 
+                        const minTotal = minHarga * currentQty;
+                        const maxTotal = maxHarga * currentQty;
+                        
+                        if (angkaInput < minTotal || angkaInput > maxTotal) {
+                            this.setCustomValidity(`Harga total utk ${currentQty} tindakan harus di antara Rp ${minTotal.toLocaleString('en-US')} - Rp ${maxTotal.toLocaleString('en-US')}`); 
                             this.style.color = "#c0392b"; 
                             if (boxHarga) boxHarga.style.border = "2px solid #e74c3c"; 
                         } else {
@@ -542,6 +502,24 @@
             };
         };
 
+        // 🔥 LOGIKA SAAT QTY BERUBAH (Perkalian Otomatis)
+        if (inpQty) {
+            inpQty.onchange = function() {
+                let qty = parseInt(this.value) || 1;
+                if (qty < 1) { this.value = 1; qty = 1; }
+                
+                if (inpHarga && inpHarga.dataset.hargaSatuan) {
+                    let basePrice = Number(inpHarga.dataset.hargaSatuan);
+                    if (basePrice > 0 && inpHarga.disabled === true) {
+                       inpHarga.value = (basePrice * qty).toLocaleString('en-US'); // Auto update harga total
+                    } else {
+                       inpHarga.dispatchEvent(new Event('input')); // Trigger ulang validasi range jika input manual
+                    }
+                }
+                window.simpanDraftRME();
+            };
+        }
+
         if (!cleanNamaPilihan) {
             if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; inpHarga.setCustomValidity(''); inpHarga.style.color = "inherit"; }
             if (boxHarga) { boxHarga.style.backgroundColor = "#f5f6fa"; boxHarga.style.border = "1px solid #bdc3c7"; }
@@ -551,31 +529,12 @@
             return;
         }
 
-        if (cleanNamaPilihan.toUpperCase() === "KUSTOM") {
-            if (selTindakan && selTindakan.tagName.toLowerCase() === 'select') {
-                const parentCell = selTindakan.parentElement;
-                parentCell.innerHTML = `<div class="wrapper-kustom-input" style="display:flex; width:100%;"><input type="text" class="sel-nama-tindakan" placeholder="Ketik nama tindakan..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px;" onchange="window.simpanDraftRME();" required></div>`;
-                setTimeout(() => { const newInp = row.querySelector('.sel-nama-tindakan'); if (newInp) newInp.focus(); }, 50);
-            }
-            if (inpHarga) {
-                inpHarga.disabled = false; inpHarga.readOnly = false; inpHarga.value = ""; inpHarga.placeholder = "Ketik harga manual...";
-                inpHarga.setCustomValidity(''); inpHarga.style.color = "inherit";
-                if (boxHarga) { boxHarga.style.backgroundColor = "white"; boxHarga.style.border = "1px solid #bdc3c7"; }
-                pasangAutoFormatHarga(0, 0); 
-            }
-            if (infoDetail) infoDetail.style.display = 'none';
-            const badgeLama = row.querySelector('.badge-wajib-consent');
-            if (badgeLama) badgeLama.style.display = 'none';
-            window.simpanDraftRME();
-            return;
-        }
-
         const match = (window.masterTindakanGlobal || []).find(t => String(t.nama || "").trim().toLowerCase() === cleanNamaPilihan.toLowerCase());
         let isWajibConsent = false;
 
-        // 🔥 KODE BARU: Jika dokter mengetik bebas tindakan yang tidak ada di master data
         if (!match && cleanNamaPilihan.toUpperCase() !== "KUSTOM") {
             if (inpHarga) {
+                inpHarga.dataset.hargaSatuan = 0;
                 inpHarga.disabled = false; inpHarga.readOnly = false; inpHarga.value = ""; inpHarga.placeholder = "Ketik harga manual...";
                 inpHarga.setCustomValidity(''); inpHarga.style.color = "inherit";
                 if (boxHarga) { boxHarga.style.backgroundColor = "white"; boxHarga.style.border = "1px solid #bdc3c7"; }
@@ -591,19 +550,21 @@
         if (match) {
             const hargaDasar = Number(match.harga || 0);
             const hargaMaksimal = Number(match.hargaMaksimal || 0);
+            let currentQty = inpQty ? parseInt(inpQty.value) || 1 : 1;
             
             if (inpHarga) {
-                inpHarga.value = hargaDasar > 0 ? hargaDasar.toLocaleString('en-US') : "";
-                inpHarga.setCustomValidity(''); inpHarga.style.color = "inherit";
-                if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
+                inpHarga.dataset.hargaSatuan = hargaDasar; // Simpan harga dasar murni di balik layar
                 
                 if (hargaMaksimal > 0 && hargaMaksimal !== hargaDasar) {
                     inpHarga.disabled = false; inpHarga.readOnly = false;
-                    inpHarga.placeholder = `Rp ${hargaDasar.toLocaleString('en-US')} - ${hargaMaksimal.toLocaleString('en-US')}`;
+                    inpHarga.value = hargaDasar > 0 ? (hargaDasar * currentQty).toLocaleString('en-US') : "";
+                    inpHarga.placeholder = `Range harga...`;
                     if (boxHarga) boxHarga.style.backgroundColor = "white"; 
                     pasangAutoFormatHarga(hargaDasar, hargaMaksimal); 
                 } else {
-                    inpHarga.disabled = true; inpHarga.placeholder = "0";
+                    inpHarga.disabled = true; 
+                    inpHarga.value = hargaDasar > 0 ? (hargaDasar * currentQty).toLocaleString('en-US') : "";
+                    inpHarga.placeholder = "0";
                     if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa"; inpHarga.oninput = null; 
                 }
                 inpHarga.dispatchEvent(new Event('input')); inpHarga.dispatchEvent(new Event('change'));
@@ -619,12 +580,6 @@
 
             const butuhConsentVal = match.Butuh_Consent || match.butuhConsent || 0;
             isWajibConsent = (String(butuhConsentVal).trim() === "1" || butuhConsentVal === 1 || String(butuhConsentVal).toLowerCase() === "true");
-        }
-
-        selTindakan = row.querySelector('.sel-nama-tindakan');
-        if (!isWajibConsent && selTindakan && selTindakan.tagName.toLowerCase() === 'select' && selTindakan.selectedIndex >= 0) {
-            const optAktif = selTindakan.options[selTindakan.selectedIndex];
-            if (optAktif && optAktif.getAttribute('data-butuh-consent') === "1") isWajibConsent = true;
         }
 
         let badge = row.querySelector('.badge-wajib-consent');
@@ -1073,7 +1028,9 @@
                                 : `<br>`;
                                 
                                 // Gabungkan Nama Tindakan dan Catatannya
-                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}`;
+                                let labelQty = (t.qty && Number(t.qty) > 1) ? ` <span style="color:#e67e22; font-weight:bold; margin-left: 5px;">(x${t.qty})</span>` : "";
+
+                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong>${labelQty} - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}`;
                             });
                         } else {
                             tampilanTindakanHtml = typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.perawatan) : r.perawatan;
