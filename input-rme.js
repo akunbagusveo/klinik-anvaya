@@ -338,7 +338,7 @@
                     <input type="text" class="inp-harga-tindakan" placeholder="0" style="border: none; outline: none; width: 100%; padding: 8px 4px; border-radius: 0 4px 4px 0; background: transparent; height: 36px;" disabled required>
                 </div>
                 <div style="flex: 2; min-width: 200px; display: flex; gap: 5px; align-items: center;">
-                    <input type="text" class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan)..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; height: 38px; box-sizing: border-box;">
+                    <textarea class="inp-catatan-tindakan" placeholder="Catatan Klinis (Gigi/Bahan)...&#10;Tekan Enter untuk baris baru" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; min-height: 38px; height: 38px; resize: vertical; box-sizing: border-box; font-family: inherit; line-height: 1.4;"></textarea>
                     <button type="button" class="btn-mic" style="padding: 0 10px; height: 38px; display: inline-flex; align-items: center;" onclick="window.mulaiDikteInputDinamis('${rowId}')">🎙️</button>
                 </div>
                 <div>
@@ -1062,9 +1062,10 @@
                                 // 🔥 KODE BARU: Desain UI Catatan Klinis yang lebih lega & profesional
                                 // Jika ada catatan, buat baris baru (div) tanpa kurung & tanpa miring.
                                 // Jika tidak ada catatan, cukup beri jeda enter (<br>).
+                                // 🔥 KODE BARU: Menambahkan CSS white-space: pre-wrap; agar Enter terbaca rapi ke bawah
                                 let labelCatatan = t.catatanKlinis 
-                                    ? `<div style="padding-left: 12px; color: #2c3e50; margin-top: 2px; margin-bottom: 8px;">${t.catatanKlinis}</div>` 
-                                    : `<br>`;
+                                ? `<div style="padding-left: 12px; color: #2c3e50; margin-top: 4px; margin-bottom: 8px; white-space: pre-wrap; line-height: 1.5;">${t.catatanKlinis}</div>` 
+                                : `<br>`;
                                 
                                 // Gabungkan Nama Tindakan dan Catatannya
                                 tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong> - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}`;
