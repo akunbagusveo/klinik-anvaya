@@ -502,20 +502,41 @@
             };
         };
 
-        // 🔥 LOGIKA SAAT QTY BERUBAH (Perkalian Otomatis)
+        // 🔥 LOGIKA SAAT QTY BERUBAH (Perkalian Otomatis & Anti-Merah)
         if (inpQty) {
+            // Set memori Qty lama agar bisa dihitung proporsional
+            if (!inpQty.dataset.oldQty) inpQty.dataset.oldQty = inpQty.value || 1;
+
             inpQty.onchange = function() {
-                let qty = parseInt(this.value) || 1;
-                if (qty < 1) { this.value = 1; qty = 1; }
-                
-                if (inpHarga && inpHarga.dataset.hargaSatuan) {
-                    let basePrice = Number(inpHarga.dataset.hargaSatuan);
-                    if (basePrice > 0 && inpHarga.disabled === true) {
-                       inpHarga.value = (basePrice * qty).toLocaleString('en-US'); // Auto update harga total
+                let newQty = parseInt(this.value) || 1;
+                if (newQty < 1) { this.value = 1; newQty = 1; }
+                let oldQty = parseInt(this.dataset.oldQty) || 1;
+
+                if (inpHarga) {
+                    // 1. Ambil angka harga yang sedang tampil saat ini
+                    let currentTotal = Number(inpHarga.value.replace(/[^0-9]/g, '')) || 0;
+                    
+                    // 2. Cari Harga Satuan (Total saat ini dibagi Qty lama)
+                    let unitPrice = oldQty > 0 ? (currentTotal / oldQty) : 0;
+                    if (unitPrice === 0 && inpHarga.dataset.hargaSatuan) {
+                        unitPrice = Number(inpHarga.dataset.hargaSatuan);
+                    }
+
+                    // 3. Kalikan dengan Qty yang baru & Tampilkan ke kotak
+                    let newTotal = unitPrice * newQty;
+                    inpHarga.value = newTotal > 0 ? newTotal.toLocaleString('en-US') : "";
+                    
+                    // 4. Picu ulang validasi agar gembok merah langsung hilang (menjadi abu-abu normal)
+                    if (typeof inpHarga.oninput === 'function') {
+                        inpHarga.dispatchEvent(new Event('input'));
                     } else {
-                       inpHarga.dispatchEvent(new Event('input')); // Trigger ulang validasi range jika input manual
+                        if (boxHarga) boxHarga.style.border = "1px solid #bdc3c7";
+                        inpHarga.setCustomValidity('');
                     }
                 }
+                
+                // 5. Simpan Qty baru ke dalam memori
+                this.dataset.oldQty = newQty;
                 window.simpanDraftRME();
             };
         }
