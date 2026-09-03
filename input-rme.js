@@ -419,7 +419,12 @@
         if (dataAwal) {
             elemenTindakan.value = dataAwal.namaTindakan || "";
             window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "");
-            if (elemenHarga) elemenHarga.value = Number(dataAwal.hargaDiinput || 0).toLocaleString('en-US');
+            
+            // 🔥 PERBAIKAN BUG NaN: Bersihkan dari koma/titik sebelum dijadikan format angka
+            if (elemenHarga) {
+                let hargaMentah = String(dataAwal.hargaDiinput || dataAwal.hargaBersihPerItem || 0).replace(/[^0-9]/g, '');
+                elemenHarga.value = hargaMentah ? Number(hargaMentah).toLocaleString('en-US') : "";
+            }
             if (elemenCatatan) elemenCatatan.value = dataAwal.catatanKlinis || "";
         }
 
