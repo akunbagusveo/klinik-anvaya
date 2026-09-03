@@ -339,9 +339,9 @@
                     </select>
                 </div>
                 <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-start;">
-                    <select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" disabled required>
-                        <option value="">-- Pilih Tindakan Medis --</option>
-                    </select>
+                    <!-- 🔥 UPGRADE: Mengubah Select menjadi Input Autocomplete (Datalist) -->
+                    <input list="list_tindakan_${rowId}" class="sel-nama-tindakan" placeholder="🔍 Ketik untuk mencari tindakan..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" autocomplete="off" disabled required>
+                    <datalist id="list_tindakan_${rowId}"></datalist>
                 </div>
                 <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa; height: 38px; box-sizing: border-box;" class="box-harga-container">
                     <span style="color: #7f8c8d; font-weight: bold; font-size: 13px; margin-right: 5px;">Rp</span>
@@ -418,50 +418,58 @@
         const row = document.getElementById(rowId);
         if (!row) return;
 
-        let selTindakan = row.querySelector('.sel-nama-tindakan');
+        // Pada arsitektur baru (Datalist), elemen utama selalu berupa <input>
+        const inputTindakan = row.querySelector('.sel-nama-tindakan');
+        const datalist = document.getElementById('list_tindakan_' + rowId);
+        
         const inpHarga = row.querySelector('.inp-harga-tindakan');
         const boxHarga = row.querySelector('.box-harga-container');
         const divInfo = row.querySelector('.info-tindakan-detail');
-
-        if (!selTindakan) return;
-
-        if (selTindakan.tagName.toLowerCase() === 'input') {
-            let cellTindakan = selTindakan.parentElement;
-            if (cellTindakan && cellTindakan.classList.contains('wrapper-kustom-input')) cellTindakan = cellTindakan.parentElement;
-            if (cellTindakan) {
-                cellTindakan.innerHTML = `<select class="sel-nama-tindakan" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: #f5f6fa; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" required><option value="">-- Pilih Tindakan Medis --</option></select>`;
-                selTindakan = row.querySelector('.sel-nama-tindakan');
-                selTindakan.addEventListener('change', () => { window.simpanDraftRME(); if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI(); });
-            }
-        }
-
         const badgeConsent = row.querySelector('.badge-wajib-consent');
-        if (badgeConsent) badgeConsent.style.display = "none";
 
-        selTindakan.innerHTML = `<option value="" data-butuh-consent="0">-- Pilih Tindakan Medis --</option>`;
+        if (!inputTindakan || !datalist) return;
+
+        // 1. Lakukan Reset Visual (Membawa logika dari kode lama Anda)
+        if (badgeConsent) badgeConsent.style.display = "none";
         if (inpHarga) { inpHarga.value = ""; inpHarga.disabled = true; }
         if (boxHarga) boxHarga.style.backgroundColor = "#f5f6fa";
         if (divInfo) divInfo.style.display = "none";
+        
+        // Kosongkan teks yang sedang diketik dokter
+        inputTindakan.value = ""; 
 
+        // 2. Cek Jika Kategori Kosong / Belum Dipilih
         const cleanKat = String(kategoriTerpilih || "").trim().toLowerCase();
         if (!cleanKat) {
-            selTindakan.disabled = true; selTindakan.style.backgroundColor = "#f5f6fa";
+            inputTindakan.disabled = true; 
+            inputTindakan.style.backgroundColor = "#f5f6fa";
+            inputTindakan.placeholder = "-- Pilih Kategori Dahulu --";
+            datalist.innerHTML = "";
             return;
         }
 
-        selTindakan.disabled = false; selTindakan.style.backgroundColor = "white";
+        // 3. Buka Gembok Input & Persiapkan Pencarian
+        inputTindakan.disabled = false; 
+        inputTindakan.style.backgroundColor = "white";
+        inputTindakan.placeholder = "🔍 Ketik nama tindakan...";
 
+        // 4. Susun Daftar Sugesti (Autocomplete) ke dalam Datalist
+        let htmlOpsi = "";
         const masterList = window.masterTindakanGlobal || [];
+        
         masterList.forEach(t => {
             if (String(t.kategori || t.Kategori || "").trim().toLowerCase() === cleanKat) {
                 const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
-                const valConsent = t.Butuh_Consent || t.butuhConsent || 0;
-                const isWajib = (String(valConsent).trim() === "1" || valConsent === 1 || String(valConsent).toLowerCase() === "true");
-                selTindakan.innerHTML += `<option value="${namaBersih}" data-butuh-consent="${isWajib ? '1' : '0'}">${namaBersih}</option>`;
+                // Catatan: data-butuh-consent tidak perlu ditaruh di <option> lagi,
+                // karena pilihTindakanDinamis sudah cerdas mencarinya langsung dari masterList
+                htmlOpsi += `<option value="${namaBersih}">`;
             }
         });
 
-        selTindakan.innerHTML += `<option value="KUSTOM" data-butuh-consent="0">Lain-lain / Tindakan Kustom</option>`;
+        // 5. Tetap sediakan opsi KUSTOM untuk kompatibilitas
+        htmlOpsi += `<option value="KUSTOM">`;
+        
+        datalist.innerHTML = htmlOpsi;
     };
 
     window.pilihTindakanDinamis = function(rowId, namaTindakan) {
@@ -535,6 +543,21 @@
 
         const match = (window.masterTindakanGlobal || []).find(t => String(t.nama || "").trim().toLowerCase() === cleanNamaPilihan.toLowerCase());
         let isWajibConsent = false;
+
+        // 🔥 KODE BARU: Jika dokter mengetik bebas tindakan yang tidak ada di master data
+        if (!match && cleanNamaPilihan.toUpperCase() !== "KUSTOM") {
+            if (inpHarga) {
+                inpHarga.disabled = false; inpHarga.readOnly = false; inpHarga.value = ""; inpHarga.placeholder = "Ketik harga manual...";
+                inpHarga.setCustomValidity(''); inpHarga.style.color = "inherit";
+                if (boxHarga) { boxHarga.style.backgroundColor = "white"; boxHarga.style.border = "1px solid #bdc3c7"; }
+                pasangAutoFormatHarga(0, 0); 
+            }
+            if (infoDetail) infoDetail.style.display = 'none';
+            const badgeLama = row.querySelector('.badge-wajib-consent');
+            if (badgeLama) badgeLama.style.display = 'none';
+            window.simpanDraftRME();
+            return;
+        }
 
         if (match) {
             const hargaDasar = Number(match.harga || 0);
