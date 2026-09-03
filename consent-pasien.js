@@ -322,15 +322,10 @@
         const elNoRM = document.getElementById('modalNoRM');
         const elNama = document.getElementById('modalNama');
         const noRM = elNoRM ? elNoRM.value || "-" : "-";
-        const cleanNoRM = String(noRM).trim();
         const namaPasien = elNama ? elNama.value || "-" : "-";
 
-        // 🔥 LOGIKA BARU: Jika PDF ada, langsung buka tab PDF! Jangan buka Pop-up!
-        const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM) || window.pdfConsentAktif;
-        if (savedPdf && savedPdf !== "-" && savedPdf !== "undefined") {
-            window.open(savedPdf, '_blank');
-            return; 
-        }
+        // 🔥 LOGIKA "BUKA PDF LAMA DI TAB BARU" DIHAPUS TOTAL
+        // Tombol ini fungsinya HANYA untuk buka pop-up input / revisi draf.
 
         const barisTindakan = document.querySelectorAll('.baris-tindakan-item');
         let daftarTindakan = [];
@@ -359,32 +354,19 @@
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
 
-        // 🔥 CEK APAKAH FILE PDF SUDAH ADA DI SERVER
-        const savedPdf = localStorage.getItem('pdf_url_consent_' + cleanNoRM) || window.pdfConsentAktif;
-        if (savedPdf && savedPdf !== "-" && savedPdf !== "undefined") {
-            window.consentSudahDisimpanHariIni = true;
-            btnConsent.disabled = false;
-            btnConsent.style.cursor = "pointer";
-            btnConsent.style.opacity = "1";
-            btnConsent.style.backgroundColor = "#2980b9"; // Berubah Biru Elegan
-            btnConsent.innerHTML = "📄 Lihat PDF Consent Resmi";
-            btnConsent.style.display = "inline-flex";
-            btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-            btnConsent.style.border = "none";
-            return; 
-        }
+        // 🔥 LOGIKA TOMBOL BIRU (LIHAT PDF) DIHAPUS TOTAL DARI SINI
+        // Karena form RME hanya berurusan dengan Draf Lokal, bukan PDF yang sudah jadi.
 
-        // Cek Draft TTD sementara (belum PDF)
-        const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM) || window.urlFotoConsentAktif;
+        // 🛡️ CEK DRAFT LOKAL: Tombol hijau HANYA aktif jika laci TTD pasien ini ada isinya!
+        const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
         const savedRisiko = localStorage.getItem('risiko_consent_' + cleanNoRM);
         
         if ((savedTTD && savedTTD !== "-" && savedTTD !== "undefined") || (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null)) {
             window.consentSudahDisimpanHariIni = true;
-            if (savedTTD) window.urlFotoConsentAktif = savedTTD;
             btnConsent.disabled = false;
             btnConsent.style.cursor = "pointer";
             btnConsent.style.opacity = "1";
-            btnConsent.style.backgroundColor = "#27ae60"; // Hijau jika baru draft
+            btnConsent.style.backgroundColor = "#27ae60"; // Hijau Draft
             btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
             btnConsent.style.display = "inline-flex";
             btnConsent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
@@ -398,7 +380,6 @@
         const semuaInputTindakan = document.querySelectorAll('.baris-tindakan-item .sel-nama-tindakan');
         semuaInputTindakan.forEach(el => {
             if (!el || !el.value) return;
-            // Deteksi visibilitas agar tidak salah tarik dari elemen sembunyi
             if (!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)) return; 
             
             const teks = String(el.value).trim().toLowerCase();
@@ -481,155 +462,151 @@
     // 6. ENGINE PENCETAK PDF CONSENT (ANTI DATA TERTUKAR)
     // =====================================================================
     window.cetakInformedConsentPDF = function(isSilent = false) {
-        const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
-        
-        const existingPdfUrl = localStorage.getItem('pdf_url_consent_' + noRM);
-        if (existingPdfUrl && existingPdfUrl !== "-" && existingPdfUrl !== "undefined") {
-            if (!isSilent) {
-                alert("♻️ Membuka kembali dokumen PDF resmi yang telah dicetak sebelumnya...");
-                window.open(existingPdfUrl, '_blank');
-            }
-            return; 
-        }
-
-        const btnCetak = document.getElementById('btnCetakConsentPDF');
-        const teksAsli = btnCetak ? btnCetak.innerHTML : "🖨️ Cetak / Unduh PDF Resmi";
-        
-        if (btnCetak && !isSilent) {
-            btnCetak.disabled = true;
-            btnCetak.innerHTML = "⏳ Membuat Dokumen PDF... (Mohon Tunggu)";
-            btnCetak.style.backgroundColor = "#7f8c8d";
-        }
-
-        const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
-        const namaPasien = document.getElementById('lblConsentNama')?.innerText || document.getElementById('modalNama')?.value || "-";
-        const tindakan = document.getElementById('lblConsentTindakan')?.innerText || "-";
-        
-        const diagnosa = document.getElementById('modalDiagnosa')?.value || document.getElementById('inputDiagnosaAktif')?.value || "Sesuai rekam medis aktif";
-        
-        // 🔥 FIX DATA PASIEN TERTUKAR: 
-        // Memastikan variabel global hanya digunakan JIKA nomor RM-nya 100% cocok dengan pasien ini!
-        const pAktifRaw = window.pasienRMEAktif || {};
-        const pAktif = (pAktifRaw.noRM === noRM) ? pAktifRaw : {}; 
-
-        let detailAntrean = null;
-        if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
-            detailAntrean = window.dataAntreanGlobal.find(p => p.noRM === noRM);
-        }
-
-        let namaDokterDariData = detailAntrean ? detailAntrean.namaDokter : (pAktif.namaDokter || "");
-        let namaDokterDinamis = (namaDokterDariData || sessionData.namaLengkap || sessionData.username || document.getElementById('selDokter')?.value || "Dokter Klinik Anvaya").trim();
-        
-        // 1. AUTO-KOREKSI BRUTAL: Cari "dr." atau "dr " di mana pun posisinya (mengabaikan huruf besar/kecil) lalu babat habis jadi "drg. "
-        namaDokterDinamis = namaDokterDinamis.replace(/\bdr\.\s*/gi, "drg. ").replace(/\bdr\s+/gi, "drg. ");
-
-        // 2. PENAMBAHAN OTOMATIS: Jika tetap tidak ada gelar "drg" sama sekali, pasangkan secara paksa
-        if (!namaDokterDinamis.toLowerCase().includes("drg.") && !namaDokterDinamis.toLowerCase().includes("drg ") && namaDokterDinamis !== "Dokter Klinik Anvaya") {
-            let namaKapital = namaDokterDinamis.replace(/\b\w/g, l => l.toUpperCase());
-            namaDokterDinamis = "drg. " + namaKapital;
-        }
-
-        let umurTeks = "-";
-        if (pAktif.tanggalLahir && typeof window.hitungUmur === "function") {
-            umurTeks = `${window.hitungUmur(pAktif.tanggalLahir)} Thn (${pAktif.tanggalLahir})`;
-        } else if (detailAntrean && detailAntrean.tanggalLahir && typeof window.hitungUmur === "function") {
-            umurTeks = `${window.hitungUmur(detailAntrean.tanggalLahir)} Thn`;
-        } else {
-            // 🔥 Ambil dari UI hanya jika profil yang tampil di latar belakang benar-benar milik pasien ini
-            const uiRm = document.getElementById('lblProfilRM')?.innerText || "";
-            if (uiRm === noRM) {
-                const domUmur = document.getElementById('lblProfilUmur')?.innerText || "";
-                const match = domUmur.match(/\((.*?)\)/);
-                umurTeks = match ? match[1] : (domUmur !== "-" ? domUmur : "-");
-            }
-        }
-
-        let jenisKelamin = pAktif.jenisKelamin || detailAntrean?.jenisKelamin || "-";
-        
-        let alamat = "-";
-        if (pAktif.alamat) {
-            alamat = pAktif.alamat;
-        } else if (detailAntrean && detailAntrean.alamat) {
-            alamat = detailAntrean.alamat;
-        } else {
-            const uiRm = document.getElementById('lblProfilRM')?.innerText || "";
-            if (uiRm === noRM) {
-                alamat = document.getElementById('lblProfilDomisili')?.innerText || "-";
-            }
-        }
-
-        let daftarRisiko = [];
-        document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked').forEach(chk => {
-            let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
-            if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) {
-                daftarRisiko.push(label);
-            }
-        });
-
-        const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
-        
-        let tujuanTindakan = "-";
-        if (typeof window.getTujuanConsentAktif === "function") {
-            tujuanTindakan = window.getTujuanConsentAktif();
-        } else {
-            tujuanTindakan = window.tujuanConsentAktif || localStorage.getItem('tujuan_consent_' + noRM) || document.getElementById('selTujuanConsent')?.value || "Penyembuhan klinis";
-        }
-
-        // Ambil status stempel dari kotak tersembunyi yang sudah kita buat sebelumnya
-        const statusStempel = document.getElementById('inputStatusStempel') ? document.getElementById('inputStatusStempel').value : "Belum";
-
-        const payload = {
-            action: "cetakConsentPDF",
-            noRM: noRM,
-            namaPasien: namaPasien,
-            umur: umurTeks,
-            jenisKelamin: jenisKelamin,
-            alamat: alamat,
-            namaDokter: namaDokterDinamis,
-            diagnosa: diagnosa,
-            tindakan: tindakan,
-            tujuan: tujuanTindakan,
-            risiko: daftarRisiko,
-            namaPenandatangan: namaPasien,
-            linkFoto: urlFotoTTD,
-            statusStempelDokter: statusStempel // 🔥 INI DATA BARU YANG DIKIRIM KE SERVER
-        };
-
-        if (typeof window.tampilkanLoading === "function" && !isSilent) {
-            window.tampilkanLoading("⏳ Merakit Dokumen PDF...");
-        }
-
-        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
-        .then(res => res.json())
-        .then(res => {
-            if (typeof window.sembunyikanLoading === "function" && !isSilent) window.sembunyikanLoading();
-
-            if (btnCetak && !isSilent) {
-                btnCetak.disabled = false;
-                btnCetak.innerHTML = "📄 Buka Ulang PDF Resmi";
-                btnCetak.style.backgroundColor = "#27ae60"; 
-            }
-
-            if (res.result === "success" && res.pdfUrl) {
-                window.pdfConsentAktif = res.pdfUrl;
-                if (noRM !== "-") localStorage.setItem('pdf_url_consent_' + noRM, res.pdfUrl);
-
+        // 🔥 FIX PROMISE: Dibungkus Promise agar bisa ditunggu (await) oleh sistem penyimpanan RME
+        return new Promise((resolve) => {
+            const noRM = document.getElementById('lblConsentRM')?.innerText || document.getElementById('modalNoRM')?.value || "-";
+            
+            const existingPdfUrl = localStorage.getItem('pdf_url_consent_' + noRM);
+            if (existingPdfUrl && existingPdfUrl !== "-" && existingPdfUrl !== "undefined") {
                 if (!isSilent) {
-                    alert("✅ Dokumen PDF Resmi berhasil dibuat!\n\nDokumen akan dibuka secara otomatis di tab baru.");
-                    window.open(res.pdfUrl, '_blank');
+                    alert("♻️ Membuka kembali dokumen PDF resmi yang telah dicetak sebelumnya...");
+                    window.open(existingPdfUrl, '_blank');
                 }
-            } else {
-                if (!isSilent) alert("❌ Gagal membuat PDF: " + (res.message || "Terjadi kesalahan di server."));
+                resolve(existingPdfUrl);
+                return; 
             }
-        })
-        .catch(err => {
-            if (typeof window.sembunyikanLoading === "function" && !isSilent) window.sembunyikanLoading();
+
+            const btnCetak = document.getElementById('btnCetakConsentPDF');
+            const teksAsli = btnCetak ? btnCetak.innerHTML : "🖨️ Cetak / Unduh PDF Resmi";
+            
             if (btnCetak && !isSilent) {
-                btnCetak.disabled = false;
-                btnCetak.innerHTML = teksAsli;
-                btnCetak.style.backgroundColor = "#2980b9";
+                btnCetak.disabled = true;
+                btnCetak.innerHTML = "⏳ Membuat Dokumen PDF... (Mohon Tunggu)";
+                btnCetak.style.backgroundColor = "#7f8c8d";
             }
-            if (!isSilent) alert("⚠️ Gangguan koneksi saat menghubungi mesin cetak server.");
+
+            const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+            const namaPasien = document.getElementById('lblConsentNama')?.innerText || document.getElementById('modalNama')?.value || "-";
+            
+            // 🔥 FIX HEADLESS: Jika pop-up tertutup, ambil teks tindakan langsung dari baris RME
+            let tindakan = document.getElementById('lblConsentTindakan')?.innerText;
+            if (!tindakan || tindakan === "-" || tindakan.trim() === "") {
+                let arrTindakan = [];
+                document.querySelectorAll('.baris-tindakan-item .sel-nama-tindakan').forEach(el => {
+                    if (el.value && el.value.trim() !== "") arrTindakan.push(el.value);
+                });
+                tindakan = arrTindakan.join(", ") || "Tindakan Medis";
+            }
+            
+            const diagnosa = document.getElementById('modalDiagnosa')?.value || document.getElementById('inputDiagnosaAktif')?.value || "Sesuai rekam medis aktif";
+            
+            const pAktifRaw = window.pasienRMEAktif || {};
+            const pAktif = (pAktifRaw.noRM === noRM) ? pAktifRaw : {}; 
+
+            let detailAntrean = null;
+            if (typeof window.dataAntreanGlobal !== 'undefined' && window.dataAntreanGlobal !== null) {
+                detailAntrean = window.dataAntreanGlobal.find(p => p.noRM === noRM);
+            }
+
+            let namaDokterDariData = detailAntrean ? detailAntrean.namaDokter : (pAktif.namaDokter || "");
+            let namaDokterDinamis = (namaDokterDariData || sessionData.namaLengkap || sessionData.username || document.getElementById('selDokter')?.value || "Dokter Klinik Anvaya").trim();
+            
+            namaDokterDinamis = namaDokterDinamis.replace(/\bdr\.\s*/gi, "drg. ").replace(/\bdr\s+/gi, "drg. ");
+            if (!namaDokterDinamis.toLowerCase().includes("drg.") && !namaDokterDinamis.toLowerCase().includes("drg ") && namaDokterDinamis !== "Dokter Klinik Anvaya") {
+                let namaKapital = namaDokterDinamis.replace(/\b\w/g, l => l.toUpperCase());
+                namaDokterDinamis = "drg. " + namaKapital;
+            }
+
+            let umurTeks = "-";
+            if (pAktif.tanggalLahir && typeof window.hitungUmur === "function") {
+                umurTeks = `${window.hitungUmur(pAktif.tanggalLahir)} Thn (${pAktif.tanggalLahir})`;
+            } else if (detailAntrean && detailAntrean.tanggalLahir && typeof window.hitungUmur === "function") {
+                umurTeks = `${window.hitungUmur(detailAntrean.tanggalLahir)} Thn`;
+            } else {
+                const uiRm = document.getElementById('lblProfilRM')?.innerText || "";
+                if (uiRm === noRM) {
+                    const domUmur = document.getElementById('lblProfilUmur')?.innerText || "";
+                    const match = domUmur.match(/\((.*?)\)/);
+                    umurTeks = match ? match[1] : (domUmur !== "-" ? domUmur : "-");
+                }
+            }
+
+            let jenisKelamin = pAktif.jenisKelamin || detailAntrean?.jenisKelamin || "-";
+            let alamat = pAktif.alamat ? pAktif.alamat : (detailAntrean?.alamat ? detailAntrean.alamat : "-");
+            if (alamat === "-") {
+                const uiRm = document.getElementById('lblProfilRM')?.innerText || "";
+                if (uiRm === noRM) alamat = document.getElementById('lblProfilDomisili')?.innerText || "-";
+            }
+
+            // 🔥 FIX HEADLESS: Jika DOM kosong, ambil risiko dari LocalStorage Draft
+            let daftarRisiko = [];
+            document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked').forEach(chk => {
+                let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
+                if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) daftarRisiko.push(label);
+            });
+            if (daftarRisiko.length === 0) {
+                let savedRisiko = localStorage.getItem('risiko_consent_' + noRM);
+                if (savedRisiko) daftarRisiko = JSON.parse(savedRisiko);
+            }
+
+            const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
+            
+            let tujuanTindakan = "-";
+            if (typeof window.getTujuanConsentAktif === "function") {
+                tujuanTindakan = window.getTujuanConsentAktif();
+            } else {
+                tujuanTindakan = window.tujuanConsentAktif || localStorage.getItem('tujuan_consent_' + noRM) || document.getElementById('selTujuanConsent')?.value || "Penyembuhan klinis";
+            }
+
+            // 🔥 FIX HEADLESS: Asumsikan sudah disahkan jika masuk via latar belakang
+            let statusStempel = document.getElementById('inputStatusStempel') ? document.getElementById('inputStatusStempel').value : "Belum";
+            if (statusStempel === "Belum" && isSilent && urlFotoTTD && urlFotoTTD !== "-") statusStempel = "Telah Disahkan";
+
+            const payload = {
+                action: "cetakConsentPDF", // INI KATA SANDI PEMBUAT PDF-NYA
+                noRM: noRM,
+                namaPasien: namaPasien,
+                umur: umurTeks,
+                jenisKelamin: jenisKelamin,
+                alamat: alamat,
+                namaDokter: namaDokterDinamis,
+                diagnosa: diagnosa,
+                tindakan: tindakan,
+                tujuan: tujuanTindakan,
+                risiko: daftarRisiko,
+                namaPenandatangan: namaPasien,
+                linkFoto: urlFotoTTD,
+                statusStempelDokter: statusStempel 
+            };
+
+            fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(res => {
+                if (btnCetak && !isSilent) {
+                    btnCetak.disabled = false;
+                    btnCetak.innerHTML = "📄 Buka Ulang PDF Resmi";
+                    btnCetak.style.backgroundColor = "#27ae60"; 
+                }
+
+                if (res.result === "success" && res.pdfUrl) {
+                    window.pdfConsentAktif = res.pdfUrl;
+                    if (noRM !== "-") localStorage.setItem('pdf_url_consent_' + noRM, res.pdfUrl);
+
+                    if (!isSilent) {
+                        alert("✅ Dokumen PDF Resmi berhasil dibuat!\n\nDokumen akan dibuka secara otomatis di tab baru.");
+                        window.open(res.pdfUrl, '_blank');
+                    }
+                }
+                resolve(true); // Sinyal ke RME bahwa proses PDF selesai
+            })
+            .catch(err => {
+                if (btnCetak && !isSilent) {
+                    btnCetak.disabled = false;
+                    btnCetak.innerHTML = teksAsli;
+                    btnCetak.style.backgroundColor = "#2980b9";
+                }
+                resolve(false); // Tetap resolve agar tidak membuat sistem RME macet
+            });
         });
     };
 
