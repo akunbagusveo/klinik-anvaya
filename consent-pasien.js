@@ -262,15 +262,17 @@
             return;
         }
 
-        const canvasTepat = document.getElementById('canvasTTD');
-        if (!canvasTepat) {
-            alert("⚠️ Elemen kanvas tanda tangan tidak ditemukan di halaman!");
+        const inputStatus = document.getElementById('inputStatusStempel');
+        if (!inputStatus || inputStatus.value !== "Telah Disahkan") {
+            alert("⚠️ Dokter wajib mengesahkan dokumen dengan Stempel Digital terlebih dahulu!");
             return;
         }
 
+        const canvasTepat = document.getElementById('canvasTTD');
+        if (!canvasTepat) { alert("⚠️ Elemen kanvas tanda tangan tidak ditemukan!"); return; }
+
         const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = canvasTepat.width;
-        blankCanvas.height = canvasTepat.height;
+        blankCanvas.width = canvasTepat.width; blankCanvas.height = canvasTepat.height;
         const isCanvasKosong = (canvasTepat.toDataURL() === blankCanvas.toDataURL());
         
         let ttdBase64Data = "";
@@ -283,99 +285,37 @@
                 alert("⚠️ Pasien atau wali wajib menorehkan tanda tangan pada area kotak yang disediakan!");
                 return;
             }
-        } else {
-            ttdBase64Data = canvasTepat.toDataURL("image/png");
-        }
+        } else { ttdBase64Data = canvasTepat.toDataURL("image/png"); }
 
         const risikoTerpilih = [];
-        document.querySelectorAll('.chk-risiko:checked').forEach(el => {
-            risikoTerpilih.push(el.value);
-        });
+        document.querySelectorAll('.chk-risiko:checked').forEach(el => { risikoTerpilih.push(el.value); });
 
-        let btn = (window.event && window.event.target) ? window.event.target : null;
-        if (!btn || btn.tagName !== 'BUTTON') {
-            btn = document.getElementById('btnSimpanConsent');
-        }
-
-        const teksAsli = btn ? btn.innerText : "Simpan Persetujuan";
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = "⏳ Mengirim & Menyimpan...";
-        }
-
-        if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Mengunggah Tanda Tangan Pasien...");
-
-        const payload = {
-            action: "simpanConsent",
-            noRM: document.getElementById('lblConsentRM')?.innerText || "-",
-            namaPasien: document.getElementById('lblConsentNama')?.innerText || "-",
-            tindakan: document.getElementById('lblConsentTindakan')?.innerText || "-",
-            risikoTerpilih: risikoTerpilih,
-            statusTTD: "Digital",
-            ttdBase64: ttdBase64Data 
-        };
-
-        fetch(window.WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = "💾 Simpan Persetujuan";
-            }
+        // 🔥 LOGIKA BARU: Simpan ke LocalStorage saja (Draft Mode), TIDAK tembak server!
+        const cleanRM = document.getElementById('lblConsentRM')?.innerText.trim() || "-";
+        if (cleanRM && cleanRM !== "-") {
+            localStorage.setItem('ttd_consent_' + cleanRM, ttdBase64Data);
+            localStorage.setItem('risiko_consent_' + cleanRM, JSON.stringify(risikoTerpilih));
             
-            if (res.result === "success") {
-                alert("✅ Informed Consent berhasil disimpan & diarsip ke Google Drive!");
-                
-                const cleanRM = String(payload.noRM || "-").trim();
-                if (cleanRM && cleanRM !== "-") {
-                    const urlSah = res.urlFoto || res.linkFoto || res.urlBukti || window.urlFotoConsentAktif;
-                    localStorage.setItem('ttd_consent_' + cleanRM, urlSah);
-                    localStorage.setItem('risiko_consent_' + cleanRM, JSON.stringify(risikoTerpilih));
-                    
-                    const selTujuan = document.getElementById('selTujuanConsent');
-                    const inpKustom = document.getElementById('inpTujuanKustomConsent');
-                    let nilaiTujuanSah = payload.tujuan || (selTujuan ? selTujuan.value : "");
-                    if (selTujuan && selTujuan.value.includes("Lain-lain") && inpKustom && inpKustom.value) {
-                        nilaiTujuanSah = inpKustom.value;
-                    }
-                    localStorage.setItem('tujuan_consent_' + cleanRM, nilaiTujuanSah);
-                    if (window.tujuanConsentAktif) {
-                        localStorage.setItem('tujuan_consent_' + cleanRM, window.tujuanConsentAktif);
-                    }
+            const selTujuan = document.getElementById('selTujuanConsent');
+            const inpKustom = document.getElementById('inpTujuanKustomConsent');
+            let nilaiTujuanSah = selTujuan ? selTujuan.value : "";
+            if (selTujuan && selTujuan.value.includes("Lain-lain") && inpKustom && inpKustom.value) nilaiTujuanSah = inpKustom.value;
+            if (nilaiTujuanSah) localStorage.setItem('tujuan_consent_' + cleanRM, nilaiTujuanSah);
 
-                    // 🔥 FIX PDF REVISI: Hancurkan cache PDF lama agar sistem DIPAKSA bikin PDF baru dengan TTD dan Risiko terbaru!
-                    localStorage.removeItem('pdf_url_consent_' + cleanRM);
-                    window.pdfConsentAktif = null;
-                }
-                
-                window.consentSudahDisimpanHariIni = true;
-                if (res.urlFoto || res.linkFoto) window.urlFotoConsentAktif = res.urlFoto || res.linkFoto;
+            // Bersihkan PDF lama (jika ada) karena pasien baru saja ttd ulang
+            localStorage.removeItem('pdf_url_consent_' + cleanRM);
+            window.pdfConsentAktif = null;
+            window.urlFotoConsentAktif = ttdBase64Data;
+        }
+        
+        window.consentSudahDisimpanHariIni = true;
+        
+        // Panggil UI RME agar tombol berubah menjadi warna Hijau (Draft Tersimpan)
+        if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
+        if (typeof window.simpanDraftRME === "function") window.simpanDraftRME();
 
-                if (typeof window.simpanDraftRME === "function") window.simpanDraftRME();
-                if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
-
-                if (typeof window.cetakInformedConsentPDF === "function") {
-                    window.cetakInformedConsentPDF(true); 
-                }
-
-                window.tutupModalConsent();
-            } else {
-                alert("❌ Gagal menyimpan consent: " + (res.message || "Terjadi kesalahan server."));
-            }
-        })
-        .catch(err => {
-            if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = teksAsli;
-            }
-            alert("⚠️ Terjadi kesalahan koneksi sistem saat mengirim data.");
-        });
+        alert("✅ Draf Informed Consent diamankan secara lokal.\n\nDokumen resmi (PDF) akan diterbitkan secara otomatis ke server sesaat setelah Anda menekan tombol 'Simpan & Selesai' pada form Rekam Medis utama.");
+        window.tutupModalConsent();
     };
 
     window.triggerInformedConsentDariRME = function() {
@@ -742,9 +682,18 @@
         document.getElementById('stampID').innerText = "TX-" + now.getTime();
         
         // Ubah Tampilan UI
+        // Ubah Tampilan UI
         btn.style.display = 'none';
         wujud.style.display = 'block';
         inputStatus.value = "Telah Disahkan";
+
+        // 🔥 KODE BARU: Buka Gembok Tombol Simpan
+        const btnSimpan = document.getElementById('btnSimpanConsent');
+        if (btnSimpan) {
+            btnSimpan.disabled = false;
+            btnSimpan.style.background = "#28a745";
+            btnSimpan.style.cursor = "pointer";
+        }
     };
 
 })();

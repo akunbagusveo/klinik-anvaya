@@ -113,6 +113,37 @@
 
                 if (!window.tokenRmeUnik) window.tokenRmeUnik = "RME-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
 
+                // 🔥 LOGIKA BARU: Tembak Data Consent ke Server untuk cetak PDF SEBELUM RME disimpan
+                const noRMFinal = dapatkanNilaiDOM('modalNoRM', 'billNoRM') || formAktifRme.dataset.activeNoRM || "";
+                const savedTTD = localStorage.getItem('ttd_consent_' + noRMFinal);
+                const savedRisikoStr = localStorage.getItem('risiko_consent_' + noRMFinal);
+                
+                // Cek apakah ada draft TTD berupa Base64 (Artinya belum pernah jadi PDF/belum dikirim)
+                if (savedTTD && savedTTD.startsWith('data:image')) {
+                    if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menerbitkan PDF Informed Consent...");
+                    
+                    let teksTindakanConsent = listTindakanDipilih.map(t => t.namaTindakan).join(", ") || "Tindakan Medis";
+                    
+                    const payloadConsent = {
+                        action: "simpanConsent",
+                        noRM: noRMFinal,
+                        namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
+                        tindakan: teksTindakanConsent,
+                        risikoTerpilih: savedRisikoStr ? JSON.parse(savedRisikoStr) : [],
+                        statusTTD: "Digital",
+                        ttdBase64: savedTTD 
+                    };
+
+                    try {
+                        // Kita tunggu (await) sampai server selesai bikin PDF, baru lanjut simpan RME
+                        await fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payloadConsent) });
+                    } catch (err) {
+                        console.error("Gagal generate PDF Consent: ", err);
+                    }
+                }
+                
+                if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Mengenkripsi & Menyimpan Rekam Medis...");
+
                 // 🔥 PAYLOAD AMAN: Tetap gunakan Nama Dokter Asli, tapi catat Owner/Admin sebagai "Operator"
                 const finalIdDokter = window.dokterPemilikRM || idDokterAktif;
                 const finalNamaDokter = window.namaDokterPemilikRM || usernameAktif;
