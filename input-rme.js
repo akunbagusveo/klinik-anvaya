@@ -931,13 +931,29 @@
         const savedDraft = localStorage.getItem('draft_rme_' + cleanNoRM);
         let draftValidObj = null;
 
-        if (savedDraft && mode === 'input') {
-            try {
-                const tempDraft = JSON.parse(savedDraft);
-                if (!tempDraft.visitDate || tempDraft.visitDate !== window.tanggalKunjunganAktif) {
-                    localStorage.removeItem('draft_rme_' + cleanNoRM); localStorage.removeItem('ttd_consent_' + cleanNoRM); localStorage.removeItem('tujuan_consent_' + cleanNoRM);
-                } else { draftValidObj = tempDraft; }
-            } catch(e) { localStorage.removeItem('draft_rme_' + cleanNoRM); }
+        if (mode === 'input') {
+            let isDraftSesuaiHariIni = false;
+            
+            if (savedDraft) {
+                try {
+                    const tempDraft = JSON.parse(savedDraft);
+                    if (tempDraft.visitDate && tempDraft.visitDate === window.tanggalKunjunganAktif) {
+                        isDraftSesuaiHariIni = true;
+                        draftValidObj = tempDraft; 
+                    }
+                } catch(e) { /* Abaikan jika format rusak */ }
+            }
+            
+            // 🔥 SAPU BERSIH: Jika ini adalah Kunjungan Baru (Bukan draft hari ini & bukan sedang edit RME lama)
+            if (!isDraftSesuaiHariIni && !rowNumberTarget) {
+                localStorage.removeItem('draft_rme_' + cleanNoRM); 
+                localStorage.removeItem('ttd_consent_' + cleanNoRM); 
+                localStorage.removeItem('tujuan_consent_' + cleanNoRM);
+                
+                // 🔪 BUNUH MEMORI KUNJUNGAN LALU AGAR TIDAK MUNCUL LAGI
+                localStorage.removeItem('pdf_url_consent_' + cleanNoRM); 
+                localStorage.removeItem('risiko_consent_' + cleanNoRM);  
+            }
         }
         
         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
