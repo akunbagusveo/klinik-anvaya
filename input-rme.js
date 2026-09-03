@@ -323,25 +323,16 @@
         rowWrapper.className = 'baris-tindakan-item';
         rowWrapper.style = "display: flex; flex-direction: column; background: white; padding: 15px; border: 1px solid #ebd3c7; border-radius: 4px; border-left: 4px solid #3498db; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
 
-        // 🔥 UPGRADE: Siapkan data Autocomplete untuk SEMUA tindakan sekaligus!
-        let htmlOpsiTindakan = "";
-        if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
-            window.masterTindakanGlobal.forEach(t => { 
-                const namaBersih = String(t.nama || t.Nama_Tindakan || t.namaTindakan || "").trim();
-                htmlOpsiTindakan += `<option value="${namaBersih}">`; 
-            });
-        }
-        htmlOpsiTindakan += `<option value="KUSTOM">`;
-
-        // 🔥 UPGRADE UI DIAGNOSA: Dropdown Kategori dihapus, diganti 1 Kotak Pencarian Pintar
+        // 🔥 UI ALA DIAGNOSA: Memakai position:relative untuk membungkus custom dropdown absolute
         rowWrapper.innerHTML = `
             <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
-                <div style="flex: 3; min-width: 250px; display: flex; flex-direction: column; justify-content: flex-start;">
-                    <input list="list_tindakan_${rowId}" class="sel-nama-tindakan" placeholder="🔍 Ketik nama tindakan... (misal: Cabut Gigi)" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: white; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" autocomplete="off" required>
-                    <datalist id="list_tindakan_${rowId}">
-                        ${htmlOpsiTindakan}
-                    </datalist>
+                <div style="flex: 3; min-width: 250px; display: flex; flex-direction: column; justify-content: flex-start; position: relative;">
+                    <input type="text" class="sel-nama-tindakan" id="inp_tindakan_${rowId}" placeholder="🔍 Ketik nama tindakan... (misal: Cabut Gigi)" style="width:100%; padding:8px; border-radius:4px; border:1px solid #bdc3c7; background-color: white; height: 38px;" onchange="window.pilihTindakanDinamis('${rowId}', this.value)" autocomplete="off" required>
+                    
+                    <!-- 📦 Kontainer Custom Dropdown yang Rapi ke Bawah -->
+                    <div id="drop_tindakan_${rowId}" style="display: none; position: absolute; top: 40px; left: 0; right: 0; background: white; border: 1px solid #bdc3c7; border-top: none; border-radius: 0 0 6px 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.15); max-height: 250px; overflow-y: auto; z-index: 9999;"></div>
                 </div>
+                
                 <div style="flex: 1; min-width: 150px; display: flex; align-items: center; border: 1px solid #bdc3c7; border-radius: 4px; padding-left: 10px; background-color: #f5f6fa; height: 38px; box-sizing: border-box;" class="box-harga-container">
                     <span style="color: #7f8c8d; font-weight: bold; font-size: 13px; margin-right: 5px;">Rp</span>
                     <input type="text" class="inp-harga-tindakan" placeholder="0" style="border: none; outline: none; width: 100%; padding: 8px 4px; border-radius: 0 4px 4px 0; background: transparent; height: 36px;" disabled required>
@@ -363,33 +354,75 @@
         kontainer.appendChild(rowWrapper);
 
         const elemenTindakan = rowWrapper.querySelector('.sel-nama-tindakan');
+        const dropTindakan = rowWrapper.querySelector('#drop_tindakan_' + rowId);
         const elemenHarga = rowWrapper.querySelector('.inp-harga-tindakan');
         const elemenCatatan = rowWrapper.querySelector('.inp-catatan-tindakan');
 
         if (elemenTindakan) {
-            // Deteksi cerdas: jika dokter klik pilihan dari dropdown, langsung proses harganya
+            // 🧠 LOGIKA PENCARIAN CUSTOM (Autocomplete Cerdas)
             elemenTindakan.addEventListener('input', function() {
-                const isMatch = Array.from(document.getElementById('list_tindakan_' + rowId).options).some(opt => opt.value === this.value);
-                if (isMatch) window.pilihTindakanDinamis(rowId, this.value);
+                const keyword = this.value.toLowerCase().trim();
+                dropTindakan.innerHTML = '';
+                
+                if (!keyword) {
+                    dropTindakan.style.display = 'none';
+                    return;
+                }
+
+                const matches = (window.masterTindakanGlobal || []).filter(t => {
+                    return String(t.nama || "").toLowerCase().includes(keyword) || String(t.kategori || "").toLowerCase().includes(keyword);
+                });
+
+                if (matches.length > 0) {
+                    dropTindakan.style.display = 'block';
+                    matches.forEach(m => {
+                        const optDiv = document.createElement('div');
+                        // Styling mirip UI Diagnosa
+                        optDiv.style = "padding: 10px 14px; border-bottom: 1px solid #f1f2f6; cursor: pointer; display: flex; flex-direction: column; gap: 4px;";
+                        optDiv.innerHTML = `<strong style="color: #2c3e50; font-size: 13px;">${m.nama}</strong><span style="color: #7f8c8d; font-size: 11px;">Kategori: ${m.kategori}</span>`;
+                        
+                        // Efek melayang (Hover)
+                        optDiv.onmouseover = () => optDiv.style.backgroundColor = "#f5f6fa";
+                        optDiv.onmouseout = () => optDiv.style.backgroundColor = "transparent";
+                        
+                        // Saat opsi diklik
+                        optDiv.onclick = () => {
+                            elemenTindakan.value = m.nama;
+                            dropTindakan.style.display = 'none';
+                            window.pilihTindakanDinamis(rowId, m.nama);
+                            window.simpanDraftRME();
+                        };
+                        dropTindakan.appendChild(optDiv);
+                    });
+                } else {
+                    dropTindakan.style.display = 'block';
+                    dropTindakan.innerHTML = `<div style="padding: 12px; color: #e74c3c; font-size: 12px; text-align: center; font-style: italic;">Tidak ditemukan. Tekan Tab/Enter untuk Input Custom.</div>`;
+                }
             });
+
+            // 🖱️ Tutup dropdown jika dokter mengeklik area kosong di luar kotak
+            document.addEventListener('click', function(e) {
+                if (e.target !== elemenTindakan && e.target !== dropTindakan) {
+                    if (dropTindakan) dropTindakan.style.display = 'none';
+                }
+            });
+
             elemenTindakan.addEventListener('change', () => { window.simpanDraftRME(); if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI(); });
         }
+        
         if (elemenHarga) {
             elemenHarga.addEventListener('input', window.simpanDraftRME);
             elemenHarga.addEventListener('change', window.simpanDraftRME);
         }
         if (elemenCatatan) elemenCatatan.addEventListener('input', window.simpanDraftRME);
 
-        // Load data jika sedang mengedit/membuka draft RME lama
         if (dataAwal) {
             elemenTindakan.value = dataAwal.namaTindakan || "";
             window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "");
-            
             if (elemenHarga) elemenHarga.value = Number(dataAwal.hargaDiinput || 0).toLocaleString('en-US');
             if (elemenCatatan) elemenCatatan.value = dataAwal.catatanKlinis || "";
         }
 
-        // Kunci input jika tagihan sudah dilunasi di kasir
         if (window.isPasienLunasAktif) {
             if (elemenTindakan) { elemenTindakan.disabled = true; elemenTindakan.style.backgroundColor = "#e9ecef"; }
             if (elemenHarga) { elemenHarga.readOnly = true; elemenHarga.style.backgroundColor = "#e9ecef"; }
