@@ -440,11 +440,10 @@
         window.tujuanConsentAktif = "";
         window.pdfConsentAktif = ""; 
 
+        // 1. RESET TOMBOL UTAMA RME (DI LUAR FORM CONSENT)
         const btnConsent = document.getElementById('btnBuatConsent');
         if (btnConsent) {
             btnConsent.classList.remove('btn-consent-wajib');
-            
-            // Kembalikan ke mode Abu-abu (Terkunci & Redup) sebagai default saat form kosong
             btnConsent.disabled = true;
             btnConsent.style.cursor = "not-allowed"; 
             btnConsent.style.opacity = "0.5"; 
@@ -454,8 +453,27 @@
             btnConsent.style.border = "none";
             btnConsent.style.fontWeight = "normal";
         }
-
         document.querySelectorAll('.badge-consent').forEach(el => el.remove());
+
+        // 2. 🔥 KODE BARU: RESET TAMPILAN STEMPEL DI DALAM POP-UP CONSENT
+        const btnStempel = document.getElementById('btnStempelDokter');
+        const wujudStempel = document.getElementById('wujudStempelDigital');
+        const inputStatus = document.getElementById('inputStatusStempel');
+
+        if (btnStempel) btnStempel.style.display = 'block'; // Munculkan lagi tombolnya
+        if (wujudStempel) wujudStempel.style.display = 'none'; // Sembunyikan wujud stempel hijau
+        if (inputStatus) inputStatus.value = 'Belum'; // Kembalikan status ke 'Belum'
+
+        // 3. 🔥 KODE EKSTRA: Bersihkan juga Kanvas Tanda Tangan (Jaga-jaga agar TTD pasien lama tidak menempel)
+        const canvasTTD = document.getElementById('canvasTTD');
+        if (canvasTTD) {
+            const ctx = canvasTTD.getContext('2d');
+            ctx.clearRect(0, 0, canvasTTD.width, canvasTTD.height);
+        }
+        
+        // Sembunyikan banner pratinjau TTD jika ada
+        const bannerTTD = document.getElementById('bannerPratinjauTTD');
+        if (bannerTTD) bannerTTD.style.display = 'none';
     };
 
     // =====================================================================
