@@ -8,13 +8,15 @@
     window.currentKasirQueueData = [];
 
     // =====================================================================
-    // 1. PEMUAT ANTREAN KASIR (DENGAN SMART RADAR CETAK CONSENT)
+    // 1. PEMUAT ANTREAN KASIR (DUAL RENDER HYBRID PC & MOBILE)
     // =====================================================================
     window.muatAntreanKasir = function() {
-        const tbody = document.getElementById('tbodyAntreanKasir');
-        if (!tbody) return;
+        const wadahPC = document.getElementById('tbodyAntreanKasirPC');
+        const wadahMobile = document.getElementById('tbodyAntreanKasirMobile');
 
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d; font-weight: bold;">Mengambil data antrean kasir... ⏳</td></tr>`;
+        // Indikator Loading
+        if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d; font-weight: bold;">Mengambil data antrean kasir... ⏳</td></tr>`;
+        if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding:30px; font-weight:bold; color:#7f8c8d; background:#fff; border-radius:8px;">Mengambil data antrean kasir... ⏳</div>`;
 
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menarik Data Antrean Kasir dari Server...");
 
@@ -26,15 +28,18 @@
         .then(res => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
 
-            tbody.innerHTML = ""; 
+            if (wadahPC) wadahPC.innerHTML = ""; 
+            if (wadahMobile) wadahMobile.innerHTML = ""; 
             
             if (res.result !== "success") {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">❌ Gagal memuat data: ${res.message}</td></tr>`;
+                if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">❌ Gagal memuat data: ${res.message}</td></tr>`;
+                if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding:20px; color:#e74c3c; font-weight:bold; background:#fff; border-radius:8px;">❌ Gagal memuat data: ${res.message}</div>`;
                 return;
             }
 
             if (!res.data || res.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #27ae60; font-weight: bold;">🎉 Semua antrean pembayaran hari ini telah lunas dibayar!</td></tr>`;
+                if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #27ae60; font-weight: bold;">🎉 Semua antrean pembayaran hari ini telah lunas dibayar!</td></tr>`;
+                if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding:40px; background:#fff; border-radius:8px; color:#27ae60; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.05);">🎉 Semua antrean lunas dibayar!</div>`;
                 return;
             }
 
@@ -90,11 +95,12 @@
                     htmlTindakanRingkas = p.tindakanRaw || "-";
                 }
 
-                let btnCetakConsentHtml = "";
                 const serverPdf = p.pdfConsentUrl || ""; 
                 
+                // 💻 Tombol Cetak untuk PC
+                let btnCetakConsentHtmlPC = "";
                 if (butuhConsent || serverPdf !== "") {
-                    btnCetakConsentHtml = `
+                    btnCetakConsentHtmlPC = `
                         <button onclick="window.cetakConsentKasir('${p.noRM}', '${serverPdf}')" 
                                 style="background-color: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Cetak Dokumen Informed Consent Pasien">
                             🖨️ Cetak Consent
@@ -102,53 +108,129 @@
                     `;
                 }
 
-                const tr = document.createElement('tr');
-                tr.style.borderBottom = "1px solid #dee2e6";
+                // 📱 Tombol Cetak untuk Mobile (Lebar penuh & empuk dipencet)
+                let btnCetakConsentHtmlMobile = "";
+                if (butuhConsent || serverPdf !== "") {
+                    btnCetakConsentHtmlMobile = `
+                        <button onclick="window.cetakConsentKasir('${p.noRM}', '${serverPdf}')" 
+                                style="width: 100%; background-color: #3498db; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Cetak Dokumen Informed Consent Pasien">
+                            🖨️ Cetak Consent
+                        </button>
+                    `;
+                }
 
-                // 🔥 FITUR BARU: Mencegah cetak "Dr. dr. Aldila"
                 let namaDokterTampil = String(p.namaDokter || "").trim();
                 if (!namaDokterTampil.toLowerCase().includes("dr.") && !namaDokterTampil.toLowerCase().includes("dr ")) {
                     namaDokterTampil = "dr. " + namaDokterTampil;
                 }
 
-                tr.innerHTML = `
-                    <td style="padding: 12px 10px; font-weight: bold; color: #2980b9; vertical-align: middle;">${p.noRM}</td>
-                    <td style="padding: 12px 10px; font-weight: 600; vertical-align: middle; line-height: 1.4;">
-                        ${p.namaPasien}
-                    </td>
-                    <td style="padding: 12px 10px; color: #7f8c8d; vertical-align: middle;">${p.tanggalDaftar}</td>
-                    <td style="padding: 12px 10px; vertical-align: middle;">🩺 ${namaDokterTampil}</td>
-                    <td style="padding: 12px 10px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;" title="Klik Proses Bayar untuk detail lengkap">
-                        ${htmlTindakanRingkas}
-                    </td>
-                    <td style="padding: 12px 10px; vertical-align: middle;">
-                        <span style="background-color: #fce4d6; color: #c65911; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">
-                            ${p.statusBayar}
-                        </span>
-                    </td>
-                    <td style="padding: 12px 10px; text-align: center; vertical-align: middle;">
-                        <div style="display: flex; gap: 6px; justify-content: center; align-items: stretch; flex-wrap: wrap;">
-                            ${btnCetakConsentHtml}
-                            <button onclick="window.kirimPingAsisten('${p.namaPasien}')" 
-                                    style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;" title="Ingatkan dokter/asisten untuk input RME">
-                                🔔 Ping
-                            </button>
-                            <button onclick="window.bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran).replace(/"/g, '&quot;')}')" 
-                                    style="background-color: #2ecc71; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                💰 Proses Bayar
-                            </button>
-                        </div>
-                    </td>
-                `;
+                let amanNamaPasien = (p.namaPasien || "").replace(/'/g, "\\'");
 
-                tbody.appendChild(tr);
+                // 💻 SUNTIKKAN KE TABEL PC
+                if (wadahPC) {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = "1px solid #dee2e6";
+                    tr.innerHTML = `
+                        <td style="padding: 12px 10px; font-weight: bold; color: #2980b9; vertical-align: middle;">${p.noRM}</td>
+                        <td style="padding: 12px 10px; font-weight: 600; vertical-align: middle; line-height: 1.4;">${p.namaPasien}</td>
+                        <td style="padding: 12px 10px; color: #7f8c8d; vertical-align: middle;">${p.tanggalDaftar}</td>
+                        <td style="padding: 12px 10px; vertical-align: middle;">🩺 ${namaDokterTampil}</td>
+                        <td style="padding: 12px 10px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;" title="Klik Proses Bayar untuk detail lengkap">
+                            ${htmlTindakanRingkas}
+                        </td>
+                        <td style="padding: 12px 10px; vertical-align: middle;">
+                            <span style="background-color: #fce4d6; color: #c65911; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">
+                                ${p.statusBayar}
+                            </span>
+                        </td>
+                        <td style="padding: 12px 10px; text-align: center; vertical-align: middle;">
+                            <div style="display: flex; gap: 6px; justify-content: center; align-items: stretch; flex-wrap: wrap;">
+                                ${btnCetakConsentHtmlPC}
+                                <button onclick="window.kirimPingAsisten('${amanNamaPasien}')" 
+                                        style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;" title="Ingatkan dokter/asisten untuk input RME">
+                                    🔔 Ping
+                                </button>
+                                <button onclick="window.bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran).replace(/"/g, '&quot;')}')" 
+                                        style="background-color: #2ecc71; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                    💰 Proses Bayar
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    wadahPC.appendChild(tr);
+                }
+
+                // 📱 SUNTIKKAN KE KARTU MOBILE (Card Accordion)
+                if (wadahMobile) {
+                    let card = document.createElement('div');
+                    card.className = "kasir-card";
+                    card.style.cssText = "background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden; transition: all 0.3s ease;";
+                    
+                    card.innerHTML = `
+                        <!-- Header Kartu yang bisa diklik -->
+                        <div onclick="window.toggleAccordionKasir(this)" style="padding:15px; background:#fbfcfc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                            <div>
+                                <div style="font-weight:bold; color:#2980b9; font-size:16px; margin-bottom:4px;">${p.namaPasien}</div>
+                                <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${p.noRM} • <span style="color:#e67e22;">${p.statusBayar}</span></div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="acc-icon" style="font-size:18px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Isi Kartu (Lipatan Bawah) -->
+                        <div class="kasir-card-body" style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                            <div style="margin-bottom:8px; font-size:13px;">
+                                <span style="color:#7f8c8d;">📅 Tgl Daftar:</span> <strong style="color:#2c3e50;">${p.tanggalDaftar}</strong>
+                            </div>
+                            <div style="margin-bottom:12px; font-size:13px;">
+                                <span style="color:#7f8c8d;">👨‍⚕️ Dokter:</span> <strong style="color:#8e44ad;">${namaDokterTampil}</strong>
+                            </div>
+                            <div style="margin-bottom:15px; font-size:13px;">
+                                <span style="color:#7f8c8d;">💉 Tindakan Medis:</span><br>
+                                <div style="margin-top:6px;">${htmlTindakanRingkas}</div>
+                            </div>
+                            
+                            <!-- Area Tombol Aksi HP (Sangat nyaman buat jempol) -->
+                            <div style="display: flex; gap: 8px; flex-direction: column;">
+                                ${btnCetakConsentHtmlMobile}
+                                <button onclick="window.kirimPingAsisten('${amanNamaPasien}')" style="width: 100%; background-color: #f39c12; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    🔔 Ping Dokter/Asisten
+                                </button>
+                                <button onclick="window.bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran).replace(/"/g, '&quot;')}')" style="width: 100%; background-color: #2ecc71; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    💰 Proses Pembayaran
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    wadahMobile.appendChild(card);
+                }
             });
         })
         .catch(err => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
             console.error(err);
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">⚠️ Gangguan koneksi jaringan antrean kasir.</td></tr>`;
+            if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #e74c3c; font-weight: bold;">⚠️ Gangguan koneksi jaringan antrean kasir.</td></tr>`;
+            if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding:20px; color:#e74c3c; font-weight:bold; background:#fff; border-radius:8px;">⚠️ Gangguan koneksi jaringan.</div>`;
         });
+    };
+
+    // =====================================================================
+    // 1.5. ANIMASI KLIK ACCORDION MOBILE (FUNGSI BARU)
+    // =====================================================================
+    window.toggleAccordionKasir = function(headerElement) {
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon');
+        
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #ecf0f1";
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.style.transform = "rotate(0deg)";
+        }
     };
 
     // =====================================================================

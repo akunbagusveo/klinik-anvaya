@@ -2903,21 +2903,33 @@
             </div>
         </div>
 
+        <!-- 🔥 WADAH HYBRID KASIR & BILLING -->
         <div id="kasir" class="tab-content" style="display: none; padding: 20px;">
+            
+            <!-- Sensor CSS Otomatis Pendeteksi Layar -->
+            <style>
+                .kasir-view-pc { display: block; }
+                .kasir-view-mobile { display: none; }
+                /* Jika layar lebih kecil dari 768px (HP/Tablet kecil), Tabel sembunyi, Card Muncul! */
+                @media (max-width: 768px) {
+                    .kasir-view-pc { display: none !important; }
+                    .kasir-view-mobile { display: flex !important; flex-direction: column; gap: 12px; }
+                }
+            </style>
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
                 <h2 style="margin: 0; color: #2c3e50;">💰 Menu Kasir & Billing Klinik Anvaya</h2>
                 <button class="btn-primary" onclick="typeof muatAntreanKasir === 'function' && window.muatAntreanKasir()" style="padding: 8px 15px; border-radius:4px; border:none; background-color:#3498db; color:white; font-weight:bold; cursor:pointer;">🔄 Segarkan Antrean</button>
             </div>
         
-            <div style="background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); padding: 20px; border: 1px solid #dee2e6;">
+            <!-- 💻 WUJUD 1: UNTUK LAYAR PC / LAPTOP (Bentuk Tabel) -->
+            <div class="kasir-view-pc" style="background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); padding: 20px; border: 1px solid #dee2e6;">
                 <h4 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">📋 Antrean Pembayaran Hari Ini</h4>
                 
-                <!-- BUNGKUSAN TABEL DENGAN FIXED HEADER -->
                 <div style="max-height: 400px; overflow-y: auto; margin-top: 15px; border-bottom: 1px solid #dee2e6;">
                     <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left; position: relative;">
                         <thead>
                             <tr>
-                                <!-- 🔥 PERBAIKAN: Menambahkan 'color: white !important;' langsung ke setiap <th> -->
                                 <th style="padding: 12px 10px; background-color: #34495e; color: white !important; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #dee2e6;">No. RM</th>
                                 <th style="padding: 12px 10px; background-color: #34495e; color: white !important; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #dee2e6;">Nama Pasien</th>
                                 <th style="padding: 12px 10px; background-color: #34495e; color: white !important; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #dee2e6;">Tanggal Daftar</th>
@@ -2927,15 +2939,16 @@
                                 <th style="padding: 12px 10px; background-color: #34495e; color: white !important; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #dee2e6; text-align: center;">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="tbodyAntreanKasir">
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d; font-weight: bold;">
-                                    Mengambil data antrean kasir... ⏳
-                                </td>
-                            </tr>
+                        <tbody id="tbodyAntreanKasirPC">
+                            <!-- Tabel akan dirender di sini oleh JS -->
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- 📱 WUJUD 2: UNTUK LAYAR HP (Bentuk Card Accordion) -->
+            <div id="tbodyAntreanKasirMobile" class="kasir-view-mobile" style="margin-top: 5px;">
+                <!-- Kartu akan dirender di sini oleh JS -->
             </div>
         </div>
 
