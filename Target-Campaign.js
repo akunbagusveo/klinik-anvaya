@@ -9,41 +9,153 @@
     /**
      * 1. FUNGSI MUAT DATA: Menarik data pasien ulang tahun bulan ini dari server
      */
+    // window.muatDataUlangTahun = function() {
+    //     const tbody = document.getElementById('bodyTabelUlangTahun');
+    //     const lblBulan = document.getElementById('lblBulanUlangTahun');
+    //     const btnRefresh = document.getElementById('btnRefreshUlangTahun');
+
+    //     if (!tbody) return;
+
+    //     // --- PROTEKSI RBAC (Cek Hak Akses Analisis Bisnis) ---
+    //     const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
+    //     const perms = sessionData.permissions || {};
+    //     const role = (sessionData.role || '').toLowerCase();
+        
+    //     const punyaAkses = perms.aksesanalisisbisnis === 1 || 
+    //                     perms.Akses_AnalisisBisnis === 1 || 
+    //                     perms.analisisBisnis === 1 || 
+    //                     role === 'owner' || 
+    //                     role === 'super admin' ||
+    //                     role === 'admin';
+
+    //     if (!punyaAkses) {
+    //         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; background: #fef2f2; color: #991b1b; font-weight: bold;">🔒 Akses Ditolak: Fitur ini khusus untuk peran yang memiliki izin Analisis Bisnis / Digital Marketing.</td></tr>';
+    //         return;
+    //     }
+
+    //     // Ubah status tombol dan tabel menjadi loading
+    //     if (btnRefresh) btnRefresh.innerHTML = '⏳ Memuat...';
+    //     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 35px 20px; color: #0ea5e9; font-weight: bold;">⏳ Mengambil data pasien ulang tahun bulan ini dari Master Pasien...</td></tr>';
+
+    //     // 🔥 UPGRADE: Sinkronisasi visual dengan Layar Hitam Loading
+    //     if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menarik Target Campaign Ulang Tahun...");
+
+    //     // Nama-nama bulan dalam bahasa Indonesia
+    //     const namaBulanIndo = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    //     const bulanSekarangIdx = new Date().getMonth() + 1;
+    //     if (lblBulan) lblBulan.innerText = namaBulanIndo[bulanSekarangIdx] || "Bulan Ini";
+
+    //     fetch(WEB_APP_URL, {
+    //         method: "POST",
+    //         body: JSON.stringify({ action: "getPasienUlangTahunBulanIni" })
+    //     })
+    //     .then(res => res.json())
+    //     .then(res => {
+    //         if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
+    //         if (btnRefresh) btnRefresh.innerHTML = '🔄 Refresh Data';
+            
+    //         tbody.innerHTML = '';
+
+    //         if (res.result === "success" && res.data && res.data.length > 0) {
+    //             // Simpan ke cache global untuk fitur Ekspor CSV
+    //             window.cacheDataUlangTahun = res.data;
+
+    //             console.log(`🎉 [CAMPAIGN ULANG TAHUN] Berhasil memuat ${res.data.length} pasien!`);
+
+    //             res.data.forEach((p, idx) => {
+    //                 const noRM = p.noRM || "-";
+    //                 const nama = p.namaPasien || "Pasien";
+    //                 const tglLahir = p.tanggalLahirTampil || "-";
+    //                 const umur = p.umur && p.umur !== "-" ? `${p.umur} Thn` : "-";
+    //                 const noWA = p.noWA && p.noWA !== "-" ? p.noWA : "Tidak Ada";
+
+    //                 let tombolActionHtml = `<span style="color: #94a3b8; font-size: 11px;">WA Tidak Ada</span>`;
+    //                 if (noWA !== "Tidak Ada" && noWA.length >= 8) {
+    //                     // Gunakan replace karakter kutip agar aman saat dimasukkan ke parameter fungsi
+    //                     const namaAman = nama.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        
+    //                     // 🔥 UPGRADE: Prefix window. ditambahkan pada tombol onclick HTML
+    //                     tombolActionHtml = `
+    //                         <button onclick="window.kirimWAUlangTahun('${noWA}', '${namaAman}')" style="background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.2); transition: 0.2s;">
+    //                             📲 Kirim Voucher WA
+    //                         </button>
+    //                     `;
+    //                 }
+
+    //                 const tr = document.createElement('tr');
+    //                 tr.style.cssText = "border-bottom: 1px solid #e2e8f0; transition: background 0.2s;";
+    //                 tr.onmouseover = function() { this.style.background = '#f8fafc'; };
+    //                 tr.onmouseout = function() { this.style.background = 'transparent'; };
+
+    //                 tr.innerHTML = `
+    //                     <td style="padding: 12px 10px; font-weight: bold; color: #1e3c72; border-right: 1px solid #e2e8f0;">${noRM}</td>
+    //                     <td style="padding: 12px 10px; font-weight: 600; color: #0f172a; border-right: 1px solid #e2e8f0;">${nama}</td>
+    //                     <td style="padding: 12px 10px; color: #334155; border-right: 1px solid #e2e8f0;">${tglLahir}</td>
+    //                     <td style="padding: 12px 10px; text-align: center; font-weight: bold; color: #d97706; border-right: 1px solid #e2e8f0;">${umur}</td>
+    //                     <td style="padding: 12px 10px; color: #334155; border-right: 1px solid #e2e8f0;">${noWA}</td>
+    //                     <td style="padding: 12px 10px; text-align: center;">${tombolActionHtml}</td>
+    //                 `;
+    //                 tbody.appendChild(tr);
+    //             });
+    //         } else {
+    //             window.cacheDataUlangTahun = [];
+    //             tbody.innerHTML = `
+    //                 <tr>
+    //                     <td colspan="6" style="text-align:center; padding: 40px; background: #f8fafc; color: #64748b; font-weight: bold; border-radius: 6px;">
+    //                         🎂 Belum ada data pasien aktif yang tercatat berulang tahun di bulan ini (${namaBulanIndo[bulanSekarangIdx]}).
+    //                     </td>
+    //                 </tr>
+    //             `;
+    //         }
+    //     })
+    //     .catch(err => {
+    //         if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
+    //         if (btnRefresh) btnRefresh.innerHTML = '🔄 Refresh Data';
+    //         console.error("❌ Gagal memuat data ulang tahun:", err);
+    //         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #c0392b; font-weight: bold;">⚠️ Terjadi kesalahan koneksi saat memuat data dari server. Silakan coba lagi.</td></tr>';
+    //     });
+    // };
+
+    // Variabel global untuk cache dan paginasi
+    window.cacheDataUlangTahun = [];
+    window.currentPageUltah = 1;
+    window.itemsPerPageUltah = 10; 
+    window.namaBulanUltahAktif = "Bulan Ini";
+
+    /**
+     * 1. FUNGSI MUAT DATA (Hanya bertugas menarik data dari server 1x)
+     */
     window.muatDataUlangTahun = function() {
-        const tbody = document.getElementById('bodyTabelUlangTahun');
+        const wadahPC = document.getElementById('bodyTabelUlangTahunPC');
+        const wadahMobile = document.getElementById('bodyTabelUlangTahunMobile');
+        const wadahPaginasi = document.getElementById('wadahPaginasiUltah');
         const lblBulan = document.getElementById('lblBulanUlangTahun');
         const btnRefresh = document.getElementById('btnRefreshUlangTahun');
 
-        if (!tbody) return;
-
-        // --- PROTEKSI RBAC (Cek Hak Akses Analisis Bisnis) ---
+        // --- PROTEKSI RBAC ASLI ---
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const perms = sessionData.permissions || {};
         const role = (sessionData.role || '').toLowerCase();
         
-        const punyaAkses = perms.aksesanalisisbisnis === 1 || 
-                        perms.Akses_AnalisisBisnis === 1 || 
-                        perms.analisisBisnis === 1 || 
-                        role === 'owner' || 
-                        role === 'super admin' ||
-                        role === 'admin';
+        const punyaAkses = perms.aksesanalisisbisnis === 1 || perms.Akses_AnalisisBisnis === 1 || perms.analisisBisnis === 1 || role === 'owner' || role === 'super admin' || role === 'admin';
 
         if (!punyaAkses) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; background: #fef2f2; color: #991b1b; font-weight: bold;">🔒 Akses Ditolak: Fitur ini khusus untuk peran yang memiliki izin Analisis Bisnis / Digital Marketing.</td></tr>';
+            if (wadahPC) wadahPC.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; background: #fef2f2; color: #991b1b; font-weight: bold;">🔒 Akses Ditolak: Fitur ini khusus untuk peran yang memiliki izin Analisis Bisnis / Digital Marketing.</td></tr>';
+            if (wadahMobile) wadahMobile.innerHTML = '<div style="text-align:center; padding: 30px; background: #fef2f2; color: #991b1b; font-weight: bold; border-radius: 8px;">🔒 Akses Ditolak</div>';
             return;
         }
 
-        // Ubah status tombol dan tabel menjadi loading
         if (btnRefresh) btnRefresh.innerHTML = '⏳ Memuat...';
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 35px 20px; color: #0ea5e9; font-weight: bold;">⏳ Mengambil data pasien ulang tahun bulan ini dari Master Pasien...</td></tr>';
+        if (wadahPC) wadahPC.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 35px 20px; color: #0ea5e9; font-weight: bold;">⏳ Mengambil data pasien ulang tahun bulan ini dari Master Pasien...</td></tr>';
+        if (wadahMobile) wadahMobile.innerHTML = '<div style="text-align:center; padding: 35px 20px; color: #0ea5e9; font-weight: bold; background: #fff; border-radius: 8px;">⏳ Mengambil data...</div>';
+        if (wadahPaginasi) wadahPaginasi.innerHTML = '';
 
-        // 🔥 UPGRADE: Sinkronisasi visual dengan Layar Hitam Loading
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Menarik Target Campaign Ulang Tahun...");
 
-        // Nama-nama bulan dalam bahasa Indonesia
         const namaBulanIndo = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const bulanSekarangIdx = new Date().getMonth() + 1;
-        if (lblBulan) lblBulan.innerText = namaBulanIndo[bulanSekarangIdx] || "Bulan Ini";
+        window.namaBulanUltahAktif = namaBulanIndo[bulanSekarangIdx] || "Bulan Ini";
+        if (lblBulan) lblBulan.innerText = window.namaBulanUltahAktif;
 
         fetch(WEB_APP_URL, {
             method: "POST",
@@ -53,67 +165,168 @@
         .then(res => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
             if (btnRefresh) btnRefresh.innerHTML = '🔄 Refresh Data';
-            
-            tbody.innerHTML = '';
 
-            if (res.result === "success" && res.data && res.data.length > 0) {
-                // Simpan ke cache global untuk fitur Ekspor CSV
-                window.cacheDataUlangTahun = res.data;
-
+            if (res.result === "success" && res.data) {
                 console.log(`🎉 [CAMPAIGN ULANG TAHUN] Berhasil memuat ${res.data.length} pasien!`);
-
-                res.data.forEach((p, idx) => {
-                    const noRM = p.noRM || "-";
-                    const nama = p.namaPasien || "Pasien";
-                    const tglLahir = p.tanggalLahirTampil || "-";
-                    const umur = p.umur && p.umur !== "-" ? `${p.umur} Thn` : "-";
-                    const noWA = p.noWA && p.noWA !== "-" ? p.noWA : "Tidak Ada";
-
-                    let tombolActionHtml = `<span style="color: #94a3b8; font-size: 11px;">WA Tidak Ada</span>`;
-                    if (noWA !== "Tidak Ada" && noWA.length >= 8) {
-                        // Gunakan replace karakter kutip agar aman saat dimasukkan ke parameter fungsi
-                        const namaAman = nama.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        
-                        // 🔥 UPGRADE: Prefix window. ditambahkan pada tombol onclick HTML
-                        tombolActionHtml = `
-                            <button onclick="window.kirimWAUlangTahun('${noWA}', '${namaAman}')" style="background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.2); transition: 0.2s;">
-                                📲 Kirim Voucher WA
-                            </button>
-                        `;
-                    }
-
-                    const tr = document.createElement('tr');
-                    tr.style.cssText = "border-bottom: 1px solid #e2e8f0; transition: background 0.2s;";
-                    tr.onmouseover = function() { this.style.background = '#f8fafc'; };
-                    tr.onmouseout = function() { this.style.background = 'transparent'; };
-
-                    tr.innerHTML = `
-                        <td style="padding: 12px 10px; font-weight: bold; color: #1e3c72; border-right: 1px solid #e2e8f0;">${noRM}</td>
-                        <td style="padding: 12px 10px; font-weight: 600; color: #0f172a; border-right: 1px solid #e2e8f0;">${nama}</td>
-                        <td style="padding: 12px 10px; color: #334155; border-right: 1px solid #e2e8f0;">${tglLahir}</td>
-                        <td style="padding: 12px 10px; text-align: center; font-weight: bold; color: #d97706; border-right: 1px solid #e2e8f0;">${umur}</td>
-                        <td style="padding: 12px 10px; color: #334155; border-right: 1px solid #e2e8f0;">${noWA}</td>
-                        <td style="padding: 12px 10px; text-align: center;">${tombolActionHtml}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                window.cacheDataUlangTahun = res.data;
+                window.currentPageUltah = 1; 
+                window.renderHalamanUlangTahun(); 
             } else {
                 window.cacheDataUlangTahun = [];
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align:center; padding: 40px; background: #f8fafc; color: #64748b; font-weight: bold; border-radius: 6px;">
-                            🎂 Belum ada data pasien aktif yang tercatat berulang tahun di bulan ini (${namaBulanIndo[bulanSekarangIdx]}).
-                        </td>
-                    </tr>
-                `;
+                window.renderHalamanUlangTahun(); 
             }
         })
         .catch(err => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
             if (btnRefresh) btnRefresh.innerHTML = '🔄 Refresh Data';
             console.error("❌ Gagal memuat data ulang tahun:", err);
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #c0392b; font-weight: bold;">⚠️ Terjadi kesalahan koneksi saat memuat data dari server. Silakan coba lagi.</td></tr>';
+            if (wadahPC) wadahPC.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #c0392b; font-weight: bold;">⚠️ Terjadi kesalahan koneksi saat memuat data dari server. Silakan coba lagi.</td></tr>';
+            if (wadahMobile) wadahMobile.innerHTML = '<div style="text-align:center; padding: 30px; color: #c0392b; font-weight: bold; background: #fff; border-radius: 8px;">⚠️ Terjadi kesalahan koneksi.</div>';
         });
+    };
+
+    /**
+     * 1.1 FUNGSI MESIN CETAK (Mengiris data per 10 item & mendistribusikannya ke PC dan Mobile)
+     */
+    window.renderHalamanUlangTahun = function() {
+        const wadahPC = document.getElementById('bodyTabelUlangTahunPC');
+        const wadahMobile = document.getElementById('bodyTabelUlangTahunMobile');
+        const data = window.cacheDataUlangTahun;
+
+        if (wadahPC) wadahPC.innerHTML = '';
+        if (wadahMobile) wadahMobile.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            const pesanKosong = `🎂 Belum ada data pasien aktif yang tercatat berulang tahun di bulan ini (${window.namaBulanUltahAktif}).`;
+            if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; background: #f8fafc; color: #64748b; font-weight: bold;">${pesanKosong}</td></tr>`;
+            if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding: 40px; background: #f8fafc; color: #64748b; font-weight: bold; border-radius: 8px; border: 1px solid #e2e8f0;">${pesanKosong}</div>`;
+            window.renderKontrolPaginasiUltah(0, 1);
+            return;
+        }
+
+        // Logika Potong Data (Slice)
+        const totalItems = data.length;
+        const totalPages = Math.ceil(totalItems / window.itemsPerPageUltah);
+        if (window.currentPageUltah > totalPages) window.currentPageUltah = totalPages;
+        
+        const startIndex = (window.currentPageUltah - 1) * window.itemsPerPageUltah;
+        const endIndex = startIndex + window.itemsPerPageUltah;
+        const dataHalamanIni = data.slice(startIndex, endIndex);
+
+        dataHalamanIni.forEach((p) => {
+            const noRM = p.noRM || "-";
+            const nama = p.namaPasien || "Pasien";
+            const tglLahir = p.tanggalLahirTampil || "-";
+            const umur = p.umur && p.umur !== "-" ? `${p.umur} Thn` : "-";
+            const noWA = p.noWA && p.noWA !== "-" ? p.noWA : "Tidak Ada";
+
+            let tombolActionHtmlPC = `<span style="color: #94a3b8; font-size: 11px;">WA Tidak Ada</span>`;
+            let tombolActionHtmlMobile = `<button disabled style="width:100%; background: #e2e8f0; color: #94a3b8; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: not-allowed;">❌ WA Tidak Tersedia</button>`;
+            
+            if (noWA !== "Tidak Ada" && noWA.length >= 8) {
+                const namaAman = nama.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                tombolActionHtmlPC = `
+                    <button onclick="window.kirimWAUlangTahun('${noWA}', '${namaAman}')" style="background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.2); transition: 0.2s;">
+                        📲 Kirim Voucher WA
+                    </button>
+                `;
+                tombolActionHtmlMobile = `
+                    <button onclick="window.kirimWAUlangTahun('${noWA}', '${namaAman}')" style="width:100%; background: #25d366; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; justify-content:center; align-items: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.2);">
+                        📲 Kirim Voucher via WA
+                    </button>
+                `;
+            }
+
+            if (wadahPC) {
+                const tr = document.createElement('tr');
+                tr.style.cssText = "border-bottom: 1px solid #e2e8f0; transition: background 0.2s;";
+                tr.onmouseover = function() { this.style.background = '#f8fafc'; };
+                tr.onmouseout = function() { this.style.background = 'transparent'; };
+                tr.innerHTML = `
+                    <td style="padding: 12px 10px; font-weight: bold; color: #1e3c72; border-right: 1px solid #e2e8f0;">${noRM}</td>
+                    <td style="padding: 12px 10px; font-weight: 600; color: #0f172a; border-right: 1px solid #e2e8f0;">${nama}</td>
+                    <td style="padding: 12px 10px; color: #334155; border-right: 1px solid #e2e8f0;">${tglLahir}</td>
+                    <td style="padding: 12px 10px; text-align: center; font-weight: bold; color: #d97706; border-right: 1px solid #e2e8f0;">${umur}</td>
+                    <td style="padding: 12px 10px; color: #334155; border-right: 1px solid #e2e8f0;">${noWA}</td>
+                    <td style="padding: 12px 10px; text-align: center;">${tombolActionHtmlPC}</td>
+                `;
+                wadahPC.appendChild(tr);
+            }
+
+            if (wadahMobile) {
+                let card = document.createElement('div');
+                card.style.cssText = "background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden;";
+                card.innerHTML = `
+                    <div onclick="window.toggleAccordionUltah(this)" style="padding:15px; background:#f8fafc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                        <div>
+                            <div style="font-weight:bold; color:#0ea5e9; font-size:15px; margin-bottom:4px;">${nama}</div>
+                            <div style="font-size:12px; color:#64748b; font-weight:bold;">${noRM} • Umur: <span style="color:#d97706;">${umur}</span></div>
+                        </div>
+                        <div style="display:flex; align-items:center; padding-top: 5px;">
+                            <span class="acc-icon-ultah" style="font-size:16px; color:#94a3b8; transition: transform 0.3s; font-weight:bold;">▼</span>
+                        </div>
+                    </div>
+                    <div class="ultah-card-body" style="display:none; padding:15px; border-top:1px solid #e2e8f0; background:#fff;">
+                        <div style="margin-bottom:8px; font-size:13px;"><span style="color:#64748b;">🎂 Tgl Lahir:</span> <strong>${tglLahir}</strong></div>
+                        <div style="margin-bottom:15px; font-size:13px;"><span style="color:#64748b;">📱 WhatsApp:</span> <strong>${noWA}</strong></div>
+                        ${tombolActionHtmlMobile}
+                    </div>
+                `;
+                wadahMobile.appendChild(card);
+            }
+        });
+
+        window.renderKontrolPaginasiUltah(totalPages, window.currentPageUltah);
+    };
+
+    /**
+     * 1.2 FUNGSI MENCETAK TOMBOL HALAMAN DI BAWAH (1, 2, 3...)
+     */
+    window.renderKontrolPaginasiUltah = function(totalPages, currentPage) {
+        const wadah = document.getElementById('wadahPaginasiUltah');
+        if (!wadah) return;
+        wadah.innerHTML = '';
+
+        if (totalPages <= 1) return; 
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'btn-page';
+        btnPrev.innerText = '« Prev';
+        btnPrev.disabled = currentPage === 1;
+        btnPrev.onclick = () => { window.currentPageUltah--; window.renderHalamanUlangTahun(); };
+        wadah.appendChild(btnPrev);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const btnNum = document.createElement('button');
+            btnNum.className = 'btn-page' + (i === currentPage ? ' active' : '');
+            btnNum.innerText = i;
+            btnNum.onclick = () => { window.currentPageUltah = i; window.renderHalamanUlangTahun(); };
+            wadah.appendChild(btnNum);
+        }
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'btn-page';
+        btnNext.innerText = 'Next »';
+        btnNext.disabled = currentPage === totalPages;
+        btnNext.onclick = () => { window.currentPageUltah++; window.renderHalamanUlangTahun(); };
+        wadah.appendChild(btnNext);
+    };
+
+    /**
+     * 1.3 ANIMASI KLIK ACCORDION MOBILE
+     */
+    window.toggleAccordionUltah = function(headerElement) {
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon-ultah');
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #e2e8f0";
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.style.transform = "rotate(0deg)";
+        }
     };
 
     /**

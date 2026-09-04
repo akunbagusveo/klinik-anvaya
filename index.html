@@ -2708,9 +2708,24 @@
                 <!-- ========================================================= -->
                 <!-- 🎂 KOTAK TARGET CAMPAIGN ULANG TAHUN (100% RESPONSIVE) -->
                     <!-- ========================================================= -->
+                    <!-- 🔥 WADAH HYBRID KAMPANYE ULANG TAHUN DENGAN PAGINASI -->
                     <div id="boxCampaignUlangTahun" style="display: block; width: 100%; max-width: 100%; grid-column: 1 / -1; flex: 1 1 100%; clear: both; box-sizing: border-box; background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 30px; margin-bottom: 20px; overflow: hidden;">
                         
-                        <!-- Header Kotak & Tombol Aksi (Otomatis menyusun ke bawah jika di HP) -->
+                        <!-- Sensor CSS Otomatis Pendeteksi Layar & Style Paginasi -->
+                        <style>
+                            .ultah-view-pc { display: block; }
+                            .ultah-view-mobile { display: none; }
+                            @media (max-width: 768px) {
+                                .ultah-view-pc { display: none !important; }
+                                .ultah-view-mobile { display: flex !important; flex-direction: column; gap: 12px; }
+                            }
+                            .btn-page { padding: 6px 12px; margin: 0 3px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; color: #334155; transition: 0.2s; }
+                            .btn-page:hover:not(:disabled) { background: #f1f5f9; }
+                            .btn-page.active { background: #0ea5e9; color: white; border-color: #0ea5e9; }
+                            .btn-page:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+                        </style>
+
+                        <!-- Header Kotak & Tombol Aksi -->
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;">
                             <div style="flex: 1 1 300px;">
                                 <h3 style="margin: 0; color: #1e3c72; display: flex; align-items: center; gap: 8px; font-size: 16px;">
@@ -2729,8 +2744,8 @@
                             </div>
                         </div>
 
-                        <!-- Pembungkus Tabel dengan Touch-Scroll Khusus HP & Tablet -->
-                        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <!-- 💻 WUJUD 1: UNTUK LAYAR PC / LAPTOP (Bentuk Tabel) -->
+                        <div class="ultah-view-pc" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden;">
                             <table style="width: 100%; min-width: 650px; border-collapse: collapse; text-align: left; font-size: 13px; background: #ffffff;">
                                 <thead style="background-color: #f8fafc; color: #334155; border-bottom: 2px solid #cbd5e1;">
                                     <tr>
@@ -2742,14 +2757,20 @@
                                         <th style="padding: 12px 10px; width: 15%; text-align: center;">Aksi Marketing</th>
                                     </tr>
                                 </thead>
-                                <tbody id="bodyTabelUlangTahun">
-                                    <tr>
-                                        <td colspan="6" style="text-align:center; padding: 35px 20px; color: #64748b; font-weight: bold;">
-                                            ⏳ Klik tombol "Refresh Data" di atas untuk memuat daftar pasien ulang tahun...
-                                        </td>
-                                    </tr>
+                                <tbody id="bodyTabelUlangTahunPC">
+                                    <tr><td colspan="6" style="text-align:center; padding: 35px 20px; color: #64748b; font-weight: bold;">⏳ Klik tombol "Refresh Data" di atas untuk memuat...</td></tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- 📱 WUJUD 2: UNTUK LAYAR HP (Bentuk Card Accordion) -->
+                        <div id="bodyTabelUlangTahunMobile" class="ultah-view-mobile">
+                            <!-- Kartu akan dirender di sini oleh JS -->
+                        </div>
+
+                        <!-- 🔢 WADAH KONTROL PAGINASI (Muncul di Bawah) -->
+                        <div id="wadahPaginasiUltah" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 5px;">
+                            <!-- Tombol angka halaman akan dirender di sini -->
                         </div>
                         
                     </div>
