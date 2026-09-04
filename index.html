@@ -3017,8 +3017,20 @@
         </div>
 
         <!-- HALAMAN BARU: INPUT TAGIHAN LAB -->
-        <!-- HALAMAN SMART WORKLIST LAB -->
+        <!-- 🔥 WADAH HYBRID ANTREAN LAB -->
         <div id="tagihanLab" class="tab-content" style="display:none; padding:20px;">
+            
+            <!-- Sensor CSS Otomatis Pendeteksi Layar -->
+            <style>
+                .lab-view-pc { display: block; }
+                .lab-view-mobile { display: none; }
+                /* Jika layar lebih kecil dari 768px (HP/Tablet kecil), Tabel sembunyi, Card Muncul! */
+                @media (max-width: 768px) {
+                    .lab-view-pc { display: none !important; }
+                    .lab-view-mobile { display: flex !important; flex-direction: column; gap: 12px; }
+                }
+            </style>
+
             <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span>🧪 Antrean Tagihan Lab & Vendor</span>
                 <button onclick="window.muatAntreanLab()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; display: flex; align-items: center; gap: 5px;">
@@ -3026,7 +3038,8 @@
                 </button>
             </h2>
 
-            <div style="background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-top:20px; overflow:hidden;">
+            <!-- 💻 WUJUD 1: UNTUK LAYAR PC / LAPTOP (Bentuk Tabel) -->
+            <div class="lab-view-pc" style="background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-top:20px; overflow:hidden;">
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
                         <tr style="background:#34495e; color:white;">
@@ -3037,12 +3050,17 @@
                             <th style="padding:15px; text-align:center;">Aksi Eksekusi</th>
                         </tr>
                     </thead>
-                    <!-- 🔥 WADAH BARU UNTUK KARTU ACCORDION (Responsif Mobile & PC) -->
-                    <div id="tbodyAntreanLab" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
-                        <!-- Data Kartu akan di-render dari JavaScript -->
-                    </div>
+                    <tbody id="tbodyAntreanLabPC">
+                        <!-- Tabel akan dirender di sini oleh JS -->
+                    </tbody>
                 </table>
             </div>
+
+            <!-- 📱 WUJUD 2: UNTUK LAYAR HP (Bentuk Card Accordion) -->
+            <div id="tbodyAntreanLabMobile" class="lab-view-mobile" style="margin-top: 15px;">
+                <!-- Kartu akan dirender di sini oleh JS -->
+            </div>
+
         </div>
 
         <!-- MODAL POP-UP INPUT HARGA LAB -->
