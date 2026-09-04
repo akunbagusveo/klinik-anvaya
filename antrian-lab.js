@@ -7,10 +7,11 @@
     // 1. FUNGSI PENARIKAN DATA ANTREAN LAB DARI SERVER
     // =====================================================================
     window.muatAntreanLab = function() {
-        const tbody = document.getElementById('tbodyAntreanLab');
-        if(!tbody) return;
+        const wadah = document.getElementById('tbodyAntreanLab');
+        if(!wadah) return;
         
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">⏳ Menyinkronkan mesin pelacak dengan Kasir...</td></tr>';
+        // 🔥 Ubah tag <tr> menjadi <div> agar tidak rusak
+        wadah.innerHTML = '<div style="text-align:center; padding:30px; font-weight:bold; color:#7f8c8d; background:#fff; border-radius:8px;">⏳ Menyinkronkan mesin pelacak dengan Kasir...</div>';
         
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Memeriksa Tagihan Lab Menggantung...");
 
@@ -21,58 +22,90 @@
         .then(res => res.json())
         .then(res => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-
-            if (res.result === "success") {
-                window.renderTabelAntreanLab(res.data);
-            } else {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:red;">Gagal memuat: ${res.message}</td></tr>`;
-            }
+            if (res.result === "success") { window.renderTabelAntreanLab(res.data); } 
+            else { wadah.innerHTML = `<div style="text-align:center; padding:20px; color:red; background:#fff; border-radius:8px;">Gagal memuat: ${res.message}</div>`; }
         })
         .catch(err => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-            console.error("Error muatAntreanLab:", err);
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:red;">⚠️ Gangguan jaringan komunikasi.</td></tr>';
+            wadah.innerHTML = '<div style="text-align:center; padding:20px; color:red; background:#fff; border-radius:8px;">⚠️ Gangguan jaringan komunikasi.</div>';
         });
     };
 
     // =====================================================================
-    // 2. FUNGSI RENDER TABEL & TOMBOL AKSI
+    // 2. FUNGSI RENDER CARD & ACCORDION (PENGGANTI TABEL KAKU)
     // =====================================================================
     window.renderTabelAntreanLab = function(data) {
-        const tbody = document.getElementById('tbodyAntreanLab');
-        if (!tbody) return;
+        const wadah = document.getElementById('tbodyAntreanLab');
+        if (!wadah) return;
 
-        tbody.innerHTML = "";
+        wadah.innerHTML = "";
         
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:#7f8c8d; font-style:italic;">🎉 Yeaay! Semua tagihan vendor lab eksternal pasien sudah beres diselesaikan!</td></tr>';
+            wadah.innerHTML = '<div style="text-align:center; padding:40px; background:#fff; border-radius:8px; color:#7f8c8d; font-style:italic; box-shadow:0 2px 5px rgba(0,0,0,0.05);">🎉 Yeaay! Semua tagihan vendor lab eksternal pasien sudah beres diselesaikan!</div>';
             return;
         }
 
         data.forEach(item => {
-            let tr = document.createElement('tr');
-            tr.style.borderBottom = "1px solid #ecf0f1";
-            
             let amanInvoice = (item.invoice || "").replace(/'/g, "\\'");
             let amanPasien = (item.namaPasien || "").replace(/'/g, "\\'");
             let amanTindakan = (item.namaTindakan || "").replace(/'/g, "\\'");
             let amanDokter = (item.namaDokter || "").replace(/'/g, "\\'");
 
-            tr.innerHTML = `
-                <td style="padding:15px; font-weight:bold; color:#34495e;">${item.invoice}</td>
-                <td style="padding:15px; font-weight:bold; color:#2980b9;">${item.namaPasien}</td>
-                <td style="padding:15px; font-weight:bold; color:#8e44ad;">👨‍⚕️ ${item.namaDokter}</td>
-                <td style="padding:15px; font-weight:bold; color:#e67e22; max-width: 250px; line-height: 1.6;">
-                    <span style="display:inline-block; background:#fef5e7; padding:6px 10px; border-radius:6px; border:1px solid #f8c471; word-wrap:break-word; white-space:normal;">
-                        ${item.namaTindakan}
-                    </span>
-                </td>
-                <td style="padding:15px; text-align:center;">
-                    <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
-                </td>
+            let card = document.createElement('div');
+            card.className = "lab-card";
+            card.style.cssText = "background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden; transition: all 0.3s ease;";
+            
+            card.innerHTML = `
+                <!-- HEADER KARTU (Bisa Diklik) -->
+                <div onclick="window.toggleAccordionLab(this)" style="padding:15px; background:#fbfcfc; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid transparent;">
+                    <div>
+                        <div style="font-weight:bold; color:#2980b9; font-size:16px; margin-bottom:4px;">${item.namaPasien}</div>
+                        <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${item.invoice}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:11px; background:#e8f8f5; color:#1abc9c; padding:4px 8px; border-radius:12px; font-weight:bold;">Menunggu Harga</span>
+                        <span class="acc-icon" style="font-size:18px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
+                    </div>
+                </div>
+                
+                <!-- BODY KARTU (Isi Tersembunyi) -->
+                <div class="lab-card-body" style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                    <div style="margin-bottom:10px;">
+                        <span style="font-size:12px; color:#7f8c8d;">Dokter Pengirim:</span><br>
+                        <span style="font-weight:bold; color:#8e44ad; font-size:14px;">👨‍⚕️ ${item.namaDokter}</span>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <span style="font-size:12px; color:#7f8c8d;">Tindakan Lab / Vendor:</span><br>
+                        <div style="display:inline-block; background:#fef5e7; padding:8px 12px; border-radius:6px; border:1px solid #f8c471; color:#d35400; font-size:14px; font-weight:bold; margin-top:4px; word-wrap:break-word; max-width: 100%;">
+                            ${item.namaTindakan}
+                        </div>
+                    </div>
+                    <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}')" style="width:100%; background:#27ae60; color:white; border:none; padding:12px 15px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15); font-size:15px;">
+                        💰 Input Harga Vendor
+                    </button>
+                </div>
             `;
-            tbody.appendChild(tr);
+            wadah.appendChild(card);
         });
+    };
+
+    // =====================================================================
+    // 🔥 FUNGSI BARU: ANIMASI KLIK ACCORDION
+    // Taruh fungsi ini tepat di bawah fungsi renderTabelAntreanLab di atas!
+    // =====================================================================
+    window.toggleAccordionLab = function(headerElement) {
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon');
+        
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #ecf0f1";
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.style.transform = "rotate(0deg)";
+        }
     };
 
     // =====================================================================
