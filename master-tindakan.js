@@ -77,19 +77,26 @@
         .catch(err => console.error("⚠️ Gangguan jaringan:", err));
     };
 
+   // =====================================================================
+    // 📊 MESIN RENDER MASTER TINDAKAN (HYBRID & PAGINATION)
+    // =====================================================================
     window.renderTabelMasterTindakan = function(resetHalaman = false) {
-        if (resetHalaman) currentPageTindakan = 1;
+        if (resetHalaman) window.currentPageTindakan = 1;
+        if (!window.currentPageTindakan) window.currentPageTindakan = 1;
+        
+        const limitPerPage = 15; // 🔥 DIUBAH KE 15: Agar tidak kepanjangan di-scroll di HP
 
         let elCari = document.getElementById('cariTindakan');
         let cari = elCari ? elCari.value.toLowerCase() : "";
-        
         let elStatus = document.getElementById('filterStatusTindakan');
         let statusFilter = elStatus ? elStatus.value : "Semua";
         
-        let tbody = document.getElementById('tabelMasterTindakanBody');
+        let wadahPC = document.getElementById('tabelMasterTindakanBodyPC');
+        let wadahMobile = document.getElementById('tabelMasterTindakanBodyMobile');
         let paginationDiv = document.getElementById('paginationControlsTindakan');
         
-        if (!tbody) return;
+        if (wadahPC) wadahPC.innerHTML = '';
+        if (wadahMobile) wadahMobile.innerHTML = '';
 
         let terfilter = window.dataMasterTindakanGlobal.filter(t => {
             let matchCari = (t.namaTindakan || "").toLowerCase().includes(cari) || (t.kategori || "").toLowerCase().includes(cari);
@@ -98,22 +105,21 @@
         });
 
         if (terfilter.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#95a5a6; font-weight:bold;">Data tidak ditemukan.</td></tr>`;
-            if (paginationDiv) paginationDiv.style.display = 'none';
+            if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#95a5a6; font-weight:bold;">Data tidak ditemukan.</td></tr>`;
+            if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding:30px; background:#fff; border-radius:8px; color:#95a5a6; font-weight:bold;">Data tidak ditemukan.</div>`;
+            if (paginationDiv) paginationDiv.innerHTML = '';
             return;
         }
 
-        if (paginationDiv) paginationDiv.style.display = 'block';
+        // Logika Potong Data
+        const totalPages = Math.ceil(terfilter.length / limitPerPage) || 1;
+        if (window.currentPageTindakan > totalPages) window.currentPageTindakan = totalPages;
+        if (window.currentPageTindakan < 1) window.currentPageTindakan = 1;
 
-        const totalPages = Math.ceil(terfilter.length / rowsPerPageTindakan) || 1;
-        if (currentPageTindakan > totalPages) currentPageTindakan = totalPages;
-        if (currentPageTindakan < 1) currentPageTindakan = 1;
-
-        const startIndex = (currentPageTindakan - 1) * rowsPerPageTindakan;
-        const endIndex = startIndex + rowsPerPageTindakan;
+        const startIndex = (window.currentPageTindakan - 1) * limitPerPage;
+        const endIndex = startIndex + limitPerPage;
         const paginatedItems = terfilter.slice(startIndex, endIndex);
 
-        let html = '';
         paginatedItems.forEach((t, i) => {
             let actualIndex = startIndex + i + 1; 
             
@@ -127,16 +133,20 @@
             let icnConsent = (t.butuhConsent == 1 || strConsent === "ya" || strConsent === "true") ? "📝 Ya" : "-";
             let icnLab = (t.butuhLab == 1 || strLab === "ya" || strLab === "true") ? "🧪 Ya" : "-";
 
-            let hargaMaksTxt = (t.hargaMaksimal && Number(t.hargaMaksimal) > 0) 
-                ? `Rp ${Number(t.hargaMaksimal).toLocaleString('id-ID')}` 
-                : `-`;
+            let hargaMaksTxt = (t.hargaMaksimal && Number(t.hargaMaksimal) > 0) ? `Rp ${Number(t.hargaMaksimal).toLocaleString('id-ID')}` : `-`;
+            let hargaDasarTxt = `Rp ${Number(t.hargaDasar).toLocaleString('id-ID')}`;
 
-            html += `
-                <tr style="border-bottom: 1px solid #ecf0f1;">
+            // 💻 SUNTIKKAN KE WUJUD PC
+            if (wadahPC) {
+                let tr = document.createElement('tr');
+                tr.style.cssText = "border-bottom: 1px solid #ecf0f1; transition: background 0.2s;";
+                tr.onmouseover = function() { this.style.background = '#f8fafc'; };
+                tr.onmouseout = function() { this.style.background = 'transparent'; };
+                tr.innerHTML = `
                     <td style="padding:12px 10px; font-size:13px; color:#7f8c8d;">${actualIndex}</td>
                     <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2c3e50;">${t.namaTindakan}</td>
                     <td style="padding:12px 10px; font-size:13px; color:#34495e;">${t.kategori}</td>
-                    <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2980b9; text-align:right;">Rp ${Number(t.hargaDasar).toLocaleString('id-ID')}</td>
+                    <td style="padding:12px 10px; font-size:13px; font-weight:bold; color:#2980b9; text-align:right;">${hargaDasarTxt}</td>
                     <td style="padding:12px 10px; font-size:13px; color:#7f8c8d; text-align:right;">${hargaMaksTxt}</td>
                     <td style="padding:12px 10px; font-size:13px; text-align:center; color:#e67e22;">${icnConsent}</td>
                     <td style="padding:12px 10px; font-size:13px; text-align:center; color:#9b59b6;">${icnLab}</td>
@@ -144,23 +154,101 @@
                     <td style="padding:12px 10px; text-align:center;">
                         <button onclick="window.bukaModalTindakan('${t.idTindakan}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit</button>
                     </td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = html;
+                `;
+                wadahPC.appendChild(tr);
+            }
 
-        let pageInfo = document.getElementById('pageInfoTindakan');
-        if (pageInfo) pageInfo.innerText = `Halaman ${currentPageTindakan} dari ${totalPages}`;
-        
-        let btnPrev = document.getElementById('btnPrevTindakan');
-        let btnNext = document.getElementById('btnNextTindakan');
-        if (btnPrev) btnPrev.disabled = (currentPageTindakan === 1);
-        if (btnNext) btnNext.disabled = (currentPageTindakan === totalPages);
+            // 📱 SUNTIKKAN KE WUJUD MOBILE
+            if (wadahMobile) {
+                let card = document.createElement('div');
+                card.style.cssText = "background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden;";
+                card.innerHTML = `
+                    <div onclick="window.toggleAccordionMaster(this)" style="padding:15px; background:#fbfcfc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                        <div>
+                            <div style="font-weight:bold; color:#2c3e50; font-size:15px; margin-bottom:4px;">${t.namaTindakan}</div>
+                            <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${t.kategori} • ${badgeStatus}</div>
+                        </div>
+                        <div style="display:flex; align-items:center; padding-top: 5px;">
+                            <span class="acc-icon-master" style="font-size:16px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
+                        </div>
+                    </div>
+                    <div style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+                            <span style="color:#7f8c8d;">Harga Dasar:</span> <strong style="color:#2980b9;">${hargaDasarTxt}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:13px;">
+                            <span style="color:#7f8c8d;">Harga Maksimal:</span> <strong>${hargaMaksTxt}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:13px; background:#f9f9f9; padding:10px; border-radius:6px;">
+                            <div style="text-align:center;"><div style="color:#7f8c8d; font-size:11px; margin-bottom:4px;">Wajib Consent</div><div style="color:#e67e22; font-weight:bold;">${icnConsent}</div></div>
+                            <div style="text-align:center;"><div style="color:#7f8c8d; font-size:11px; margin-bottom:4px;">Tagihan Lab</div><div style="color:#9b59b6; font-weight:bold;">${icnLab}</div></div>
+                        </div>
+                        <button onclick="window.bukaModalTindakan('${t.idTindakan}')" style="width:100%; background:#f39c12; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit Tindakan</button>
+                    </div>
+                `;
+                wadahMobile.appendChild(card);
+            }
+        });
+
+        window.renderKontrolPaginasiMaster(totalPages, window.currentPageTindakan);
     };
 
-    window.ubahHalamanTindakan = function(step) {
-        currentPageTindakan += step;
-        window.renderTabelMasterTindakan(false); 
+    // =====================================================================
+    // 🖲️ KONTROL PAGINASI & ANIMASI (PINTAR)
+    // =====================================================================
+    window.renderKontrolPaginasiMaster = function(totalPages, currentPage) {
+        const wadah = document.getElementById('paginationControlsTindakan');
+        if (!wadah) return;
+        wadah.innerHTML = '';
+        if (totalPages <= 1) { wadah.style.display = 'none'; return; }
+        
+        wadah.style.display = 'flex';
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'btn-page-master';
+        btnPrev.innerText = '« Prev';
+        btnPrev.disabled = currentPage === 1;
+        btnPrev.onclick = () => { window.currentPageTindakan--; window.renderTabelMasterTindakan(); };
+        wadah.appendChild(btnPrev);
+
+        // Algoritma ellipsis (titik-titik) untuk halamaman yang banyak
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const btnNum = document.createElement('button');
+                btnNum.className = 'btn-page-master' + (i === currentPage ? ' active' : '');
+                btnNum.innerText = i;
+                btnNum.onclick = () => { window.currentPageTindakan = i; window.renderTabelMasterTindakan(); };
+                wadah.appendChild(btnNum);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const btnDot = document.createElement('span');
+                btnDot.innerText = '...';
+                btnDot.style.margin = '0 5px';
+                btnDot.style.color = '#7f8c8d';
+                btnDot.style.fontWeight = 'bold';
+                wadah.appendChild(btnDot);
+            }
+        }
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'btn-page-master';
+        btnNext.innerText = 'Next »';
+        btnNext.disabled = currentPage === totalPages;
+        btnNext.onclick = () => { window.currentPageTindakan++; window.renderTabelMasterTindakan(); };
+        wadah.appendChild(btnNext);
+    };
+
+    window.toggleAccordionMaster = function(headerElement) {
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon-master');
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #ecf0f1";
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.style.transform = "rotate(0deg)";
+        }
     };
 
     // =====================================================================
