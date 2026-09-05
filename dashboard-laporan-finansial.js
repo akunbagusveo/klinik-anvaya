@@ -302,7 +302,15 @@
     };
 
     // =====================================================================
-    // 📊 FUNGSI MENARIK DATA KEUANGAN
+    // 📊 VARIABEL GLOBAL UNTUK PAGINASI & FILTER FINANSIAL
+    // =====================================================================
+    window.cacheDataFinansial = [];
+    window.filteredDataFinansial = [];
+    window.currentPageFinansial = 1;
+    window.itemsPerPageFinansial = 10; // Tampilkan 10 nota per halaman
+
+    // =====================================================================
+    // 📊 FUNGSI MENARIK DATA KEUANGAN DARI SERVER
     // =====================================================================
     window.muatDataFinansial = function() {
         const elTglMulai = document.getElementById('tglMulaiFinansial');
@@ -334,23 +342,27 @@
                 const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
                 const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
 
-                // 1. UPDATE KARTU METRIK
+                // 1. UPDATE KARTU METRIK UTAMA
                 setVal('valPendapatanBersih', window.formatRupiahFinansial(res.metrik.pendapatan));
                 setHtml('valTotalTransaksi', `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`);
                 setVal('valRataTransaksi', window.formatRupiahFinansial(res.metrik.rataRata));
                 setVal('valTotalDiskon', window.formatRupiahFinansial(res.metrik.diskon));
 
+                // 🔥 PERBAIKAN WARNA KETERANGAN PERTUMBUHAN (Sangat elegan & mudah dibaca)
                 const divTumbuh = document.getElementById('valPertumbuhan');
                 if (divTumbuh) {
                     if (res.metrik.pertumbuhan.arah === "naik") {
                         divTumbuh.innerHTML = `📈 Naik ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
-                        divTumbuh.style.color = "#a8ffc4";
+                        divTumbuh.style.color = "#15803d"; // Hijau gelap
+                        divTumbuh.style.background = "#dcfce7"; // Latar hijau pastel
                     } else if (res.metrik.pertumbuhan.arah === "turun") {
                         divTumbuh.innerHTML = `📉 Turun ${res.metrik.pertumbuhan.persen}% vs sblmnya`;
-                        divTumbuh.style.color = "#ffcccc";
+                        divTumbuh.style.color = "#b91c1c"; // Merah gelap
+                        divTumbuh.style.background = "#fee2e2"; // Latar merah pastel
                     } else {
                         divTumbuh.innerHTML = `➖ Stabil (0%)`;
-                        divTumbuh.style.color = "#ffffff";
+                        divTumbuh.style.color = "#475569"; // Abu gelap
+                        divTumbuh.style.background = "#f1f5f9"; // Latar abu pastel
                     }
                 }
 
@@ -372,78 +384,19 @@
                     selectDokter.value = valDokter; selectTindakan.value = valTindakan; selectPembayaran.value = valPembayaran; 
                 }
 
+                // Gambar Ulang Grafik
                 if (typeof window.renderGrafikFinansial === "function") window.renderGrafikFinansial(res.chartData);
                 
-                // 2. RENDER WADAH HYBRID (PC & MOBILE)
-                const tbody = document.getElementById('tbodyLaporanFinansial');
-                const tbodyMobile = document.getElementById('tbodyLaporanFinansialMobile');
-                
-                if (tbody) tbody.innerHTML = ''; 
-                if (tbodyMobile) tbodyMobile.innerHTML = ''; 
-                
+                // 2. SIMPAN KE CACHE & PANGGIL MESIN PENCARIAN/PAGINASI
                 if (res.dataTabel && res.dataTabel.length > 0) {
-                    res.dataTabel.forEach(nota => {
-                        let strDokter = nota.dokter || "";
-                        let arrDokter = strDokter.split(/<br\s*\/?>|,|\n/i);
-                        let dokterBersih = arrDokter.map(d => d.trim()).filter(d => { let textOnly = d.replace(/👨‍⚕️/g, "").trim(); return textOnly !== "" && textOnly !== "-"; });
-                        let dokterUnik = [...new Set(dokterBersih)];
-                        let dokterFinal = dokterUnik.length > 0 ? dokterUnik.join('<br>') : `<span style="color:#bdc3c7; font-style:italic;">Tanpa Dokter</span>`;
-                        
-                        let formatTotal = window.formatRupiahFinansial(nota.grandTotal);
-                        let statusWarna = nota.grandTotal > 0 ? '#27ae60' : '#e74c3c';
-
-                        // 💻 SUNTIKKAN KE TABEL PC
-                        if (tbody) {
-                            let btnPdfPC = nota.linkPdf !== "#" ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
-                            tbody.innerHTML += `
-                                <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
-                                    <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
-                                    <td style="padding: 12px;">${nota.tanggal}</td>
-                                    <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
-                                    <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
-                                    <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${dokterFinal}</td>
-                                    <td style="padding: 12px; text-align:center;"><span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">${nota.metodeBayar}</span></td>
-                                    <td style="padding: 12px; text-align:right; color:#e74c3c;">${nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-'}</td>
-                                    <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${formatTotal}</td>
-                                    <td style="padding: 12px; text-align:center;">${btnPdfPC}</td>
-                                </tr>
-                            `;
-                        }
-
-                        // 📱 SUNTIKKAN KE KARTU MOBILE
-                        if (tbodyMobile) {
-                            let btnPdfMobile = nota.linkPdf !== "#" ? `<button onclick="window.open('${nota.linkPdf}', '_blank')" style="width:100%; background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Buka Arsip PDF</button>` : `<button disabled style="width:100%; background:#e2e8f0; color:#94a3b8; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:13px;">❌ Bukti PDF Tidak Ada</button>`;
-                            tbodyMobile.innerHTML += `
-                                <div class="finansial-card-mobile" style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden; transition: all 0.3s ease;">
-                                    <div onclick="window.toggleAccordionFinansial(this)" style="padding:15px; background:#fbfcfc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
-                                        <div>
-                                            <div style="font-weight:bold; color:#2980b9; font-size:15px; margin-bottom:4px;">${nota.noKuitansi}</div>
-                                            <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${nota.namaPasien} • <span style="color:${statusWarna};">${formatTotal}</span></div>
-                                        </div>
-                                        <div style="display:flex; align-items:center; padding-top: 5px;">
-                                            <span class="acc-icon-finansial" style="font-size:16px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
-                                        </div>
-                                    </div>
-                                    <div class="finansial-card-body" style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
-                                        <div style="margin-bottom:8px; font-size:13px;"><span style="color:#7f8c8d;">📅 Tanggal:</span> <strong>${nota.tanggal}</strong></div>
-                                        <div style="margin-bottom:12px; font-size:13px;"><span style="color:#7f8c8d;">👨‍⚕️ Dokter:</span> <span style="color:#8e44ad; font-weight:bold;">${dokterFinal}</span></div>
-                                        <div style="margin-bottom:12px; font-size:13px;"><span style="color:#7f8c8d;">💉 Tindakan Medis:</span><br><div style="margin-top:4px; font-weight:500;">${nota.tindakan}</div></div>
-                                        <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:13px;">
-                                            <div><span style="color:#7f8c8d;">💳 Bayar:</span> <strong>${nota.metodeBayar}</strong></div>
-                                            <div><span style="color:#7f8c8d;">🏷️ Diskon:</span> <strong style="color:#e74c3c;">${nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-'}</strong></div>
-                                        </div>
-                                        <div>${btnPdfMobile}</div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    });
+                    window.cacheDataFinansial = res.dataTabel;
                 } else {
-                    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
-                    if (tbodyMobile) tbodyMobile.innerHTML = `<div style="text-align:center; padding:30px; color:gray; background:#fff; border-radius:8px;">Tidak ada transaksi di rentang tanggal tersebut.</div>`;
+                    window.cacheDataFinansial = [];
                 }
+                
+                // Panggil search yang otomatis akan merender halaman 1
+                if (typeof window.cariTabelFinansial === "function") window.cariTabelFinansial();
 
-                if (typeof window.cariTabelFinansial === "function") setTimeout(window.cariTabelFinansial, 100);
             } else {
                 alert("⚠️ Gagal memuat laporan: " + res.message);
             }
@@ -510,6 +463,9 @@
         }
     });
 
+    // =====================================================================
+    // 🔍 FUNGSI PENCARIAN (MENYARING CACHE DATA)
+    // =====================================================================
     window.cariTabelFinansial = function() {
         const inputEl = document.getElementById("inputCariFinansial");
         const filterDokterEl = document.getElementById("filterSelectDokter");
@@ -521,44 +477,148 @@
         const filterTindakan = filterTindakanEl ? filterTindakanEl.value.toLowerCase() : "";
         const filterPembayaran = filterPembayaranEl ? filterPembayaranEl.value.toLowerCase() : "";
 
-        const barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
-        const kartuMobile = document.querySelectorAll("#tbodyLaporanFinansialMobile .finansial-card-mobile");
-
-        let indexDataValid = 0; // Kunci ajaib untuk mensinkronkan baris tabel dengan kartu mobile
-
-        barisTabel.forEach(baris => {
-            if (baris.cells.length < 2) return; // Lewati baris kosong ("Tidak ada data")
-            
-            const noNota = baris.cells[0].innerText.toLowerCase();
-            const namaPasien = baris.cells[2].innerText.toLowerCase();
-            const teksTindakan = baris.cells[3].innerText.toLowerCase(); 
-            const teksDokter = baris.cells[4].innerText.toLowerCase();   
-            const teksPembayaran = baris.cells[5].innerText.toLowerCase(); 
+        // Saring seluruh cache berdasarkan filter yang aktif
+        window.filteredDataFinansial = window.cacheDataFinansial.filter(nota => {
+            const noNota = (nota.noKuitansi || "").toLowerCase();
+            const namaPasien = (nota.namaPasien || "").toLowerCase();
+            const teksTindakan = (nota.tindakan || "").toLowerCase(); 
+            const teksDokter = (nota.dokter || "").toLowerCase();   
+            const teksPembayaran = (nota.metodeBayar || "").toLowerCase(); 
 
             let matchTeks = noNota.includes(inputTeks) || namaPasien.includes(inputTeks);
             let matchDokter = filterDokter === "" || teksDokter.includes(filterDokter);
             let matchTindakan = filterTindakan === "" || teksTindakan.includes(filterTindakan);
             let matchPembayaran = filterPembayaran === "" || teksPembayaran.includes(filterPembayaran); 
 
-            if (matchTeks && matchDokter && matchTindakan && matchPembayaran) {
-                baris.style.display = ""; 
-                if (kartuMobile[indexDataValid]) kartuMobile[indexDataValid].style.display = "block"; // Mobile ikut tampil
-            } else {
-                baris.style.display = "none"; 
-                if (kartuMobile[indexDataValid]) kartuMobile[indexDataValid].style.display = "none"; // Mobile ikut sembunyi
-            }
-            
-            indexDataValid++;
+            return matchTeks && matchDokter && matchTindakan && matchPembayaran;
         });
+
+        // Setel ulang ke Halaman 1, lalu cetak!
+        window.currentPageFinansial = 1;
+        window.renderHalamanFinansial();
     };
 
     // =====================================================================
-    // 💡 ANIMASI KLIK ACCORDION MOBILE (FUNGSI BARU)
+    // 📊 MESIN CETAK TABEL, CARD, & PAGINASI (HYBRID)
     // =====================================================================
+    window.renderHalamanFinansial = function() {
+        const tbody = document.getElementById('tbodyLaporanFinansial');
+        const tbodyMobile = document.getElementById('tbodyLaporanFinansialMobile');
+        const data = window.filteredDataFinansial;
+
+        if (tbody) tbody.innerHTML = ''; 
+        if (tbodyMobile) tbodyMobile.innerHTML = ''; 
+
+        if (!data || data.length === 0) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px; color:gray; font-weight:bold;">TIdak ada transaksi yang sesuai dengan filter pencarian.</td></tr>`;
+            if (tbodyMobile) tbodyMobile.innerHTML = `<div style="text-align:center; padding:40px; color:gray; background:#fff; border-radius:8px; font-weight:bold;">TIdak ada transaksi sesuai filter.</div>`;
+            window.renderKontrolPaginasiFinansial(0, 1);
+            return;
+        }
+
+        // Logika Potong Data (Slice)
+        const totalItems = data.length;
+        const totalPages = Math.ceil(totalItems / window.itemsPerPageFinansial);
+        if (window.currentPageFinansial > totalPages) window.currentPageFinansial = totalPages;
+        
+        const startIndex = (window.currentPageFinansial - 1) * window.itemsPerPageFinansial;
+        const endIndex = startIndex + window.itemsPerPageFinansial;
+        const dataHalamanIni = data.slice(startIndex, endIndex);
+
+        dataHalamanIni.forEach(nota => {
+            let strDokter = nota.dokter || "";
+            let arrDokter = strDokter.split(/<br\s*\/?>|,|\n/i);
+            let dokterBersih = arrDokter.map(d => d.trim()).filter(d => { let textOnly = d.replace(/👨‍⚕️/g, "").trim(); return textOnly !== "" && textOnly !== "-"; });
+            let dokterUnik = [...new Set(dokterBersih)];
+            let dokterFinal = dokterUnik.length > 0 ? dokterUnik.join('<br>') : `<span style="color:#bdc3c7; font-style:italic;">Tanpa Dokter</span>`;
+            
+            let formatTotal = window.formatRupiahFinansial(nota.grandTotal);
+            let statusWarna = nota.grandTotal > 0 ? '#27ae60' : '#e74c3c';
+
+            // 💻 SUNTIKKAN KE TABEL PC
+            if (tbody) {
+                let btnPdfPC = nota.linkPdf !== "#" ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #eee; vertical-align: top; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
+                        <td style="padding: 12px;">${nota.tanggal}</td>
+                        <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
+                        <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
+                        <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${dokterFinal}</td>
+                        <td style="padding: 12px; text-align:center;"><span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">${nota.metodeBayar}</span></td>
+                        <td style="padding: 12px; text-align:right; color:#e74c3c;">${nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-'}</td>
+                        <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${formatTotal}</td>
+                        <td style="padding: 12px; text-align:center;">${btnPdfPC}</td>
+                    </tr>
+                `;
+            }
+
+            // 📱 SUNTIKKAN KE KARTU MOBILE
+            if (tbodyMobile) {
+                let btnPdfMobile = nota.linkPdf !== "#" ? `<button onclick="window.open('${nota.linkPdf}', '_blank')" style="width:100%; background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Buka Arsip PDF</button>` : `<button disabled style="width:100%; background:#e2e8f0; color:#94a3b8; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:13px;">❌ Bukti PDF Tidak Ada</button>`;
+                tbodyMobile.innerHTML += `
+                    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden; transition: all 0.3s ease;">
+                        <div onclick="window.toggleAccordionFinansial(this)" style="padding:15px; background:#f8fafc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                            <div>
+                                <div style="font-weight:bold; color:#2980b9; font-size:15px; margin-bottom:4px;">${nota.noKuitansi}</div>
+                                <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${nota.namaPasien} • <span style="color:${statusWarna};">${formatTotal}</span></div>
+                            </div>
+                            <div style="display:flex; align-items:center; padding-top: 5px;">
+                                <span class="acc-icon-finansial" style="font-size:16px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
+                            </div>
+                        </div>
+                        <div style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                            <div style="margin-bottom:8px; font-size:13px;"><span style="color:#7f8c8d;">📅 Tanggal:</span> <strong>${nota.tanggal}</strong></div>
+                            <div style="margin-bottom:12px; font-size:13px;"><span style="color:#7f8c8d;">👨‍⚕️ Dokter:</span> <span style="color:#8e44ad; font-weight:bold;">${dokterFinal}</span></div>
+                            <div style="margin-bottom:12px; font-size:13px;"><span style="color:#7f8c8d;">💉 Tindakan Medis:</span><br><div style="margin-top:4px; font-weight:500;">${nota.tindakan}</div></div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:13px;">
+                                <div><span style="color:#7f8c8d;">💳 Bayar:</span> <strong>${nota.metodeBayar}</strong></div>
+                                <div><span style="color:#7f8c8d;">🏷️ Diskon:</span> <strong style="color:#e74c3c;">${nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-'}</strong></div>
+                            </div>
+                            <div>${btnPdfMobile}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Cetak tombol halamannya!
+        window.renderKontrolPaginasiFinansial(totalPages, window.currentPageFinansial);
+    };
+
+    window.renderKontrolPaginasiFinansial = function(totalPages, currentPage) {
+        const wadah = document.getElementById('wadahPaginasiFinansial');
+        if (!wadah) return;
+        wadah.innerHTML = '';
+
+        if (totalPages <= 1) return; 
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'btn-page-fin';
+        btnPrev.innerText = '« Prev';
+        btnPrev.disabled = currentPage === 1;
+        btnPrev.onclick = () => { window.currentPageFinansial--; window.renderHalamanFinansial(); };
+        wadah.appendChild(btnPrev);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const btnNum = document.createElement('button');
+            btnNum.className = 'btn-page-fin' + (i === currentPage ? ' active' : '');
+            btnNum.innerText = i;
+            btnNum.onclick = () => { window.currentPageFinansial = i; window.renderHalamanFinansial(); };
+            wadah.appendChild(btnNum);
+        }
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'btn-page-fin';
+        btnNext.innerText = 'Next »';
+        btnNext.disabled = currentPage === totalPages;
+        btnNext.onclick = () => { window.currentPageFinansial++; window.renderHalamanFinansial(); };
+        wadah.appendChild(btnNext);
+    };
+
     window.toggleAccordionFinansial = function(headerElement) {
         const cardBody = headerElement.nextElementSibling;
         const icon = headerElement.querySelector('.acc-icon-finansial');
-        
         if (cardBody.style.display === "none") {
             cardBody.style.display = "block";
             headerElement.style.borderBottom = "1px solid #ecf0f1";
@@ -571,34 +631,27 @@
     };
 
     // ==========================================================
-    // 🖨️ FITUR EXPORT: EXCEL (CSV) & CETAK PDF
+    // 🖨️ FITUR EXPORT CERDAS (Mengekstrak dari Memori, bukan HTML)
     // ==========================================================
     window.exportKeCSV = function() {
+        if (!window.filteredDataFinansial || window.filteredDataFinansial.length === 0) {
+            alert("⚠️ Tidak ada data transaksi yang sesuai filter untuk diekspor!"); return;
+        }
+
         let csv = [];
         let header = ["No. Kuitansi", "Tanggal", "Nama Pasien", "Rincian Tindakan", "Dokter Pelaksana", "Pembayaran", "Diskon", "Grand Total"];
         csv.push(header.join(","));
 
-        let barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
-        
-        barisTabel.forEach(row => {
-            if (row.style.display !== "none" && row.cells.length > 1) { 
-                let barisCsv = [];
-                for (let i = 0; i < 8; i++) { 
-                    let teks = "";
-                    let spans = row.cells[i].querySelectorAll('span');
-                    
-                    if (spans.length > 0 && (i === 3 || i === 4)) {
-                        let arrSpan = Array.from(spans).map(s => s.innerText.trim());
-                        teks = arrSpan.join(", "); 
-                    } else {
-                        teks = row.cells[i].innerText.trim().replace(/(\r\n|\n|\r)/gm, " "); 
-                    }
+        window.filteredDataFinansial.forEach(nota => {
+            let diskonStr = nota.diskon > 0 ? nota.diskon.toString() : '0';
+            let totalStr = nota.grandTotal.toString();
+            
+            // Pembersihan karakter HTML (seperti <br>) agar rapi di Excel
+            let tndk = String(nota.tindakan).replace(/<br\s*\/?>/gi, " - ").replace(/"/g, '""');
+            let dktr = String(nota.dokter).replace(/👨‍⚕️/g, "").replace(/<br\s*\/?>/gi, " - ").replace(/"/g, '""');
 
-                    teks = teks.replace(/"/g, '""'); 
-                    barisCsv.push(`"${teks}"`); 
-                }
-                csv.push(barisCsv.join(","));
-            }
+            let barisCsv = [`"${nota.noKuitansi}"`, `"${nota.tanggal}"`, `"${nota.namaPasien}"`, `"${tndk}"`, `"${dktr}"`, `"${nota.metodeBayar}"`, `"${diskonStr}"`, `"${totalStr}"`];
+            csv.push(barisCsv.join(","));
         });
 
         let csvString = csv.join("\n");
@@ -614,66 +667,47 @@
     };
 
     window.cetakTabelPDF = function() {
+        if (!window.filteredDataFinansial || window.filteredDataFinansial.length === 0) {
+            alert("⚠️ Tidak ada data transaksi yang sesuai filter untuk dicetak!"); return;
+        }
+
         let tableHtml = `<table border="1" cellpadding="8" style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px; text-align: left;">`;
         tableHtml += `<thead style="background-color: #f2f2f2;"><tr>
-            <th style="width: 12%;">No. Nota</th>
-            <th style="width: 10%;">Tanggal</th>
-            <th style="width: 14%;">Nama Pasien</th>
-            <th style="width: 25%;">Rincian Tindakan</th>
-            <th style="width: 15%;">Dokter</th>
-            <th style="width: 7%; text-align:center;">Bayar</th>
-            <th style="width: 8%; text-align:right;">Diskon</th>
-            <th style="width: 9%; text-align:right;">Total</th>
+            <th style="width: 12%;">No. Nota</th><th style="width: 10%;">Tanggal</th><th style="width: 14%;">Nama Pasien</th>
+            <th style="width: 25%;">Rincian Tindakan</th><th style="width: 15%;">Dokter</th><th style="width: 7%; text-align:center;">Bayar</th>
+            <th style="width: 8%; text-align:right;">Diskon</th><th style="width: 9%; text-align:right;">Total</th>
         </tr></thead><tbody>`;
 
-        let barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
-        let adaData = false;
+        window.filteredDataFinansial.forEach(nota => {
+            let tndk = String(nota.tindakan);
+            let dktr = String(nota.dokter).replace(/👨‍⚕️/g, "");
+            let diskonStr = nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-';
+            let totalStr = window.formatRupiahFinansial(nota.grandTotal);
 
-        barisTabel.forEach(row => {
-            if (row.style.display !== "none" && row.cells.length > 1) {
-                adaData = true;
-                tableHtml += `<tr>`;
-                for(let i = 0; i < 8; i++){
-                    let align = (i === 6 || i === 7) ? 'text-align:right;' : (i === 5 ? 'text-align:center;' : '');
-                    let teksBersih = "";
-                    let spans = row.cells[i].querySelectorAll('span');
-                    
-                    if (spans.length > 0 && (i === 3 || i === 4)) {
-                        let arrSpan = Array.from(spans).map(s => `<li style="margin-bottom: 2px;">${s.innerText.trim()}</li>`);
-                        teksBersih = `<ul style="margin: 0; padding-left: 14px;">${arrSpan.join("")}</ul>`; 
-                    } else {
-                        teksBersih = row.cells[i].innerText.trim().replace(/(\r\n|\n|\r)/gm, "<br>");
-                    }
-
-                    tableHtml += `<td style="${align} vertical-align: top;">${teksBersih}</td>`;
-                }
-                tableHtml += `</tr>`;
-            }
+            tableHtml += `<tr>
+                <td style="vertical-align: top;">${nota.noKuitansi}</td>
+                <td style="vertical-align: top;">${nota.tanggal}</td>
+                <td style="vertical-align: top;">${nota.namaPasien}</td>
+                <td style="vertical-align: top;">${tndk}</td>
+                <td style="vertical-align: top;">${dktr}</td>
+                <td style="text-align:center; vertical-align: top;">${nota.metodeBayar}</td>
+                <td style="text-align:right; vertical-align: top;">${diskonStr}</td>
+                <td style="text-align:right; vertical-align: top;">${totalStr}</td>
+            </tr>`;
         });
         tableHtml += `</tbody></table>`;
-
-        if(!adaData) {
-            alert("⚠️ Tidak ada data untuk dicetak!"); return;
-        }
 
         let jendelaCetak = window.open('', '_blank', 'width=900,height=600');
         jendelaCetak.document.write(`
             <html>
                 <head>
                     <title>Cetak Laporan Keuangan</title>
-                    <style>
-                        tr { page-break-inside: avoid; }
-                        @media print {
-                            @page { margin: 1.5cm; } 
-                        }
-                    </style>
+                    <style> tr { page-break-inside: avoid; } @media print { @page { margin: 1.5cm; } } </style>
                 </head>
                 <body style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
                     <h2 style="text-align: center; margin-bottom: 5px; color: #2c3e50;">Laporan Keuangan Klinik</h2>
                     <p style="text-align: center; font-size: 12px; color: #7f8c8d; margin-top: 0; margin-bottom: 25px;">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
-                    
                     ${tableHtml}
-                    
                     <div style="margin-top:40px; text-align:right; font-size:12px;">
                         <p>Mengetahui,</p><br><br><br><p><b>Bagian Keuangan</b></p>
                     </div>
@@ -682,11 +716,7 @@
         `);
         jendelaCetak.document.close();
         jendelaCetak.focus();
-        
-        setTimeout(() => { 
-            jendelaCetak.print(); 
-            jendelaCetak.close();
-        }, 500);
+        setTimeout(() => { jendelaCetak.print(); jendelaCetak.close(); }, 500);
     };
 
 })();

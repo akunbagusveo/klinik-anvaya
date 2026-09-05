@@ -2782,29 +2782,24 @@
             <!-- ========================================================= -->
             <div id="subTabFinansial" class="sub-tab-content" style="display: none; margin-top: 20px;">
     
-                <!-- 🔥 SENSOR CSS OTOMATIS: Merapikan Kotak Omzet & Mengubah Tabel jadi Card di HP -->
-                <!-- 🔥 SENSOR CSS OTOMATIS (Diperbarui untuk Grid 2x2 HP) -->
                 <style>
                     .finansial-view-pc { display: block; }
                     .finansial-view-mobile { display: none; }
                     
-                    /* Desain Premium Kotak Ringkasan Omzet */
-                    .financial-metrics { 
-                        display: grid; 
-                        grid-template-columns: repeat(4, 1fr); 
-                        gap: 15px; 
-                        margin-bottom: 20px; 
-                    }
-                    .metric-card { 
-                        background: #fff; padding: 20px; border-radius: 8px; 
-                        border: 1px solid #dee2e6; box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-                        text-align: center; display: flex; flex-direction: column; justify-content: center;
-                    }
+                    /* Desain Kotak Ringkasan Omzet */
+                    .financial-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+                    .metric-card { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: center; }
                     .metric-title { font-size: 12px; color: #7f8c8d; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
                     .metric-value { font-size: 22px; font-weight: bold; color: #2c3e50; }
                     .metric-card.alert .metric-value { color: #e74c3c; }
-
-                    /* Responsivitas Layar */
+            
+                    /* 🔥 CSS BARU: Tombol Paginasi Finansial */
+                    .btn-page-fin { padding: 6px 12px; margin: 0 3px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; color: #334155; transition: 0.2s; }
+                    .btn-page-fin:hover:not(:disabled) { background: #f1f5f9; }
+                    .btn-page-fin.active { background: #2980b9; color: white; border-color: #2980b9; }
+                    .btn-page-fin:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+            
+                    /* Responsivitas Layar (Grid 2x2 di HP) */
                     @media (max-width: 992px) {
                         .financial-metrics { grid-template-columns: repeat(2, 1fr); }
                     }
@@ -2812,7 +2807,6 @@
                         .finansial-view-pc { display: none !important; }
                         .finansial-view-mobile { display: flex !important; flex-direction: column; gap: 12px; margin-top: 15px; }
                         
-                        /* 🔥 FIX 1: Memaksa Grid 2x2 di layar HP agar presisi dan elegan */
                         .financial-metrics { grid-template-columns: repeat(2, 1fr); gap: 10px; }
                         .metric-card { padding: 12px 8px; }
                         .metric-title { font-size: 10px; margin-bottom: 5px; }
@@ -2840,12 +2834,13 @@
                     </div>
                 </div>
             
-                <!-- B. Kartu Metrik (Sekarang Sangat Rapi di PC & HP) -->
+                <!-- B. Kartu Metrik -->
                 <div class="financial-metrics">
                     <div class="metric-card">
                         <div class="metric-title">TOTAL OMZET KASIR</div>
                         <div class="metric-value" id="valPendapatanBersih">Rp 0</div>
-                        <div id="valPertumbuhan" style="font-size: 13px; margin-top: 8px; font-weight: bold; background: rgba(0,0,0,0.1); display: inline-block; padding: 3px 10px; border-radius: 20px;">-</div>
+                        <!-- Wadah Pertumbuhan (Warna akan diubah oleh JS) -->
+                        <div id="valPertumbuhan" style="font-size: 13px; margin-top: 8px; font-weight: bold; padding: 4px 12px; border-radius: 20px; display: inline-block;">-</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-title">Total Transaksi Selesai</div>
@@ -2869,27 +2864,21 @@
                 </div>
             
                 <!-- D. Area Konten Kapsul Laporan -->
-                <!-- D. Area Konten Kapsul Laporan -->
                 <div id="pillGrafik" class="pill-content" style="display: none;">
-                    
-                    <!-- 🔥 FIX 2: minmax diubah menjadi 280px agar muat di semua layar HP -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                        
-                        <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box;">
-                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px; font-size: 14px;">📈 Tren Omzet Harian & ATV</h4>
-                            <!-- Pembungkus relatif agar Chart.js bisa menyesuaikan diri -->
-                            <div style="position: relative; width: 100%; height: 250px;">
+                    <!-- 🔥 FIX GRAFIK: Diubah menjadi flex-column agar mengambil lebar layar 100% -->
+                    <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px;">
+                        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box;">
+                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">📈 Tren Omzet Harian & ATV</h4>
+                            <div style="position: relative; width: 100%; height: 280px;">
                                 <canvas id="canvasChartHarian"></canvas>
                             </div>
                         </div>
-
-                        <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box;">
-                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px; font-size: 14px;">💰 Top 10 Kontribusi Tindakan</h4>
-                            <div style="position: relative; width: 100%; height: 250px; display: flex; justify-content: center;">
+                        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box;">
+                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">💰 Top 10 Kontribusi Rupiah Tindakan</h4>
+                            <div style="position: relative; width: 100%; height: 350px; display: flex; justify-content: center;">
                                 <canvas id="canvasChartTindakan"></canvas>
                             </div>
                         </div>
-
                     </div>
                 </div>
             
@@ -2920,12 +2909,12 @@
                             <button onclick="window.cetakTabelPDF()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🖨️ Cetak / PDF</button>
                         </div>
                     </div>
-                    <div style="margin-bottom: 10px;"><span style="font-size: 12px; color: gray;">*Scroll ke bawah di dalam tabel untuk melihat lebih banyak. Export mengikuti hasil filter Anda.</span></div>
+                    <div style="margin-bottom: 10px;"><span style="font-size: 12px; color: gray;">*Export & Cetak akan otomatis mengikuti hasil filter Anda.</span></div>
             
-                    <!-- 💻 WUJUD 1: Tabel Untuk Layar Lebar (PC/Laptop) -->
-                    <div class="finansial-view-pc" style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow-x: auto; max-height: 450px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                    <!-- 💻 WUJUD 1: Tabel Layar Lebar -->
+                    <div class="finansial-view-pc" style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
                         <table width="100%" style="border-collapse: collapse; font-size: 13px; text-align: left; min-width: 900px;">
-                            <thead style="background: #2c3e50; color: white; position: sticky; top: 0; z-index: 2;">
+                            <thead style="background: #2c3e50; color: white;">
                                 <tr>
                                     <th style="padding: 12px; border-right: 1px solid #34495e;">No. Kuitansi</th>
                                     <th style="padding: 12px; border-right: 1px solid #34495e;">Tanggal</th>
@@ -2935,7 +2924,7 @@
                                     <th style="padding: 12px; border-right: 1px solid #34495e; text-align: center;">Pembayaran</th>
                                     <th style="padding: 12px; border-right: 1px solid #34495e; text-align: right;">Diskon</th>
                                     <th style="padding: 12px; border-right: 1px solid #34495e; text-align: right;">Grand Total</th>
-                                    <th style="padding: 12px; text-align: center; min-width: 100px; white-space: nowrap;">Arsip PDF</th>    
+                                    <th style="padding: 12px; text-align: center; min-width: 100px;">Arsip PDF</th>    
                                 </tr>
                             </thead>
                             <tbody id="tbodyLaporanFinansial">
@@ -2945,9 +2934,10 @@
                     </div>
             
                     <!-- 📱 WUJUD 2: Card Accordion Untuk HP -->
-                    <div id="tbodyLaporanFinansialMobile" class="finansial-view-mobile">
-                        <!-- Kartu akan dirender di sini oleh JS -->
-                    </div>
+                    <div id="tbodyLaporanFinansialMobile" class="finansial-view-mobile"></div>
+            
+                    <!-- 🔥 KONTROL PAGINASI (Muncul di Bawah) -->
+                    <div id="wadahPaginasiFinansial" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 5px;"></div>
             
                 </div>
             </div>
