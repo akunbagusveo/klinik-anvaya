@@ -2207,9 +2207,82 @@
         <div id="backend" class="tab-content" style="display:none;">
             <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px;">Pengaturan Sistem</h2>
             
-            <!-- Navigasi Sub-Tab -->
-            <div class="nav-tabs" style="margin-bottom: 20px; background-color: #f1f1f1; padding: 10px; border-radius: 5px;">
-                <button id="subTabUserBtn" onclick="window.bukaSubTab('manajemenUser')" class="tab-link active" style="margin-right: 10px; font-weight: bold;">👥 Manajemen Pengguna</button>
+            <!-- 🔥 SENSOR CSS OTOMATIS: Merubah Sub-Menu menjadi List Vertikal di HP -->
+            <style>
+                /* 💻 DESAIN DEFAULT UNTUK PC (Berjejer Rapi) */
+                .settings-nav-tabs {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    margin-bottom: 20px;
+                    background-color: #f1f1f1;
+                    padding: 10px;
+                    border-radius: 8px;
+                }
+                
+                .settings-nav-tabs .tab-link {
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: all 0.3s ease;
+                    background-color: transparent;
+                    color: #34495e;
+                    margin: 0 !important; /* Menghapus margin inline lama */
+                }
+
+                .settings-nav-tabs .tab-link:hover {
+                    background-color: #e2e8f0;
+                }
+
+                .settings-nav-tabs .tab-link.active {
+                    background-color: #3498db;
+                    color: white;
+                    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+                }
+
+                /* 📱 RESPONSIVITAS MOBILE (Berubah jadi List Vertikal ala iPhone/Android) */
+                @media (max-width: 768px) {
+                    .settings-nav-tabs {
+                        flex-direction: column;
+                        padding: 0; /* Hilangkan padding abu-abu di HP */
+                        gap: 8px;
+                        background-color: transparent;
+                    }
+                    
+                    .settings-nav-tabs .tab-link {
+                        width: 100%;
+                        text-align: left;
+                        padding: 16px 20px;
+                        background-color: #fff;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+                        display: flex;
+                        justify-content: space-between; /* Teks di kiri, panah di kanan */
+                        align-items: center;
+                        font-size: 15px;
+                    }
+                    
+                    /* Menambahkan efek panah ❯ otomatis di ujung kanan tombol untuk HP */
+                    .settings-nav-tabs .tab-link::after {
+                        content: "❯";
+                        font-size: 14px;
+                        color: #94a3b8;
+                        font-weight: bold;
+                        transition: color 0.3s;
+                    }
+                    
+                    .settings-nav-tabs .tab-link.active::after {
+                        color: white;
+                    }
+                }
+            </style>
+
+            <!-- WADAH TOMBOL NAVIGASI -->
+            <div class="nav-tabs settings-nav-tabs">
+                <button id="subTabUserBtn" onclick="window.bukaSubTab('manajemenUser')" class="tab-link active" style="font-weight: bold;">👥 Manajemen Pengguna</button>
                 <button id="subTabAksesBtn" onclick="window.bukaSubTab('manajemenAkses')" class="tab-link" style="font-weight: bold;">🔐 Hak Akses Role</button>
                 <button id="subTabJadwalBtn" onclick="window.bukaSubTab('manajemenJadwal')" class="tab-link" style="font-weight: bold;">📅 Kelola Jadwal Dokter</button>
                 <button id="subTabLogBtn" onclick="window.bukaSubTab('manajemenLog')" class="tab-link" style="font-weight: bold;">📜 Log Aktivitas</button>
