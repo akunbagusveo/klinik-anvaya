@@ -2207,7 +2207,7 @@
         <div id="backend" class="tab-content" style="display:none;">
             <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px;">Pengaturan Sistem</h2>
             
-           <!-- 🔥 CSS MASTER-DETAIL (DRILL-DOWN) PERMANEN -->
+           <!-- 🔥 CSS MASTER-DETAIL (DRILL-DOWN) PERMANEN & ANTI-BUG -->
             <style>
                 /* Desain Default PC (Berjejer Rapi) */
                 .settings-nav-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background-color: #f1f1f1; padding: 10px; border-radius: 8px; }
@@ -2220,9 +2220,34 @@
 
                 /* 📱 RESPONSIVITAS MOBILE & LOGIKA DRILL-DOWN */
                 @media (max-width: 768px) {
-                    .settings-nav-tabs { flex-direction: column; padding: 0; gap: 8px; background-color: transparent; }
-                    .settings-nav-tabs .tab-link { width: 100%; text-align: left; padding: 16px 20px; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; align-items: center; font-size: 15px; }
-                    .settings-nav-tabs .tab-link::after { content: "❯"; margin-left: auto; font-size: 14px; color: #94a3b8; font-weight: bold; transition: color 0.3s; }
+                    .settings-nav-tabs { flex-direction: column; padding: 0; gap: 8px; background-color: transparent; display: flex; }
+                    
+                    /* 🔥 FIX CSS: Gunakan Position Absolute agar Panah 100% mentok kanan */
+                    .settings-nav-tabs .tab-link { 
+                        width: 100%; 
+                        text-align: left; 
+                        padding: 16px 20px; 
+                        background-color: #fff; 
+                        border: 1px solid #e2e8f0; 
+                        border-radius: 8px; 
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.02); 
+                        font-size: 15px; 
+                        display: block;       /* Cabut flexbox agar tidak nge-bug di HP */
+                        position: relative;   /* KUNCI 1: Jadikan patokan kordinat */
+                    }
+                    
+                    /* 🔥 KUNCI 2: Paksa panah menempel di dinding kanan (right: 20px) */
+                    .settings-nav-tabs .tab-link::after { 
+                        content: "❯"; 
+                        position: absolute;   /* Melayang bebas di dalam tombol */
+                        right: 20px;          /* Selalu berjarak 20px dari tepi kanan */
+                        top: 50%;             
+                        transform: translateY(-50%); /* Menengahkan panah secara vertikal */
+                        font-size: 14px; 
+                        color: #94a3b8; 
+                        font-weight: bold; 
+                        transition: color 0.3s; 
+                    }
                     .settings-nav-tabs .tab-link.active::after { color: white; }
 
                     /* SAKLAR: Jika drill-down aktif, Menu Vertikal disembunyikan! */
