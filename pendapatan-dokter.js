@@ -424,6 +424,9 @@
     // =====================================================================
     // 💼 3. FUNGSI SILENT MODE: TARIK DATA KOKPIT MANAJEMEN (OWNER VIEW)
     // =====================================================================
+    window.currentPageBagiHasil = 1;
+    window.itemsPerPageBagiHasil = 5; // Menampilkan 5 dokter per halaman agar nyaman
+
     window.muatDataBagiHasil = function() {
         const area = document.getElementById('areaBagiHasil');
         if (area) area.innerHTML = '<h4 style="text-align:center; padding:20px;">Memuat Kalkulasi Bagi Hasil... ⏳</h4>';
@@ -456,12 +459,10 @@
                 window.arsipGajiTerkunci = (res.result === "success") ? res.data : [];
             } catch (err) {
                 window.arsipGajiTerkunci = [];
-                console.log("Gagal menyalakan radar arsip", err);
             }
         }
 
         let defaultBulanFilter = tglAkhir ? tglAkhir.substring(0, 7) : "";
-
         let dataTerfilter = rawDataBagiHasil.filter(item => item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
 
         let invoiceMap = {};
@@ -472,40 +473,30 @@
             }
         });
 
-        // 🔥 MESIN PENYATU IDENTITAS DOKTER (ANTI SPLIT)
         let doctorMap = {};
-        
         const getDoctorKeyAndFormalize = (rawName) => {
             if (!rawName || rawName === "-") return { key: "umum", formal: "Umum" };
             let clean = rawName.toLowerCase().replace(/^(dr\.|dr |drg\.|drg )/i, '').trim();
-            
             let matchedKey = clean;
             for (let existingKey in doctorMap) {
                 if (existingKey === clean || existingKey.includes(clean) || clean.includes(existingKey)) {
-                    matchedKey = existingKey;
-                    break;
+                    matchedKey = existingKey; break;
                 }
             }
-
             let formal = rawName.trim();
             if (!formal.toLowerCase().includes("dr.") && !formal.toLowerCase().includes("dr ") && formal.toLowerCase() !== "umum") {
                 formal = "dr. " + formal.replace(/\b\w/g, l => l.toUpperCase());
             }
-
             return { key: matchedKey, formal: formal };
         };
 
         dataTerfilter.forEach(item => {
             if (item.jenis !== "LAB") {
                 let docInfo = getDoctorKeyAndFormalize(item.dokterPelaksana);
-                
                 if (!doctorMap[docInfo.key]) {
                     doctorMap[docInfo.key] = { nama: docInfo.formal, jmlTindakan: 0, totalBagiHasil: 0, rincian: [] };
-                } else {
-                    // Update ke nama terpanjang/paling formal jika ada yg lebih lengkap
-                    if (docInfo.formal.length > doctorMap[docInfo.key].nama.length) {
-                        doctorMap[docInfo.key].nama = docInfo.formal;
-                    }
+                } else if (docInfo.formal.length > doctorMap[docInfo.key].nama.length) {
+                    doctorMap[docInfo.key].nama = docInfo.formal;
                 }
                 
                 let inv = invoiceMap[item.invoice];
@@ -533,12 +524,10 @@
         });
 
         let totalDasarBagiHasil = 0; 
-
         Object.values(doctorMap).forEach(doc => {
             doc.rincian.forEach(r => {
                 let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
                 totalDasarBagiHasil += dasarBagiHasil; 
-                
                 r.feeFinal = dasarBagiHasil * 0.4;
                 doc.totalBagiHasil += r.feeFinal;
             });
@@ -546,10 +535,11 @@
 
         let arrayDokter = Object.values(doctorMap);
         arrayDokter.sort((a, b) => b.totalBagiHasil - a.totalBagiHasil);
+        
         window.dataBagiHasilGlobal = arrayDokter; 
-
-        let totalBagiHasilPeriode = arrayDokter.reduce((sum, d) => sum + d.totalBagiHasil, 0);
-        let totalDokterAktif = arrayDokter.length;
+        window.bh_totalBagiHasilPeriode = arrayDokter.reduce((sum, d) => sum + d.totalBagiHasil, 0);
+        window.bh_totalDokterAktif = arrayDokter.length;
+        window.bh_defaultBulanFilter = defaultBulanFilter;
 
         let totalBonusTerkunci = 0;
         let totalPotonganTerkunci = 0;
@@ -562,106 +552,140 @@
                 }
             });
         }
+        window.bh_profitKlinik = (totalDasarBagiHasil * 0.6) - totalBonusTerkunci + totalPotonganTerkunci;
 
-        let profitKlinik = (totalDasarBagiHasil * 0.6) - totalBonusTerkunci + totalPotonganTerkunci;
+        window.currentPageBagiHasil = 1;
+        window.renderHalamanBagiHasil();
+    };
+
+    // =====================================================================
+    // 🎨 3.1 MESIN RENDER HALAMAN HYBRID (PC & MOBILE)
+    // =====================================================================
+    window.renderHalamanBagiHasil = function() {
+        const areaBagi = document.getElementById('areaBagiHasil');
+        if (!areaBagi) return;
+
+        let totalPages = Math.ceil(window.dataBagiHasilGlobal.length / window.itemsPerPageBagiHasil);
+        if (window.currentPageBagiHasil > totalPages) window.currentPageBagiHasil = totalPages;
+        if (window.currentPageBagiHasil < 1) window.currentPageBagiHasil = 1;
+
+        const startIndex = (window.currentPageBagiHasil - 1) * window.itemsPerPageBagiHasil;
+        const endIndex = startIndex + window.itemsPerPageBagiHasil;
+        const dataHalamanIni = window.dataBagiHasilGlobal.slice(startIndex, endIndex);
 
         let htmlContent = `
-            <div style="display:flex; gap:15px; margin-bottom:20px;">
+            <style>
+                .bh-pc { display: block; }
+                .bh-mobile { display: none; }
+                .bh-top-cards { display: flex; gap: 15px; margin-bottom: 20px; }
+                @media(max-width: 768px) {
+                    .bh-pc { display: none !important; }
+                    .bh-mobile { display: flex !important; flex-direction: column; gap: 12px; }
+                    .bh-top-cards { flex-direction: column; }
+                }
+                .btn-page-bh { padding: 6px 12px; margin: 0 3px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; color: #334155; transition: 0.2s; }
+                .btn-page-bh:hover:not(:disabled) { background: #f1f5f9; }
+                .btn-page-bh.active { background: #9b59b6; color: white; border-color: #9b59b6; }
+                .btn-page-bh:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+            </style>
+
+            <div class="bh-top-cards">
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #2ecc71; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
                     <h4 style="margin:0 0 5px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; font-weight:bold;">Total Gaji Dokter</h4>
-                    <h2 style="margin:0; color:#2c3e50; font-size:22px;">Rp ${totalBagiHasilPeriode.toLocaleString('id-ID')}</h2>
+                    <h2 style="margin:0; color:#2c3e50; font-size:22px;">Rp ${window.bh_totalBagiHasilPeriode.toLocaleString('id-ID')}</h2>
                     <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Pokok 40% (Belum termsk bonus)</div>
                 </div>
-                
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #9b59b6; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
                     <h4 style="margin:0 0 5px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; font-weight:bold;">Profit Hak Klinik</h4>
-                    <h2 style="margin:0; color:#9b59b6; font-size:22px;">Rp ${profitKlinik.toLocaleString('id-ID')}</h2>
+                    <h2 style="margin:0; color:#9b59b6; font-size:22px;">Rp ${window.bh_profitKlinik.toLocaleString('id-ID')}</h2>
                     <div style="font-size:11px; color:#95a5a6; margin-top:5px;">(Hak 60% Klinik - Bonus + Potongan)</div>
                 </div>
-
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #3498db; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
                     <h4 style="margin:0 0 5px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; font-weight:bold;">Dokter Aktif</h4>
-                    <h2 style="margin:0; color:#2c3e50; font-size:22px;">${totalDokterAktif} Dokter</h2>
+                    <h2 style="margin:0; color:#2c3e50; font-size:22px;">${window.bh_totalDokterAktif} Dokter</h2>
                     <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Dalam rentang filter terpilih</div>
                 </div>
             </div>
-            
+        `;
+
+        // 💻 WUJUD 1: TABEL PC
+        htmlContent += `<div class="bh-pc">`;
+        htmlContent += `
             <table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">
-                <thead>
+                <thead style="background-color:#34495e; color:white;">
                     <tr>
-                        <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:left; border:none; width:25%;">Nama Dokter</th>
-                        <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:center; border:none; width:15%;">Jml Tindakan</th>
-                        <th style="padding:15px; background-color:#34495e !important; color:white !important; text-align:center; border:none; width:35%;">Injeksi Manual & Keterangan</th>
-                        <th style="padding:15px; background-color:#2c3e50 !important; color:#2ecc71 !important; text-align:right; border:none; width:25%;">Gaji Final (Take Home Pay)</th>
+                        <th style="padding:15px; text-align:left; border:none; width:25%;">Nama Dokter</th>
+                        <th style="padding:15px; text-align:center; border:none; width:15%;">Jml Tindakan</th>
+                        <th style="padding:15px; text-align:center; border:none; width:35%;">Injeksi Manual & Keterangan</th>
+                        <th style="padding:15px; background-color:#2c3e50; color:#2ecc71; text-align:right; border:none; width:25%;">Take Home Pay</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
+        if (dataHalamanIni.length === 0) {
+            htmlContent += `<tr><td colspan="4" style="padding:20px; text-align:center;">Tidak ada data.</td></tr>`;
+        }
 
-        if(arrayDokter.length === 0) htmlContent += `<tr><td colspan="4" style="padding:20px; text-align:center;">Tidak ada data.</td></tr>`;
+        // 📱 WUJUD 2: MOBILE CARDS 
+        let htmlMobile = `<div class="bh-mobile">`;
+        if (dataHalamanIni.length === 0) {
+            htmlMobile += `<div style="padding:20px; text-align:center; background:#fff; border-radius:8px;">Tidak ada data.</div>`;
+        }
 
-        arrayDokter.forEach((d, idx) => {
+        dataHalamanIni.forEach((d, loopIndex) => {
+            let idx = startIndex + loopIndex; 
             let rowId = `detail_dokter_${idx}`;
-            let chevronId = `chevron_${idx}`;
             
-            let dataTerkunci = null;
-            if (window.arsipGajiTerkunci) {
-                dataTerkunci = window.arsipGajiTerkunci.find(x => window.isDokterMatchGlobal(x.namaDokter, d.nama) && x.periode === defaultBulanFilter);
-            }
-            
-            let isLocked = !!dataTerkunci;
-            
-            let valBonus = isLocked && dataTerkunci.bonus > 0 ? dataTerkunci.bonus.toLocaleString('id-ID') : "";
-            let valPotongan = isLocked && dataTerkunci.potongan > 0 ? dataTerkunci.potongan.toLocaleString('id-ID') : "";
-            let valTHP = isLocked ? dataTerkunci.thp : d.totalBagiHasil;
-
-            let ketBonus = "";
-            let ketPotongan = "";
-            if (isLocked && dataTerkunci.teksKeterangan) {
-                let splitKet = dataTerkunci.teksKeterangan.split(" | Potongan: ");
-                if (splitKet.length === 2) {
-                    ketBonus = splitKet[0].replace("Bonus: ", "");
-                    if (ketBonus === "Injeksi Bonus / Insentif") ketBonus = ""; 
-                    
-                    ketPotongan = splitKet[1];
-                    if (ketPotongan === "Pemotongan Lain (Kasbon dll)") ketPotongan = "";
+            // Inisialisasi Status State (Agar input manual kebal paginasi)
+            if (d.ketBonus === undefined) {
+                let dataTerkunci = window.arsipGajiTerkunci ? window.arsipGajiTerkunci.find(x => window.isDokterMatchGlobal(x.namaDokter, d.nama) && x.periode === window.bh_defaultBulanFilter) : null;
+                d.isLocked = !!dataTerkunci;
+                d.valBonus = d.isLocked && dataTerkunci.bonus > 0 ? dataTerkunci.bonus.toLocaleString('id-ID') : "";
+                d.valPotongan = d.isLocked && dataTerkunci.potongan > 0 ? dataTerkunci.potongan.toLocaleString('id-ID') : "";
+                d.valTHP = d.isLocked ? dataTerkunci.thp : d.totalBagiHasil;
+                
+                d.ketBonus = ""; d.ketPotongan = "";
+                if (d.isLocked && dataTerkunci.teksKeterangan) {
+                    let splitKet = dataTerkunci.teksKeterangan.split(" | Potongan: ");
+                    if (splitKet.length === 2) {
+                        d.ketBonus = splitKet[0].replace("Bonus: ", "") === "Injeksi Bonus / Insentif" ? "" : splitKet[0].replace("Bonus: ", "");
+                        d.ketPotongan = splitKet[1] === "Pemotongan Lain (Kasbon dll)" ? "" : splitKet[1];
+                    }
                 }
             }
 
-            let btnCetakHtml = isLocked 
-                ? `<button id="btnCekSlip_${idx}" onclick="window.bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:none;">✅ Terkunci (${defaultBulanFilter})</button>`
-                : `<button id="btnCekSlip_${idx}" onclick="window.bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>`;
-            
+            let thpDitampilkan = d.valTHP_Dinamic !== undefined ? d.valTHP_Dinamic : d.valTHP;
+            let btnCetakHtml = d.isLocked 
+                ? `<button onclick="window.bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">✅ Terkunci (${window.bh_defaultBulanFilter})</button>`
+                : `<button onclick="window.bukaPreviewSlip(${idx}, event)" style="margin-top:8px; background:#3498db; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.2);">👁️ Cek Slip</button>`;
+
+            // -- HTML UNTUK PC --
             htmlContent += `
                 <tr style="border-bottom:1px solid #ecf0f1;">
-                    <td style="padding:15px; font-weight:bold; color:#2980b9; font-size:15px; cursor:pointer;" onclick="window.toggleDetailDokter('${rowId}', '${chevronId}')">
-                        <span id="${chevronId}" style="display:inline-block; transition:transform 0.3s; margin-right:10px; font-size:12px; color:#7f8c8d;">▶</span>
-                        ${d.nama}
+                    <td style="padding:15px; font-weight:bold; color:#2980b9; font-size:15px; cursor:pointer;" onclick="window.toggleAccordionBagiHasil(this, '${rowId}')">
+                        <span class="acc-icon-bh-pc" style="display:inline-block; transition:transform 0.3s; margin-right:10px; font-size:12px; color:#7f8c8d;">▶</span>${d.nama}
                     </td>
                     <td style="padding:15px; text-align:center; font-weight:500;">${d.jmlTindakan}</td>
-                    
                     <td style="padding:15px; text-align:center;">
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
                             <div style="display:flex; gap:5px;">
-                                <input type="text" id="inpKetBonus_${idx}" value="${ketBonus}" placeholder="Ket: THR, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
-                                <input type="text" id="inpBonus_${idx}" value="${valBonus}" placeholder="+ Rp Bonus" oninput="window.formatRupiahInput(this); window.hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
+                                <input type="text" value="${d.ketBonus}" placeholder="Ket: THR, dll" oninput="window.updateInputManual(${idx}, 'ketBonus', this);" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
+                                <input type="text" value="${d.valBonus}" placeholder="+ Rp Bonus" oninput="window.formatRupiahInput(this); window.updateInputManual(${idx}, 'valBonus', this); window.hitungRealtimeGaji(${idx});" style="width:100px; padding:6px; border:1px solid #2ecc71; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
                             <div style="display:flex; gap:5px;">
-                                <input type="text" id="inpKetPotongan_${idx}" value="${ketPotongan}" placeholder="Ket: Kasbon, dll" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
-                                <input type="text" id="inpPotongan_${idx}" value="${valPotongan}" placeholder="- Rp Potong" oninput="window.formatRupiahInput(this); window.hitungRealtimeGaji(${idx}, ${d.totalBagiHasil})" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
+                                <input type="text" value="${d.ketPotongan}" placeholder="Ket: Kasbon, dll" oninput="window.updateInputManual(${idx}, 'ketPotongan', this);" style="width:110px; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-size:11px;">
+                                <input type="text" value="${d.valPotongan}" placeholder="- Rp Potong" oninput="window.formatRupiahInput(this); window.updateInputManual(${idx}, 'valPotongan', this); window.hitungRealtimeGaji(${idx});" style="width:100px; padding:6px; border:1px solid #e74c3c; border-radius:4px; font-size:12px; text-align:right;">
                             </div>
                         </div>
                     </td>
-                    
                     <td style="padding:15px; text-align:right; font-weight:bold; color:#27ae60; background-color:#fcfdfd; font-size:15px;">
-                        <span id="lblGajiFinal_${idx}">Rp ${valTHP.toLocaleString('id-ID')}</span>
-                        <br>
-                        ${btnCetakHtml}
+                        <span id="lblGajiFinal_${idx}">Rp ${thpDitampilkan.toLocaleString('id-ID')}</span><br>${btnCetakHtml}
                     </td>
                 </tr>
             `;
 
-            htmlContent += `
+            let htmlDetailTindakanMobile = "";
+            let htmlDetailTindakanPC = `
                 <tr id="${rowId}" style="display:none; background-color:#f8f9fa;">
                     <td colspan="4" style="padding: 0;">
                         <div style="margin: 0 0 15px 40px; padding: 15px; border-left: 4px solid #3498db; background-color: white; box-shadow: -2px 2px 5px rgba(0,0,0,0.03); border-radius: 0 8px 8px 0;">
@@ -678,29 +702,171 @@
                                     <th style="padding:8px; text-align:right; border:none !important;">Fee Bersih (40%)</th>
                                 </tr>
             `;
+
             d.rincian.forEach(rin => {
                 let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
                 let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
                 let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
 
-                htmlContent += `
-                                <tr style="border-bottom:1px solid #f1f2f6;">
-                                    <td style="padding:8px; color:#7f8c8d;">${rin.tanggal}</td>
-                                    <td style="padding:8px; color:#2c3e50; font-weight:bold;">${rin.pasien}</td>
-                                    <td style="padding:8px; color:#7f8c8d;">${rin.tindakan}</td>
-                                    <td style="padding:8px; text-align:right; color:#7f8c8d;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
-                                    <td style="padding:8px; text-align:right; color:#e74c3c;">${labTxt}</td>
-                                    <td style="padding:8px; text-align:right; color:#e74c3c;">${diskonTxt}</td>
-                                    <td style="padding:8px; text-align:right; font-weight:bold; color:#2980b9;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
-                                    <td style="padding:8px; text-align:right; font-weight:bold; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
-                                </tr>
+                // Loop Detail PC
+                htmlDetailTindakanPC += `
+                    <tr style="border-bottom:1px solid #f1f2f6;">
+                        <td style="padding:8px; color:#7f8c8d;">${rin.tanggal}</td>
+                        <td style="padding:8px; color:#2c3e50; font-weight:bold;">${rin.pasien}</td>
+                        <td style="padding:8px; color:#7f8c8d;">${rin.tindakan}</td>
+                        <td style="padding:8px; text-align:right; color:#7f8c8d;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
+                        <td style="padding:8px; text-align:right; color:#e74c3c;">${labTxt}</td>
+                        <td style="padding:8px; text-align:right; color:#e74c3c;">${diskonTxt}</td>
+                        <td style="padding:8px; text-align:right; font-weight:bold; color:#2980b9;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
+                        <td style="padding:8px; text-align:right; font-weight:bold; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+
+                // Loop Detail Mobile
+                htmlDetailTindakanMobile += `
+                    <div style="padding:10px; border:1px solid #ecf0f1; border-radius:6px; margin-bottom:10px; background:#fbfcfc;">
+                        <div style="font-weight:bold; color:#2c3e50; font-size:13px;">${rin.tanggal} - ${rin.pasien}</div>
+                        <div style="color:#7f8c8d; font-size:12px; margin-bottom:6px; border-bottom:1px dashed #eee; padding-bottom:5px;">${rin.tindakan}</div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;"><span style="color:#7f8c8d;">Tarif Dasar:</span> <span>Rp ${rin.hargaAsli.toLocaleString('id-ID')}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;"><span style="color:#7f8c8d;">Potong Lab/Diskon:</span> <span style="color:#e74c3c;">${labTxt} / ${diskonTxt}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:bold; margin-top:5px; border-top:1px solid #eee; padding-top:5px;"><span>Fee Bersih (40%):</span> <span style="color:#27ae60;">Rp ${rin.feeFinal.toLocaleString('id-ID')}</span></div>
+                    </div>
                 `;
             });
-            htmlContent += `</table></div></td></tr>`;
+            htmlDetailTindakanPC += `</table></div></td></tr>`;
+            htmlContent += htmlDetailTindakanPC;
+
+            // -- HTML UNTUK MOBILE --
+            let btnCetakHtmlMobile = d.isLocked 
+                ? `<button onclick="window.bukaPreviewSlip(${idx}, event)" style="width:100%; margin-top:10px; background:#27ae60; color:white; border:none; padding:12px; border-radius:6px; font-size:14px; font-weight:bold; cursor:pointer;">✅ Slip Terkunci</button>`
+                : `<button onclick="window.bukaPreviewSlip(${idx}, event)" style="width:100%; margin-top:10px; background:#3498db; color:white; border:none; padding:12px; border-radius:6px; font-size:14px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">👁️ Cek & Terbitkan Slip</button>`;
+
+            htmlMobile += `
+                <div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden;">
+                    <div onclick="window.toggleAccordionBagiHasil(this)" style="padding:15px; background:#f8fafc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                        <div>
+                            <div style="font-weight:bold; color:#2980b9; font-size:16px; margin-bottom:4px;">${d.nama}</div>
+                            <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${d.jmlTindakan} Tindakan</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                            <div id="lblGajiFinalMob_${idx}" style="color:#27ae60; font-weight:bold; font-size:16px;">Rp ${thpDitampilkan.toLocaleString('id-ID')}</div>
+                            <span class="acc-icon-bh-mob" style="font-size:12px; color:#95a5a6; font-weight:bold; margin-top:5px;">▼ Detail</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                        <!-- Blok Injeksi Manual HP -->
+                        <div style="background:#f1f2f6; padding:12px; border-radius:6px; margin-bottom:15px;">
+                            <div style="font-size:11px; font-weight:bold; color:#2c3e50; margin-bottom:10px; text-transform:uppercase;">📝 Injeksi Manual</div>
+                            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                                <input type="text" value="${d.ketBonus}" placeholder="Ket: THR" oninput="window.updateInputManual(${idx}, 'ketBonus', this);" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:13px;">
+                                <input type="text" value="${d.valBonus}" placeholder="+ Bonus" oninput="window.formatRupiahInput(this); window.updateInputManual(${idx}, 'valBonus', this); window.hitungRealtimeGaji(${idx});" style="flex:1; padding:10px; border:1px solid #2ecc71; border-radius:4px; font-size:13px; text-align:right; font-weight:bold;">
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" value="${d.ketPotongan}" placeholder="Ket: Kasbon" oninput="window.updateInputManual(${idx}, 'ketPotongan', this);" style="flex:1; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-size:13px;">
+                                <input type="text" value="${d.valPotongan}" placeholder="- Potong" oninput="window.formatRupiahInput(this); window.updateInputManual(${idx}, 'valPotongan', this); window.hitungRealtimeGaji(${idx});" style="flex:1; padding:10px; border:1px solid #e74c3c; border-radius:4px; font-size:13px; text-align:right; font-weight:bold;">
+                            </div>
+                        </div>
+                        
+                        ${btnCetakHtmlMobile}
+
+                        <h5 style="margin:20px 0 10px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; border-bottom:1px solid #eee; padding-bottom:5px;">Rincian Tindakan Pasien</h5>
+                        ${htmlDetailTindakanMobile}
+                    </div>
+                </div>
+            `;
         });
-        htmlContent += `</tbody></table>`;
-        const areaBagi = document.getElementById('areaBagiHasil');
-        if (areaBagi) areaBagi.innerHTML = htmlContent;
+        
+        htmlContent += `</tbody></table></div>`;
+        htmlMobile += `</div>`;
+        htmlContent += htmlMobile;
+        
+        htmlContent += `<div id="wadahPaginasiBagiHasil" style="display:flex; justify-content:center; align-items:center; margin-top:20px; flex-wrap:wrap; gap:5px;"></div>`;
+        
+        areaBagi.innerHTML = htmlContent;
+        window.renderKontrolPaginasiBagiHasil(totalPages, window.currentPageBagiHasil);
+    };
+
+    // =====================================================================
+    // 🖲️ 3.2 FUNGSI KONTROL PAGINASI & STATE INPUT
+    // =====================================================================
+    window.updateInputManual = function(idx, field, elem) {
+        if (!window.dataBagiHasilGlobal[idx]) return;
+        window.dataBagiHasilGlobal[idx][field] = elem.value;
+    };
+
+    window.hitungRealtimeGaji = function(idx) {
+        let d = window.dataBagiHasilGlobal[idx];
+        let nominalBonus = Number(String(d.valBonus || "0").replace(/[^0-9]/g, '')) || 0;
+        let nominalPotongan = Number(String(d.valPotongan || "0").replace(/[^0-9]/g, '')) || 0;
+        
+        let finalGaji = (d.totalBagiHasil + nominalBonus) - nominalPotongan;
+        d.valTHP_Dinamic = finalGaji; 
+        
+        let elPC = document.getElementById(`lblGajiFinal_${idx}`);
+        let elMob = document.getElementById(`lblGajiFinalMob_${idx}`);
+        if(elPC) elPC.innerText = "Rp " + finalGaji.toLocaleString('id-ID');
+        if(elMob) elMob.innerText = "Rp " + finalGaji.toLocaleString('id-ID');
+    };
+
+    window.renderKontrolPaginasiBagiHasil = function(totalPages, currentPage) {
+        const wadah = document.getElementById('wadahPaginasiBagiHasil');
+        if (!wadah) return;
+        wadah.innerHTML = '';
+        if (totalPages <= 1) return; 
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'btn-page-bh';
+        btnPrev.innerText = '« Prev';
+        btnPrev.disabled = currentPage === 1;
+        btnPrev.onclick = () => { window.currentPageBagiHasil--; window.renderHalamanBagiHasil(); };
+        wadah.appendChild(btnPrev);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const btnNum = document.createElement('button');
+            btnNum.className = 'btn-page-bh' + (i === currentPage ? ' active' : '');
+            btnNum.innerText = i;
+            btnNum.onclick = () => { window.currentPageBagiHasil = i; window.renderHalamanBagiHasil(); };
+            wadah.appendChild(btnNum);
+        }
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'btn-page-bh';
+        btnNext.innerText = 'Next »';
+        btnNext.disabled = currentPage === totalPages;
+        btnNext.onclick = () => { window.currentPageBagiHasil++; window.renderHalamanBagiHasil(); };
+        wadah.appendChild(btnNext);
+    };
+
+    window.toggleAccordionBagiHasil = function(headerElement, rowIdPC) {
+        // Logika Togel PC
+        if (rowIdPC) {
+            const detailRow = document.getElementById(rowIdPC);
+            const icon = headerElement.querySelector('.acc-icon-bh-pc');
+            if (detailRow) {
+                if (detailRow.style.display === "none") {
+                    detailRow.style.display = "table-row";
+                    icon.style.transform = "rotate(90deg)";
+                } else {
+                    detailRow.style.display = "none";
+                    icon.style.transform = "rotate(0deg)";
+                }
+            }
+            return;
+        }
+        
+        // Logika Togel Mobile
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon-bh-mob');
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #ecf0f1";
+            icon.innerText = "▲ Tutup";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.innerText = "▼ Detail";
+        }
     };
 
     window.formatRupiahInput = function(inputElem) {
@@ -713,58 +879,37 @@
     };
 
     // =====================================================================
-    // 🔥 4. FUNGSI KUNCI & CETAK SLIP GAJI
+    // 🔥 4. FUNGSI KUNCI & CETAK SLIP GAJI (MENGGUNAKAN DATA STATE)
     // =====================================================================
     window.bukaPreviewSlip = function(idx, event) {
         if (event) event.stopPropagation();
-
-        if (!window.dataBagiHasilGlobal || !window.dataBagiHasilGlobal[idx]) {
-            alert("⚠️ Data dokter tidak ditemukan.");
-            return;
-        }
+        if (!window.dataBagiHasilGlobal || !window.dataBagiHasilGlobal[idx]) { alert("⚠️ Data dokter tidak ditemukan."); return; }
         
         window.currentPreviewIdx = idx;
-        
-        let dataDokter = window.dataBagiHasilGlobal[idx];
-        let elBonus = document.getElementById(`inpBonus_${idx}`);
-        let elPotongan = document.getElementById(`inpPotongan_${idx}`);
-        let elKetBonus = document.getElementById(`inpKetBonus_${idx}`);
-        let elKetPotongan = document.getElementById(`inpKetPotongan_${idx}`);
+        let d = window.dataBagiHasilGlobal[idx];
 
-        let strBonus = elBonus ? elBonus.value.replace(/[^0-9]/g, '') : "0";
-        let strPotongan = elPotongan ? elPotongan.value.replace(/[^0-9]/g, '') : "0";
+        let nominalBonus = Number(String(d.valBonus || "0").replace(/[^0-9]/g, '')) || 0;
+        let nominalPotongan = Number(String(d.valPotongan || "0").replace(/[^0-9]/g, '')) || 0;
         
-        let nominalBonus = Number(strBonus) || 0;
-        let nominalPotongan = Number(strPotongan) || 0;
-        
-        let teksBonus = (elKetBonus && elKetBonus.value.trim() !== "") ? elKetBonus.value.trim() : "Injeksi Bonus / Insentif";
-        let teksPotongan = (elKetPotongan && elKetPotongan.value.trim() !== "") ? elKetPotongan.value.trim() : "Pemotongan Lain (Kasbon dll)";
+        let teksBonus = (d.ketBonus && d.ketBonus.trim() !== "") ? d.ketBonus.trim() : "Injeksi Bonus / Insentif";
+        let teksPotongan = (d.ketPotongan && d.ketPotongan.trim() !== "") ? d.ketPotongan.trim() : "Pemotongan Lain (Kasbon dll)";
         
         window.dataDraftSlip = {
-            pokokGaji: dataDokter.totalBagiHasil,
+            pokokGaji: d.totalBagiHasil,
             bonus: nominalBonus,
             potongan: nominalPotongan,
-            finalGaji: (dataDokter.totalBagiHasil + nominalBonus) - nominalPotongan,
+            finalGaji: (d.totalBagiHasil + nominalBonus) - nominalPotongan,
             teksBonus: teksBonus,
             teksPotongan: teksPotongan
         };
         
-        let labMenggantung = dataDokter.rincian.filter(r => {
+        let labMenggantung = d.rincian.filter(r => {
             let isButuhLab = false;
-            
-            if (String(r.tindakan).match(/\blab\b/i)) {
-                isButuhLab = true;
-            }
-            
+            if (String(r.tindakan).match(/\blab\b/i)) isButuhLab = true;
             if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
-                let dataMaster = window.masterTindakanGlobal.find(m => 
-                    String(m.nama).trim().toLowerCase() === String(r.tindakan).trim().toLowerCase()
-                );
-                if (dataMaster && (dataMaster.Butuh_Lab === 1 || dataMaster.butuhLab === 1 || String(dataMaster.Butuh_Lab) === "1")) {
-                    isButuhLab = true;
-                }
+                let dataMaster = window.masterTindakanGlobal.find(m => String(m.nama).trim().toLowerCase() === String(r.tindakan).trim().toLowerCase());
+                if (dataMaster && (dataMaster.Butuh_Lab == 1 || dataMaster.butuhLab == 1 || String(dataMaster.Butuh_Lab) === "1")) isButuhLab = true;
             }
-            
             return isButuhLab && (r.hargaLabVendor === 0 || !r.hargaLabVendor);
         });
 
@@ -776,14 +921,14 @@
             bannerPeringatanHtml = `
                 <div class="no-print" style="background-color: #fff3cd; color: #856404; padding: 15px; border-left: 5px solid #e74c3c; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <span style="font-size:16px;">🚨</span> PERINGATAN AUDIT KEUANGAN!<br>
-                    Terdapat <b>${labMenggantung.length} tindakan Lab</b> (Contoh pasien: ${labMenggantung[0].pasien}) yang belum diinput tagihan eksternalnya oleh Perawat.<br>
-                    <span style="color:#c0392b;">Sistem secara otomatis MEMBLOKIR penerbitan slip gaji ini untuk mencegah Klinik menanggung kerugian (membayar fee dokter dari uang Lab).</span>
+                    Terdapat <b>${labMenggantung.length} tindakan Lab</b> (Contoh pasien: ${labMenggantung[0].pasien}) yang belum diinput tagihan eksternalnya.<br>
+                    <span style="color:#c0392b;">Sistem secara otomatis MEMBLOKIR penerbitan slip gaji ini untuk mencegah Klinik menanggung kerugian.</span>
                 </div>
             `;
         }
 
         let htmlRincian = '';
-        dataDokter.rincian.forEach((rin, urut) => {
+        d.rincian.forEach((rin, urut) => {
             let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
             let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
             let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
@@ -803,70 +948,35 @@
             `;
         });
 
-        const tglCetak = new Date().toLocaleString('id-ID');
-        
         const htmlSlip = `
                 <style>
                     @media print {
-                        @page { 
-                            size: auto;
-                            margin: 15mm 20mm; 
-                        }
+                        @page { size: auto; margin: 15mm 20mm; }
                         body { visibility: hidden; background: white !important; }
-                        #modalPreviewSlip, .modal-content, .modal-dialog {
-                            position: absolute !important;
-                            left: 0 !important; top: 0 !important;
-                            width: 100% !important; height: auto !important;
-                            display: block !important; overflow: visible !important;
-                            background: transparent !important;
-                            border: none !important; box-shadow: none !important; outline: none !important;
-                        }
+                        #modalPreviewSlip, .modal-content, .modal-dialog { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important; display: block !important; overflow: visible !important; background: transparent !important; border: none !important; box-shadow: none !important; outline: none !important; }
                         #kertasPreviewPDF, #kertasPreviewPDF * { visibility: visible !important; }
-                        #kertasPreviewPDF {
-                            position: absolute !important;
-                            left: 0 !important; top: 0 !important;
-                            margin: 0 !important;
-                            padding: 0 !important; 
-                            width: 100% !important;
-                            border: none !important; box-shadow: none !important;
-                        }
+                        #kertasPreviewPDF { position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important; padding: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; }
                         #modalPreviewSlip button, .no-print { display: none !important; }
                         table { page-break-inside: auto; width: 100%; }
                         tr { page-break-inside: avoid; page-break-after: auto; }
                         thead { display: table-header-group; }
                         tfoot { display: table-footer-group; }
-                        .hindari-terpotong { 
-                            page-break-inside: avoid !important; 
-                            break-inside: avoid !important; 
-                        }
+                        .hindari-terpotong { page-break-inside: avoid !important; break-inside: avoid !important; }
                     }
                 </style>
-
             <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5; position: relative;">
-                
                 <div class="no-print" style="text-align: right; margin-bottom: 20px; border-bottom: 1px dashed #bdc3c7; padding-bottom: 15px;">
-                    <button onclick="window.print()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
-                        🖨️ Cetak / Simpan PDF
-                    </button>
+                    <button onclick="window.print()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">🖨️ Cetak / Simpan PDF</button>
                 </div>
-
                 ${bannerPeringatanHtml}
-
                 <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">
                     <h2 style="margin:0; letter-spacing: 2px;">KLINIK ANVAYA</h2>
                     <h3 style="margin:5px 0 0 0; color:#7f8c8d; font-weight:normal;">SLIP GAJI & RINCIAN TINDAKAN</h3>
                 </div>
-                
                 <div style="display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px;">
-                    <div>
-                        <div style="font-size: 12px; color: #7f8c8d;">Nama Dokter</div>
-                        <div style="font-weight: bold; font-size: 16px;">${dataDokter.nama}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 11px; margin-top: 3px; color:#95a5a6;">Dirender pada: ${tglCetak}</div>
-                    </div>
+                    <div><div style="font-size: 12px; color: #7f8c8d;">Nama Dokter</div><div style="font-weight: bold; font-size: 16px;">${d.nama}</div></div>
+                    <div style="text-align: right;"><div style="font-size: 11px; margin-top: 3px; color:#95a5a6;">Dirender pada: ${new Date().toLocaleString('id-ID')}</div></div>
                 </div>
-
                 <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; word-break: break-word;">
                     <thead>
@@ -884,26 +994,17 @@
                     </thead>
                     <tbody>${htmlRincian}</tbody>
                 </table>
-                <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 14px;">
-                    Total Fee Bersih: Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}
-                </div>
-
+                <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 14px;">Total Fee Bersih: Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}</div>
                 <div class="hindari-terpotong" style="border: 2px solid #2ecc71; padding: 15px; margin-top: 25px; background: #f9fffb; border-radius: 6px;">
                     <div style="font-weight:bold; color:#2c3e50; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:5px;">B. KALKULASI FINAL (TAKE HOME PAY)</div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px;"><span>Total Pokok Fee Bersih (Dari Tindakan)</span><span>Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}</span></div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px; color:#27ae60;"><span>(+) ${teksBonus}</span><span>Rp ${nominalBonus.toLocaleString('id-ID')}</span></div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:15px; color:#e74c3c;"><span>(-) ${teksPotongan}</span><span>(Rp ${nominalPotongan.toLocaleString('id-ID')})</span></div>
                     <div style="border-top:2px dashed #2ecc71; margin: 15px 0;"></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:20px; font-weight:bold; color:#27ae60;">
-                        <span>TOTAL DITERIMA</span><span>Rp ${window.dataDraftSlip.finalGaji.toLocaleString('id-ID')}</span>
-                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:20px; font-weight:bold; color:#27ae60;"><span>TOTAL DITERIMA</span><span>Rp ${window.dataDraftSlip.finalGaji.toLocaleString('id-ID')}</span></div>
                 </div>
-                
                 <div class="hindari-terpotong" style="display:flex; justify-content:flex-end; margin-top:50px; text-align:center;">
-                    <div>
-                        <p style="margin-bottom:60px;">Manajemen Klinik Anvaya,</p>
-                        <p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">( ..................................... )</p>
-                    </div>
+                    <div><p style="margin-bottom:60px;">Manajemen Klinik Anvaya,</p><p style="font-weight:bold; border-bottom:1px solid #2c3e50; display:inline-block; padding:0 20px;">( ..................................... )</p></div>
                 </div>
             </div>
         `;
@@ -911,14 +1012,8 @@
         const divKertas = document.getElementById('kertasPreviewPDF');
         if (divKertas) divKertas.innerHTML = htmlSlip;
         
-        let tglAkhirFilter = document.getElementById('tglAkhirFinansial') ? document.getElementById('tglAkhirFinansial').value : ""; 
-        let tglSekarang = new Date();
-        let blnStr = ("0" + (tglSekarang.getMonth() + 1)).slice(-2);
-        
-        let defaultBulan = tglAkhirFilter ? tglAkhirFilter.substring(0, 7) : (tglSekarang.getFullYear() + "-" + blnStr);
-        
         let elInpBulan = document.getElementById('inpBulanGaji');
-        if (elInpBulan) elInpBulan.value = defaultBulan;
+        if (elInpBulan) elInpBulan.value = window.bh_defaultBulanFilter;
 
         let btnKunci = document.getElementById('btnKunciSlip');
         if (btnKunci) {
@@ -934,24 +1029,16 @@
                 btnKunci.innerText = "🔒 KUNCI & TERBITKAN SLIP";
             }
         }
-
         let elModal = document.getElementById('modalPreviewSlip');
         if (elModal) elModal.style.display = 'flex';
     };
 
     window.kunciDanSimpanSlip = function() {
         let bulanGaji = document.getElementById('inpBulanGaji') ? document.getElementById('inpBulanGaji').value : ""; 
-        if (!bulanGaji) {
-            alert("⚠️ Harap pilih 'Gaji Bulan' terlebih dahulu sebelum mengunci!");
-            return;
-        }
+        if (!bulanGaji) { alert("⚠️ Harap pilih 'Gaji Bulan' terlebih dahulu sebelum mengunci!"); return; }
 
         let dataDokter = window.dataBagiHasilGlobal[window.currentPreviewIdx];
-        
-        let labMenggantung = dataDokter.rincian.filter(r => 
-            r.tindakan.match(/\blab\b/i) && r.hargaLabVendor === 0
-        );
-
+        let labMenggantung = dataDokter.rincian.filter(r => r.tindakan.match(/\blab\b/i) && r.hargaLabVendor === 0);
         if (labMenggantung.length > 0) {
             alert(`🚫 SISTEM MENOLAK (POTENSI KERUGIAN KLINIK)!\n\nDitemukan ${labMenggantung.length} tindakan Lab yang belum diinput tagihan eksternalnya (Contoh pasien: ${labMenggantung[0].pasien}).\n\nHarap instruksikan Perawat/Admin untuk melengkapi menu [Tagihan Eksternal / Lab] terlebih dahulu agar Klinik tidak nombok fee dokter!`);
             return; 
@@ -959,16 +1046,12 @@
 
         let isAlreadyLocked = window.arsipGajiTerkunci && window.arsipGajiTerkunci.some(x => window.isDokterMatchGlobal(x.namaDokter, dataDokter.nama) && x.periode === bulanGaji);
         if (isAlreadyLocked) {
-            let konfirmasi = confirm(`⚠️ PERHATIAN!\nSlip Gaji periode ${bulanGaji} untuk dr. ${dataDokter.nama} SUDAH PERNAH DITERBITKAN.\n\nApakah Anda yakin ingin MEREVISI (menimpa) data lama dengan angka yang baru ini?`);
-            if (!konfirmasi) return; 
+            if (!confirm(`⚠️ PERHATIAN!\nSlip Gaji periode ${bulanGaji} untuk dr. ${dataDokter.nama} SUDAH PERNAH DITERBITKAN.\n\nApakah Anda yakin ingin MEREVISI (menimpa) data lama dengan angka yang baru ini?`)) return; 
         }
 
         let draft = window.dataDraftSlip;
         let btn = document.getElementById('btnKunciSlip');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = "⏳ MENGUNCI DATA...";
-        }
+        if (btn) { btn.disabled = true; btn.innerText = "⏳ MENGUNCI DATA..."; }
 
         let payload = {
             action: "kunciSlipGaji",
@@ -982,43 +1065,25 @@
             rincianJson: JSON.stringify(dataDokter.rincian) 
         };
 
-        fetch(window.WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = "🔒 KUNCI & TERBITKAN SLIP";
-            }
-            
+            if (btn) { btn.disabled = false; btn.innerText = "🔒 KUNCI & TERBITKAN SLIP"; }
             if (res.result === "success") {
                 alert("✅ BERHASIL: " + res.message);
                 const mod = document.getElementById('modalPreviewSlip');
                 if (mod) mod.style.display = 'none';
                 
                 if (!window.arsipGajiTerkunci) window.arsipGajiTerkunci = [];
-                // Hapus arsip lama yang namanya mirip untuk menimpa
                 window.arsipGajiTerkunci = window.arsipGajiTerkunci.filter(x => !(window.isDokterMatchGlobal(x.namaDokter, dataDokter.nama) && x.periode === bulanGaji));
                 window.arsipGajiTerkunci.push({ namaDokter: dataDokter.nama, periode: bulanGaji });
                 
-                let btnCek = document.getElementById('btnCekSlip_' + window.currentPreviewIdx);
-                if (btnCek) {
-                    btnCek.innerHTML = `✅ Terkunci (${bulanGaji})`;
-                    btnCek.style.background = "#27ae60"; 
-                    btnCek.style.boxShadow = "none";
-                }
-
-            } else {
-                alert("❌ Gagal Mengunci: " + res.message);
-            }
+                // Minta sistem untuk me-render ulang halaman agar status kunci teraplikasikan!
+                window.renderHalamanBagiHasil();
+            } else { alert("❌ Gagal Mengunci: " + res.message); }
         })
         .catch(err => {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = "🔒 KUNCI & TERBITKAN SLIP";
-            }
+            if (btn) { btn.disabled = false; btn.innerText = "🔒 KUNCI & TERBITKAN SLIP"; }
             alert("⚠️ Terjadi gangguan koneksi jaringan.");
         });
     };
@@ -1043,57 +1108,88 @@
 
     window.cetakSlipDokter = function(index, event) {
         if (event) event.stopPropagation(); 
-        
         let btn = (window.event && window.event.target) ? window.event.target : null;
         const teksAsli = btn ? btn.innerText : "Mencetak...";
-        
-        if (btn) {
-            btn.innerText = "⏳ Mencetak...";
-            btn.disabled = true;
-        }
+        if (btn) { btn.innerText = "⏳ Mencetak..."; btn.disabled = true; }
 
         const dataDokter = window.dataBagiHasilGlobal[index];
         
         fetch(window.WEB_APP_URL, {
             method: "POST",
-            body: JSON.stringify({
-                action: "cetakSlipBagiHasil",
-                namaDokter: dataDokter.nama,
-                periode: window.periodeBagiHasilGlobal,
-                rincian: JSON.stringify(dataDokter.rincian)
-            })
+            body: JSON.stringify({ action: "cetakSlipBagiHasil", namaDokter: dataDokter.nama, periode: window.periodeBagiHasilGlobal, rincian: JSON.stringify(dataDokter.rincian) })
         })
         .then(res => res.json())
         .then(res => {
             if (res.result === "success") {
                 window.open(res.pdfUrl, '_blank');
-                
                 if (btn) {
-                    btn.innerHTML = "📂 Buka Slip";
-                    btn.style.backgroundColor = "#27ae60"; 
-                    btn.style.boxShadow = "0 1px 3px rgba(39, 174, 96, 0.4)";
-                    btn.disabled = false;
-                    
-                    btn.onclick = function(e) {
-                        if (e) e.stopPropagation();
-                        window.open(res.pdfUrl, '_blank');
-                    };
+                    btn.innerHTML = "📂 Buka Slip"; btn.style.backgroundColor = "#27ae60"; btn.style.boxShadow = "0 1px 3px rgba(39, 174, 96, 0.4)"; btn.disabled = false;
+                    btn.onclick = function(e) { if (e) e.stopPropagation(); window.open(res.pdfUrl, '_blank'); };
                 }
             } else {
-                if (btn) {
-                    btn.innerText = teksAsli;
-                    btn.disabled = false;
-                }
+                if (btn) { btn.innerText = teksAsli; btn.disabled = false; }
                 alert("Gagal mencetak: " + res.message);
             }
         })
         .catch(err => {
-            if (btn) {
-                btn.innerText = teksAsli;
-                btn.disabled = false;
-            }
+            if (btn) { btn.innerText = teksAsli; btn.disabled = false; }
             alert("Kesalahan jaringan saat mencetak slip.");
         });
-    };
+    }
+
+    // window.cetakSlipDokter = function(index, event) {
+    //     if (event) event.stopPropagation(); 
+        
+    //     let btn = (window.event && window.event.target) ? window.event.target : null;
+    //     const teksAsli = btn ? btn.innerText : "Mencetak...";
+        
+    //     if (btn) {
+    //         btn.innerText = "⏳ Mencetak...";
+    //         btn.disabled = true;
+    //     }
+
+    //     const dataDokter = window.dataBagiHasilGlobal[index];
+        
+    //     fetch(window.WEB_APP_URL, {
+    //         method: "POST",
+    //         body: JSON.stringify({
+    //             action: "cetakSlipBagiHasil",
+    //             namaDokter: dataDokter.nama,
+    //             periode: window.periodeBagiHasilGlobal,
+    //             rincian: JSON.stringify(dataDokter.rincian)
+    //         })
+    //     })
+    //     .then(res => res.json())
+    //     .then(res => {
+    //         if (res.result === "success") {
+    //             window.open(res.pdfUrl, '_blank');
+                
+    //             if (btn) {
+    //                 btn.innerHTML = "📂 Buka Slip";
+    //                 btn.style.backgroundColor = "#27ae60"; 
+    //                 btn.style.boxShadow = "0 1px 3px rgba(39, 174, 96, 0.4)";
+    //                 btn.disabled = false;
+                    
+    //                 btn.onclick = function(e) {
+    //                     if (e) e.stopPropagation();
+    //                     window.open(res.pdfUrl, '_blank');
+    //                 };
+    //             }
+    //         } else {
+    //             if (btn) {
+    //                 btn.innerText = teksAsli;
+    //                 btn.disabled = false;
+    //             }
+    //             alert("Gagal mencetak: " + res.message);
+    //         }
+    //     })
+    //     .catch(err => {
+    //         if (btn) {
+    //             btn.innerText = teksAsli;
+    //             btn.disabled = false;
+    //         }
+    //         alert("Kesalahan jaringan saat mencetak slip.");
+    //     });
+    // };
 
 })();
