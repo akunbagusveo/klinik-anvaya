@@ -2328,20 +2328,44 @@
                     </div>
                 </div>
 
-                <!-- Tabel Daftar User -->
-                <table id="tabelUsers" border="1" width="100%" style="text-align: left; border-collapse: collapse;">
-                    <thead style="background-color: #ddd;">
-                        <tr>
-                            <th style="padding: 8px;">Nama & Username</th>
-                            <th style="padding: 8px;">Role</th>
-                            <th style="padding: 8px;">Status</th>
-                            <th style="padding: 8px; text-align: center;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyUsers">
-                        <tr><td colspan="4" style="text-align:center; padding: 15px;">Belum ada data dimuat.</td></tr>
-                    </tbody>
-                </table>
+                <!-- 🔥 SENSOR CSS OTOMATIS: Merubah Tabel jadi Card di HP + Desain Paginasi -->
+                <style>
+                    .user-pc { display: block; }
+                    .user-mobile { display: none; }
+                    @media (max-width: 768px) {
+                        .user-pc { display: none !important; }
+                        .user-mobile { display: flex !important; flex-direction: column; gap: 12px; }
+                    }
+                    .btn-page-usr { padding: 6px 12px; margin: 0 3px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; color: #334155; transition: 0.2s; }
+                    .btn-page-usr:hover:not(:disabled) { background: #e8f8f5; }
+                    .btn-page-usr.active { background: #28a745; color: white; border-color: #28a745; }
+                    .btn-page-usr:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+                </style>
+
+                <!-- 💻 WUJUD 1: TABEL PC / LAPTOP -->
+                <div class="user-pc" style="border: 1px solid #ecf0f1; border-radius: 6px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-top: 20px;">
+                    <table width="100%" style="text-align: left; border-collapse: collapse; min-width: 600px;">
+                        <thead style="background-color: #34495e; color: white;">
+                            <tr>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Nama & Username</th>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Role</th>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Status</th>
+                                <th style="padding: 12px 15px; text-align: center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyUsersPC">
+                            <tr><td colspan="4" style="text-align:center; padding: 20px; color:#7f8c8d; font-weight:bold;">⏳ Memuat data pengguna...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 📱 WUJUD 2: CARD ACCORDION MOBILE -->
+                <div id="bodyUsersMobile" class="user-mobile" style="margin-top: 20px;">
+                    <!-- Kartu disuntik via JS -->
+                </div>
+
+                <!-- 🔥 WADAH PAGINASI CERDAS -->
+                <div id="paginationControlsUser" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 5px;"></div>
             </div>
 
             <!-- ========================================== -->
