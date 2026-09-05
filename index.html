@@ -2324,121 +2324,143 @@
             <!-- ========================================== -->
             <!-- SUB-TAB 3: ATUR JADWAL DOKTER   -->
             <!-- ========================================== -->
-            <div id="manajemenJadwal" class="sub-tab-content" style="display:none;">
-                <h3>Manajemen Jadwal Praktik Dokter</h3>
+            <div id="manajemenJadwal" class="sub-tab-content" style="display:none; padding: 20px;">
+    
+                <!-- 🔥 SENSOR CSS OTOMATIS: Merapikan Grid di HP & Membentuk Tombol Paginasi -->
+                <style>
+                    .jdw-pc { display: block; }
+                    .jdw-mobile { display: none; }
+                    @media (max-width: 768px) {
+                        .jdw-pc { display: none !important; }
+                        .jdw-mobile { display: flex !important; flex-direction: column; gap: 12px; }
+                    }
+                    /* Tombol Paginasi Jadwal */
+                    .btn-page-jdw { padding: 6px 12px; margin: 0 3px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; color: #334155; transition: 0.2s; }
+                    .btn-page-jdw:hover:not(:disabled) { background: #e8f8f5; }
+                    .btn-page-jdw.active { background: #28a745; color: white; border-color: #28a745; }
+                    .btn-page-jdw:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+                </style>
             
-                <button onclick="window.bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #28a745; padding-bottom: 10px;">📅 Manajemen Jadwal Praktik Dokter</h3>
+            
+                <button onclick="window.bukaModalJadwal()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;">
                     ➕ Tambah Jadwal Praktik Baru
                 </button>
             
-                <div class="antrean-filter-wrapper" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <!-- AREA FILTER & SORTING -->
+                <div class="antrean-filter-wrapper" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ecf0f1;">
                     <div style="flex: 1; min-width: 200px;">
-                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Dokter:</label>
-                        <select id="filterJadwalDokter" onchange="window.aplikasikanFilterDanSortJadwal()">
+                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; color:#7f8c8d; display:block;">Filter Dokter:</label>
+                        <select id="filterJadwalDokter" onchange="window.aplikasikanFilterDanSortJadwal(true)" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
                             <option value="">⏳ Memuat daftar dokter...</option>
                         </select>
                     </div>
-                    
-                    <div style="width: 130px;">
-                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Hari:</label>
-                        <select id="filterJadwalHari" onchange="window.aplikasikanFilterDanSortJadwal()">
+                    <div style="flex: 1; min-width: 130px;">
+                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; color:#7f8c8d; display:block;">Filter Hari:</label>
+                        <select id="filterJadwalHari" onchange="window.aplikasikanFilterDanSortJadwal(true)" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
                             <option value="">Semua Hari</option>
-                            <option value="Senin">Senin</option>
-                            <option value="Selasa">Selasa</option>
-                            <option value="Rabu">Rabu</option>
-                            <option value="Kamis">Kamis</option>
-                            <option value="Jumat">Jumat</option>
-                            <option value="Sabtu">Sabtu</option>
+                            <option value="Senin">Senin</option><option value="Selasa">Selasa</option>
+                            <option value="Rabu">Rabu</option><option value="Kamis">Kamis</option>
+                            <option value="Jumat">Jumat</option><option value="Sabtu">Sabtu</option>
                         </select>
                     </div>
-            
-                    <div style="width: 140px;">
-                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Filter Slot:</label>
-                        <select id="filterJadwalSlot" onchange="window.aplikasikanFilterDanSortJadwal()">
+                    <div style="flex: 1; min-width: 140px;">
+                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; color:#7f8c8d; display:block;">Filter Slot:</label>
+                        <select id="filterJadwalSlot" onchange="window.aplikasikanFilterDanSortJadwal(true)" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
                             <option value="">Semua Slot</option>
+                            <option value="Pagi">Pagi</option>
                             <option value="Siang">Siang</option>
                             <option value="Sore/Malam">Sore/Malam</option>
                         </select>
                     </div>
-            
-                    <div style="width: 180px;">
-                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Urutkan Berdasarkan:</label>
-                        <select id="urutJadwalMaster" onchange="window.aplikasikanFilterDanSortJadwal()">
+                    <div style="flex: 1; min-width: 180px;">
+                        <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; color:#7f8c8d; display:block;">Urutkan Berdasarkan:</label>
+                        <select id="urutJadwalMaster" onchange="window.aplikasikanFilterDanSortJadwal(true)" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+                            <option value="hariUrut">Urutan Hari (Senin - Sabtu)</option>
                             <option value="default">Default (Baris Sheet)</option>
                             <option value="namaAZ">Nama Dokter (A - Z)</option>
                             <option value="namaZA">Nama Dokter (Z - A)</option>
-                            <option value="hariUrut">Urutan Hari (Senin - Sabtu)</option>
                             <option value="jamKerja">Jam Mulai Terawal</option>
                         </select>
                     </div>
                 </div>
             
-                <div id="modalTambahJadwal" class="modal-popup-container">
-                    <div class="modal-popup-content" style="background-color: #f4fdf7; border: 1px solid #c3e6cb;">
-                        <h4 style="margin-top: 0; color: #155724; border-bottom: 1px solid #c3e6cb; padding-bottom: 8px;">
-                            ➕ Tambah Jadwal Praktik Baru
-                        </h4>
+                <!-- MODAL TAMBAH JADWAL (Asli dari kode Anda) -->
+                <div id="modalTambahJadwal" class="modal-popup-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+                    <div class="modal-popup-content" style="background-color: #f4fdf7; border: 1px solid #c3e6cb; padding:25px; border-radius:8px; width:90%; max-width:400px; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
+                        <h4 style="margin-top: 0; color: #155724; border-bottom: 1px solid #c3e6cb; padding-bottom: 10px; font-size:18px;">➕ Tambah Jadwal Praktik</h4>
                         
-                        <label style="font-size: 13px; font-weight: bold; display:block; margin-top:10px;">Pilih Dokter:</label>
-                        <select id="jadwalNamaDokter">
-                            <option value="">⏳ Memuat daftar dokter...</option>
+                        <label style="font-size: 13px; font-weight: bold; display:block; margin-top:15px; margin-bottom:5px;">Pilih Dokter:</label>
+                        <select id="jadwalNamaDokter" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"><option value="">⏳ Memuat daftar dokter...</option></select>
+                        
+                        <label style="font-size: 13px; font-weight: bold; display:block; margin-top:15px; margin-bottom:5px;">Hari Praktik:</label>
+                        <select id="jadwalHari" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                            <option value="Senin">Senin</option><option value="Selasa">Selasa</option>
+                            <option value="Rabu">Rabu</option><option value="Kamis">Kamis</option>
+                            <option value="Jumat">Jumat</option><option value="Sabtu">Sabtu</option>
                         </select>
                         
-                        <label style="font-size: 13px; font-weight: bold; display:block;">Hari Praktik:</label>
-                        <select id="jadwalHari">
-                            <option value="Senin">Senin</option>
-                            <option value="Selasa">Selasa</option>
-                            <option value="Rabu">Rabu</option>
-                            <option value="Kamis">Kamis</option>
-                            <option value="Jumat">Jumat</option>
-                            <option value="Sabtu">Sabtu</option>
-                        </select>
+                        <div style="display:flex; gap:10px; margin-top:15px;">
+                            <div style="flex:1;">
+                                <label style="font-size: 13px; font-weight: bold; display:block; margin-bottom:5px;">Jam Mulai:</label>
+                                <select id="jadwalJamMulai" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                                    <option value="08:00">08:00</option><option value="09:00">09:00</option>
+                                    <option value="10:00">10:00</option><option value="11:00">11:00</option>
+                                    <option value="12:00">12:00</option><option value="13:00">13:00</option>
+                                    <option value="14:00">14:00</option><option value="15:00">15:00</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size: 13px; font-weight: bold; display:block; margin-bottom:5px;">Jam Selesai:</label>
+                                <select id="jadwalJamSelesai" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                                    <option value="12:00">12:00</option><option value="13:00">13:00</option>
+                                    <option value="14:00">14:00</option><option value="15:00">15:00</option>
+                                    <option value="16:00">16:00</option><option value="17:00">17:00</option>
+                                    <option value="18:00">18:00</option><option value="19:00">19:00</option>
+                                </select>
+                            </div>
+                        </div>
                         
-                        <label style="font-size: 13px; font-weight: bold; display:block;">Jam Mulai:</label>
-                        <select id="jadwalJamMulai">
-                            <option value="11:00">11:00</option>
-                            <option value="12:00">12:00</option>
-                            <option value="13:00">13:00</option>
-                            <option value="14:00">14:00</option>
-                            <option value="15:00">15:00</option>
-                        </select>
-                        
-                        <label style="font-size: 13px; font-weight: bold; display:block;">Jam Selesai:</label>
-                        <select id="jadwalJamSelesai">
-                            <option value="15:00">15:00</option>
-                            <option value="16:00">16:00</option>
-                            <option value="17:00">17:00</option>
-                            <option value="18:00">18:00</option>
-                            <option value="19:00">19:00</option>
-                        </select>
-                        
-                        <label style="font-size: 13px; font-weight: bold; display:block;">Slot Waktu:</label>
-                        <select id="jadwalSlot">
+                        <label style="font-size: 13px; font-weight: bold; display:block; margin-top:15px; margin-bottom:5px;">Slot Waktu:</label>
+                        <select id="jadwalSlot" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                            <option value="Pagi">Pagi</option>
                             <option value="Siang">Siang</option>
                             <option value="Sore/Malam">Sore/Malam</option>
                         </select>
                         
-                        <div class="modal-action-buttons" style="text-align: right; margin-top: 15px;">
-                            <button onclick="window.tutupModalJadwal()" style="background-color: #ccc; color: black; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;">Batal</button>
-                            <button onclick="window.simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Simpan Jadwal</button>
+                        <div class="modal-action-buttons" style="text-align: right; margin-top: 25px; display:flex; gap:10px; justify-content:flex-end;">
+                            <button onclick="window.tutupModalJadwal()" style="background-color: #bdc3c7; color: #2c3e50; border:none; padding:10px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">Batal</button>
+                            <button onclick="window.simpanJadwalBaru()" style="background-color: #28a745; color: white; font-weight: bold; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💾 Simpan Jadwal</button>
                         </div>
                     </div>
                 </div> 
             
-                <table border="1" width="100%" style="text-align: left; border-collapse: collapse;">
-                    <thead style="background-color: #ddd;">
-                        <tr>
-                            <th style="padding: 8px;">Dokter</th>
-                            <th style="padding: 8px;">Hari Praktik</th>
-                            <th style="padding: 8px;">Jam Kerja</th>
-                            <th style="padding: 8px;">Slot</th>
-                            <th style="padding: 8px; text-align: center;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyJadwalMaster">
-                        <tr><td colspan="5" style="text-align:center; padding: 15px;">Memuat data jadwal...</td></tr>
-                    </tbody>
-                </table>
+                <!-- 💻 WUJUD 1: TABEL PC / LAPTOP -->
+                <div class="jdw-pc" style="border: 1px solid #ecf0f1; border-radius: 6px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                    <table width="100%" style="text-align: left; border-collapse: collapse; min-width: 600px;">
+                        <thead style="background-color: #34495e; color: white;">
+                            <tr>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Dokter</th>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Hari Praktik</th>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Jam Kerja</th>
+                                <th style="padding: 12px 15px; border-right: 1px solid #2c3e50;">Slot</th>
+                                <th style="padding: 12px 15px; text-align: center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyJadwalMasterPC">
+                            <tr><td colspan="5" style="text-align:center; padding: 20px; color:#7f8c8d; font-weight:bold;">⏳ Memuat data jadwal...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            
+                <!-- 📱 WUJUD 2: CARD ACCORDION MOBILE -->
+                <div id="bodyJadwalMasterMobile" class="jdw-mobile">
+                    <!-- Kartu disuntik via JS -->
+                </div>
+            
+                <!-- 🔥 WADAH PAGINASI CERDAS -->
+                <div id="paginationControlsJadwal" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 5px;"></div>
+            
             </div>
 
             <!-- ========================================== -->

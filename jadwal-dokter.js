@@ -76,19 +76,19 @@
     };
 
     // =====================================================================
-    // 2. PENARIKAN DATA MASTER JADWAL
+    // 2. PENARIKAN DATA MASTER JADWAL (DUAL RENDER READY)
     // =====================================================================
+    window.currentPageJadwal = 1;
+    window.itemsPerPageJadwal = 15; // 15 jadwal per halaman
+
     window.muatJadwalMaster = function() {
-        const tbody = document.getElementById('bodyJadwalMaster');
+        const wadahPC = document.getElementById('bodyJadwalMasterPC');
+        const wadahMobile = document.getElementById('bodyJadwalMasterMobile');
         
-        if (!tbody) {
-            console.warn("Elemen #bodyJadwalMaster belum dimuat atau tidak ditemukan di tab ini.");
-            return; 
-        }
+        if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">⏳ Memuat seluruh jadwal dokter...</td></tr>`;
+        if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding:20px; background:#fff; border-radius:8px;">⏳ Memuat jadwal...</div>`;
 
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Memuat seluruh jadwal dokter...</td></tr>`;
-
-        fetch(WEB_APP_URL, {
+        fetch(window.WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({ action: "getJadwalMaster" })
         })
@@ -96,43 +96,46 @@
         .then(res => {
             if (res.result === "success") {
                 dataJadwalGlobal = res.data || [];
-                window.aplikasikanFilterDanSortJadwal();
+                window.aplikasikanFilterDanSortJadwal(true);
             } else {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">❌ Gagal memuat data jadwal.</td></tr>`;
+                if(wadahPC) wadahPC.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">❌ Gagal memuat data jadwal.</td></tr>`;
+                if(wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; color:red; background:#fff; padding:20px; border-radius:8px;">❌ Gagal memuat data.</div>`;
             }
         })
         .catch(err => {
             console.error(err);
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">⚠️ Gangguan koneksi sistem.</td></tr>`;
+            if(wadahPC) wadahPC.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">⚠️ Gangguan koneksi sistem.</td></tr>`;
         });
     };
 
     // =====================================================================
-    // 3. MESIN PENYARINGAN & PENGURUTAN (REAL-TIME FRONTEND)
+    // 3. MESIN PENYARINGAN, PENGURUTAN, & PAGINASI (HYBRID)
     // =====================================================================
-    window.aplikasikanFilterDanSortJadwal = function() {
-        const tbody = document.getElementById('bodyJadwalMaster');
-        if (!tbody) return;
+    window.aplikasikanFilterDanSortJadwal = function(resetHalaman = false) {
+        if (resetHalaman) window.currentPageJadwal = 1;
+        if (!window.currentPageJadwal) window.currentPageJadwal = 1;
+
+        const wadahPC = document.getElementById('bodyJadwalMasterPC');
+        const wadahMobile = document.getElementById('bodyJadwalMasterMobile');
+        const paginationDiv = document.getElementById('paginationControlsJadwal');
         
+        if (wadahPC) wadahPC.innerHTML = "";
+        if (wadahMobile) wadahMobile.innerHTML = "";
+
         const filterDokter = document.getElementById('filterJadwalDokter') ? document.getElementById('filterJadwalDokter').value : ""; 
         const filterHari = document.getElementById('filterJadwalHari') ? document.getElementById('filterJadwalHari').value : "";
         const filterSlot = document.getElementById('filterJadwalSlot') ? document.getElementById('filterJadwalSlot').value : "";
-        const opsiUrutan = document.getElementById('urutJadwalMaster') ? document.getElementById('urutJadwalMaster').value : "";
+        const opsiUrutan = document.getElementById('urutJadwalMaster') ? document.getElementById('urutJadwalMaster').value : "hariUrut"; // Default urut hari
 
-        // --- PROSES 1: PENYARINGAN (FILTER) DENGAN PROTEKSI DATA ---
+        // --- FILTER ---
         let dataHasilFilter = dataJadwalGlobal.filter(jdw => {
-            const namaDokterJadwal = jdw.dokter || "";
-            const hariJadwal = jdw.hari || "";
-            const slotJadwal = jdw.slot || "";
-
-            const cocokNama = filterDokter === "" || namaDokterJadwal === filterDokter;
-            const cocokHari = filterHari === "" || hariJadwal === filterHari;
-            const cocokSlot = filterSlot === "" || slotJadwal === filterSlot;
-
+            const cocokNama = filterDokter === "" || (jdw.dokter || "") === filterDokter;
+            const cocokHari = filterHari === "" || (jdw.hari || "") === filterHari;
+            const cocokSlot = filterSlot === "" || (jdw.slot || "") === filterSlot;
             return cocokNama && cocokHari && cocokSlot;
         });
 
-        // --- PROSES 2: PENGURUTAN (SORTING) ---
+        // --- SORTING ---
         if (opsiUrutan === "namaAZ") {
             dataHasilFilter.sort((a, b) => (a.dokter || "").localeCompare(b.dokter || ""));
         } else if (opsiUrutan === "namaZA") {
@@ -143,32 +146,128 @@
             dataHasilFilter.sort((a, b) => (a.jamMulai || "").localeCompare(b.jamMulai || ""));
         }
 
-        // --- PROSES 3: RENDERING DATA KE TABEL ---
-        tbody.innerHTML = "";
         if (dataHasilFilter.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 15px;">Data jadwal tidak ditemukan.</td></tr>`;
+            if (wadahPC) wadahPC.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color:#7f8c8d; font-weight:bold;">Data jadwal tidak ditemukan.</td></tr>`;
+            if (wadahMobile) wadahMobile.innerHTML = `<div style="text-align:center; padding: 20px; background:#fff; border-radius:8px; color:#7f8c8d; font-weight:bold;">Data tidak ditemukan.</div>`;
+            if (paginationDiv) paginationDiv.innerHTML = '';
             return;
         }
 
-        dataHasilFilter.forEach(jdw => {
-            let row = `<tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 8px;"><strong>${jdw.dokter || "-"}</strong></td>
-                <td style="padding: 8px;">${jdw.hari || "-"}</td>
-                <td style="padding: 8px;">${jdw.jamMulai || ""} - ${jdw.jamSelesai || ""}</td>
-                <td style="padding: 8px;"><span style="background:#e2e3e5; padding:3px 8px; border-radius:10px; font-size:12px;">${jdw.slot || "-"}</span></td>
-                <td style="padding: 8px; text-align: center;">
-                    <button onclick="window.hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Hapus</button>
-                </td>
-            </tr>`;
-            tbody.innerHTML += row;
+        // --- PAGINATION SLICE ---
+        const totalPages = Math.ceil(dataHasilFilter.length / window.itemsPerPageJadwal) || 1;
+        if (window.currentPageJadwal > totalPages) window.currentPageJadwal = totalPages;
+        
+        const startIndex = (window.currentPageJadwal - 1) * window.itemsPerPageJadwal;
+        const endIndex = startIndex + window.itemsPerPageJadwal;
+        const paginatedItems = dataHasilFilter.slice(startIndex, endIndex);
+
+        // --- RENDER KE PC & MOBILE ---
+        paginatedItems.forEach(jdw => {
+            let badgeSlot = `<span style="background:#e8f8f5; color:#1abc9c; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:bold;">${jdw.slot || "-"}</span>`;
+            if(jdw.slot === "Sore/Malam") badgeSlot = `<span style="background:#fef5e7; color:#e67e22; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:bold;">${jdw.slot || "-"}</span>`;
+
+            // Wujud PC
+            if (wadahPC) {
+                let row = `<tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px; font-weight:bold; color:#2c3e50;">👨‍⚕️ ${jdw.dokter || "-"}</td>
+                    <td style="padding: 12px; color:#34495e; font-weight:500;">📅 ${jdw.hari || "-"}</td>
+                    <td style="padding: 12px; color:#7f8c8d;">⏱️ ${jdw.jamMulai || ""} - ${jdw.jamSelesai || ""}</td>
+                    <td style="padding: 12px;">${badgeSlot}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="window.hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>
+                    </td>
+                </tr>`;
+                wadahPC.innerHTML += row;
+            }
+
+            // Wujud Mobile (Accordion Card)
+            if (wadahMobile) {
+                let card = document.createElement('div');
+                card.style.cssText = "background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden;";
+                card.innerHTML = `
+                    <div onclick="window.toggleAccordionJadwal(this)" style="padding:15px; background:#fbfcfc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                        <div>
+                            <div style="font-weight:bold; color:#2980b9; font-size:15px; margin-bottom:4px;">👨‍⚕️ ${jdw.dokter || "-"}</div>
+                            <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${jdw.hari || "-"} • ${badgeSlot}</div>
+                        </div>
+                        <div style="display:flex; align-items:center; padding-top: 5px;">
+                            <span class="acc-icon-jdw" style="font-size:16px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
+                        </div>
+                    </div>
+                    <div style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:13px;">
+                            <span style="color:#7f8c8d;">Jam Kerja:</span> <strong style="color:#2c3e50;">⏱️ ${jdw.jamMulai || ""} - ${jdw.jamSelesai || ""}</strong>
+                        </div>
+                        <button onclick="window.hapusJadwal('${jdw.idJadwal}', ${jdw.barisSheet})" style="width:100%; background:#e74c3c; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus Jadwal</button>
+                    </div>
+                `;
+                wadahMobile.appendChild(card);
+            }
         });
+
+        window.renderKontrolPaginasiJadwal(totalPages, window.currentPageJadwal);
     };
 
-    // Fungsi Bantu (Privat) - Tidak perlu di-expose ke window
+    // Fungsi Bantu (Privat) - Jangan diubah
     function konversiHariKeAngka(hari) {
         const daftarHari = { "Senin": 1, "Selasa": 2, "Rabu": 3, "Kamis": 4, "Jumat": 5, "Sabtu": 6, "Minggu": 7 };
         return daftarHari[hari] || 99; 
     }
+
+    // =====================================================================
+    // 3.1 KONTROL PAGINASI & ANIMASI KLIK
+    // =====================================================================
+    window.renderKontrolPaginasiJadwal = function(totalPages, currentPage) {
+        const wadah = document.getElementById('paginationControlsJadwal');
+        if (!wadah) return;
+        wadah.innerHTML = '';
+        if (totalPages <= 1) return; 
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'btn-page-jdw';
+        btnPrev.innerText = '« Prev';
+        btnPrev.disabled = currentPage === 1;
+        btnPrev.onclick = () => { window.currentPageJadwal--; window.aplikasikanFilterDanSortJadwal(false); };
+        wadah.appendChild(btnPrev);
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const btnNum = document.createElement('button');
+                btnNum.className = 'btn-page-jdw' + (i === currentPage ? ' active' : '');
+                btnNum.innerText = i;
+                btnNum.onclick = () => { window.currentPageJadwal = i; window.aplikasikanFilterDanSortJadwal(false); };
+                wadah.appendChild(btnNum);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const btnDot = document.createElement('span');
+                btnDot.innerText = '...';
+                btnDot.style.margin = '0 5px';
+                btnDot.style.color = '#7f8c8d';
+                btnDot.style.fontWeight = 'bold';
+                wadah.appendChild(btnDot);
+            }
+        }
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'btn-page-jdw';
+        btnNext.innerText = 'Next »';
+        btnNext.disabled = currentPage === totalPages;
+        btnNext.onclick = () => { window.currentPageJadwal++; window.aplikasikanFilterDanSortJadwal(false); };
+        wadah.appendChild(btnNext);
+    };
+
+    window.toggleAccordionJadwal = function(headerElement) {
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon-jdw');
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #ecf0f1";
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.style.transform = "rotate(0deg)";
+        }
+    };
 
     // =====================================================================
     // 4. PENAMBAHAN & PENGHAPUSAN JADWAL
