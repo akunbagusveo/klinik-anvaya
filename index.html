@@ -2783,6 +2783,7 @@
             <div id="subTabFinansial" class="sub-tab-content" style="display: none; margin-top: 20px;">
     
                 <!-- 🔥 SENSOR CSS OTOMATIS: Merapikan Kotak Omzet & Mengubah Tabel jadi Card di HP -->
+                <!-- 🔥 SENSOR CSS OTOMATIS (Diperbarui untuk Grid 2x2 HP) -->
                 <style>
                     .finansial-view-pc { display: block; }
                     .finansial-view-mobile { display: none; }
@@ -2802,17 +2803,20 @@
                     .metric-title { font-size: 12px; color: #7f8c8d; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
                     .metric-value { font-size: 22px; font-weight: bold; color: #2c3e50; }
                     .metric-card.alert .metric-value { color: #e74c3c; }
-            
-                    /* Responsivitas (Otomatis berubah berdasarkan lebar layar perangkat) */
+
+                    /* Responsivitas Layar */
                     @media (max-width: 992px) {
                         .financial-metrics { grid-template-columns: repeat(2, 1fr); }
                     }
                     @media (max-width: 768px) {
                         .finansial-view-pc { display: none !important; }
                         .finansial-view-mobile { display: flex !important; flex-direction: column; gap: 12px; margin-top: 15px; }
-                    }
-                    @media (max-width: 480px) {
-                        .financial-metrics { grid-template-columns: 1fr; }
+                        
+                        /* 🔥 FIX 1: Memaksa Grid 2x2 di layar HP agar presisi dan elegan */
+                        .financial-metrics { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+                        .metric-card { padding: 12px 8px; }
+                        .metric-title { font-size: 10px; margin-bottom: 5px; }
+                        .metric-value { font-size: 16px; }
                     }
                 </style>
             
@@ -2865,18 +2869,27 @@
                 </div>
             
                 <!-- D. Area Konten Kapsul Laporan -->
+                <!-- D. Area Konten Kapsul Laporan -->
                 <div id="pillGrafik" class="pill-content" style="display: none;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">📈 Tren Omzet Harian & ATV</h4>
-                            <canvas id="canvasChartHarian"></canvas>
+                    
+                    <!-- 🔥 FIX 2: minmax diubah menjadi 280px agar muat di semua layar HP -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        
+                        <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box;">
+                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px; font-size: 14px;">📈 Tren Omzet Harian & ATV</h4>
+                            <!-- Pembungkus relatif agar Chart.js bisa menyesuaikan diri -->
+                            <div style="position: relative; width: 100%; height: 250px;">
+                                <canvas id="canvasChartHarian"></canvas>
+                            </div>
                         </div>
-                        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px;">💰 Top 10 Kontribusi Rupiah Tindakan</h4>
-                            <div style="height: 300px; display: flex; justify-content: center;">
+
+                        <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box;">
+                            <h4 style="margin-top:0; color:#2c3e50; margin-bottom:15px; font-size: 14px;">💰 Top 10 Kontribusi Tindakan</h4>
+                            <div style="position: relative; width: 100%; height: 250px; display: flex; justify-content: center;">
                                 <canvas id="canvasChartTindakan"></canvas>
                             </div>
                         </div>
+
                     </div>
                 </div>
             
