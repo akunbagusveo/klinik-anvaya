@@ -323,56 +323,23 @@
 
         fetch(window.WEB_APP_URL, {
             method: 'POST',
-            body: JSON.stringify({ 
-                action: "getLaporanFinansial", 
-                startDate: tglMulai, 
-                endDate: tglAkhir 
-            })
+            body: JSON.stringify({ action: "getLaporanFinansial", startDate: tglMulai, endDate: tglAkhir })
         })
         .then(res => res.json())
         .then(res => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-
-            if (btnFilter) {
-                btnFilter.innerText = teksAsli;
-                btnFilter.disabled = false;
-            }
+            if (btnFilter) { btnFilter.innerText = teksAsli; btnFilter.disabled = false; }
 
             if (res.result === "success") {
                 const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
                 const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
 
+                // 1. UPDATE KARTU METRIK
                 setVal('valPendapatanBersih', window.formatRupiahFinansial(res.metrik.pendapatan));
                 setHtml('valTotalTransaksi', `${res.metrik.transaksi} <span style="font-size:14px; font-weight:normal;">Nota</span>`);
                 setVal('valRataTransaksi', window.formatRupiahFinansial(res.metrik.rataRata));
                 setVal('valTotalDiskon', window.formatRupiahFinansial(res.metrik.diskon));
 
-                const selectDokter = document.getElementById('filterSelectDokter');
-                const selectTindakan = document.getElementById('filterSelectTindakan');
-                const selectPembayaran = document.getElementById('filterSelectPembayaran');
-                
-                if (selectDokter && selectTindakan && selectPembayaran) {
-                    const valDokter = selectDokter.value;
-                    const valTindakan = selectTindakan.value;
-                    const valPembayaran = selectPembayaran.value; 
-
-                    selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
-                    selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
-                    selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>';
-                    
-                    if (res.opsiFilter) {
-                        res.opsiFilter.dokter.forEach(d => selectDokter.innerHTML += `<option value="${d}">${d}</option>`);
-                        res.opsiFilter.tindakan.forEach(t => selectTindakan.innerHTML += `<option value="${t}">${t}</option>`);
-                        if(res.opsiFilter.pembayaran) {
-                            res.opsiFilter.pembayaran.forEach(p => selectPembayaran.innerHTML += `<option value="${p}">${p}</option>`);
-                        }
-                    }
-                    
-                    selectDokter.value = valDokter;
-                    selectTindakan.value = valTindakan;
-                    selectPembayaran.value = valPembayaran; 
-                }
-                
                 const divTumbuh = document.getElementById('valPertumbuhan');
                 if (divTumbuh) {
                     if (res.metrik.pertumbuhan.arah === "naik") {
@@ -387,31 +354,47 @@
                     }
                 }
 
-                if (typeof window.renderGrafikFinansial === "function") {
-                    window.renderGrafikFinansial(res.chartData);
-                }
+                // Update Dropdown Filter
+                const selectDokter = document.getElementById('filterSelectDokter');
+                const selectTindakan = document.getElementById('filterSelectTindakan');
+                const selectPembayaran = document.getElementById('filterSelectPembayaran');
                 
+                if (selectDokter && selectTindakan && selectPembayaran) {
+                    const valDokter = selectDokter.value; const valTindakan = selectTindakan.value; const valPembayaran = selectPembayaran.value; 
+                    selectDokter.innerHTML = '<option value="">👨‍⚕️ Semua Dokter</option>';
+                    selectTindakan.innerHTML = '<option value="">🩺 Semua Tindakan</option>';
+                    selectPembayaran.innerHTML = '<option value="">💳 Semua Pembayaran</option>';
+                    if (res.opsiFilter) {
+                        res.opsiFilter.dokter.forEach(d => selectDokter.innerHTML += `<option value="${d}">${d}</option>`);
+                        res.opsiFilter.tindakan.forEach(t => selectTindakan.innerHTML += `<option value="${t}">${t}</option>`);
+                        if(res.opsiFilter.pembayaran) res.opsiFilter.pembayaran.forEach(p => selectPembayaran.innerHTML += `<option value="${p}">${p}</option>`);
+                    }
+                    selectDokter.value = valDokter; selectTindakan.value = valTindakan; selectPembayaran.value = valPembayaran; 
+                }
+
+                if (typeof window.renderGrafikFinansial === "function") window.renderGrafikFinansial(res.chartData);
+                
+                // 2. RENDER WADAH HYBRID (PC & MOBILE)
                 const tbody = document.getElementById('tbodyLaporanFinansial');
-                if (tbody) {
-                    tbody.innerHTML = ''; 
-                    
-                    if (res.dataTabel && res.dataTabel.length > 0) {
-                        res.dataTabel.forEach(nota => {
-                            let btnPdf = nota.linkPdf !== "#" 
-                                ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` 
-                                : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
+                const tbodyMobile = document.getElementById('tbodyLaporanFinansialMobile');
+                
+                if (tbody) tbody.innerHTML = ''; 
+                if (tbodyMobile) tbodyMobile.innerHTML = ''; 
+                
+                if (res.dataTabel && res.dataTabel.length > 0) {
+                    res.dataTabel.forEach(nota => {
+                        let strDokter = nota.dokter || "";
+                        let arrDokter = strDokter.split(/<br\s*\/?>|,|\n/i);
+                        let dokterBersih = arrDokter.map(d => d.trim()).filter(d => { let textOnly = d.replace(/👨‍⚕️/g, "").trim(); return textOnly !== "" && textOnly !== "-"; });
+                        let dokterUnik = [...new Set(dokterBersih)];
+                        let dokterFinal = dokterUnik.length > 0 ? dokterUnik.join('<br>') : `<span style="color:#bdc3c7; font-style:italic;">Tanpa Dokter</span>`;
+                        
+                        let formatTotal = window.formatRupiahFinansial(nota.grandTotal);
+                        let statusWarna = nota.grandTotal > 0 ? '#27ae60' : '#e74c3c';
 
-                            let strDokter = nota.dokter || "";
-                            let arrDokter = strDokter.split(/<br\s*\/?>|,|\n/i);
-                            let dokterBersih = arrDokter.map(d => d.trim()).filter(d => {
-                                let textOnly = d.replace(/👨‍⚕️/g, "").trim(); 
-                                return textOnly !== "" && textOnly !== "-"; 
-                            });
-                            let dokterUnik = [...new Set(dokterBersih)];
-                            let dokterFinal = dokterUnik.length > 0 
-                                ? dokterUnik.join('<br>') 
-                                : `<span style="color:#bdc3c7; font-style:italic;">Tanpa Dokter</span>`;
-
+                        // 💻 SUNTIKKAN KE TABEL PC
+                        if (tbody) {
+                            let btnPdfPC = nota.linkPdf !== "#" ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
                             tbody.innerHTML += `
                                 <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
                                     <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
@@ -419,38 +402,56 @@
                                     <td style="padding: 12px; font-weight:bold;">${nota.namaPasien}</td>
                                     <td style="padding: 12px; font-size: 12px; line-height: 1.5;">${nota.tindakan}</td>
                                     <td style="padding: 12px; font-size: 12px; line-height: 1.5; color: #4b6584; font-weight: 500;">${dokterFinal}</td>
-                                    <td style="padding: 12px; text-align:center;">
-                                        <span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">
-                                            ${nota.metodeBayar}
-                                        </span>
-                                    </td>
+                                    <td style="padding: 12px; text-align:center;"><span style="background: #f1f2f6; border: 1px solid #dcdde1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #2f3640; display: inline-block;">${nota.metodeBayar}</span></td>
                                     <td style="padding: 12px; text-align:right; color:#e74c3c;">${nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-'}</td>
-                                    <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${window.formatRupiahFinansial(nota.grandTotal)}</td>
-                                    <td style="padding: 12px; text-align:center;">${btnPdf}</td>
+                                    <td style="padding: 12px; text-align:right; color:#27ae60; font-weight:bold;">${formatTotal}</td>
+                                    <td style="padding: 12px; text-align:center;">${btnPdfPC}</td>
                                 </tr>
                             `;
-                        });
-                    } else {
-                        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
-                    }
+                        }
+
+                        // 📱 SUNTIKKAN KE KARTU MOBILE
+                        if (tbodyMobile) {
+                            let btnPdfMobile = nota.linkPdf !== "#" ? `<button onclick="window.open('${nota.linkPdf}', '_blank')" style="width:100%; background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Buka Arsip PDF</button>` : `<button disabled style="width:100%; background:#e2e8f0; color:#94a3b8; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:13px;">❌ Bukti PDF Tidak Ada</button>`;
+                            tbodyMobile.innerHTML += `
+                                <div class="finansial-card-mobile" style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden; transition: all 0.3s ease;">
+                                    <div onclick="window.toggleAccordionFinansial(this)" style="padding:15px; background:#fbfcfc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
+                                        <div>
+                                            <div style="font-weight:bold; color:#2980b9; font-size:15px; margin-bottom:4px;">${nota.noKuitansi}</div>
+                                            <div style="font-size:12px; color:#7f8c8d; font-weight:bold;">${nota.namaPasien} • <span style="color:${statusWarna};">${formatTotal}</span></div>
+                                        </div>
+                                        <div style="display:flex; align-items:center; padding-top: 5px;">
+                                            <span class="acc-icon-finansial" style="font-size:16px; color:#95a5a6; transition: transform 0.3s; font-weight:bold;">▼</span>
+                                        </div>
+                                    </div>
+                                    <div class="finansial-card-body" style="display:none; padding:15px; border-top:1px solid #ecf0f1; background:#fff;">
+                                        <div style="margin-bottom:8px; font-size:13px;"><span style="color:#7f8c8d;">📅 Tanggal:</span> <strong>${nota.tanggal}</strong></div>
+                                        <div style="margin-bottom:12px; font-size:13px;"><span style="color:#7f8c8d;">👨‍⚕️ Dokter:</span> <span style="color:#8e44ad; font-weight:bold;">${dokterFinal}</span></div>
+                                        <div style="margin-bottom:12px; font-size:13px;"><span style="color:#7f8c8d;">💉 Tindakan Medis:</span><br><div style="margin-top:4px; font-weight:500;">${nota.tindakan}</div></div>
+                                        <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:13px;">
+                                            <div><span style="color:#7f8c8d;">💳 Bayar:</span> <strong>${nota.metodeBayar}</strong></div>
+                                            <div><span style="color:#7f8c8d;">🏷️ Diskon:</span> <strong style="color:#e74c3c;">${nota.diskon > 0 ? window.formatRupiahFinansial(nota.diskon) : '-'}</strong></div>
+                                        </div>
+                                        <div>${btnPdfMobile}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                } else {
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:gray;">Tidak ada transaksi di rentang tanggal tersebut.</td></tr>`;
+                    if (tbodyMobile) tbodyMobile.innerHTML = `<div style="text-align:center; padding:30px; color:gray; background:#fff; border-radius:8px;">Tidak ada transaksi di rentang tanggal tersebut.</div>`;
                 }
 
-                if (typeof window.cariTabelFinansial === "function") {
-                    setTimeout(window.cariTabelFinansial, 100);
-                }
-
+                if (typeof window.cariTabelFinansial === "function") setTimeout(window.cariTabelFinansial, 100);
             } else {
                 alert("⚠️ Gagal memuat laporan: " + res.message);
             }
         })
         .catch(err => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-            if (btnFilter) {
-                btnFilter.innerText = teksAsli;
-                btnFilter.disabled = false;
-            }
-            console.error("🚨 TERSANGKA ERROR DITEMUKAN:", err); 
-            alert("⚠️ Terjadi kesalahan jaringan.");
+            if (btnFilter) { btnFilter.innerText = teksAsli; btnFilter.disabled = false; }
+            alert("⚠️ Terjadi kesalahan jaringan saat memuat data.");
         });
     };
 
@@ -521,9 +522,12 @@
         const filterPembayaran = filterPembayaranEl ? filterPembayaranEl.value.toLowerCase() : "";
 
         const barisTabel = document.querySelectorAll("#tbodyLaporanFinansial tr");
+        const kartuMobile = document.querySelectorAll("#tbodyLaporanFinansialMobile .finansial-card-mobile");
+
+        let indexDataValid = 0; // Kunci ajaib untuk mensinkronkan baris tabel dengan kartu mobile
 
         barisTabel.forEach(baris => {
-            if (baris.cells.length < 2) return; 
+            if (baris.cells.length < 2) return; // Lewati baris kosong ("Tidak ada data")
             
             const noNota = baris.cells[0].innerText.toLowerCase();
             const namaPasien = baris.cells[2].innerText.toLowerCase();
@@ -538,10 +542,32 @@
 
             if (matchTeks && matchDokter && matchTindakan && matchPembayaran) {
                 baris.style.display = ""; 
+                if (kartuMobile[indexDataValid]) kartuMobile[indexDataValid].style.display = "block"; // Mobile ikut tampil
             } else {
                 baris.style.display = "none"; 
+                if (kartuMobile[indexDataValid]) kartuMobile[indexDataValid].style.display = "none"; // Mobile ikut sembunyi
             }
+            
+            indexDataValid++;
         });
+    };
+
+    // =====================================================================
+    // 💡 ANIMASI KLIK ACCORDION MOBILE (FUNGSI BARU)
+    // =====================================================================
+    window.toggleAccordionFinansial = function(headerElement) {
+        const cardBody = headerElement.nextElementSibling;
+        const icon = headerElement.querySelector('.acc-icon-finansial');
+        
+        if (cardBody.style.display === "none") {
+            cardBody.style.display = "block";
+            headerElement.style.borderBottom = "1px solid #ecf0f1";
+            icon.style.transform = "rotate(180deg)";
+        } else {
+            cardBody.style.display = "none";
+            headerElement.style.borderBottom = "1px solid transparent";
+            icon.style.transform = "rotate(0deg)";
+        }
     };
 
     // ==========================================================
