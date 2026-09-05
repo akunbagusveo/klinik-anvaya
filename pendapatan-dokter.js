@@ -963,6 +963,13 @@
                         tfoot { display: table-footer-group; }
                         .hindari-terpotong { page-break-inside: avoid !important; break-inside: avoid !important; }
                     }
+                    /* 🔥 CSS BARU: Mencegah Tabel Penyet di Layar HP */
+                    .tabel-responsif-slip { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+                    .tabel-responsif-slip table { min-width: 800px; /* Paksa lebar minimal agar tidak terjepit */ }
+                    @media print {
+                        .tabel-responsif-slip { overflow: visible !important; border-bottom: none !important; margin-top: 10px !important; }
+                        .tabel-responsif-slip table { min-width: 100% !important; }
+                    }
                 </style>
             <div style="font-family: 'Segoe UI', Tahoma, sans-serif; color: #2c3e50; line-height: 1.5; position: relative;">
                 <div class="no-print" style="text-align: right; margin-bottom: 20px; border-bottom: 1px dashed #bdc3c7; padding-bottom: 15px;">
@@ -978,22 +985,27 @@
                     <div style="text-align: right;"><div style="font-size: 11px; margin-top: 3px; color:#95a5a6;">Dirender pada: ${new Date().toLocaleString('id-ID')}</div></div>
                 </div>
                 <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; word-break: break-word;">
-                    <thead>
-                        <tr>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:4%;">No</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:left;">Tanggal</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:15%; text-align:left;">Pasien</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:20%; text-align:left;">Tindakan</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Tarif (Rp)</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Biaya Lab</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:9%; text-align:right;">Diskon</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right; color:#2980b9;">Dasar Fee</th>
-                            <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:right;">Fee Bersih</th>
-                        </tr>
-                    </thead>
-                    <tbody>${htmlRincian}</tbody>
-                </table>
+                
+                <!-- 🔥 WADAH SCROLL HORIZONTAL BARU -->
+                <div class="tabel-responsif-slip">
+                    <table style="width: 100%; border-collapse: collapse; table-layout: auto;">
+                        <thead>
+                            <tr>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:4%;">No</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:left;">Tanggal</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:15%; text-align:left;">Pasien</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:20%; text-align:left;">Tindakan</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Tarif (Rp)</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right;">Biaya Lab</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:9%; text-align:right;">Diskon</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:10%; text-align:right; color:#2980b9;">Dasar Fee</th>
+                                <th style="background:#ecf0f1; padding:10px 5px; font-size:11px; border-bottom:2px solid #bdc3c7; width:11%; text-align:right;">Fee Bersih</th>
+                            </tr>
+                        </thead>
+                        <tbody>${htmlRincian}</tbody>
+                    </table>
+                </div>
+
                 <div style="text-align:right; font-weight:bold; padding: 10px 5px; border-top: 2px solid #2c3e50; margin-top:5px; font-size: 14px;">Total Fee Bersih: Rp ${window.dataDraftSlip.pokokGaji.toLocaleString('id-ID')}</div>
                 <div class="hindari-terpotong" style="border: 2px solid #2ecc71; padding: 15px; margin-top: 25px; background: #f9fffb; border-radius: 6px;">
                     <div style="font-weight:bold; color:#2c3e50; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:5px;">B. KALKULASI FINAL (TAKE HOME PAY)</div>
@@ -1136,60 +1148,5 @@
             alert("Kesalahan jaringan saat mencetak slip.");
         });
     }
-
-    // window.cetakSlipDokter = function(index, event) {
-    //     if (event) event.stopPropagation(); 
-        
-    //     let btn = (window.event && window.event.target) ? window.event.target : null;
-    //     const teksAsli = btn ? btn.innerText : "Mencetak...";
-        
-    //     if (btn) {
-    //         btn.innerText = "⏳ Mencetak...";
-    //         btn.disabled = true;
-    //     }
-
-    //     const dataDokter = window.dataBagiHasilGlobal[index];
-        
-    //     fetch(window.WEB_APP_URL, {
-    //         method: "POST",
-    //         body: JSON.stringify({
-    //             action: "cetakSlipBagiHasil",
-    //             namaDokter: dataDokter.nama,
-    //             periode: window.periodeBagiHasilGlobal,
-    //             rincian: JSON.stringify(dataDokter.rincian)
-    //         })
-    //     })
-    //     .then(res => res.json())
-    //     .then(res => {
-    //         if (res.result === "success") {
-    //             window.open(res.pdfUrl, '_blank');
-                
-    //             if (btn) {
-    //                 btn.innerHTML = "📂 Buka Slip";
-    //                 btn.style.backgroundColor = "#27ae60"; 
-    //                 btn.style.boxShadow = "0 1px 3px rgba(39, 174, 96, 0.4)";
-    //                 btn.disabled = false;
-                    
-    //                 btn.onclick = function(e) {
-    //                     if (e) e.stopPropagation();
-    //                     window.open(res.pdfUrl, '_blank');
-    //                 };
-    //             }
-    //         } else {
-    //             if (btn) {
-    //                 btn.innerText = teksAsli;
-    //                 btn.disabled = false;
-    //             }
-    //             alert("Gagal mencetak: " + res.message);
-    //         }
-    //     })
-    //     .catch(err => {
-    //         if (btn) {
-    //             btn.innerText = teksAsli;
-    //             btn.disabled = false;
-    //         }
-    //         alert("Kesalahan jaringan saat mencetak slip.");
-    //     });
-    // };
 
 })();
