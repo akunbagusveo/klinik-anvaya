@@ -174,6 +174,8 @@
                     rowUpdate: dapatkanNilaiDOM('modalRowUpdate', 'txtRowUpdate') || formAktifRme.dataset.rowUpdate || "", 
                     rowRekamMedisTarget: window.barisRekamMedisTarget || "", 
                     namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
+                    // riwayatAlergiUpdate: document.getElementById('modalRiwayatAlergi') ? document.getElementById('modalRiwayatAlergi').value.trim() : "",
+                    riwayatSakit: document.getElementById('modalRiwayatSakit') ? document.getElementById('modalRiwayatSakit').value.trim() : "",
                     anamnesa: dapatkanNilaiDOM('modalAnamnesa', 'txtAnamnesa'),
                     objektif: dapatkanNilaiDOM('modalObjektif', 'txtObjektif'),
                     diagnosa: dapatkanNilaiDOM('modalDiagnosa', 'txtDiagnosa'),
@@ -999,6 +1001,7 @@
                     };
                     
                     pasokNilai('modalAnamnesa', 'txtAnamnesa', draftObj.anamnesa);
+                    pasokNilai('modalRiwayatSakit', 'txtRiwayatSakit', draftObj.riwayatSakit);
                     pasokNilai('modalObjektif', 'txtObjektif', draftObj.objektif);
                     
                     pasokNilai('modalDiagnosa', 'txtDiagnosa', draftObj.diagnosa);
@@ -1065,6 +1068,7 @@
                     bannerTampil = true;
                 }
                 if(bannerTampil && bannerMedis) bannerMedis.style.display = 'block';
+
             }
         });
 
@@ -1147,6 +1151,7 @@
                         </div>
                         <div class="detail-mobile-rme" style="font-size:13px; padding:15px; background-color: white; border-radius: 0 0 8px 8px;">
                             <div style="margin-bottom:8px;"><strong>💬 Anamnesa:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.anamnesa) : (r.anamnesa || '-')}</span></div>
+                            ${(r.riwayatSakit && r.riwayatSakit !== '-' && r.riwayatSakit !== '') ? `<div style="margin-bottom:8px; color:#d35400;"><strong>⚠️ Riwayat Sakit:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.riwayatSakit) : r.riwayatSakit}</span></div>` : ''}
                             <div style="margin-bottom:8px;"><strong>🔍 Objektif:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.objektif) : (r.objektif || '-')}</span></div>
                             <div style="margin-bottom:8px; color:#c0392b;"><strong>📌 Diagnosa:</strong><br><span style="white-space:pre-wrap;">${typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.diagnosa) : (r.diagnosa || '-')}</span></div>
                             <div style="margin-bottom:8px;"><strong>🛠️ Tindakan:</strong><br><span style="white-space:pre-wrap;">${tampilanTindakanHtml || '-'}</span></div>
@@ -1225,6 +1230,7 @@
             if (data.result === 'success') {
                 if (data.hariIni) {
                     setNilaiDOM('modalAnamnesa', 'txtAnamnesa', data.hariIni.anamnesa || "");
+                    setNilaiDOM('modalRiwayatSakit', 'txtRiwayatSakit', data.hariIni.riwayatSakit || "");
                     setNilaiDOM('modalObjektif', 'txtObjektif', data.hariIni.objektif || "");
                     setNilaiDOM('modalDiagnosa', 'txtDiagnosa', data.hariIni.diagnosa || "");
                     window.triggerSyncDiagnosa();
