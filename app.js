@@ -721,28 +721,100 @@
     };
 
     window.bukaSubTab = function(subTabId) {
+        // 1. Sembunyikan Semua Konten Terlebih Dahulu
         document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
         
         const tabMaster = document.getElementById('tabMasterTindakan');
         if (tabMaster) tabMaster.style.display = 'none';
         
+        // 2. Tampilkan Konten Target yang Dipilih
         const target = document.getElementById(subTabId);
         if (target) target.style.display = 'block';
         
-        const btnUser = document.getElementById('subTabUserBtn');
-        const btnAkses = document.getElementById('subTabAksesBtn');
-        const btnJadwal = document.getElementById('subTabJadwalBtn');
-        const btnLog = document.getElementById('subTabLogBtn');
-        const btnMaster = document.getElementById('subTabMasterTindakanBtn');
-        const btnUmum = document.getElementById('subTabUmumBtn'); // 🔥 Tombol Baru
+        // 3. Atur Indikator Tombol Aktif (Dinamis menggunakan Class, membersihkan hardcode lama)
+        const semuaTombol = document.querySelectorAll('.settings-nav-tabs .tab-link');
+        semuaTombol.forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.backgroundColor = ''; // Bersihkan sisa warna abu-abu (#ddd) lama
+        });
 
-        if (btnUser) btnUser.style.backgroundColor = (subTabId === 'manajemenUser') ? '#ddd' : '';
-        if (btnAkses) btnAkses.style.backgroundColor = (subTabId === 'manajemenAkses') ? '#ddd' : '';
-        if (btnJadwal) btnJadwal.style.backgroundColor = (subTabId === 'manajemenJadwal') ? '#ddd' : '';
-        if (btnLog) btnLog.style.backgroundColor = (subTabId === 'manajemenLog') ? '#ddd' : '';
-        if (btnMaster) btnMaster.style.backgroundColor = (subTabId === 'masterTindakan') ? '#ddd' : '';
-        if (btnUmum) btnUmum.style.backgroundColor = (subTabId === 'pengaturanUmum') ? '#ddd' : '';
+        // Peta dinamis pencarian ID Tombol
+        const mapTombol = {
+            'manajemenUser': 'subTabUserBtn',
+            'manajemenAkses': 'subTabAksesBtn',
+            'manajemenJadwal': 'subTabJadwalBtn',
+            'manajemenLog': 'subTabLogBtn',
+            'masterTindakan': 'subTabMasterTindakanBtn',
+            'pengaturanUmum': 'subTabUmumBtn'
+        };
+        
+        const idTombolAktif = mapTombol[subTabId];
+        if (idTombolAktif) {
+            const btnAktif = document.getElementById(idTombolAktif);
+            if (btnAktif) btnAktif.classList.add('active'); // CSS Biru otomatis menyala
+        }
 
+        // =================================================================
+        // 🔥 FITUR BARU: MASTER-DETAIL VIEW (DRILL-DOWN) UNTUK HP
+        // =================================================================
+        const navTabs = document.querySelector('.settings-nav-tabs');
+        
+        // A. Suntik CSS dan Tombol Back secara otomatis (Jika belum ada)
+        if (navTabs && !document.getElementById('btnBackDrillDown')) {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                /* Logika Khusus Layar HP (Sembunyikan Menu, Munculkan Tombol Back) */
+                @media (max-width: 768px) {
+                    .settings-nav-tabs.drill-down-active { display: none !important; }
+                    .btn-back-drilldown.drill-down-active { display: flex !important; }
+                    .btn-back-drilldown { 
+                        display: none; width: 100%; background: #2c3e50; color: white; border: none; 
+                        padding: 14px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; 
+                        margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 15px; 
+                        position: sticky; top: 10px; z-index: 999; align-items: center; gap: 8px;
+                    }
+                }
+                /* Di Layar PC, Tombol Back selalu disembunyikan */
+                @media (min-width: 769px) {
+                    .btn-back-drilldown { display: none !important; }
+                    .settings-nav-tabs { display: flex !important; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            const backBtn = document.createElement('button');
+            backBtn.id = 'btnBackDrillDown';
+            backBtn.className = 'btn-back-drilldown';
+            backBtn.innerHTML = '⬅️ Kembali ke Daftar Menu';
+            
+            // Logika ketika tombol "Kembali" ditekan
+            backBtn.onclick = function() {
+                // Sembunyikan semua isi konten
+                document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
+                if (tabMaster) tabMaster.style.display = 'none';
+                
+                // Matikan indikator warna aktif di tombol
+                semuaTombol.forEach(btn => btn.classList.remove('active'));
+                
+                // Munculkan menu list vertikal kembali
+                navTabs.classList.remove('drill-down-active');
+                this.classList.remove('drill-down-active');
+            };
+            
+            // Sisipkan tombol Back tepat di atas wadah menu
+            navTabs.parentNode.insertBefore(backBtn, navTabs);
+        }
+
+        // B. Aktifkan Mode Layar Penuh (Menyembunyikan menu vertikal & memunculkan tombol Back)
+        if (navTabs) {
+            navTabs.classList.add('drill-down-active');
+            const backBtn = document.getElementById('btnBackDrillDown');
+            if (backBtn) backBtn.classList.add('drill-down-active');
+        }
+
+        // =================================================================
+        // 4. PEMANGGILAN FUNGSI INIT MASING-MASING TAB (Fungsi Asli Anda)
+        // =================================================================
         if (subTabId === 'manajemenUser') {
             if (typeof window.muatDataUser === "function") window.muatDataUser();
             if (typeof window.muatPilihanRole === "function") window.muatPilihanRole(); 
@@ -757,7 +829,7 @@
             if (tabMaster) tabMaster.style.display = 'block'; 
             if (typeof window.initMasterTindakan === "function") window.initMasterTindakan(); 
         } else if (subTabId === 'pengaturanUmum') {
-            window.muatPengaturanUmum(); // 🔥 Tarik data saat tab dibuka
+            if (typeof window.muatPengaturanUmum === "function") window.muatPengaturanUmum();
         }
     };
 
