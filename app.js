@@ -764,14 +764,42 @@
             const style = document.createElement('style');
             style.innerHTML = `
                 /* Logika Khusus Layar HP (Sembunyikan Menu, Munculkan Tombol Back) */
+                /* 📱 RESPONSIVITAS MOBILE (Berubah jadi List Vertikal ala iPhone/Android) */
                 @media (max-width: 768px) {
-                    .settings-nav-tabs.drill-down-active { display: none !important; }
-                    .btn-back-drilldown.drill-down-active { display: flex !important; }
-                    .btn-back-drilldown { 
-                        display: none; width: 100%; background: #2c3e50; color: white; border: none; 
-                        padding: 14px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; 
-                        margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 15px; 
-                        position: sticky; top: 10px; z-index: 999; align-items: center; gap: 8px;
+                    .settings-nav-tabs {
+                        flex-direction: column;
+                        padding: 0; 
+                        gap: 8px;
+                        background-color: transparent;
+                    }
+                    
+                    .settings-nav-tabs .tab-link {
+                        width: 100%;
+                        text-align: left;
+                        padding: 16px 20px;
+                        background-color: #fff;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+                        
+                        /* 🔥 FIX CSS: Gunakan Flexbox sederhana tanpa space-between */
+                        display: flex;
+                        align-items: center;
+                        font-size: 15px;
+                    }
+                    
+                    /* 🔥 FIX CSS: Dorong panah mentok ke dinding kanan */
+                    .settings-nav-tabs .tab-link::after {
+                        content: "❯";
+                        margin-left: auto; /* Ini kunci ajaibnya! */
+                        font-size: 14px;
+                        color: #94a3b8;
+                        font-weight: bold;
+                        transition: color 0.3s;
+                    }
+                    
+                    .settings-nav-tabs .tab-link.active::after {
+                        color: white;
                     }
                 }
                 /* Di Layar PC, Tombol Back selalu disembunyikan */
@@ -831,6 +859,23 @@
         } else if (subTabId === 'pengaturanUmum') {
             if (typeof window.muatPengaturanUmum === "function") window.muatPengaturanUmum();
         }
+    };
+
+    // 🔥 FUNGSI BARU: Mengembalikan layar ke mode "Daftar Menu" untuk HP
+    window.resetNavigasiPengaturan = function() {
+        // 1. Sembunyikan semua konten tabel/sub-menu
+        document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
+        const tabMaster = document.getElementById('tabMasterTindakan');
+        if (tabMaster) tabMaster.style.display = 'none';
+        
+        // 2. Matikan indikator warna aktif di tombol
+        document.querySelectorAll('.settings-nav-tabs .tab-link').forEach(btn => btn.classList.remove('active'));
+        
+        // 3. Tarik kembali List Vertikal ke layar
+        const navTabs = document.querySelector('.settings-nav-tabs');
+        const backBtn = document.getElementById('btnBackDrillDown');
+        if (navTabs) navTabs.classList.remove('drill-down-active');
+        if (backBtn) backBtn.classList.remove('drill-down-active');
     };
 
     // =========================================================================

@@ -1537,7 +1537,7 @@
             
             <span class="sidebar-category">SISTEM KAMI</span>
             <button id="tabKamusDikteBtn" class="tab-link" onclick="window.switchTab('kamusDikte')">📖 Kamus Dikte</button>
-            <button id="tabBackendBtn" class="tab-link" onclick="window.switchTab('backend')" style="display: none;">⚙️ Pengaturan Sistem</button>
+            <button id="tabBackendBtn" class="tab-link" onclick="window.bukaTab('pengaturan'); if(window.innerWidth <= 768){ window.resetNavigasiPengaturan(); } else { window.bukaSubTab('manajemenUser'); }" style="display: none;">⚙️ Pengaturan Sistem</button>
         </div>
     </div>
 
