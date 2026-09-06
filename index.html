@@ -3365,10 +3365,11 @@
                             <!-- 🔥 UPGRADE: MULTIPLE DIAGNOSES DENGAN UI CHIP (KAPSUL) -->
                             <!-- ======================================================= -->
                             <div class="form-group" style="position: relative;">
-                                <label>📌 Diagnosa / Penyakit Primer & Sekunder <button type="button" class="btn-mic" onclick="window.mulaiDikte('inputCariDiagnosa')">🎙️</button></label>
+                                <!-- 🔥 TAMBAH ID PADA TOMBOL MIC -->
+                                <label>📌 Diagnosa / Penyakit Primer & Sekunder <button type="button" id="btnMicDiagnosa" class="btn-mic" onclick="window.mulaiDikte('inputCariDiagnosa')">🎙️</button></label>
                                 
-                                <!-- Tombol Quick Pick (DITAMBAHKAN WINDOW.) -->
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                                <!-- 🔥 TAMBAH ID quickPickDiagnosa DI SINI -->
+                                <div id="quickPickDiagnosa" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
                                     <button type="button" onclick="window.pilihICD('K02.9 - Dental caries, unspecified')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Karies</button>
                                     <button type="button" onclick="window.pilihICD('K04.0 - Pulpitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Pulpitis</button>
                                     <button type="button" onclick="window.pilihICD('K05.0 - Acute gingivitis')" style="background: #e8f4f8; color: #2980b9; border: 1px solid #baddea; border-radius: 15px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">Gingivitis</button>
@@ -3379,13 +3380,10 @@
                                 <!-- AREA CHIP DIAGNOSA TERPILIH -->
                                 <div id="tempatChipDiagnosa" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
                             
-                                <!-- 🔥 INPUT PENCARIAN & DIKTE (DITAMBAHKAN WINDOW. PADA EVENT ENTER) -->
+                                <!-- INPUT PENCARIAN -->
                                 <input type="text" id="inputCariDiagnosa" autocomplete="off" placeholder="Ketik nama penyakit lalu klik hasilnya... (Atau ketik bebas & tekan Enter)" style="border: 1px dashed #3498db; background: #f9fcff; margin-bottom: 0;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); if(this.value.trim() !== '') window.pilihICD(this.value.trim()); }">
                                 
-                                <!-- TEXTAREA ASLI -->
                                 <textarea id="modalDiagnosa" style="display: none;"></textarea>
-                                
-                                <!-- Kontainer Dropdown -->
                                 <div id="icdDropdown" style="display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #bdc3c7; border-radius: 4px; width: 100%; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-top: 2px;">
                                 </div>
                             </div>

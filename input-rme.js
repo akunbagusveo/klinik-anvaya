@@ -19,6 +19,7 @@
         if (typeof window.renderChipDiagnosa === "function") window.renderChipDiagnosa();
     };
 
+
     const getVisibleContainer = () => {
         const split = document.getElementById('formModalMedisSplit');
         const modal = document.getElementById('formModalMedis');
@@ -793,6 +794,8 @@
                     e.preventDefault(); 
                     window.open(pdfUrl, '_blank'); 
                 };
+                // 🔥 GEMBOK AKTIF: Kunci UI Diagnosa!
+                if (typeof window.kunciDiagnosaUI === "function") window.kunciDiagnosaUI(true);
             } else {
                 btnConsent.style.backgroundColor = "#e74c3c"; // Kembali Merah
                 btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
@@ -800,6 +803,8 @@
                     e.preventDefault();
                     if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME();
                 };
+                // 🔥 GEMBOK TERBUKA: Buka UI Diagnosa
+                if (typeof window.kunciDiagnosaUI === "function") window.kunciDiagnosaUI(false);
             }
         }
 

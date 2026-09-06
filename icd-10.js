@@ -42,31 +42,72 @@
             teks.style.fontWeight = "500";
             teks.style.color = "#2c3e50";
             
-            const btnHapus = document.createElement('button');
-            btnHapus.type = "button"; // 🔥 PENTING: Mencegah Form RME tersubmit tidak sengaja
-            btnHapus.innerHTML = "❌ Hapus";
-            btnHapus.style.background = "#ffeaa7";
-            btnHapus.style.color = "#d35400";
-            btnHapus.style.border = "none";
-            btnHapus.style.borderRadius = "4px";
-            btnHapus.style.cursor = "pointer";
-            btnHapus.style.fontSize = "11px";
-            btnHapus.style.fontWeight = "bold";
-            btnHapus.style.padding = "4px 8px";
-            
-            btnHapus.onclick = function() {
-                window.diagnosaTerpilih.splice(index, 1); 
-                window.renderChipDiagnosa(); 
-            };
-            
+            // Masukkan teks ke dalam chip terlebih dahulu
             chip.appendChild(teks);
-            chip.appendChild(btnHapus);
+            
+            // 🔥 LOGIKA GEMBOK: Tombol Hapus HANYA dibuat dan dimunculkan jika UI Diagnosa TIDAK terkunci
+            if (!window.isDiagnosaLocked) {
+                const btnHapus = document.createElement('button');
+                btnHapus.type = "button"; // 🔥 PENTING: Mencegah Form RME tersubmit tidak sengaja
+                btnHapus.innerHTML = "❌ Hapus";
+                btnHapus.style.background = "#ffeaa7";
+                btnHapus.style.color = "#d35400";
+                btnHapus.style.border = "none";
+                btnHapus.style.borderRadius = "4px";
+                btnHapus.style.cursor = "pointer";
+                btnHapus.style.fontSize = "11px";
+                btnHapus.style.fontWeight = "bold";
+                btnHapus.style.padding = "4px 8px";
+                
+                btnHapus.onclick = function() {
+                    window.diagnosaTerpilih.splice(index, 1); 
+                    window.renderChipDiagnosa(); 
+                };
+                
+                // Masukkan tombol hapus ke dalam chip
+                chip.appendChild(btnHapus);
+            }
+            
+            // Render chip ke layar
             tempatChip.appendChild(chip);
         });
 
         if (textareaDB) {
             textareaDB.value = window.diagnosaTerpilih.join('\n');
         }
+    };
+
+    // 🔥 FUNGSI BARU: Mengunci seluruh UI Diagnosa
+    window.kunciDiagnosaUI = function(isLocked) {
+        window.isDiagnosaLocked = isLocked;
+        const inputCari = document.getElementById('inputCariDiagnosa');
+        const quickPick = document.getElementById('quickPickDiagnosa');
+        const btnMic = document.getElementById('btnMicDiagnosa');
+        const peringatanId = 'peringatanDiagnosaTerkunci';
+        let peringatan = document.getElementById(peringatanId);
+
+        if (isLocked) {
+            if (inputCari) inputCari.style.display = 'none';
+            if (quickPick) quickPick.style.display = 'none';
+            if (btnMic) btnMic.style.display = 'none';
+            
+            // Tambahkan banner peringatan kuning jika belum ada
+            if (!peringatan && inputCari) {
+                peringatan = document.createElement('div');
+                peringatan.id = peringatanId;
+                peringatan.style = "padding: 10px; background: #fff3cd; border: 1px solid #ffe69c; color: #856404; border-radius: 4px; font-size: 12px; margin-bottom: 8px; font-style: italic;";
+                peringatan.innerHTML = "🔒 <strong>Diagnosa Terkunci.</strong> Informed Consent telah diterbitkan.";
+                inputCari.parentNode.insertBefore(peringatan, inputCari);
+            }
+        } else {
+            if (inputCari) inputCari.style.display = 'block';
+            if (quickPick) quickPick.style.display = 'flex';
+            if (btnMic) btnMic.style.display = 'inline-block';
+            if (peringatan) peringatan.remove();
+        }
+        
+        // Render ulang untuk menghilangkan/memunculkan tombol Hapus
+        window.renderChipDiagnosa();
     };
 
     window.pilihICD = function(teksDiagnosa) {
