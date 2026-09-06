@@ -1111,22 +1111,40 @@
                     try {
                         let arrTindakan = JSON.parse(r.perawatan);
                         if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                            arrTindakan.forEach(t => {
-                                let hargaAman = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
-                                
-                                // 🔥 KODE BARU: Desain UI Catatan Klinis yang lebih lega & profesional
-                                // Jika ada catatan, buat baris baru (div) tanpa kurung & tanpa miring.
-                                // Jika tidak ada catatan, cukup beri jeda enter (<br>).
-                                // 🔥 KODE BARU: Menambahkan CSS white-space: pre-wrap; agar Enter terbaca rapi ke bawah
-                                let labelCatatan = t.catatanKlinis 
-                                ? `<div style="padding-left: 12px; color: #2c3e50; margin-top: 4px; margin-bottom: 8px; white-space: pre-wrap; line-height: 1.5;">${t.catatanKlinis}</div>` 
-                                : `<br>`;
-                                
-                                // Gabungkan Nama Tindakan dan Catatannya
-                                let labelQty = (t.qty && Number(t.qty) > 1) ? ` <span style="color:#e67e22; font-weight:bold; margin-left: 5px;">(x${t.qty})</span>` : "";
+                            // 🔥 BUAT STRUKTUR KEPALA TABEL
+                            tampilanTindakanHtml = `
+                            <div style="overflow-x:auto; margin-top:5px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <table style="width:100%; border-collapse: collapse; font-size: 12px; text-align: left; background: #fff; white-space: nowrap;">
+                                    <thead>
+                                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #cbd5e1; color: #34495e;">
+                                            <th style="padding: 8px 10px; border-right: 1px solid #e2e8f0;">Nama Tindakan</th>
+                                            <th style="padding: 8px 10px; border-right: 1px solid #e2e8f0; text-align: right;">Harga Dasar</th>
+                                            <th style="padding: 8px 10px; border-right: 1px solid #e2e8f0; text-align: center;">Qty</th>
+                                            <th style="padding: 8px 10px; border-right: 1px solid #e2e8f0; text-align: right;">Total Harga</th>
+                                            <th style="padding: 8px 10px; min-width: 150px;">Catatan Klinis</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                            
+                            // 🔥 ISI BARIS TABEL DARI DATA
+                            arrTindakan.forEach((t, index) => {
+                                let hargaDasar = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
+                                let qty = Number(t.qty) || 1; // Default 1 jika qty kosong/versi lama
+                                let totalHarga = hargaDasar * qty;
+                                let catatan = t.catatanKlinis ? t.catatanKlinis.trim() : "-";
+                                let bgRow = index % 2 === 0 ? "#ffffff" : "#fbfcfc"; // Efek zebra (belang-belang)
 
-                                tampilanTindakanHtml += `• <strong>${t.namaTindakan}</strong>${labelQty} - Rp ${hargaAman.toLocaleString('id-ID')}${labelCatatan}`;
+                                tampilanTindakanHtml += `
+                                        <tr style="border-bottom: 1px solid #e2e8f0; background-color: ${bgRow};">
+                                            <td style="padding: 8px 10px; border-right: 1px solid #e2e8f0; font-weight: bold; color: #2c3e50;">${t.namaTindakan}</td>
+                                            <td style="padding: 8px 10px; border-right: 1px solid #e2e8f0; text-align: right;">Rp ${hargaDasar.toLocaleString('id-ID')}</td>
+                                            <td style="padding: 8px 10px; border-right: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #e67e22;">x${qty}</td>
+                                            <td style="padding: 8px 10px; border-right: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #27ae60;">Rp ${totalHarga.toLocaleString('id-ID')}</td>
+                                            <td style="padding: 8px 10px; white-space: pre-wrap; font-style: italic; color: #7f8c8d; font-size: 11px;">${catatan}</td>
+                                        </tr>`;
                             });
+                            
+                            tampilanTindakanHtml += `</tbody></table></div>`;
                         } else {
                             tampilanTindakanHtml = typeof window.formatKeBulletPoin === "function" ? window.formatKeBulletPoin(r.perawatan) : r.perawatan;
                         }
