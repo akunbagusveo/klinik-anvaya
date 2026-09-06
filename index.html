@@ -3641,7 +3641,7 @@
                         
                         <!-- 🔥 SUNTIKAN BARU: Kotak Input (Otomatis muncul jika dicentang) -->
                         <div id="wadahRisikoLain" style="display: none; grid-column: 1 / -1;">
-                            <input type="text" id="inpRisikoLain" placeholder="Ketik risiko lainnya secara spesifik di sini..." style="width: 100%; padding: 6px; border: 1px solid #f39c12; border-radius: 4px; font-size: 13px;">
+                            <input type="text" id="inpRisikoLain" placeholder="Ketik risiko lainnya secara spesifik di sini..." style="width: 100%; padding: 6px; border: 1px solid #f39c12; border-radius: 4px; font-size: 13px;" oninput="document.getElementById('chkRisikoLain').value = this.value.trim() !== '' ? 'Lain-lain: ' + this.value : 'Lain-lain (Kustom)'">
                         </div>
                     </div>
                 </div>
