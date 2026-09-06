@@ -371,11 +371,18 @@
         const btnConsent = document.getElementById('btnBuatConsent');
         if (!btnConsent) return;
 
+        // =====================================================================
+        // 🔥 SENSOR ANTI-BENTROK (MENGUNCI MODE PDF)
+        // Jika tombol sudah diubah jadi "Lihat PDF" oleh fungsi Edit sebelumnya, 
+        // hentikan watchdog ini agar tidak me-reset tombol kembali ke Oranye/Abu!
+        // =====================================================================
+        if (btnConsent.innerHTML.includes("Lihat PDF")) {
+            window.consentSudahDisimpanHariIni = true; // Loloskan validasi Simpan RME
+            return; 
+        }
+
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
-
-        // 🔥 LOGIKA TOMBOL BIRU (LIHAT PDF) DIHAPUS TOTAL DARI SINI
-        // Karena form RME hanya berurusan dengan Draf Lokal, bukan PDF yang sudah jadi.
 
         // 🛡️ CEK DRAFT LOKAL: Tombol hijau HANYA aktif jika laci TTD pasien ini ada isinya!
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
