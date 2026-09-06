@@ -93,18 +93,30 @@
                     const selNama = row.querySelector('.sel-nama-tindakan');
                     const inpHarga = row.querySelector('.inp-harga-tindakan');
                     const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+                    // 🔥 1. SENSOR BARU: Tangkap kotak input Quantity
+                    const inpQty = row.querySelector('.inp-qty-tindakan'); 
                     
                     if (selNama && selNama.value) {
+                        // Harga Murni saat ini berisi Harga Total (karena sudah dikali Qty oleh sistem UI form)
                         let hargaMurni = Number(inpHarga.value.replace(/[^0-9]/g, '')) || 0;
+                        
+                        // 🔥 2. EKSTRAKSI QTY: Ambil nilai angkanya, default ke 1 jika kosong
+                        let qtyInput = inpQty ? (parseInt(inpQty.value) || 1) : 1;
+                        
+                        // 🔥 3. KOREKSI HARGA: Kembalikan Harga Total menjadi Harga Dasar Murni
+                        let hargaDasarSebenarnya = qtyInput > 0 ? (hargaMurni / qtyInput) : hargaMurni;
+
                         let namaTindakanFix = selNama.value.trim();
                         let statusButuhLab = 0;
                         if (window.masterTindakanGlobal) {
                             let dataMasterItem = window.masterTindakanGlobal.find(t => t.nama === namaTindakanFix);
                             if (dataMasterItem && dataMasterItem.Butuh_Lab === 1) statusButuhLab = 1;
                         }
+                        
                         listTindakanDipilih.push({
                             namaTindakan: namaTindakanFix,
-                            hargaBersihPerItem: hargaMurni,
+                            hargaBersihPerItem: hargaDasarSebenarnya, // Kirim harga dasar yang sudah dikoreksi
+                            qty: qtyInput,                            // Kirim data Qty agar tidak hilang
                             catatanKlinis: inpCatatan ? inpCatatan.value.trim() : "",
                             butuhLab: statusButuhLab 
                         });
