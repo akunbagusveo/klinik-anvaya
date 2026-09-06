@@ -345,16 +345,20 @@
             }
         });
 
+        // 🔥 MENANGKAP VARIABEL BARU
         const anamnesa = ambilNilaiDualId('modalAnamnesa', 'txtAnamnesa');
+        const riwayatSakit = ambilNilaiDualId('modalRiwayatSakit', 'txtRiwayatSakit'); 
         const objektif = ambilNilaiDualId('modalObjektif', 'txtObjektif');
         const diagnosa = ambilNilaiDualId('modalDiagnosa', 'txtDiagnosa');
         const resep = ambilNilaiDualId('modalResep', 'txtResep');
 
-        if (listTindakanDraft.length === 0 && anamnesa === "" && objektif === "" && diagnosa === "" && resep === "") return;
+        // 🔥 MENAMBAHKAN riwayatSakit KE DALAM CEK KEKOSONGAN
+        if (listTindakanDraft.length === 0 && anamnesa === "" && riwayatSakit === "" && objektif === "" && diagnosa === "" && resep === "") return;
 
         const draft = {
             visitDate: window.tanggalKunjunganAktif, 
             anamnesa: anamnesa,
+            riwayatSakit: riwayatSakit, // 🔥 MENYIMPAN KE LOCAL STORAGE (CACHE)
             objektif: objektif,
             diagnosa: diagnosa,
             tindakanDinamis: listTindakanDraft, 
