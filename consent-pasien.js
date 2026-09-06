@@ -255,6 +255,14 @@
         if (modal) modal.style.display = 'none';
     };
 
+    window.toggleRisikoLain = function(checkbox) {
+        const wadah = document.getElementById('wadahRisikoLain');
+        if (wadah) {
+            wadah.style.display = checkbox.checked ? 'block' : 'none';
+            if (checkbox.checked) document.getElementById('inpRisikoLain').focus();
+        }
+    };
+
     window.kirimDataConsent = function() {
         const chkSetuju = document.getElementById('chkSayaSetuju');
         if (!chkSetuju || !chkSetuju.checked) {
@@ -288,7 +296,19 @@
         } else { ttdBase64Data = canvasTepat.toDataURL("image/png"); }
 
         const risikoTerpilih = [];
-        document.querySelectorAll('.chk-risiko:checked').forEach(el => { risikoTerpilih.push(el.value); });
+        document.querySelectorAll('.chk-risiko:checked').forEach(el => { 
+            if (el.id === 'chkRisikoLain') {
+                // 🔥 Jika opsi Lain-lain dicentang, tangkap teks ketikan dokter
+                const inpLain = document.getElementById('inpRisikoLain');
+                if (inpLain && inpLain.value.trim() !== "") {
+                    risikoTerpilih.push("Lain-lain: " + inpLain.value.trim());
+                } else {
+                    risikoTerpilih.push(el.value); // Fallback jika kotak kosong
+                }
+            } else {
+                risikoTerpilih.push(el.value); 
+            }
+        });
 
         // 🔥 LOGIKA BARU: Simpan ke LocalStorage saja (Draft Mode), TIDAK tembak server!
         const cleanRM = document.getElementById('lblConsentRM')?.innerText.trim() || "-";

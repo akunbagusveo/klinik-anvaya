@@ -3637,6 +3637,14 @@
                         <label><input type="checkbox" class="chk-risiko" value="Infeksi sekunder" checked> Infeksi sekunder</label>
                         <label><input type="checkbox" class="chk-risiko" value="Reaksi alergi obat/anestesi"> Reaksi alergi obat/anestesi</label>
                         <label><input type="checkbox" class="chk-risiko" value="Perlu tindakan lanjutan"> Perlu tindakan lanjutan</label>
+                        
+                        <!-- 🔥 SUNTIKAN BARU: Opsi Lain-lain -->
+                        <label style="grid-column: 1 / -1;"><input type="checkbox" id="chkRisikoLain" class="chk-risiko" value="Lain-lain" onchange="window.toggleRisikoLain(this)"> Lain-lain (Kustom)</label>
+                        
+                        <!-- 🔥 SUNTIKAN BARU: Kotak Input (Otomatis muncul jika dicentang) -->
+                        <div id="wadahRisikoLain" style="display: none; grid-column: 1 / -1;">
+                            <input type="text" id="inpRisikoLain" placeholder="Ketik risiko lainnya secara spesifik di sini..." style="width: 100%; padding: 6px; border: 1px solid #f39c12; border-radius: 4px; font-size: 13px;">
+                        </div>
                     </div>
                 </div>
 
