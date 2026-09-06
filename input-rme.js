@@ -175,7 +175,7 @@
                     rowRekamMedisTarget: window.barisRekamMedisTarget || "", 
                     namaPasien: dapatkanNilaiDOM('modalNama', 'billNama'),
                     // riwayatAlergiUpdate: document.getElementById('modalRiwayatAlergi') ? document.getElementById('modalRiwayatAlergi').value.trim() : "",
-                    riwayatSakit: document.getElementById('modalRiwayatSakit') ? document.getElementById('modalRiwayatSakit').value.trim() : "",
+                    riwayatSakit: dapatkanNilaiDOM('modalRiwayatSakit', 'txtRiwayatSakit'),
                     anamnesa: dapatkanNilaiDOM('modalAnamnesa', 'txtAnamnesa'),
                     objektif: dapatkanNilaiDOM('modalObjektif', 'txtObjektif'),
                     diagnosa: dapatkanNilaiDOM('modalDiagnosa', 'txtDiagnosa'),
