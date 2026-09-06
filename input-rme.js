@@ -513,13 +513,18 @@
             if (elemenCatatan) elemenCatatan.value = dataAwal.catatanKlinis || "";
         }
 
-        if (window.isPasienLunasAktif) {
+        // 🔥 LOGIKA KEAMANAN GANDA (Lunas ATAU Consent sudah terbit)
+        if (window.isPasienLunasAktif || window.isTindakanLocked) {
             if (elemenTindakan) { elemenTindakan.disabled = true; elemenTindakan.style.backgroundColor = "#e9ecef"; }
+            const elemenQty = rowWrapper.querySelector('.inp-qty-tindakan');
+            if (elemenQty) { elemenQty.disabled = true; elemenQty.style.backgroundColor = "#e9ecef"; }
             if (elemenHarga) { elemenHarga.readOnly = true; elemenHarga.style.backgroundColor = "#e9ecef"; }
+            if (elemenCatatan) { elemenCatatan.disabled = true; elemenCatatan.style.backgroundColor = "#e9ecef"; }
             rowWrapper.querySelectorAll('button, [class*="hapus"]').forEach(tombol => tombol.style.display = 'none');
         }
+        
         window.simpanDraftRME();
-    };
+    }; // Akhir dari fungsi tambahBarisTindakan
 
     window.hapusBarisTindakan = function(rowId) {
         const row = document.getElementById(rowId);
@@ -788,23 +793,25 @@
         const btnConsent = document.getElementById('btnBuatConsent');
         if (btnConsent) {
             if (pdfUrl && pdfUrl !== "-" && pdfUrl !== "") {
-                btnConsent.style.backgroundColor = "#2980b9"; // Ubah jadi Biru
+                btnConsent.style.backgroundColor = "#2980b9"; 
                 btnConsent.innerHTML = "📄 Lihat PDF Consent";
                 btnConsent.onclick = function(e) { 
                     e.preventDefault(); 
                     window.open(pdfUrl, '_blank'); 
                 };
-                // 🔥 GEMBOK AKTIF: Kunci UI Diagnosa!
+                // 🔥 GEMBOK AKTIF: Kunci UI Diagnosa & Tindakan!
                 if (typeof window.kunciDiagnosaUI === "function") window.kunciDiagnosaUI(true);
+                if (typeof window.kunciTindakanUI === "function") window.kunciTindakanUI(true); 
             } else {
-                btnConsent.style.backgroundColor = "#e74c3c"; // Kembali Merah
+                btnConsent.style.backgroundColor = "#e74c3c"; 
                 btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
                 btnConsent.onclick = function(e) {
                     e.preventDefault();
                     if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME();
                 };
-                // 🔥 GEMBOK TERBUKA: Buka UI Diagnosa
+                // 🔥 GEMBOK TERBUKA: Buka UI Diagnosa & Tindakan!
                 if (typeof window.kunciDiagnosaUI === "function") window.kunciDiagnosaUI(false);
+                if (typeof window.kunciTindakanUI === "function") window.kunciTindakanUI(false); 
             }
         }
 

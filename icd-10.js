@@ -110,6 +110,43 @@
         window.renderChipDiagnosa();
     };
 
+    // 🔥 FUNGSI BARU: Mengunci seluruh UI Tindakan
+    window.kunciTindakanUI = function(isLocked) {
+        window.isTindakanLocked = isLocked;
+        const btnTambah = document.getElementById('btnTambahTindakan');
+        const semuaBaris = document.querySelectorAll('.baris-tindakan-item');
+
+        if (isLocked) {
+            if (btnTambah) btnTambah.style.display = 'none'; // Hilangkan tombol tambah
+            
+            semuaBaris.forEach(row => {
+                const inpNama = row.querySelector('.sel-nama-tindakan');
+                const inpQty = row.querySelector('.inp-qty-tindakan');
+                const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+                const tombolHapusMic = row.querySelectorAll('button');
+                
+                if (inpNama) { inpNama.disabled = true; inpNama.style.backgroundColor = "#e9ecef"; }
+                if (inpQty) { inpQty.disabled = true; inpQty.style.backgroundColor = "#e9ecef"; }
+                if (inpCatatan) { inpCatatan.disabled = true; inpCatatan.style.backgroundColor = "#e9ecef"; }
+                tombolHapusMic.forEach(btn => btn.style.display = 'none'); // Hilangkan mic & tempat sampah
+            });
+        } else {
+            if (btnTambah) btnTambah.style.display = 'inline-flex';
+            
+            semuaBaris.forEach(row => {
+                const inpNama = row.querySelector('.sel-nama-tindakan');
+                const inpQty = row.querySelector('.inp-qty-tindakan');
+                const inpCatatan = row.querySelector('.inp-catatan-tindakan');
+                const tombolHapusMic = row.querySelectorAll('button');
+                
+                if (inpNama) { inpNama.disabled = false; inpNama.style.backgroundColor = "white"; }
+                if (inpQty) { inpQty.disabled = false; inpQty.style.backgroundColor = "transparent"; }
+                if (inpCatatan) { inpCatatan.disabled = false; inpCatatan.style.backgroundColor = "white"; }
+                tombolHapusMic.forEach(btn => btn.style.display = 'inline-flex');
+            });
+        }
+    };
+
     window.pilihICD = function(teksDiagnosa) {
         const inputCari = document.getElementById('inputCariDiagnosa');
         const dropdownIcd = document.getElementById('icdDropdown');
