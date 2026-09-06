@@ -584,14 +584,28 @@
             }
 
             // 🔥 FIX HEADLESS: Jika DOM kosong, ambil risiko dari LocalStorage Draft
+            // 🔥 PERBAIKAN FATAL BUG KUSTOM: Ambil risiko PRIORITAS UTAMA dari LocalStorage Draft
             let daftarRisiko = [];
-            document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked').forEach(chk => {
-                let label = chk.parentElement ? chk.parentElement.innerText.trim() : "";
-                if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) daftarRisiko.push(label);
-            });
-            if (daftarRisiko.length === 0) {
-                let savedRisiko = localStorage.getItem('risiko_consent_' + noRM);
-                if (savedRisiko) daftarRisiko = JSON.parse(savedRisiko);
+            let savedRisiko = localStorage.getItem('risiko_consent_' + noRM);
+            
+            if (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null && savedRisiko !== "undefined") {
+                // Gunakan data matang yang sudah disensor oleh fungsi kirimDataConsent
+                daftarRisiko = JSON.parse(savedRisiko);
+            } else {
+                // Fallback jika LocalStorage terhapus: Baca dari layar DOM dengan sensor ketikan
+                document.querySelectorAll('#modalInformedConsent input[type="checkbox"]:checked, .chk-risiko:checked').forEach(chk => {
+                    if (chk.id === 'chkRisikoLain' || chk.value.includes('Lain-lain')) {
+                        const inpLain = document.getElementById('inpRisikoLain');
+                        if (inpLain && inpLain.value.trim() !== "") {
+                            daftarRisiko.push("Lain-lain: " + inpLain.value.trim()); // Tangkap teks ketikan!
+                        } else {
+                            daftarRisiko.push("Lain-lain (Kustom)");
+                        }
+                    } else {
+                        let label = chk.parentElement ? chk.parentElement.innerText.trim() : chk.value;
+                        if (label && !label.toLowerCase().includes("saya yang bertanda tangan")) daftarRisiko.push(label);
+                    }
+                });
             }
 
             const urlFotoTTD = window.urlFotoConsentAktif || localStorage.getItem('ttd_consent_' + noRM) || "-";
