@@ -495,13 +495,19 @@
         if (dataAwal) {
             elemenTindakan.value = dataAwal.namaTindakan || "";
             const elemenQty = rowWrapper.querySelector('.inp-qty-tindakan');
-            if (elemenQty) elemenQty.value = dataAwal.qty || 1;
+            
+            // 🔥 BUG 2 FIX (Bagian Tampilan): Pasang Qty dan hitung ulang Harga Total di form
+            let qtyInit = dataAwal.qty || 1;
+            if (elemenQty) elemenQty.value = qtyInit;
+            
             window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "");
             
-            // 🔥 PERBAIKAN BUG NaN: Bersihkan dari koma/titik sebelum dijadikan format angka
             if (elemenHarga) {
-                let hargaMentah = String(dataAwal.hargaDiinput || dataAwal.hargaBersihPerItem || 0).replace(/[^0-9]/g, '');
-                elemenHarga.value = hargaMentah ? Number(hargaMentah).toLocaleString('en-US') : "";
+                let hargaDasarMentah = String(dataAwal.hargaDiinput || dataAwal.hargaBersihPerItem || 0).replace(/[^0-9]/g, '');
+                let hargaDasarAngka = Number(hargaDasarMentah) || 0;
+                let hargaTotalUntukLayar = hargaDasarAngka * qtyInit; // Kalikan Qty!
+                
+                elemenHarga.value = hargaTotalUntukLayar > 0 ? hargaTotalUntukLayar.toLocaleString('en-US') : "";
             }
             if (elemenCatatan) elemenCatatan.value = dataAwal.catatanKlinis || "";
         }
@@ -709,31 +715,18 @@
         const dataTerpilih = window.currentHistoryData.find(r => String(r.barisSheet) === String(barisSheet));
         
         if (dataTerpilih) {
-            // 🔥 MENGUNCI HAK MILIK DOKTER ASLI SAAT DI-EDIT OLEH OWNER/ADMIN
             window.dokterPemilikRM = dataTerpilih.idDokter;
             window.namaDokterPemilikRM = dataTerpilih.namaDokter;
 
-            let proKontrolMentah = dataTerpilih.proKontrol || "";
-            let extractedDate = "";
-            let pureCatatan = proKontrolMentah;
+            // 🔥 BUG 4 FIX: Ambil langsung tanggal kontrol yang sudah diekstrak sempurna dari Backend
+            let extractedDate = dataTerpilih.tanggalKontrol || "";
+            let pureCatatan = dataTerpilih.proKontrol || "";
 
-            const regexTgl = /Tgl Kontrol:\s*([0-9]{2,4}-[0-9]{2}-[0-9]{2,4})/i;
-            const matchTgl = proKontrolMentah.match(regexTgl);
-            
-            if (matchTgl && matchTgl[1]) {
-                extractedDate = matchTgl[1].trim();
-                if (extractedDate.match(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/)) {
-                    let p = extractedDate.split('-');
-                    extractedDate = `${p[2]}-${p[1]}-${p[0]}`; 
-                }
-                pureCatatan = proKontrolMentah.replace(/🗓️ Tgl Kontrol:.*?\n📝 Catatan:\s*/g, "").trim();
-                pureCatatan = pureCatatan.replace(/🗓️ Tgl Kontrol:.*?\n/g, "").trim(); 
-            }
-
-            window.salinAtauEditRME(isHariIni, dataTerpilih.barisSheet, dataTerpilih.anamnesa, dataTerpilih.objektif, dataTerpilih.diagnosa, dataTerpilih.perawatan, dataTerpilih.resep, dataTerpilih.proPerawatan, pureCatatan);
+            // 🔥 BUG 1 & BUG 3 FIX: Kita lempar riwayatSakit & pdfUrl ke fungsi salin
+            window.salinAtauEditRME(isHariIni, dataTerpilih.barisSheet, dataTerpilih.anamnesa, dataTerpilih.objektif, dataTerpilih.diagnosa, dataTerpilih.perawatan, dataTerpilih.resep, dataTerpilih.proPerawatan, pureCatatan, dataTerpilih.riwayatSakit, dataTerpilih.pdfUrl);
 
             const normalisasiTeks = (teks) => (teks || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
-            window.originalRmeSnapshot = normalisasiTeks(dataTerpilih.anamnesa) + normalisasiTeks(dataTerpilih.objektif) + normalisasiTeks(dataTerpilih.diagnosa) + normalisasiTeks(dataTerpilih.perawatan) + normalisasiTeks(dataTerpilih.resep) + normalisasiTeks(dataTerpilih.proPerawatan) + normalisasiTeks(pureCatatan) + normalisasiTeks(extractedDate);
+            window.originalRmeSnapshot = normalisasiTeks(dataTerpilih.anamnesa) + normalisasiTeks(dataTerpilih.riwayatSakit) + normalisasiTeks(dataTerpilih.objektif) + normalisasiTeks(dataTerpilih.diagnosa) + normalisasiTeks(dataTerpilih.perawatan) + normalisasiTeks(dataTerpilih.resep) + normalisasiTeks(dataTerpilih.proPerawatan) + normalisasiTeks(pureCatatan) + normalisasiTeks(extractedDate);
 
             setTimeout(() => {
                 document.querySelectorAll('#modalTanggalKontrol, #tanggalKontrol').forEach(el => el.value = extractedDate);
@@ -747,7 +740,7 @@
         }
     };
 
-    window.salinAtauEditRME = function(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon) {
+    window.salinAtauEditRME = function(isHariIni, barisSheet, anam, obj, diag, per, res, proPer, proKon, riwayatSakit, pdfUrl) {
         const kolomKiri = document.getElementById('kolomInputRME');
         if(kolomKiri) kolomKiri.style.display = 'block';
         
@@ -756,8 +749,10 @@
         };
 
         setNilaiAman('modalAnamnesa', anam); setNilaiAman('txtAnamnesa', anam);
-        setNilaiAman('modalObjektif', obj); setNilaiAman('txtObjektif', obj);
+        // 🔥 BUG 1 FIX: Pasang data Riwayat Sakit ke kotak HTML
+        setNilaiAman('modalRiwayatSakit', riwayatSakit); setNilaiAman('txtRiwayatSakit', riwayatSakit);
         
+        setNilaiAman('modalObjektif', obj); setNilaiAman('txtObjektif', obj);
         setNilaiAman('modalDiagnosa', diag); setNilaiAman('txtDiagnosa', diag);
         window.triggerSyncDiagnosa();
 
@@ -773,15 +768,42 @@
             try {
                 let arrTindakan = JSON.parse(per);
                 if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                    arrTindakan.forEach(t => { window.tambahBarisTindakan({ namaTindakan: t.namaTindakan, hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, catatanKlinis: t.catatanKlinis }); });
+                    // 🔥 BUG 2 FIX: Jangan lupakan 'qty' saat merender ulang tindakan!
+                    arrTindakan.forEach(t => { 
+                        window.tambahBarisTindakan({ 
+                            namaTindakan: t.namaTindakan, 
+                            hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, 
+                            qty: t.qty || 1, // <- Ini yang kemarin tertinggal!
+                            catatanKlinis: t.catatanKlinis 
+                        }); 
+                    });
                 }
             } catch(e) {
                 if (per && per !== "-" && per !== "") window.tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: per });
             }
         }
 
-        const btnSimpan = document.getElementById('btnSimpanRME');
+        // 🔥 BUG 3 FIX: Kunci Tombol Consent jika PDF sudah terbit
+        const btnConsent = document.getElementById('btnBuatConsent');
+        if (btnConsent) {
+            if (pdfUrl && pdfUrl !== "-" && pdfUrl !== "") {
+                btnConsent.style.backgroundColor = "#2980b9"; // Ubah jadi Biru
+                btnConsent.innerHTML = "📄 Lihat PDF Consent";
+                btnConsent.onclick = function(e) { 
+                    e.preventDefault(); 
+                    window.open(pdfUrl, '_blank'); 
+                };
+            } else {
+                btnConsent.style.backgroundColor = "#e74c3c"; // Kembali Merah
+                btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
+                btnConsent.onclick = function(e) {
+                    e.preventDefault();
+                    if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME();
+                };
+            }
+        }
 
+        const btnSimpan = document.getElementById('btnSimpanRME');
         if (isHariIni === true || isHariIni === "true") {
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
             alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
