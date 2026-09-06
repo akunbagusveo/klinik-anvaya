@@ -297,13 +297,13 @@
 
         const risikoTerpilih = [];
         document.querySelectorAll('.chk-risiko:checked').forEach(el => { 
-            if (el.id === 'chkRisikoLain') {
-                // 🔥 Jika opsi Lain-lain dicentang, tangkap teks ketikan dokter
+            // 🔥 SENSOR PENANGKAP TEKS KUSTOM
+            if (el.id === 'chkRisikoLain' || el.value.includes('Lain-lain')) {
                 const inpLain = document.getElementById('inpRisikoLain');
                 if (inpLain && inpLain.value.trim() !== "") {
-                    risikoTerpilih.push("Lain-lain: " + inpLain.value.trim());
+                    risikoTerpilih.push("Lain-lain: " + inpLain.value.trim()); // Tangkap teks ketikan!
                 } else {
-                    risikoTerpilih.push(el.value); // Fallback jika kotak kosong
+                    risikoTerpilih.push("Lain-lain (Kustom)"); // Fallback jika kosong
                 }
             } else {
                 risikoTerpilih.push(el.value); 
