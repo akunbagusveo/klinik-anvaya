@@ -284,11 +284,11 @@
         try {
             let arrTindakan = JSON.parse(pasien.tindakanRaw);
             if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                arrTindakan.forEach(t => {
+                // 🔥 TAMBAHKAN index pada forEach agar kita bisa memberi ID unik pada input
+                arrTindakan.forEach((t, index) => {
                     const hargaMurniItem = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
                     window.totalTindakanAktifKasir += hargaMurniItem;
                     
-                    // 🔥 FITUR BARU: Mencegah cetak "Dr. dr. Aldila" di rincian tindakan
                     let namaDokterTindakan = String(t.dokterPelaksana || 'Umum').trim();
                     if (namaDokterTindakan !== 'Umum' && !namaDokterTindakan.toLowerCase().includes("dr.") && !namaDokterTindakan.toLowerCase().includes("dr ")) {
                         namaDokterTindakan = "dr. " + namaDokterTindakan;
@@ -296,12 +296,16 @@
 
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
+                    
+                    // 🔥 UBAH KOLOM CATATAN MENJADI KOTAK INPUT DINAMIS
                     tr.innerHTML = `
                         <td style="padding: 8px; font-weight: 600; color: #34495e;">
                             ${t.namaTindakan} <br>
                             <span style="font-size:10px; color:#16a085; font-weight: bold;">👨‍⚕️ ${namaDokterTindakan}</span>
                         </td>
-                        <td style="padding: 8px; color: #7f8c8d; font-style: italic;">${t.catatanKlinis || '-'}</td>
+                        <td style="padding: 8px;">
+                            <input type="text" id="inpCatatanItem_${index}" value="${t.catatanKlinis || ''}" placeholder="Ketik catatan..." style="width: 100%; max-width: 180px; padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; outline: none;">
+                        </td>
                         <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${hargaMurniItem.toLocaleString('id-ID')}</td>
                     `;
                     if (tbody) tbody.appendChild(tr);
@@ -368,29 +372,33 @@
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
         let tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
 
-        // 🔥 PERBAIKAN FATAL: Memastikan Harga Satuan dikalikan dengan Qty sebelum dikirim ke Server
+        // 🔥 PERBAIKAN FATAL: Memastikan Harga Satuan dikalikan dengan Qty & Menarik Catatan Kasir
         try {
             let listTindakan = JSON.parse(tindakanRawStr);
-            listTindakan = listTindakan.map(item => {
+            // 🔥 TAMBAHKAN index DI SINI
+            listTindakan = listTindakan.map((item, index) => { 
                 let qty = Number(item.qty) || Number(item.quantity) || 1;
-                let hargaSatuan = Number(item.hargaBersihPerItem) || 0; // Dari RME masih berupa Harga Dasar
+                let hargaSatuan = Number(item.hargaBersihPerItem) || 0; 
+                
+                // 🔥 SEDOT TEKS DARI KOTAK INPUT CATATAN KASIR
+                let inputCatatan = document.getElementById(`inpCatatanItem_${index}`);
+                let teksCatatanBaru = inputCatatan ? inputCatatan.value.trim() : "";
                 
                 if (qty > 1) {
-                    // 1. Kalikan harga agar masuk ke Kuitansi & Gaji Dokter sebagai Total Harga yang benar
                     item.hargaBersihPerItem = hargaSatuan * qty;
-                    
-                    // 2. Tambahkan format (Qty x @ Rp Satuan) pada nama tindakan untuk transparansi penuh
                     let hargaSatuanFormat = hargaSatuan.toLocaleString('id-ID');
                     let formatTransparan = `(${qty}x @ Rp ${hargaSatuanFormat})`;
-                    
                     let namaTndLower = item.namaTindakan.toLowerCase();
-                    // Cegah duplikasi teks jika sudah ada
                     if (!namaTndLower.includes(`(${qty}x`) && !namaTndLower.includes(`(x${qty}`)) {
                         item.namaTindakan = `${item.namaTindakan} ${formatTransparan}`;
                     }
                 }
                 
-                // Pastikan qty terekspor dengan rapi
+                // 🔥 SUNTIKKAN CATATAN KE NAMA TINDAKAN (Jika kasir mengisi kotak catatannya)
+                if (teksCatatanBaru !== "") {
+                    item.namaTindakan = `${item.namaTindakan} [Catatan: ${teksCatatanBaru}]`;
+                }
+                
                 item.qty = qty;
                 return item;
             });
