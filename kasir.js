@@ -284,23 +284,29 @@
         try {
             let arrTindakan = JSON.parse(pasien.tindakanRaw);
             if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                // 🔥 TAMBAHKAN index pada forEach agar kita bisa memberi ID unik pada input
                 arrTindakan.forEach((t, index) => {
-                    const hargaMurniItem = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
-                    window.totalTindakanAktifKasir += hargaMurniItem;
+                    // 🔥 PERBAIKAN BUG GRAND TOTAL: Deteksi & Kalikan Qty sejak modal Kasir dibuka!
+                    let qty = Number(t.qty) || Number(t.quantity) || 1;
+                    let hargaDasar = Number(t.hargaDiinput || t.hargaBersihPerItem) || 0;
+                    let hargaMurniItem = hargaDasar * qty; // Total untuk item ini
+                    
+                    window.totalTindakanAktifKasir += hargaMurniItem; // Sekarang Grand Total akan valid 100%!
                     
                     let namaDokterTindakan = String(t.dokterPelaksana || 'Umum').trim();
                     if (namaDokterTindakan !== 'Umum' && !namaDokterTindakan.toLowerCase().includes("dr.") && !namaDokterTindakan.toLowerCase().includes("dr ")) {
                         namaDokterTindakan = "dr. " + namaDokterTindakan;
                     }
 
+                    // Tambahkan info estetis ke layar kasir agar kasir juga tahu ini dikali Qty
+                    let infoQtyLayar = qty > 1 ? `<br><span style="font-size:11px; color:#e67e22;">(${qty}x @ Rp ${hargaDasar.toLocaleString('id-ID')})</span>` : "";
+
                     let tr = document.createElement('tr');
                     tr.style.borderBottom = "1px solid #f2f4f4";
                     
-                    // 🔥 UBAH KOLOM CATATAN MENJADI KOTAK INPUT DINAMIS
+                    // 🔥 HTML Kolom Kasir dengan Catatan Dinamis
                     tr.innerHTML = `
                         <td style="padding: 8px; font-weight: 600; color: #34495e;">
-                            ${t.namaTindakan} <br>
+                            ${t.namaTindakan} ${infoQtyLayar} <br>
                             <span style="font-size:10px; color:#16a085; font-weight: bold;">👨‍⚕️ ${namaDokterTindakan}</span>
                         </td>
                         <td style="padding: 8px;">
