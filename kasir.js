@@ -366,7 +366,36 @@
         }
 
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
-        const tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
+        let tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
+
+        // 🔥 PERBAIKAN FATAL: Memastikan Harga Satuan dikalikan dengan Qty sebelum dikirim ke Server
+        try {
+            let listTindakan = JSON.parse(tindakanRawStr);
+            listTindakan = listTindakan.map(item => {
+                let qty = Number(item.qty) || Number(item.quantity) || 1;
+                let hargaSatuan = Number(item.hargaBersihPerItem) || 0; // Dari RME masih berupa Harga Dasar
+                
+                if (qty > 1) {
+                    // 1. Kalikan harga agar masuk ke Kuitansi & Gaji Dokter sebagai Total Harga yang benar
+                    item.hargaBersihPerItem = hargaSatuan * qty;
+                    
+                    // 2. Tambahkan embel-embel (x...) pada nama tindakan jika belum ada
+                    let cekStringQty = `(x${qty})`;
+                    let cekStringQtySpasi = `(x ${qty})`;
+                    let namaTndLower = item.namaTindakan.toLowerCase();
+                    if (!namaTndLower.includes(cekStringQty.toLowerCase()) && !namaTndLower.includes(cekStringQtySpasi.toLowerCase())) {
+                        item.namaTindakan = `${item.namaTindakan} (x${qty})`;
+                    }
+                }
+                
+                // Pastikan qty terekspor dengan rapi
+                item.qty = qty;
+                return item;
+            });
+            tindakanRawStr = JSON.stringify(listTindakan);
+        } catch (e) {
+            console.error("Gagal memparsing JSON Tindakan Kasir:", e);
+        }
 
         let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
