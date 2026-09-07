@@ -351,12 +351,13 @@
         const metodeBayar = document.getElementById('selBillMetode').value;
         const btnKunciCetak = document.getElementById('btnKunciCetak');
         
+        // 🔥 AMBIL DATA KETERANGAN
+        const keteranganKasir = document.getElementById('inpBillKeterangan') ? document.getElementById('inpBillKeterangan').value.trim() : "";
+        
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
-        
-        // 🔥 FITUR BARU: Menggunakan Nama Lengkap untuk Nama Kasir yang bertugas mencetak Kuitansi
         const usernameAktif = sessionData.namaLengkap || sessionData.username || "Staf Kasir";
 
         if (!barisPendaftaran) {
@@ -369,6 +370,7 @@
 
         let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
+        if (keteranganKasir) pesanKonfirmasi += `Catatan: ${keteranganKasir}\n`; // 🔥 Tampilkan di konfirmasi
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan & Buat PDF?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -399,7 +401,8 @@
             sisaPiutang: 0,     
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
-            kasirOperator: usernameAktif // 🔥 Terkirim ke PDF sebagai Nama Lengkap
+            keterangan: keteranganKasir, // 🔥 SUNTIKKAN KE PAYLOAD SERVER!
+            kasirOperator: usernameAktif 
         };
 
         fetch(window.WEB_APP_URL, {
@@ -418,8 +421,10 @@
             if (res.result === "success") {
                 alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!`);
                 window.tokenKasirUnik = null; 
-                
                 if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
+                
+                // 🔥 Reset input keterangan setelah sukses
+                if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
                 
                 window.tutupModalBilling();
                 if (typeof window.muatAntreanKasir === "function") window.muatAntreanKasir();
@@ -430,11 +435,10 @@
         .catch(err => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
             console.error(err);
-            
             if (btnKunciCetak) btnKunciCetak.innerText = "Koneksi Terputus...";
-            
             alert("⚠️ KONEKSI TERPUTUS SAAT MEMPROSES PEMBAYARAN!\n\nJangan panik. Transaksi Anda kemungkinan besar sudah berhasil dicatat dan PDF sedang dibuat oleh sistem.\n\nSistem akan memuat ulang antrean kasir. Jika nama pasien sudah hilang dari antrean, berarti pembayaran SUKSES masuk ke laporan keuangan.");
             
+            if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
             window.tutupModalBilling();
             if (typeof window.muatAntreanKasir === "function") window.muatAntreanKasir();
             
@@ -454,6 +458,9 @@
         const metodeBayar = document.getElementById('selBillMetode').value;
         const btnKunci = document.getElementById('btnKunciKuitansi');
         
+        // 🔥 AMBIL DATA KETERANGAN
+        const keteranganKasir = document.getElementById('inpBillKeterangan') ? document.getElementById('inpBillKeterangan').value.trim() : "";
+        
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
         
@@ -467,6 +474,7 @@
 
         let pesanKonfirmasi = `Konfirmasi Pembayaran:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
+        if (keteranganKasir) pesanKonfirmasi += `Catatan: ${keteranganKasir}\n`; // 🔥 Tampilkan di konfirmasi
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -488,6 +496,7 @@
             sisaPiutang: 0, 
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
+            keterangan: keteranganKasir, // 🔥 SUNTIKKAN KE PAYLOAD SERVER!
             operator: usernameAktif
         };
 
@@ -504,6 +513,7 @@
             
             if (res.result === "success") {
                 alert(`🎉 PEMBAYARAN SUKSES DIKUNCI!\n\nNomor Kuitansi Resmi:\n👉 ${res.noKuitansi}`);
+                if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
                 window.tutupModalBilling();
                 if (typeof window.muatAntreanKasir === "function") window.muatAntreanKasir();
             } else {
