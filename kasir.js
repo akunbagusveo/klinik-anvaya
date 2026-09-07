@@ -379,12 +379,14 @@
                     // 1. Kalikan harga agar masuk ke Kuitansi & Gaji Dokter sebagai Total Harga yang benar
                     item.hargaBersihPerItem = hargaSatuan * qty;
                     
-                    // 2. Tambahkan embel-embel (x...) pada nama tindakan jika belum ada
-                    let cekStringQty = `(x${qty})`;
-                    let cekStringQtySpasi = `(x ${qty})`;
+                    // 2. Tambahkan format (Qty x @ Rp Satuan) pada nama tindakan untuk transparansi penuh
+                    let hargaSatuanFormat = hargaSatuan.toLocaleString('id-ID');
+                    let formatTransparan = `(${qty}x @ Rp ${hargaSatuanFormat})`;
+                    
                     let namaTndLower = item.namaTindakan.toLowerCase();
-                    if (!namaTndLower.includes(cekStringQty.toLowerCase()) && !namaTndLower.includes(cekStringQtySpasi.toLowerCase())) {
-                        item.namaTindakan = `${item.namaTindakan} (x${qty})`;
+                    // Cegah duplikasi teks jika sudah ada
+                    if (!namaTndLower.includes(`(${qty}x`) && !namaTndLower.includes(`(x${qty}`)) {
+                        item.namaTindakan = `${item.namaTindakan} ${formatTransparan}`;
                     }
                 }
                 
