@@ -243,7 +243,9 @@
                     let diskonProrataItem = rasio * inv.diskon;
                     
                     rincianDokter.push({
-                        tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, tindakan: item.namaTindakan,
+                        tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, 
+                        tindakan: item.namaTindakan, 
+                        qty: item.qty || item.quantity || 1, // 🔥 SUNTIKAN QTY DINAMIS
                         hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
                     });
                 }
@@ -505,7 +507,9 @@
                 
                 doctorMap[docInfo.key].jmlTindakan++;
                 doctorMap[docInfo.key].rincian.push({
-                    tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, tindakan: item.namaTindakan,
+                    tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, 
+                    tindakan: item.namaTindakan, 
+                    qty: item.qty || item.quantity || 1, // 🔥 SUNTIKAN QTY DINAMIS
                     hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
                 });
             }
@@ -933,12 +937,17 @@
             let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
             let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
 
+            // 🔥 SMART LOGIC (TAMPILAN LAYAR): Tampilkan (x2) jika Qty > 1
+            let namaTindakanTampil = rin.tindakan;
+            let qtyLayar = rin.qty ? Number(rin.qty) : 1;
+            if (qtyLayar > 1) { namaTindakanTampil += " (x" + qtyLayar + ")"; }
+
             htmlRincian += `
                 <tr style="border-bottom: 1px dashed #e9ecef;">
                     <td style="padding:8px 5px; text-align:center; font-size:11px;">${urut + 1}</td>
                     <td style="padding:8px 5px; font-size:11px;">${rin.tanggal}</td>
                     <td style="padding:8px 5px; font-size:11px; font-weight:bold;">${rin.pasien}</td>
-                    <td style="padding:8px 5px; font-size:11px;">${rin.tindakan}</td>
+                    <td style="padding:8px 5px; font-size:11px;">${namaTindakanTampil}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${labTxt}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${diskonTxt}</td>
