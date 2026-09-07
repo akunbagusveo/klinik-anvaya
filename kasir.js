@@ -304,7 +304,11 @@
                             <span style="font-size:10px; color:#16a085; font-weight: bold;">👨‍⚕️ ${namaDokterTindakan}</span>
                         </td>
                         <td style="padding: 8px;">
-                            <input type="text" id="inpCatatanItem_${index}" value="${t.catatanKlinis || ''}" placeholder="Ketik catatan..." style="width: 100%; max-width: 180px; padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; outline: none;">
+                            <input type="text" id="inpCatatanItem_${index}" 
+                                   value="" 
+                                   placeholder="${t.catatanKlinis ? 'Klinis: ' + t.catatanKlinis : 'Ketik catatan kuitansi...'}" 
+                                   style="width: 100%; max-width: 180px; padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; outline: none;" 
+                                   title="Teks bayangan adalah catatan RME Dokter. Ketik di sini jika ingin memunculkannya di Kuitansi.">
                         </td>
                         <td style="padding: 8px; text-align: right; font-weight: bold;">Rp ${hargaMurniItem.toLocaleString('id-ID')}</td>
                     `;
