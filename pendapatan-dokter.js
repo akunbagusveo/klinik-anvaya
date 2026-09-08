@@ -465,7 +465,39 @@
         }
 
         let defaultBulanFilter = tglAkhir ? tglAkhir.substring(0, 7) : "";
-        let dataTerfilter = rawDataBagiHasil.filter(item => item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
+
+        // 🔥 L1: RADAR CARRY-OVER (Menarik Tagihan Menggantung dari Bulan-Bulan Lalu)
+        let listCarryOver = [];
+        if (window.arsipGajiTerkunci) {
+            window.arsipGajiTerkunci.forEach(arsip => {
+                if (arsip.periode < defaultBulanFilter) { 
+                    let rincianPast = [];
+                    try { rincianPast = JSON.parse(arsip.rincianJson || "[]"); } catch(e){}
+                    rincianPast.forEach(r => {
+                        if (r.isPendingLab) {
+                            // Bersihkan embel-embel penangguhan agar bisa dicocokkan dengan database asli
+                            let namaTindakanAsli = r.tindakan.replace(" ⏳ [DITANGGUHKAN]", "").trim();
+                            listCarryOver.push({ invoice: r.invoice, tindakan: namaTindakanAsli });
+                        }
+                    });
+                }
+            });
+        }
+
+        // Filter data: Masukkan bulan ini, DAN tarik data bulan lalu yang butuh Carry-Over
+        let dataTerfilter = rawDataBagiHasil.filter(item => {
+            if (item.tanggal >= tglMulai && item.tanggal <= tglAkhir) return true;
+            
+            let isCarryOver = listCarryOver.some(co => co.invoice === item.invoice && (item.jenis === "LAB" || item.namaTindakan.includes(co.tindakan)));
+            if (isCarryOver) {
+                if (item.jenis !== "LAB" && !item.isMarkedCarryOver) {
+                    item.namaTindakan = item.namaTindakan + " 🔄 (Carry-Over)";
+                    item.isMarkedCarryOver = true; 
+                }
+                return true; // Paksa masuk ke bulan ini!
+            }
+            return false;
+        });
 
         let invoiceMap = {};
         dataTerfilter.forEach(item => {
@@ -530,10 +562,27 @@
         let totalDasarBagiHasil = 0; 
         Object.values(doctorMap).forEach(doc => {
             doc.rincian.forEach(r => {
-                let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
-                totalDasarBagiHasil += dasarBagiHasil; 
-                r.feeFinal = dasarBagiHasil * 0.4;
-                doc.totalBagiHasil += r.feeFinal;
+                // 🔥 L2: DETEKSI LAB MENGGANTUNG & TANGGUHKAN FEE-NYA JADI Rp 0
+                let isButuhLab = false;
+                let namaTindakanLower = String(r.tindakan).toLowerCase();
+                
+                if (namaTindakanLower.match(/\blab\b/i)) isButuhLab = true;
+                if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
+                    let dataMaster = window.masterTindakanGlobal.find(m => namaTindakanLower.includes(String(m.nama).trim().toLowerCase()));
+                    if (dataMaster && (dataMaster.Butuh_Lab == 1 || dataMaster.butuhLab == 1 || String(dataMaster.Butuh_Lab) === "1")) isButuhLab = true;
+                }
+
+                if (isButuhLab && (r.hargaLabVendor === 0 || !r.hargaLabVendor)) {
+                    r.isPendingLab = true;
+                    r.tindakan = r.tindakan + " ⏳ [DITANGGUHKAN]";
+                    r.feeFinal = 0; // Fee dibekukan jadi 0 agar tidak rugi
+                    // Dasar bagi hasil di-skip agar tidak masuk total
+                } else {
+                    let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
+                    totalDasarBagiHasil += dasarBagiHasil; 
+                    r.feeFinal = dasarBagiHasil * 0.4;
+                    doc.totalBagiHasil += r.feeFinal;
+                }
             });
         });
 
@@ -907,26 +956,17 @@
             teksPotongan: teksPotongan
         };
         
-        let labMenggantung = d.rincian.filter(r => {
-            let isButuhLab = false;
-            if (String(r.tindakan).match(/\blab\b/i)) isButuhLab = true;
-            if (window.masterTindakanGlobal && window.masterTindakanGlobal.length > 0) {
-                let dataMaster = window.masterTindakanGlobal.find(m => String(m.nama).trim().toLowerCase() === String(r.tindakan).trim().toLowerCase());
-                if (dataMaster && (dataMaster.Butuh_Lab == 1 || dataMaster.butuhLab == 1 || String(dataMaster.Butuh_Lab) === "1")) isButuhLab = true;
-            }
-            return isButuhLab && (r.hargaLabVendor === 0 || !r.hargaLabVendor);
-        });
-
+        // 🔥 INFO CARRY-OVER DI LAYAR PREVIEW SLIP
+        let labMenggantung = d.rincian.filter(r => r.isPendingLab);
         let bannerPeringatanHtml = "";
-        let isBlokirKunci = false;
+        let isBlokirKunci = false; // KITA MATIKAN SIFAT BLOKIRNYA
 
         if (labMenggantung.length > 0) {
-            isBlokirKunci = true;
             bannerPeringatanHtml = `
-                <div class="no-print" style="background-color: #fff3cd; color: #856404; padding: 15px; border-left: 5px solid #e74c3c; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <span style="font-size:16px;">🚨</span> PERINGATAN AUDIT KEUANGAN!<br>
-                    Terdapat <b>${labMenggantung.length} tindakan Lab</b> (Contoh pasien: ${labMenggantung[0].pasien}) yang belum diinput tagihan eksternalnya.<br>
-                    <span style="color:#c0392b;">Sistem secara otomatis MEMBLOKIR penerbitan slip gaji ini untuk mencegah Klinik menanggung kerugian.</span>
+                <div class="no-print" style="background-color: #fff3cd; color: #856404; padding: 15px; border-left: 5px solid #f39c12; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <span style="font-size:16px;">⏳</span> <b>INFO PENANGGUHAN (CARRY-OVER) AKTIF:</b><br>
+                    Terdapat <b>${labMenggantung.length} tindakan</b> (Contoh: ${labMenggantung[0].pasien}) yang fee-nya <b>dinolkan sementara (Rp 0)</b> karena tagihan lab eksternalnya belum diinput ke sistem.<br>
+                    <span style="color:#d35400;">Silakan teruskan mengunci slip ini. Sistem akan otomatis memasukkan & membayarkan tindakan ini di slip bulan depan jika tagihan labnya sudah beres.</span>
                 </div>
             `;
         }
@@ -935,7 +975,9 @@
         d.rincian.forEach((rin, urut) => {
             let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
             let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
-            let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
+            // let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
+            // Agar di tabel PDF dasar fee-nya juga 0
+            let dasarBagiHasil = rin.isPendingLab ? 0 : (rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata);
 
             // 🔥 SMART LOGIC (TAMPILAN LAYAR): Tampilkan (x2) jika Qty > 1
             let namaTindakanTampil = rin.tindakan;
@@ -1059,11 +1101,11 @@
         if (!bulanGaji) { alert("⚠️ Harap pilih 'Gaji Bulan' terlebih dahulu sebelum mengunci!"); return; }
 
         let dataDokter = window.dataBagiHasilGlobal[window.currentPreviewIdx];
-        let labMenggantung = dataDokter.rincian.filter(r => r.tindakan.match(/\blab\b/i) && r.hargaLabVendor === 0);
-        if (labMenggantung.length > 0) {
-            alert(`🚫 SISTEM MENOLAK (POTENSI KERUGIAN KLINIK)!\n\nDitemukan ${labMenggantung.length} tindakan Lab yang belum diinput tagihan eksternalnya (Contoh pasien: ${labMenggantung[0].pasien}).\n\nHarap instruksikan Perawat/Admin untuk melengkapi menu [Tagihan Eksternal / Lab] terlebih dahulu agar Klinik tidak nombok fee dokter!`);
-            return; 
-        }
+        // let labMenggantung = dataDokter.rincian.filter(r => r.tindakan.match(/\blab\b/i) && r.hargaLabVendor === 0);
+        // if (labMenggantung.length > 0) {
+        //     alert(`🚫 SISTEM MENOLAK (POTENSI KERUGIAN KLINIK)!\n\nDitemukan ${labMenggantung.length} tindakan Lab yang belum diinput tagihan eksternalnya (Contoh pasien: ${labMenggantung[0].pasien}).\n\nHarap instruksikan Perawat/Admin untuk melengkapi menu [Tagihan Eksternal / Lab] terlebih dahulu agar Klinik tidak nombok fee dokter!`);
+        //     return; 
+        // }
 
         let isAlreadyLocked = window.arsipGajiTerkunci && window.arsipGajiTerkunci.some(x => window.isDokterMatchGlobal(x.namaDokter, dataDokter.nama) && x.periode === bulanGaji);
         if (isAlreadyLocked) {
