@@ -552,8 +552,21 @@
                 let docInfo = getDoctorKeyAndFormalize(item.dokterPelaksana);
                 let doc = doctorMap[docInfo.key];
                 if (doc) {
-                    let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
-                    let match = doc.rincian.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
+                    let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "").trim();
+                    
+                    // 🔥 PERBAIKAN BUG CARRY-OVER: Cocokkan lab dengan mengabaikan teks Carry-Over
+                    let match = doc.rincian.find(r => {
+                        if (r.invoice !== item.invoice) return false;
+                        
+                        // Bersihkan embel-embel Carry Over saat mencocokkan
+                        let namaTindakanLayar = r.tindakan.replace(" 🔄 (Carry-Over)", "").trim();
+                        
+                        // Gunakan logika "includes" agar kebal terhadap tambahan catatan
+                        return namaTindakanLayar === namaTindakanAsli || 
+                               namaTindakanLayar.includes(namaTindakanAsli) || 
+                               namaTindakanAsli.includes(namaTindakanLayar);
+                    });
+                    
                     if (match) match.hargaLabVendor += (item.bebanPotongan / 0.4);
                 }
             }
