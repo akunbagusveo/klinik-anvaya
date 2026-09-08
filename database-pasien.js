@@ -537,7 +537,7 @@
                                 
                                 <div>
                                     <label style="font-weight:bold; display:block; margin-bottom:4px;">Tanggal Lahir</label>
-                                    <input type="text" id="editTanggalLahir" value="${p.tanggalLahir || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                    <input type="date" id="editTanggalLahir" value="${p.tanggalLahir || '-'}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                                 </div>
                                 
                                 <div>
