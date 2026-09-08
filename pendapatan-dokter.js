@@ -397,25 +397,48 @@
             let lab = rin.hargaLabVendor || 0;
             let diskon = rin.diskonProrata || 0;
             
-            let dasarBagiHasil = hargaAsli - lab - diskon;
-            let feeDokter = rin.feeFinal || (dasarBagiHasil * 0.4);
+            // 🔥 DETEKSI PENANGGUHAN (Sinkron dengan layar Owner)
+            let isDitangguhkan = rin.isPendingLab || (rin.tindakan && String(rin.tindakan).includes("[DITANGGUHKAN]"));
+
+            // 🔥 LOGIKA NILAI TAMPILAN DINAMIS (Paksa 0 jika ditangguhkan)
+            let dasarBagiHasil = isDitangguhkan ? 0 : (hargaAsli - lab - diskon);
+            let feeDokter = isDitangguhkan ? 0 : (rin.feeFinal || (dasarBagiHasil * 0.4));
 
             let txtLab = lab > 0 ? `-${lab.toLocaleString('id-ID')}` : '-';
             let txtDiskon = diskon > 0 ? `-${diskon.toLocaleString('id-ID')}` : '-';
 
+            // Ubah teks lab menjadi ikon jam pasir agar intuitif
+            if (isDitangguhkan) {
+                txtLab = '<span title="Menunggu tagihan vendor">⏳</span>';
+                txtDiskon = '-';
+            }
+
+            // 🔥 SMART LOGIC (TAMPILAN LAYAR): Tampilkan (x2) jika Qty > 1
+            let namaTindakanTampil = rin.tindakan;
+            let qtyLayar = rin.qty ? Number(rin.qty) : 1;
+            if (qtyLayar > 1) { namaTindakanTampil += " (x" + qtyLayar + ")"; }
+
+            // 🔥 STYLING VISUAL DINAMIS (Warna khusus untuk tindakan ditangguhkan)
+            let rowStyle = isDitangguhkan ? "border-bottom: 1px dashed #e9ecef; background-color: #fdf2e9;" : "border-bottom: 1px solid #ecf0f1;";
+            let textMuted = isDitangguhkan ? "color:#7f8c8d; font-style:italic;" : "color:#7f8c8d;";
+            let textPasien = isDitangguhkan ? "color:#7f8c8d; font-style:italic; font-weight:normal;" : "color:#2c3e50; font-weight:bold;";
+            let textTindakan = isDitangguhkan ? "color:#7f8c8d; font-style:italic;" : "color:#34495e;";
+            let textDasarStyle = isDitangguhkan ? "color:#e67e22; font-style:italic;" : "color:#2980b9;";
+            let textFeeStyle = isDitangguhkan ? "color:#e67e22; font-style:italic;" : "color:#27ae60;";
+
             html += `
-                <tr style="border-bottom:1px solid #ecf0f1;">
-                    <td style="padding:12px; text-align:center; color:#7f8c8d; font-size:13px;">${index + 1}</td>
-                    <td style="padding:12px; color:#7f8c8d; font-size:13px;">${rin.tanggal}</td>
-                    <td style="padding:12px; color:#2c3e50; font-weight:bold; font-size:13px;">${rin.pasien}</td>
-                    <td style="padding:12px; color:#34495e; font-size:13px;">${rin.tindakan}</td>
+                <tr style="${rowStyle}">
+                    <td style="padding:12px; text-align:center; font-size:13px; ${textMuted}">${index + 1}</td>
+                    <td style="padding:12px; font-size:13px; ${textMuted}">${rin.tanggal}</td>
+                    <td style="padding:12px; font-size:13px; ${textPasien}">${rin.pasien}</td>
+                    <td style="padding:12px; font-size:13px; ${textTindakan}">${namaTindakanTampil}</td>
                     
-                    <td style="padding:12px; text-align:right; color:#7f8c8d; font-size:13px;">${hargaAsli.toLocaleString('id-ID')}</td>
+                    <td style="padding:12px; text-align:right; font-size:13px; ${textMuted}">${hargaAsli.toLocaleString('id-ID')}</td>
                     <td style="padding:12px; text-align:right; color:#e74c3c; font-size:13px;">${txtLab}</td>
                     <td style="padding:12px; text-align:right; color:#e74c3c; font-size:13px;">${txtDiskon}</td>
                     
-                    <td style="padding:12px; text-align:right; font-weight:bold; color:#2980b9; font-size:13px;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
-                    <td style="padding:12px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">${feeDokter.toLocaleString('id-ID')}</td>
+                    <td style="padding:12px; text-align:right; font-weight:bold; font-size:13px; ${textDasarStyle}">${dasarBagiHasil.toLocaleString('id-ID')}</td>
+                    <td style="padding:12px; text-align:right; font-weight:bold; font-size:13px; ${textFeeStyle}">${feeDokter.toLocaleString('id-ID')}</td>
                 </tr>
             `;
         });
