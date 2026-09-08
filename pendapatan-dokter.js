@@ -986,28 +986,41 @@
 
         let htmlRincian = '';
         d.rincian.forEach((rin, urut) => {
+            // 🔥 LOGIKA NILAI TAMPILAN DINAMIS
             let labTxt = rin.hargaLabVendor > 0 ? `-${rin.hargaLabVendor.toLocaleString('id-ID')}` : '-';
             let diskonTxt = rin.diskonProrata > 0 ? `-${rin.diskonProrata.toLocaleString('id-ID')}` : '-';
-            // let dasarBagiHasil = rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata;
-            // Agar di tabel PDF dasar fee-nya juga 0
+            
             let dasarBagiHasil = rin.isPendingLab ? 0 : (rin.hargaAsli - rin.hargaLabVendor - rin.diskonProrata);
+            let feeTampil = rin.isPendingLab ? 0 : rin.feeFinal; // Paksa layar menampilkan Rp 0
+
+            // Jika ditangguhkan, ubah teks lab menjadi ikon jam pasir agar lebih intuitif
+            if (rin.isPendingLab) {
+                labTxt = '<span title="Menunggu tagihan vendor">⏳</span>';
+                diskonTxt = '-';
+            }
 
             // 🔥 SMART LOGIC (TAMPILAN LAYAR): Tampilkan (x2) jika Qty > 1
             let namaTindakanTampil = rin.tindakan;
             let qtyLayar = rin.qty ? Number(rin.qty) : 1;
             if (qtyLayar > 1) { namaTindakanTampil += " (x" + qtyLayar + ")"; }
 
+            // 🔥 STYLING VISUAL DINAMIS (Ganti warna khusus untuk tindakan ditangguhkan)
+            let rowStyle = rin.isPendingLab ? "border-bottom: 1px dashed #e9ecef; background-color: #fdf2e9;" : "border-bottom: 1px dashed #e9ecef;";
+            let textMuted = rin.isPendingLab ? "color:#7f8c8d; font-style:italic;" : "";
+            let textDasarStyle = rin.isPendingLab ? "color:#e67e22; font-style:italic;" : "color:#2c3e50;";
+            let textFeeStyle = rin.isPendingLab ? "color:#e67e22; font-style:italic;" : "color:#27ae60;";
+
             htmlRincian += `
-                <tr style="border-bottom: 1px dashed #e9ecef;">
-                    <td style="padding:8px 5px; text-align:center; font-size:11px;">${urut + 1}</td>
-                    <td style="padding:8px 5px; font-size:11px;">${rin.tanggal}</td>
-                    <td style="padding:8px 5px; font-size:11px; font-weight:bold;">${rin.pasien}</td>
-                    <td style="padding:8px 5px; font-size:11px;">${namaTindakanTampil}</td>
-                    <td style="padding:8px 5px; text-align:right; font-size:11px;">${rin.hargaAsli.toLocaleString('id-ID')}</td>
+                <tr style="${rowStyle}">
+                    <td style="padding:8px 5px; text-align:center; font-size:11px; ${textMuted}">${urut + 1}</td>
+                    <td style="padding:8px 5px; font-size:11px; ${textMuted}">${rin.tanggal}</td>
+                    <td style="padding:8px 5px; font-size:11px; font-weight:bold; ${textMuted}">${rin.pasien}</td>
+                    <td style="padding:8px 5px; font-size:11px; ${textMuted}">${namaTindakanTampil}</td>
+                    <td style="padding:8px 5px; text-align:right; font-size:11px; ${textMuted}">${rin.hargaAsli.toLocaleString('id-ID')}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${labTxt}</td>
                     <td style="padding:8px 5px; text-align:right; font-size:11px; color:#e74c3c;">${diskonTxt}</td>
-                    <td style="padding:8px 5px; text-align:right; font-size:11px; font-weight:bold; color:#2c3e50;">${dasarBagiHasil.toLocaleString('id-ID')}</td>
-                    <td style="padding:8px 5px; text-align:right; font-weight:bold; font-size:11px; color:#27ae60;">${rin.feeFinal.toLocaleString('id-ID')}</td>
+                    <td style="padding:8px 5px; text-align:right; font-size:11px; font-weight:bold; ${textDasarStyle}">${dasarBagiHasil.toLocaleString('id-ID')}</td>
+                    <td style="padding:8px 5px; text-align:right; font-weight:bold; font-size:11px; ${textFeeStyle}">${feeTampil.toLocaleString('id-ID')}</td>
                 </tr>
             `;
         });
