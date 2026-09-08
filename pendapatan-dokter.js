@@ -489,37 +489,61 @@
 
         let defaultBulanFilter = tglAkhir ? tglAkhir.substring(0, 7) : "";
 
-        // 🔥 L1: RADAR CARRY-OVER (Menarik Tagihan Menggantung dari Bulan-Bulan Lalu)
+        // 🔥 L1: RADAR CARRY-OVER & PERISAI ANTI DOUBLE-PAY
         let listCarryOver = [];
+        let listSudahDibayar = []; // Daftar hitam tindakan yang sudah lunas bulan lalu
+
         if (window.arsipGajiTerkunci) {
             window.arsipGajiTerkunci.forEach(arsip => {
                 if (arsip.periode < defaultBulanFilter) { 
                     let rincianPast = [];
                     try { rincianPast = JSON.parse(arsip.rincianJson || "[]"); } catch(e){}
+                    
                     rincianPast.forEach(r => {
+                        let namaTindakanAsli = r.tindakan.replace(" ⏳ [DITANGGUHKAN]", "").replace(" 🔄 (Carry-Over)", "").trim();
+                        
                         if (r.isPendingLab) {
-                            // Bersihkan embel-embel penangguhan agar bisa dicocokkan dengan database asli
-                            let namaTindakanAsli = r.tindakan.replace(" ⏳ [DITANGGUHKAN]", "").trim();
+                            // Jika dulu ditangguhkan, masukkan ke antrean Carry-Over (Ditagih lagi)
                             listCarryOver.push({ invoice: r.invoice, tindakan: namaTindakanAsli });
+                        } else {
+                            // Jika dulu SUDAH lunas/dibayar, masukkan ke Blacklist!
+                            listSudahDibayar.push({ invoice: r.invoice, tindakan: namaTindakanAsli });
                         }
                     });
                 }
             });
         }
 
-        // Filter data: Masukkan bulan ini, DAN tarik data bulan lalu yang butuh Carry-Over
+        // 🔥 MESIN FILTER PINTAR
         let dataTerfilter = rawDataBagiHasil.filter(item => {
-            if (item.tanggal >= tglMulai && item.tanggal <= tglAkhir) return true;
             
-            let isCarryOver = listCarryOver.some(co => co.invoice === item.invoice && (item.jenis === "LAB" || item.namaTindakan.includes(co.tindakan)));
+            // 1. PERISAI GANDA: Apakah tindakan ini sudah dibayar di slip masa lalu?
+            let isSudahDibayar = false;
+            if (item.jenis !== "LAB") {
+                isSudahDibayar = listSudahDibayar.some(lunas => 
+                    lunas.invoice === item.invoice && 
+                    (item.namaTindakan.includes(lunas.tindakan) || lunas.tindakan.includes(item.namaTindakan))
+                );
+            }
+            // Jika sudah dibayar, HANCURKAN! Jangan tampilkan di slip lagi!
+            if (isSudahDibayar) return false; 
+
+            // 2. CEK CARRY-OVER: Apakah ini tindakan yang dulu tertunda dan harus dibayar sekarang?
+            let isCarryOver = listCarryOver.some(co => 
+                co.invoice === item.invoice && 
+                (item.jenis === "LAB" || item.namaTindakan.includes(co.tindakan) || co.tindakan.includes(item.namaTindakan))
+            );
+
             if (isCarryOver) {
                 if (item.jenis !== "LAB" && !item.isMarkedCarryOver) {
                     item.namaTindakan = item.namaTindakan + " 🔄 (Carry-Over)";
                     item.isMarkedCarryOver = true; 
                 }
-                return true; // Paksa masuk ke bulan ini!
+                return true; // PAKSA MASUK ke slip bulan ini!
             }
-            return false;
+
+            // 3. TRANSAKSI NORMAL: Jika bukan Carry-Over & belum dibayar, cek apakah masuk filter tanggal
+            return (item.tanggal >= tglMulai && item.tanggal <= tglAkhir);
         });
 
         let invoiceMap = {};
