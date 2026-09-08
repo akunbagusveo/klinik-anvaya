@@ -265,33 +265,41 @@
     window.pilihPasienKeForm = function(encodedData) {
         const p = JSON.parse(decodeURIComponent(encodedData));
         
-        let noRM   = p.noRM || p[0] || "";
-        let nama   = p.namaPasien || p.nama || p[1] || "";
-        let tmpLhr = p.tempatLahir || p[2] || "";
-        let tglLhr = p.tanggalLahir || p[3] || "";
-        let gender = p.gender || p[4] || "Laki-laki";
-        let wa     = p.noWA || p.whatsapp || p[5] || "";
-        let kerja  = p.pekerjaan || p[6] || "";
-        let email  = p.email || p[7] || "";
-        let alamat = p.alamat || p[8] || "";
-        let ktp    = p.noKTP || p.ktp || p[9] || "";
-        let kec    = p.kecamatan || p[11] || "";
-        let kota   = p.kota || p[12] || "";
+        // 🔥 1. EKSTRAKSI SUPER DINAMIS (Mendeteksi segala kemungkinan urutan/nama variabel dari server)
+        let noRM   = p.noRM || p.rm || p[0] || "";
+        let nama   = p.namaPasien || p.nama || p.namaLengkap || p[1] || "";
+        let ktp    = p.noKTP || p.ktp || p.nik || p[2] || p[9] || "";
+        let tmpLhr = p.tempatLahir || p.tmpLahir || p.tempat_lahir || p[3] || p[4] || ""; 
+        let tglLhr = p.tanggalLahir || p.tglLahir || p.tanggal_lahir || p[4] || p[3] || "";
+        let gender = p.jenisKelamin || p.gender || p[5] || p[4] || "Laki-laki";
+        let kerja  = p.pekerjaan || p.pendidikan || p.kerja || p[6] || p[5] || "";
+        let wa     = p.noWA || p.whatsapp || p.hp || p[7] || p[6] || "";
+        let email  = p.email || p[8] || p[7] || "";
+        let alamat = p.alamat || p.alamatLengkap || p[9] || p[8] || "";
+        let kec    = p.kecamatan || p.kelurahan || p[10] || p[11] || "";
+        let kota   = p.kota || p.kotaDomisili || p[11] || p[12] || "";
 
         const ktpBersih = ktp.toString().replace(/'/g, '').trim();
-        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+        // 🔥 2. FUNGSI TEMBAK HTML YANG KEBAL TYPO ID
+        const setValMulti = (ids, val) => {
+            for (let id of ids) {
+                const el = document.getElementById(id);
+                if (el) { el.value = val; return; } // Berhenti mencari jika ID cocok ditemukan
+            }
+        };
         
-        setVal('txtNoRM', noRM);
-        setVal('nama', nama);
-        setVal('txtKTP', ktpBersih);
-        setVal('tempatLahir', tmpLhr);
-        setVal('tanggalLahir', tglLhr);
-        setVal('pekerjaan', kerja);
-        setVal('whatsapp', wa.toString().replace(/'/g, ''));
-        setVal('email', email);
-        setVal('alamat', alamat);
-        setVal('kecamatan', kec);
-        setVal('kota', kota);
+        setValMulti(['txtNoRM', 'rm', 'noRM'], noRM);
+        setValMulti(['nama', 'namaLengkap', 'txtNama'], nama);
+        setValMulti(['txtKTP', 'ktp', 'nik'], ktpBersih);
+        setValMulti(['tempatLahir', 'txtTempatLahir', 'tmpLahir'], tmpLhr);
+        setValMulti(['tanggalLahir', 'txtTanggalLahir', 'tglLahir', 'inpEditTanggalLahir'], tglLhr);
+        setValMulti(['pekerjaan', 'txtPekerjaan', 'pendidikan'], kerja);
+        setValMulti(['whatsapp', 'txtWhatsApp', 'noWA'], wa.toString().replace(/'/g, ''));
+        setValMulti(['email', 'txtEmail'], email);
+        setValMulti(['alamat', 'txtAlamat'], alamat);
+        setValMulti(['kecamatan', 'txtKecamatan', 'kelurahan'], kec);
+        setValMulti(['kota', 'txtKota', 'kotaDomisili'], kota);
 
         const rbLaki = document.getElementById('rbLaki');
         const rbPerempuan = document.getElementById('rbPerempuan');
@@ -301,27 +309,49 @@
             rbLaki.checked = true;
         }
 
-        // 🔥 LOGIKA SMART DETECTOR: Cek apakah ID KTP adalah buatan sistem (TEMP- atau ANAK-)
         const isKtpSementara = ktpBersih.toUpperCase().startsWith('TEMP-') || ktpBersih.toUpperCase().startsWith('ANAK-');
 
-        // Kunci RM dan Nama seperti biasa
-        ['txtNoRM', 'nama'].forEach(id => {
+        // 🔥 3. PENGUNCIAN CERDAS (IDENTITAS INTI = TERKUNCI AMAN)
+        const identitasInti = [
+            'txtNoRM', 'rm', 'nama', 'namaLengkap', 
+            'tempatLahir', 'txtTempatLahir', 'tanggalLahir', 'txtTanggalLahir'
+        ];
+        identitasInti.forEach(id => {
             const el = document.getElementById(id);
-            if (el) { el.readOnly = true; el.style.backgroundColor = "#e9ecef"; }
+            if (el) { 
+                el.readOnly = true; 
+                el.style.backgroundColor = "#e9ecef"; 
+                el.style.pointerEvents = "none"; // Matikan klik kalender agar date-picker tidak muncul
+            }
         });
 
-        // Tangani kolom KTP secara terpisah
-        const elKTP = document.getElementById('txtKTP');
+        if (rbLaki) rbLaki.disabled = true;
+        if (rbPerempuan) rbPerempuan.disabled = true;
+
+        // 🔥 4. PEMBUKAAN CERDAS (INFO DINAMIS = BISA DI-UPDATE KASIR)
+        const identitasDinamis = [
+            'pekerjaan', 'txtPekerjaan', 'whatsapp', 'txtWhatsApp', 'email', 'txtEmail', 
+            'alamat', 'txtAlamat', 'kecamatan', 'txtKecamatan', 'kota', 'txtKota'
+        ];
+        identitasDinamis.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { 
+                el.readOnly = false; 
+                el.style.backgroundColor = "#ffffff"; // Warna putih bersih
+                el.style.border = "1px solid #3498db"; // Garis biru lembut tanda bisa diedit
+            }
+        });
+
+        // 5. Smart Detector KTP (Tetap dipertahankan dengan aman)
+        const elKTP = document.getElementById('txtKTP') || document.getElementById('ktp');
         if (elKTP) {
             if (isKtpSementara) {
-                // BUKA KUNCI KTP agar Resepsionis bisa langsung memperbaruinya
                 elKTP.readOnly = false;
                 elKTP.style.backgroundColor = "#fef3c7"; 
                 elKTP.style.border = "2px solid #f59e0b";
-                elKTP.removeAttribute('pattern'); // Cabut sementara jika masih tetap belum bawa
+                elKTP.removeAttribute('pattern'); 
                 elKTP.removeAttribute('maxlength');
             } else {
-                // Kunci normal karena KTP sudah valid
                 elKTP.readOnly = true;
                 elKTP.style.backgroundColor = "#e9ecef";
                 elKTP.style.border = "1px solid #ccc";
@@ -330,14 +360,13 @@
             }
         }
 
-        window.tutupModalPasien();
+        if (typeof window.tutupModalPasien === "function") window.tutupModalPasien();
         
-        // Peringatan Berbeda Berdasarkan Status KTP
         if (isKtpSementara) {
-            alert(`⚠️ PERHATIAN KHUSUS!\n\nPasien atas nama ${nama} ini sebelumnya didaftarkan TANPA KTP ASLI (ID: ${ktpBersih}).\n\nMohon minta pasien menunjukkan KTP/KK sekarang untuk meng-update datanya di kolom KTP!`);
-            if (elKTP) elKTP.focus(); // Langsung arahkan kursor ke kotak KTP
+            alert(`⚠️ PERHATIAN KHUSUS!\n\nPasien atas nama ${nama} ini sebelumnya didaftarkan TANPA KTP ASLI.\n\nMohon minta pasien menunjukkan KTP/KK sekarang untuk meng-update datanya di kolom KTP!`);
+            if (elKTP) elKTP.focus();
         } else {
-            alert(`✅ Pasien Terpilih:\nNo. RM: ${noRM}\nNama: ${nama}\n\nSilakan lengkapi Rencana Tanggal Kunjungan & Dokter!`);
+            alert(`✅ Pasien Terpilih:\nNo. RM: ${noRM}\nNama: ${nama}\n\nInfo dinamis (No WA, Alamat, Pekerjaan) terbuka dan siap di-update jika pasien pindah domisili/nomor.`);
             if (document.getElementById('tujuan')) document.getElementById('tujuan').focus();
         }
     };
