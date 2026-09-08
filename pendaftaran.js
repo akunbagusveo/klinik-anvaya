@@ -312,21 +312,40 @@
         const isKtpSementara = ktpBersih.toUpperCase().startsWith('TEMP-') || ktpBersih.toUpperCase().startsWith('ANAK-');
 
         // 🔥 3. PENGUNCIAN CERDAS (IDENTITAS INTI = TERKUNCI AMAN)
+        // Memastikan semua kemungkinan ID (Alias) masuk dalam daftar kunci
         const identitasInti = [
-            'txtNoRM', 'rm', 'nama', 'namaLengkap', 
-            'tempatLahir', 'txtTempatLahir', 'tanggalLahir', 'txtTanggalLahir'
+            'txtNoRM', 'rm', 'noRM',
+            'nama', 'namaLengkap', 'txtNama',
+            'tempatLahir', 'txtTempatLahir', 'tmpLahir', 
+            'tanggalLahir', 'txtTanggalLahir', 'tglLahir', 'inpEditTanggalLahir'
         ];
+        
         identitasInti.forEach(id => {
             const el = document.getElementById(id);
             if (el) { 
-                el.readOnly = true; 
-                el.style.backgroundColor = "#e9ecef"; 
-                el.style.pointerEvents = "none"; // Matikan klik kalender agar date-picker tidak muncul
+                el.setAttribute('readonly', 'readonly'); 
+                el.style.backgroundColor = "#e9ecef"; // Warna abu-abu rapat
+                el.style.pointerEvents = "none"; // Mematikan klik agar pop-up kalender tidak muncul
+                el.tabIndex = -1; // Menghindari fokus jika ditekan tombol Tab di keyboard
             }
         });
 
-        if (rbLaki) rbLaki.disabled = true;
-        if (rbPerempuan) rbPerempuan.disabled = true;
+        // 🔥 Mengunci Gender (Radio Buttons) Beserta Area Sekitarnya
+        const arrGender = [document.getElementById('rbLaki'), document.getElementById('rbPerempuan')];
+        arrGender.forEach(el => {
+            if (el) {
+                el.style.pointerEvents = "none"; // Cegah klik
+                
+                // Cari elemen pembungkusnya (biasanya <label> atau <div>) untuk diwarnai abu-abu
+                const pembungkus = el.parentElement;
+                if (pembungkus && pembungkus.tagName !== 'BODY') {
+                    pembungkus.style.backgroundColor = "#e9ecef"; // Warnai background teks Laki/Perempuan
+                    pembungkus.style.padding = "4px 8px";
+                    pembungkus.style.borderRadius = "4px";
+                    pembungkus.style.pointerEvents = "none";
+                }
+            }
+        });
 
         // 🔥 4. PEMBUKAAN CERDAS (INFO DINAMIS = BISA DI-UPDATE KASIR)
         const identitasDinamis = [
