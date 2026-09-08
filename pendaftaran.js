@@ -498,7 +498,7 @@
         if (tipe === 'lama') {
             if (boxLama) boxLama.style.display = 'block';
             
-            // 🔥 FIX: Matikan & Sembunyikan fitur Pasien Anak jika Pasien Lama
+            // Matikan & Sembunyikan fitur Pasien Anak jika Pasien Lama
             if (cbAnak) {
                 cbAnak.checked = false;
                 if (cbAnak.parentElement) cbAnak.parentElement.style.display = 'none';
@@ -508,20 +508,24 @@
         } else {
             if (boxLama) boxLama.style.display = 'none';
             
-            // 🔥 RESET: Munculkan dan kembalikan fitur Pasien Anak jika Pasien Baru
+            // RESET: Munculkan dan kembalikan fitur Pasien Anak jika Pasien Baru
             if (cbAnak) {
                 cbAnak.checked = false;
                 if (cbAnak.parentElement) cbAnak.parentElement.style.display = 'flex';
             }
 
+            // 🔥 HARD-RESET 1: Buka Semua Gembok Input Teks & Kalender
             daftarInput.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     if (id !== 'txtNoRM') el.readOnly = false; 
-                    el.style.backgroundColor = "#fff";
+                    el.style.backgroundColor = "#ffffff";
+                    el.style.pointerEvents = "auto"; // Lepas gembok klik (Khusus Kalender)
+                    el.style.border = "1px solid #ccc"; // Kembalikan warna garis normal
+                    el.removeAttribute('tabindex'); // Kembalikan akses tombol Tab
                     el.value = "";
 
-                    // 🔥 RESET: Kembalikan validasi 16 digit KTP
+                    // RESET: Kembalikan validasi 16 digit KTP
                     if (id === 'txtKTP') {
                         el.setAttribute('pattern', '\\d{16}');
                         el.setAttribute('maxlength', '16');
@@ -529,6 +533,23 @@
                 }
             });
             
+            // 🔥 HARD-RESET 2: Buka Gembok Gender & Bersihkan Background Abu-abu
+            const arrGender = [document.getElementById('rbLaki'), document.getElementById('rbPerempuan')];
+            arrGender.forEach(el => {
+                if (el) {
+                    el.disabled = false;
+                    el.style.pointerEvents = "auto";
+                    
+                    const pembungkus = el.parentElement;
+                    if (pembungkus && pembungkus.tagName !== 'BODY') {
+                        pembungkus.style.backgroundColor = "transparent"; // Hapus abu-abu
+                        pembungkus.style.padding = "0";
+                        pembungkus.style.pointerEvents = "auto";
+                    }
+                }
+            });
+
+            // Setel default kembali ke Laki-laki
             const rbLaki = document.getElementById('rbLaki');
             if (rbLaki) rbLaki.checked = true;
 
