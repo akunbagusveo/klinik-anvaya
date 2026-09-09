@@ -449,47 +449,51 @@
             }
             
             if (res.result === "success") {
-                alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!\n\nSistem akan membuka PDF dan menyiapkan format pesan WhatsApp untuk Anda kirimkan ke pasien.`);
+                alert(`🎉 KUITANSI PDF BERHASIL DIBUAT!\n\nSistem sedang menarik nomor WA pasien dari database untuk mengirimkan kuitansi...`);
                 window.tokenKasirUnik = null; 
                 
                 if (res.pdfUrl) {
                     window.open(res.pdfUrl, '_blank');
                     
-                    setTimeout(() => {
+                    // 🔥 SUNTIKAN RADAR WA: Ambil Nomor HP Langsung dari Master Pasien di Server!
+                    fetch(window.WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'getDetailPasien', noRM: noRM })
+                    })
+                    .then(resDetail => resDetail.json())
+                    .then(dataDetail => {
                         let waText = `Halo Kak *${namaPasien}*,\nTerima kasih atas kunjungannya di Klinik Anvaya hari ini. 🙏\n\nBerikut adalah tautan e-Kuitansi Pembayaran Anda:\n🔗 ${res.pdfUrl}\n\nSemoga sehat selalu! 🦷✨`;
                         
-                        let noWA = pasien.noWA || pasien.whatsapp || pasien.phone || pasien.noTelp || "";
-                        let noWABersih = String(noWA).replace(/[^0-9]/g, '');
+                        let noWA = "";
+                        // Sedot nomor telepon yang sah dari database
+                        if (dataDetail.result === 'success' && dataDetail.data) {
+                            noWA = dataDetail.data.phone || dataDetail.data.noWA || dataDetail.data.whatsapp || dataDetail.data.noTelp || "";
+                        }
                         
-                        // 🔥 SMART PROMPT AGRESIF: Muncul jika kosong atau digit terlalu pendek
+                        let noWABersih = String(noWA).replace(/[^0-9]/g, '');
+
+                        // Jika ternyata di database memang benar-benar kosong, baru minta manual
                         if (noWABersih.length < 9) {
-                            let inputManual = prompt(`⚠️ Nomor WA Pasien (${namaPasien}) tidak terdeteksi!\n\nKetik nomor WA pasien sekarang (Misal: 0812...) agar sistem langsung melompat ke ruang Chat.\n(Atau biarkan kosong & klik OK jika ingin mencari kontak secara manual)`, "");
-                            if (inputManual) {
-                                noWABersih = String(inputManual).replace(/[^0-9]/g, '');
-                            } else {
-                                noWABersih = ""; 
-                            }
+                            let inputManual = prompt(`⚠️ Nomor WA Pasien (${namaPasien}) tidak terdaftar di database!\n\nKetik nomor WA pasien sekarang (Misal: 0812...) agar sistem langsung melompat ke ruang Chat:`, "");
+                            if (inputManual) noWABersih = String(inputManual).replace(/[^0-9]/g, '');
                         }
 
-                        // Standarisasi nomor ke format Internasional 62
-                        if (noWABersih.startsWith('0')) {
-                            noWABersih = '62' + noWABersih.substring(1);
-                        } else if (noWABersih.startsWith('8')) {
-                            noWABersih = '62' + noWABersih; 
-                        }
-                        
-                        // 🔥 DEEP-LINK API WHATSAPP PALING STABIL
-                        let waUrl = "";
+                        // Standarisasi nomor ke format Internasional (+62)
+                        if (noWABersih.startsWith('0')) noWABersih = '62' + noWABersih.substring(1);
+                        if (noWABersih.startsWith('8')) noWABersih = '62' + noWABersih;
+
+                        // 🔥 MENGGUNAKAN DEEP-LINK WA.ME YANG PALING PRESISI
+                        let waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`; // Fallback kosong
                         if (noWABersih.length > 8) {
-                            // Target presisi: Langsung masuk ke Chat Room (Sama seperti Gambar 2)
-                            waUrl = `https://api.whatsapp.com/send?phone=${noWABersih}&text=${encodeURIComponent(waText)}`;
-                        } else {
-                            // Fallback: Masuk ke Share Contact jika Kasir menekan Batal (Sama seperti Gambar 3)
-                            waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+                            waUrl = `https://wa.me/${noWABersih}?text=${encodeURIComponent(waText)}`; // Target Chat Langsung
                         }
-                        
-                        window.open(waUrl, '_blank');
-                    }, 1000); 
+
+                        // Beri jeda agar browser tidak mengira ini serangan Pop-up
+                        setTimeout(() => {
+                            window.open(waUrl, '_blank');
+                        }, 800);
+                    })
+                    .catch(e => console.log("Gagal mengambil no WA dari server:", e));
                 }
                 
                 if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
