@@ -459,20 +459,33 @@
                         let waText = `Halo Kak *${namaPasien}*,\nTerima kasih atas kunjungannya di Klinik Anvaya hari ini. 🙏\n\nBerikut adalah tautan e-Kuitansi Pembayaran Anda:\n🔗 ${res.pdfUrl}\n\nSemoga sehat selalu! 🦷✨`;
                         
                         let noWA = pasien.noWA || pasien.whatsapp || pasien.phone || pasien.noTelp || "";
+                        let noWABersih = String(noWA).replace(/[^0-9]/g, '');
                         
-                        // 🔥 SUNTIKAN ANTI-KOSONG (SMART PROMPT)
-                        if (!noWA || String(noWA).trim() === "" || String(noWA).trim() === "-") {
-                            noWA = prompt(`⚠️ Nomor WhatsApp tidak ditemukan di data Kasir!\n\nSilakan ketik nomor WA pasien atas nama ${namaPasien} (misal: 0812...) agar sistem bisa langsung membuka ruang chat:`, "");
+                        // 🔥 SMART PROMPT AGRESIF: Muncul jika kosong atau digit terlalu pendek
+                        if (noWABersih.length < 9) {
+                            let inputManual = prompt(`⚠️ Nomor WA Pasien (${namaPasien}) tidak terdeteksi!\n\nKetik nomor WA pasien sekarang (Misal: 0812...) agar sistem langsung melompat ke ruang Chat.\n(Atau biarkan kosong & klik OK jika ingin mencari kontak secara manual)`, "");
+                            if (inputManual) {
+                                noWABersih = String(inputManual).replace(/[^0-9]/g, '');
+                            } else {
+                                noWABersih = ""; 
+                            }
                         }
 
-                        let noWABersih = String(noWA || "").replace(/[^0-9]/g, '');
-                        if (noWABersih.startsWith('0')) noWABersih = '62' + noWABersih.substring(1);
-                        if (noWABersih.startsWith('8')) noWABersih = '62' + noWABersih; 
+                        // Standarisasi nomor ke format Internasional 62
+                        if (noWABersih.startsWith('0')) {
+                            noWABersih = '62' + noWABersih.substring(1);
+                        } else if (noWABersih.startsWith('8')) {
+                            noWABersih = '62' + noWABersih; 
+                        }
                         
-                        // 🔥 FORMAT TAUTAN DEEP-LINK WA.ME
-                        let waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+                        // 🔥 DEEP-LINK API WHATSAPP PALING STABIL
+                        let waUrl = "";
                         if (noWABersih.length > 8) {
-                            waUrl = `https://wa.me/${noWABersih}?text=${encodeURIComponent(waText)}`;
+                            // Target presisi: Langsung masuk ke Chat Room (Sama seperti Gambar 2)
+                            waUrl = `https://api.whatsapp.com/send?phone=${noWABersih}&text=${encodeURIComponent(waText)}`;
+                        } else {
+                            // Fallback: Masuk ke Share Contact jika Kasir menekan Batal (Sama seperti Gambar 3)
+                            waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
                         }
                         
                         window.open(waUrl, '_blank');
