@@ -1239,6 +1239,9 @@
     };
 
     window.bukaInputRME = function(noRM, namaPasien, tanggalDaftar) { 
+        // 🔥 1. VAKSIN PEMBERSIH: Reset total status consent agar tidak bocor dari pasien sebelumnya
+        if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
+
         const formAktifRme = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         const kolomKiri = document.getElementById('kolomInputRME');
         if (kolomKiri) kolomKiri.style.display = 'block'; 
@@ -1279,6 +1282,19 @@
             }
         }
 
+        // 🔥 2. CEK MEMORI LOKAL: Cek apakah Draf Consent Pasien INI pernah disimpan
+        const savedTTD = localStorage.getItem('ttd_consent_' + String(noRM).trim());
+        if (savedTTD && savedTTD !== "-" && savedTTD !== "undefined") {
+            window.consentSudahDisimpanHariIni = true;
+            window.urlFotoConsentAktif = savedTTD;
+            const btnConsent = document.getElementById('btnBuatConsent');
+            if (btnConsent) {
+                btnConsent.disabled = false;
+                btnConsent.style.backgroundColor = "#27ae60";
+                btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
+            }
+        }
+
         const alertBox = document.getElementById('alertMedisFormRME');
         if (alertBox) alertBox.style.display = 'none';
         
@@ -1311,6 +1327,15 @@
                     if (data.hariIni.pdfUrl) {
                         window.pdfConsentAktif = data.hariIni.pdfUrl;
                         localStorage.setItem('pdf_url_consent_' + noRM, data.hariIni.pdfUrl);
+                        
+                        // 🔥 3. KUNCI TOMBOL JIKA PDF SUDAH TERBIT
+                        const btnConsent = document.getElementById('btnBuatConsent');
+                        if (btnConsent) {
+                            btnConsent.disabled = false;
+                            btnConsent.style.backgroundColor = "#2980b9";
+                            btnConsent.innerHTML = "📄 Lihat PDF Consent";
+                            btnConsent.onclick = function(e) { e.preventDefault(); window.open(data.hariIni.pdfUrl, '_blank'); };
+                        }
                     }
 
                     const elTgl1 = document.getElementById('modalTanggalKontrol');
@@ -1327,7 +1352,7 @@
                         try {
                             let arrTindakan = JSON.parse(data.hariIni.perawatan);
                             if (Array.isArray(arrTindakan)) {
-                                arrTindakan.forEach(t => { window.tambahBarisTindakan({ namaTindakan: t.namaTindakan, hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, catatanKlinis: t.catatanKlinis || "" }); });
+                                arrTindakan.forEach(t => { window.tambahBarisTindakan({ namaTindakan: t.namaTindakan, hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, catatanKlinis: t.catatanKlinis || "", qty: t.qty || 1 }); });
                             }
                         } catch(e) {
                             if (data.hariIni.perawatan) { window.tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: data.hariIni.perawatan }); }
@@ -1347,6 +1372,10 @@
         window.barisRekamMedisTarget = null; 
         window.dokterPemilikRM = null; // Bersihkan memori pemilik
         window.namaDokterPemilikRM = null; 
+
+        // 🔥 4. VAKSIN PEMBERSIH KETIKA FORM DITUTUP
+        if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
+
         const sectionRME = document.getElementById('sectionRME');
         const modalRiwayatFull = document.getElementById('modalRiwayatFull');
         if (sectionRME) sectionRME.style.display = 'none';
