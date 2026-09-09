@@ -365,12 +365,9 @@
         const metodeBayar = document.getElementById('selBillMetode').value;
         const btnKunciCetak = document.getElementById('btnKunciCetak');
         
-        // 🔥 AMBIL DATA KETERANGAN
         const keteranganKasir = document.getElementById('inpBillKeterangan') ? document.getElementById('inpBillKeterangan').value.trim() : "";
-        
         const diskonMurni = Number(document.getElementById('inpBillDiskon').value.replace(/[^0-9]/g, '')) || 0;
         const grandTotalMurni = window.totalTindakanAktifKasir - diskonMurni;
-        
         const sessionData = JSON.parse(localStorage.getItem('anvaya_session') || '{}');
         const usernameAktif = sessionData.namaLengkap || sessionData.username || "Staf Kasir";
 
@@ -387,7 +384,6 @@
             listTindakan = listTindakan.map((item, index) => { 
                 let qty = Number(item.qty) || Number(item.quantity) || 1;
                 let hargaSatuan = Number(item.hargaBersihPerItem) || 0; 
-                
                 let inputCatatan = document.getElementById(`inpCatatanItem_${index}`);
                 let teksCatatanBaru = inputCatatan ? inputCatatan.value.trim() : "";
                 
@@ -401,10 +397,7 @@
                     }
                 }
                 
-                if (teksCatatanBaru !== "") {
-                    item.namaTindakan = `${item.namaTindakan} [Catatan: ${teksCatatanBaru}]`;
-                }
-                
+                if (teksCatatanBaru !== "") item.namaTindakan = `${item.namaTindakan} [Catatan: ${teksCatatanBaru}]`;
                 item.qty = qty;
                 return item;
             });
@@ -427,9 +420,7 @@
 
         if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Memproses Pembayaran & Membuat Kuitansi PDF...");
 
-        if (!window.tokenKasirUnik) {
-            window.tokenKasirUnik = "KASIR-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
-        }
+        if (!window.tokenKasirUnik) window.tokenKasirUnik = "KASIR-" + new Date().getTime() + "-" + Math.floor(Math.random() * 10000);
 
         const payload = {
             action: "prosesFinalBilling",
@@ -440,20 +431,14 @@
             tindakanRaw: tindakanRawStr,
             totalTindakan: window.totalTindakanAktifKasir,
             diskon: diskonMurni,
-            biayaLab: 0,        
-            dpLab: 0,           
-            labelCetakLab: "",  
-            sisaPiutang: 0,     
+            biayaLab: 0, dpLab: 0, labelCetakLab: "", sisaPiutang: 0,     
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
             keterangan: keteranganKasir, 
             kasirOperator: usernameAktif 
         };
 
-        fetch(window.WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        })
+        fetch(window.WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
@@ -467,33 +452,34 @@
                 alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!\n\nSistem akan membuka PDF dan menyiapkan format pesan WhatsApp untuk Anda kirimkan ke pasien.`);
                 window.tokenKasirUnik = null; 
                 
-                // 🔥 1. BUKA PDF DI TAB BARU
                 if (res.pdfUrl) {
                     window.open(res.pdfUrl, '_blank');
                     
-                    // 🔥 2. AUTO-WHATSAPP: Buka tab WA dengan Jeda 1 detik agar tidak diblokir browser
                     setTimeout(() => {
-                        // Merakit Teks Profesional
                         let waText = `Halo Kak *${namaPasien}*,\nTerima kasih atas kunjungannya di Klinik Anvaya hari ini. 🙏\n\nBerikut adalah tautan e-Kuitansi Pembayaran Anda:\n🔗 ${res.pdfUrl}\n\nSemoga sehat selalu! 🦷✨`;
                         
-                        // Deteksi & Bersihkan Nomor HP
                         let noWA = pasien.noWA || pasien.whatsapp || pasien.phone || pasien.noTelp || "";
-                        let noWABersih = String(noWA).replace(/[^0-9]/g, '');
-                        if (noWABersih.startsWith('0')) noWABersih = '62' + noWABersih.substring(1);
                         
-                        // Rakit Tautan API WhatsApp
-                        let waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+                        // 🔥 SUNTIKAN ANTI-KOSONG (SMART PROMPT)
+                        if (!noWA || String(noWA).trim() === "" || String(noWA).trim() === "-") {
+                            noWA = prompt(`⚠️ Nomor WhatsApp tidak ditemukan di data Kasir!\n\nSilakan ketik nomor WA pasien atas nama ${namaPasien} (misal: 0812...) agar sistem bisa langsung membuka ruang chat:`, "");
+                        }
+
+                        let noWABersih = String(noWA || "").replace(/[^0-9]/g, '');
+                        if (noWABersih.startsWith('0')) noWABersih = '62' + noWABersih.substring(1);
+                        if (noWABersih.startsWith('8')) noWABersih = '62' + noWABersih; 
+                        
+                        // 🔥 FORMAT TAUTAN DEEP-LINK WA.ME
+                        let waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
                         if (noWABersih.length > 8) {
-                            waUrl = `https://api.whatsapp.com/send?phone=${noWABersih}&text=${encodeURIComponent(waText)}`;
+                            waUrl = `https://wa.me/${noWABersih}?text=${encodeURIComponent(waText)}`;
                         }
                         
-                        // Eksekusi Buka WhatsApp
                         window.open(waUrl, '_blank');
-                    }, 1000); // 1000 milidetik = 1 detik jeda
+                    }, 1000); 
                 }
                 
                 if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
-                
                 window.tutupModalBilling();
                 if (typeof window.muatAntreanKasir === "function") window.muatAntreanKasir();
             } else {
