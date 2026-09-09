@@ -1269,7 +1269,16 @@
         };
 
         setNilaiDOM('modalNama', 'namaPasien', namaPasien);
-        window.barisRekamMedisTarget = null; 
+        
+        // 🔥 SUNTIKAN ANTI-BOCOR: Paksa form mengingat No RM pasien yang baru!
+        setNilaiDOM('modalNoRM', 'billNoRM', noRM);
+        
+        const lblProfilRM = document.getElementById('lblProfilRM');
+        const lblConsentRM = document.getElementById('lblConsentRM');
+        if (lblProfilRM) lblProfilRM.innerText = noRM;
+        if (lblConsentRM) lblConsentRM.innerText = noRM;
+        
+        window.barisRekamMedisTarget = null;
 
         // 🔥 MENGUNCI HAK MILIK SAAT PASIEN DIBUKA DARI DAFTAR TUNGGU
         window.dokterPemilikRM = null;
