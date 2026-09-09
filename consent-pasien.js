@@ -373,22 +373,23 @@
 
         // =====================================================================
         // 🔥 SENSOR ANTI-BENTROK (MENGUNCI MODE PDF)
-        // Jika tombol sudah diubah jadi "Lihat PDF" oleh fungsi Edit sebelumnya, 
-        // hentikan watchdog ini agar tidak me-reset tombol kembali ke Oranye/Abu!
         // =====================================================================
         if (btnConsent.innerHTML.includes("Lihat PDF")) {
-            window.consentSudahDisimpanHariIni = true; // Loloskan validasi Simpan RME
+            window.consentSudahDisimpanHariIni = true; 
             return; 
         }
 
         const noRM = document.getElementById('modalNoRM')?.value || document.getElementById('lblProfilRM')?.innerText || "-";
         const cleanNoRM = String(noRM).trim();
 
-        // 🛡️ CEK DRAFT LOKAL: Tombol hijau HANYA aktif jika laci TTD pasien ini ada isinya!
+        // 🛡️ CEK DRAFT LOKAL: Tombol hijau HANYA aktif jika laci TTD pasien ini benar-benar terisi gambar/URL!
         const savedTTD = localStorage.getItem('ttd_consent_' + cleanNoRM);
-        const savedRisiko = localStorage.getItem('risiko_consent_' + cleanNoRM);
         
-        if ((savedTTD && savedTTD !== "-" && savedTTD !== "undefined") || (savedRisiko && savedRisiko !== "[]" && savedRisiko !== null)) {
+        // 🔥 PERBAIKAN BUG FATAL: Kita hapus deteksi 'savedRisiko' yang bocor.
+        // Sebuah consent hanya sah disebut "Tersimpan" jika ada Tanda Tangan-nya (Panjang karakter > 20).
+        const isTtdValid = savedTTD && savedTTD !== "-" && savedTTD !== "undefined" && savedTTD !== "null" && savedTTD.length > 20;
+
+        if (isTtdValid) {
             window.consentSudahDisimpanHariIni = true;
             btnConsent.disabled = false;
             btnConsent.style.cursor = "pointer";
