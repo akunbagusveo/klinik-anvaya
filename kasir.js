@@ -382,15 +382,12 @@
         const pasien = window.currentKasirQueueData.find(p => p.noRM === noRM && JSON.stringify(p.barisPendaftaran) === barisPendaftaran);
         let tindakanRawStr = pasien ? pasien.tindakanRaw : "[]";
 
-        // 🔥 PERBAIKAN FATAL: Memastikan Harga Satuan dikalikan dengan Qty & Menarik Catatan Kasir
         try {
             let listTindakan = JSON.parse(tindakanRawStr);
-            // 🔥 TAMBAHKAN index DI SINI
             listTindakan = listTindakan.map((item, index) => { 
                 let qty = Number(item.qty) || Number(item.quantity) || 1;
                 let hargaSatuan = Number(item.hargaBersihPerItem) || 0; 
                 
-                // 🔥 SEDOT TEKS DARI KOTAK INPUT CATATAN KASIR
                 let inputCatatan = document.getElementById(`inpCatatanItem_${index}`);
                 let teksCatatanBaru = inputCatatan ? inputCatatan.value.trim() : "";
                 
@@ -404,7 +401,6 @@
                     }
                 }
                 
-                // 🔥 SUNTIKKAN CATATAN KE NAMA TINDAKAN (Jika kasir mengisi kotak catatannya)
                 if (teksCatatanBaru !== "") {
                     item.namaTindakan = `${item.namaTindakan} [Catatan: ${teksCatatanBaru}]`;
                 }
@@ -419,7 +415,7 @@
 
         let pesanKonfirmasi = `Konfirmasi Pembayaran & Cetak Kuitansi:\nPasien: ${namaPasien}\n`;
         pesanKonfirmasi += `Tindakan Medis (Nett): Rp ${grandTotalMurni.toLocaleString('id-ID')}\n`;
-        if (keteranganKasir) pesanKonfirmasi += `Catatan: ${keteranganKasir}\n`; // 🔥 Tampilkan di konfirmasi
+        if (keteranganKasir) pesanKonfirmasi += `Catatan: ${keteranganKasir}\n`; 
         pesanKonfirmasi += `\nTOTAL DIBAYAR HARI INI: Rp ${grandTotalMurni.toLocaleString('id-ID')}\nMetode: ${metodeBayar}\n\nLanjutkan & Buat PDF?`;
 
         if (!confirm(pesanKonfirmasi)) return;
@@ -450,7 +446,7 @@
             sisaPiutang: 0,     
             grandTotal: grandTotalMurni,
             metodePembayaran: metodeBayar,
-            keterangan: keteranganKasir, // 🔥 SUNTIKKAN KE PAYLOAD SERVER!
+            keterangan: keteranganKasir, 
             kasirOperator: usernameAktif 
         };
 
@@ -468,11 +464,34 @@
             }
             
             if (res.result === "success") {
-                alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!`);
+                alert(`🎉 PEMBAYARAN & KUITANSI PDF BERHASIL DIBUAT!\n\nSistem akan membuka PDF dan menyiapkan format pesan WhatsApp untuk Anda kirimkan ke pasien.`);
                 window.tokenKasirUnik = null; 
-                if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
                 
-                // 🔥 Reset input keterangan setelah sukses
+                // 🔥 1. BUKA PDF DI TAB BARU
+                if (res.pdfUrl) {
+                    window.open(res.pdfUrl, '_blank');
+                    
+                    // 🔥 2. AUTO-WHATSAPP: Buka tab WA dengan Jeda 1 detik agar tidak diblokir browser
+                    setTimeout(() => {
+                        // Merakit Teks Profesional
+                        let waText = `Halo Kak *${namaPasien}*,\nTerima kasih atas kunjungannya di Klinik Anvaya hari ini. 🙏\n\nBerikut adalah tautan e-Kuitansi Pembayaran Anda:\n🔗 ${res.pdfUrl}\n\nSemoga sehat selalu! 🦷✨`;
+                        
+                        // Deteksi & Bersihkan Nomor HP
+                        let noWA = pasien.noWA || pasien.whatsapp || pasien.phone || pasien.noTelp || "";
+                        let noWABersih = String(noWA).replace(/[^0-9]/g, '');
+                        if (noWABersih.startsWith('0')) noWABersih = '62' + noWABersih.substring(1);
+                        
+                        // Rakit Tautan API WhatsApp
+                        let waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+                        if (noWABersih.length > 8) {
+                            waUrl = `https://api.whatsapp.com/send?phone=${noWABersih}&text=${encodeURIComponent(waText)}`;
+                        }
+                        
+                        // Eksekusi Buka WhatsApp
+                        window.open(waUrl, '_blank');
+                    }, 1000); // 1000 milidetik = 1 detik jeda
+                }
+                
                 if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
                 
                 window.tutupModalBilling();
@@ -485,7 +504,7 @@
             if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
             console.error(err);
             if (btnKunciCetak) btnKunciCetak.innerText = "Koneksi Terputus...";
-            alert("⚠️ KONEKSI TERPUTUS SAAT MEMPROSES PEMBAYARAN!\n\nJangan panik. Transaksi Anda kemungkinan besar sudah berhasil dicatat dan PDF sedang dibuat oleh sistem.\n\nSistem akan memuat ulang antrean kasir. Jika nama pasien sudah hilang dari antrean, berarti pembayaran SUKSES masuk ke laporan keuangan.");
+            alert("⚠️ KONEKSI TERPUTUS SAAT MEMPROSES PEMBAYARAN!\n\nSistem akan memuat ulang antrean kasir. Jika nama pasien sudah hilang dari antrean, berarti pembayaran SUKSES masuk ke laporan keuangan.");
             
             if(document.getElementById('inpBillKeterangan')) document.getElementById('inpBillKeterangan').value = "";
             window.tutupModalBilling();
