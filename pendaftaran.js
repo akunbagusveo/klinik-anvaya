@@ -59,6 +59,15 @@
                         
                         let statusPasien = String(pasien.status || "").toLowerCase();
                         let isBatalAtauAbsen = statusPasien.includes("batal") || statusPasien.includes("tidak datang");
+                        
+                        // Perbaikan Bug Dropdown: Hapus opsi dokter JIKA dokter tsb di-booking di jam itu dan statusnya bukan batal.
+                        if ((tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && !isBatalAtauAbsen) {
+                             let optToRemove = Array.from(selectDokter.options).find(opt => 
+                                 opt.text.toLowerCase().includes(namaDokDb) || opt.value.toLowerCase() === idDokDb
+                             );
+                             if (optToRemove) optToRemove.disabled = true; 
+                        }
+
                         return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && !isBatalAtauAbsen;
                     });
 
