@@ -103,7 +103,14 @@
                     kota: document.getElementById('kota') ? document.getElementById('kota').value : "", 
                     tglKunjungan: tglKunjunganVal,
                     waktuKunjungan: waktuKunjunganVal,
-                    tujuan: document.getElementById('tujuan') ? document.getElementById('tujuan').value : "", 
+                    tujuan: (function() {
+                        const el = document.getElementById('tujuan');
+                        if (!el) return "";
+                        if (el.tagName.toLowerCase() === 'select' && el.selectedIndex >= 0) {
+                            return el.options[el.selectedIndex].text.trim();
+                        }
+                        return el.value.trim();
+                    })(), 
                     riwayatAlergi: document.getElementById('riwayatAlergi') ? document.getElementById('riwayatAlergi').value : "",
                     riwayatObat: document.getElementById('riwayatObat') ? document.getElementById('riwayatObat').value : "",
                     idDokter: idDokterVal,
