@@ -57,7 +57,9 @@
                         if (idDokDb !== "" && teksDokterVal.includes(idDokDb)) isDokterSama = true;
                         if (namaDokDb !== "" && teksDokterVal.includes(namaDokDb)) isDokterSama = true;
                         
-                        return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama;
+                        let statusPasien = String(pasien.status || "").toLowerCase();
+                        let isBatalAtauAbsen = statusPasien.includes("batal") || statusPasien.includes("tidak datang");
+                        return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && !isBatalAtauAbsen;
                     });
 
                     if (konflikJadwal) {
