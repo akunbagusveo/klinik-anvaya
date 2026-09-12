@@ -814,14 +814,37 @@
             document.head.appendChild(style);
         }
 
+        // =====================================================================
+        // 🔥 JURUS PAMUNGKAS KUNCI DIAGNOSA (ANTI-TEMBUS)
+        // =====================================================================
         const kunciUIKhususDiagnosa = (kunci) => {
-            document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => {
+            // 1. Kunci semua elemen input yang memiliki kata "diagnosa"
+            document.querySelectorAll('input[id*="Diagnosa"], input[name*="diagnosa"], input[id*="diagnosa"]').forEach(el => {
                 el.disabled = kunci;
-                el.style.backgroundColor = kunci ? "#e9ecef" : "white";
-                el.placeholder = kunci ? "🔒 Terkunci (Sesuai Medikolegal)" : "Ketik nama penyakit lalu klik hasilnya...";
+                if (kunci) {
+                    el.placeholder = "🔒 Terkunci (Sesuai Medikolegal)";
+                    el.style.backgroundColor = "#e9ecef";
+                } else {
+                    el.placeholder = "Ketik nama penyakit lalu klik hasilnya...";
+                    el.style.backgroundColor = "white";
+                }
             });
-            if (kunci) document.body.classList.add('lock-diagnosa-ui'); // Aktifkan CSS penyembunyi [X]
-            else document.body.classList.remove('lock-diagnosa-ui');
+
+            // 2. Matikan fungsi klik (pointer-events) pada seluruh KOTAK BUNGKUSAN Diagnosa
+            document.querySelectorAll('#modalDiagnosa, #txtDiagnosa').forEach(el => {
+                const container = el.closest('.form-group') || el.parentElement;
+                if (container) {
+                    if (kunci) {
+                        container.style.pointerEvents = 'none'; // 👈 Ini yang mematikan tombol Hapus [X]
+                        container.style.opacity = '0.65';       // Efek transparan/terkunci
+                        container.style.filter = 'grayscale(100%)'; // Ubah warna jadi abu-abu
+                    } else {
+                        container.style.pointerEvents = 'auto'; // Hidupkan klik kembali
+                        container.style.opacity = '1';
+                        container.style.filter = 'none';
+                    }
+                }
+            });
         };
 
         // 2. Eksekusi Kunci Informed Consent 
@@ -849,10 +872,10 @@
         // 3. Eksekusi Kunci Diagnosa & Tindakan
         if (modeTerkunciParsial) {
             if (btnTambahTindakan) btnTambahTindakan.style.display = "none";
-            kunciUIKhususDiagnosa(true);
+            setTimeout(() => { kunciUIKhususDiagnosa(true); }, 400); // 👈 Tunda 0.4 detik agar chip selesai dibuat
         } else {
             if (btnTambahTindakan) btnTambahTindakan.style.display = "inline-block";
-            kunciUIKhususDiagnosa(false);
+            setTimeout(() => { kunciUIKhususDiagnosa(false); }, 400);
         }
         // =====================================================================
 
@@ -882,9 +905,14 @@
         const formSplit = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         if (formSplit) formSplit.reset();
         
-        // 🔥 BUKA KEMBALI GEMBOK DIAGNOSA AGAR PASIEN SELANJUTNYA TIDAK IKUT TERKUNCI
-        document.body.classList.remove('lock-diagnosa-ui');
-        document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => {
+        // 🔥 BUKA KEMBALI GEMBOK KOTAK DIAGNOSA
+        document.querySelectorAll('#modalDiagnosa, #txtDiagnosa').forEach(el => {
+            const container = el.closest('.form-group') || el.parentElement;
+            if (container) {
+                container.style.pointerEvents = 'auto'; // Buka klik kembali
+                container.style.opacity = '1';
+                container.style.filter = 'none';
+            }
             el.disabled = false;
             el.style.backgroundColor = "white";
             el.placeholder = "Ketik nama penyakit lalu klik hasilnya...";
