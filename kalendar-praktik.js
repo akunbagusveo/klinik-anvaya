@@ -58,6 +58,16 @@
 
             if (data && (data.result === "success" || data.status === "success")) {
                 cacheDataKalender = data.queue || data.data || [];
+                
+                // 🔥 SMART SORTING: Mengurutkan antrean dari pagi ke malam berdasarkan jam
+                cacheDataKalender.sort(function(a, b) {
+                    // Tangkap properti waktu dari berbagai kemungkinan penamaan variabel backend
+                    let jamA = (a.waktu || a.jam || a[3] || "00:00").toString().trim();
+                    let jamB = (b.waktu || b.jam || b[3] || "00:00").toString().trim();
+                    return jamA.localeCompare(jamB);
+                });
+
+                // Setelah terurut rapi, baru kita render ke layar
                 window.renderKalenderInstan();
             } else {
                 gridBody.innerHTML = `<div style="grid-column: span 7; background: #fee2e2; color: #991b1b; padding: 30px; text-align: center; font-weight: bold;">❌ Gagal dari server: ${data.message || "Format respon tidak dikenali."}</div>`;
@@ -134,7 +144,7 @@
             const kotakHari = document.createElement('div');
             kotakHari.className = `sel-kalender-hybrid ${apakahHariIni ? 'is-today' : ''}`;
             kotakHari.setAttribute('onclick', `if(window.innerWidth <= 768) window.pilihTanggalMobile('${strTgl}', this)`);
-            kotakHari.style.cssText = `background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; min-height: 115px; padding: 6px; display: flex; flex-direction: column; cursor: pointer; ${apakahHariIni ? 'outline: 2px solid #f59e0b; z-index: 2;' : ''}`;
+            kotakHari.style.cssText = `background: ${apakahHariIni ? '#fefce8' : '#ffffff'}; min-height: 115px; max-height: 180px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; cursor: pointer; ${apakahHariIni ? 'outline: 2px solid #f59e0b; z-index: 2;' : ''}`;
 
             if (apakahHariIni) elemenHariIni = kotakHari;
 
