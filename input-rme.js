@@ -877,10 +877,10 @@
         // 3. Eksekusi Kunci Diagnosa & Tindakan
         if (modeTerkunciParsial) {
             if (btnTambahTindakan) btnTambahTindakan.style.display = "none";
-            setTimeout(() => { kunciUIKhususDiagnosa(true); }, 400); // 👈 Tunda 0.4 detik agar chip selesai dibuat
+            setTimeout(() => { if (typeof window.kunciUIKhususDiagnosa === "function") window.kunciUIKhususDiagnosa(true); }, 400); // 👈 Tunda 0.4 detik agar chip selesai dibuat
         } else {
             if (btnTambahTindakan) btnTambahTindakan.style.display = "inline-block";
-            setTimeout(() => { kunciUIKhususDiagnosa(false); }, 400);
+            setTimeout(() => { if (typeof window.kunciUIKhususDiagnosa === "function") window.kunciUIKhususDiagnosa(false); }, 400)
         }
         // =====================================================================
 
