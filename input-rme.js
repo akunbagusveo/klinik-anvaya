@@ -822,7 +822,7 @@
         // =====================================================================
         // 🔥 JURUS PAMUNGKAS KUNCI DIAGNOSA (ANTI-TEMBUS)
         // =====================================================================
-        const kunciUIKhususDiagnosa = (kunci) => {
+        window.kunciUIKhususDiagnosa = function(kunci) {
             // 1. Kunci semua elemen input yang memiliki kata "diagnosa"
             document.querySelectorAll('input[id*="Diagnosa"], input[name*="diagnosa"], input[id*="diagnosa"]').forEach(el => {
                 el.disabled = kunci;
@@ -840,11 +840,11 @@
                 const container = el.closest('.form-group') || el.parentElement;
                 if (container) {
                     if (kunci) {
-                        container.style.pointerEvents = 'none'; // 👈 Ini yang mematikan tombol Hapus [X]
-                        container.style.opacity = '0.65';       // Efek transparan/terkunci
-                        container.style.filter = 'grayscale(100%)'; // Ubah warna jadi abu-abu
+                        container.style.pointerEvents = 'none'; 
+                        container.style.opacity = '0.65';       
+                        container.style.filter = 'grayscale(100%)'; 
                     } else {
-                        container.style.pointerEvents = 'auto'; // Hidupkan klik kembali
+                        container.style.pointerEvents = 'auto'; 
                         container.style.opacity = '1';
                         container.style.filter = 'none';
                     }
