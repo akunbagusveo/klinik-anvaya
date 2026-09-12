@@ -7,40 +7,43 @@
     let cacheMasterPasien = []; // Memori penampung di RAM Browser
 
     // =====================================================================
-    // 1.5 MESIN GENERATOR JAM DINAMIS (AUTO-RENDER)
+    // 1.5 MESIN GENERATOR JAM DINAMIS (DUAL-TARGET)
     // =====================================================================
     window.renderJamKunjunganDinamis = function() {
-        const elemenWaktu = document.getElementById('waktuKunjungan');
-        if (!elemenWaktu) return;
+        const elemenPendaftaran = document.getElementById('waktuKunjungan');
+        const elemenEditAntrean = document.getElementById('editJamSelect');
 
-        let opsiHtml = '<option value="" disabled selected>-- Pilih Jam Kunjungan --</option>';
-        
-        // Loop Jam Operasional: Jam 11 s.d. Jam 18
+        let opsiHtmlPendaftaran = '<option value="" disabled selected>-- Pilih Jam --</option>';
+        let opsiHtmlEdit = ''; // Modal edit biasanya tidak butuh label kosong
+
+        // Mesin Looping: Jam 11 s.d. 18, interval 15 menit
         for (let jam = 11; jam <= 18; jam++) {
-            // Loop Menit: Interval per 15 menit
             for (let menit = 0; menit < 60; menit += 15) {
                 let strJam = String(jam).padStart(2, '0');
                 let strMenit = String(menit).padStart(2, '0');
                 let waktuFix = `${strJam}:${strMenit}`;
                 
-                opsiHtml += `<option value="${waktuFix}">${waktuFix}</option>`;
+                let tagOption = `<option value="${waktuFix}">${waktuFix}</option>`;
+                opsiHtmlPendaftaran += tagOption;
+                opsiHtmlEdit += tagOption;
             }
         }
         
-        // Memaksa HTML menggunakan daftar jam yang baru dirakit
-        elemenWaktu.innerHTML = opsiHtml;
+        // Tembakkan hasilnya ke DUA lokasi sekaligus
+        if (elemenPendaftaran) elemenPendaftaran.innerHTML = opsiHtmlPendaftaran;
+        if (elemenEditAntrean) elemenEditAntrean.innerHTML = opsiHtmlEdit;
     };
 
     // Panggil saat elemen HTML selesai dibaca (Lebih cepat dari 'load')
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
-    });
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
+    // });
 
     // =====================================================================
     // 2. FORM PENDAFTARAN PASIEN SUBMIT (DIBUNGKUS AMAN)
     // =====================================================================
     window.addEventListener('load', function() {
-        // if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
+        if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
         const formPasien = document.getElementById('formPasien');
         if (formPasien) {
             formPasien.addEventListener('submit', function(e) {
