@@ -647,11 +647,24 @@
         }
     };
 
-    // 🔥 INJEKSI AGRESIF: Langsung jalankan saat kerangka HTML selesai dibaca!
-    document.addEventListener("DOMContentLoaded", function() {
+    // =====================================================================
+    // 🔥 JURUS AUTO-TRIGGER TANPA AMPUN (ANTI-GAGAL)
+    // =====================================================================
+    const jalankanMesinJam = function() {
         if (typeof window.renderJamKunjunganDinamis === "function") {
             window.renderJamKunjunganDinamis();
         }
-    });
+    };
+
+    // Tembakan 1: Eksekusi langsung detik ini juga
+    jalankanMesinJam();
+
+    // Tembakan 2: Saat seluruh halaman selesai loading
+    window.addEventListener('load', jalankanMesinJam);
+
+    // Tembakan 3 & 4: Asuransi penundaan (Delay) jika kotak form HTML telat muncul
+    setTimeout(jalankanMesinJam, 500);  // Tembak lagi di 0.5 detik
+    setTimeout(jalankanMesinJam, 1200); // Tembak lagi di 1.2 detik
+
 
 })();
