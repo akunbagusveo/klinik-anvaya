@@ -63,7 +63,13 @@
                 if (typeof window.validasiSebelumSimpanRME === "function" && !window.validasiSebelumSimpanRME()) return; 
 
                 const submitBtn = e.target.querySelector('button[type="submit"]');
-                if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "⏳ Menyimpan Perubahan..."; }
+                // 🔥 REKAM TEKS ASLI SEBELUM LOADING
+                let teksTombolAsli = "💾 Simpan & Selesaikan Kunjungan";
+                if (submitBtn) { 
+                    teksTombolAsli = submitBtn.innerText; // Simpan memori teks
+                    submitBtn.disabled = true; 
+                    submitBtn.innerText = "⏳ Menyimpan Perubahan..."; 
+                }
                 if (typeof window.tampilkanLoading === "function") window.tampilkanLoading("⏳ Mengenkripsi & Menyimpan Rekam Medis...");
 
                 const sessionData    = JSON.parse(localStorage.getItem('anvaya_session'));
@@ -211,7 +217,7 @@
                 .then(response => response.json())
                 .then(res => {
                     if (typeof window.sembunyikanLoading === "function") window.sembunyikanLoading();
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan"; }
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = teksTombolAsli; }
                     
                     if(res.result === "success") {
                         alert("✅ Catatan Rekam Medis sukses disimpan dan dikunci!");
@@ -245,7 +251,7 @@
                     if(modalFull) modalFull.style.display = 'none'; 
                     if (typeof window.switchTab === "function") window.switchTab('antrean');
                     if (typeof window.muatAntreanHariIni === "function") window.muatAntreanHariIni(); 
-                    setTimeout(() => { if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "💾 Simpan & Selesaikan Kunjungan"; } }, 5000);
+                    setTimeout(() => { if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = teksTombolAsli; } }, 5000);
                 });
             });
         });
@@ -878,9 +884,11 @@
         }
         // =====================================================================
 
-        const btnSimpan = document.getElementById('btnSimpanRME');
+        // 🔥 TAMBAHKAN PENANGKAP ELEMEN ALTERNATIF AGAR PASTI KENA
+        const btnSimpan = document.getElementById('btnSimpanRME') || document.querySelector('button[type="submit"]');
+        
         if (!isMasaLalu) {
-            if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
+            if(btnSimpan) btnSimpan.innerHTML = "🔄 Update Catatan Medis"; 
             alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
         } else {
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
