@@ -770,9 +770,8 @@
         // =====================================================================
         // 🔥 LOGIKA KUNCI PARSIAL (PARTIAL LOCK) - MEDIKOLEGAL & AKUNTANSI
         // =====================================================================
-        const isLunas = (window.isPasienLunasAktif === true);
-        const isMasaLalu = (String(isHariIni) !== "true");
-        const modeTerkunciParsial = (isLunas || isMasaLalu); // Berlaku untuk Keduanya!
+        // Sesuai SOP: Karena RME ini SUDAH TERSIMPAN, maka form inti WAJIB DIGEMBOK.
+        const modeTerkunciParsial = true;
 
         // Paksa variabel global gembok tindakan aktif agar baris tindakan otomatis terkunci
         window.isTindakanLocked = modeTerkunciParsial; 
@@ -1399,7 +1398,13 @@
         .then(data => {
             if (btnSubmit) btnSubmit.disabled = false;
             if (data.result === 'success') {
+                
                 if (data.hariIni) {
+                    // =========================================================
+                    // 🔥 SKENARIO 1: RME SUDAH PERNAH DISIMPAN HARI INI
+                    // =========================================================
+                    window.isTindakanLocked = true; // Kunci input harga/nama tindakan
+
                     setNilaiDOM('modalAnamnesa', 'txtAnamnesa', data.hariIni.anamnesa || "");
                     setNilaiDOM('modalRiwayatSakit', 'txtRiwayatSakit', data.hariIni.riwayatSakit || "");
                     setNilaiDOM('modalObjektif', 'txtObjektif', data.hariIni.objektif || "");
@@ -1411,23 +1416,23 @@
                     setNilaiDOM('modalResep', 'txtResep', data.hariIni.resep || "");
                     setNilaiDOM('modalLinkFoto', 'txtLinkFoto', data.hariIni.linkFoto || "");
                     
+                    const btnConsent = document.getElementById('btnBuatConsent');
                     if (data.hariIni.pdfUrl) {
                         window.pdfConsentAktif = data.hariIni.pdfUrl;
                         localStorage.setItem('pdf_url_consent_' + noRM, data.hariIni.pdfUrl);
-                        
-                        // 🔥 3. KUNCI TOMBOL JIKA PDF SUDAH TERBIT
-                        const btnConsent = document.getElementById('btnBuatConsent');
                         if (btnConsent) {
                             btnConsent.disabled = false;
+                            btnConsent.style.display = "inline-block";
                             btnConsent.style.backgroundColor = "#2980b9";
                             btnConsent.innerHTML = "📄 Lihat PDF Consent";
                             btnConsent.onclick = function(e) { e.preventDefault(); window.open(data.hariIni.pdfUrl, '_blank'); };
                         }
+                    } else {
+                        if (btnConsent) btnConsent.style.display = "none"; // Sembunyikan tombol Buat Consent
                     }
 
                     const elTgl1 = document.getElementById('modalTanggalKontrol');
                     const elTgl2 = document.getElementById('tanggalKontrol');
-
                     if (elTgl1) elTgl1.value = data.hariIni.tanggalKontrol || "";
                     if (elTgl2) elTgl2.value = data.hariIni.tanggalKontrol || "";
                     
@@ -1445,8 +1450,41 @@
                             if (data.hariIni.perawatan) { window.tambahBarisTindakan({ namaTindakan: "KUSTOM", hargaDiinput: 0, catatanKlinis: data.hariIni.perawatan }); }
                         }
                     }
+                    
+                    // Eksekusi Gembok Visual
+                    const btnTambahTindakan = document.getElementById('btnTambahTindakan');
+                    if (btnTambahTindakan) btnTambahTindakan.style.display = "none";
+                    setTimeout(() => { if (typeof window.kunciUIKhususDiagnosa === "function") window.kunciUIKhususDiagnosa(true); }, 400);
+
                     if (btnSubmit) { btnSubmit.innerText = "🔄 Update Catatan Rekam Medis"; btnSubmit.style.background = "#e67e22"; }
+                
                 } else {
+                    // =========================================================
+                    // 🔥 SKENARIO 2: PASIEN BARU & BELUM PERNAH DISIMPAN HARI INI
+                    // =========================================================
+                    window.isTindakanLocked = false; 
+
+                    const btnTambahTindakan = document.getElementById('btnTambahTindakan');
+                    if (btnTambahTindakan) btnTambahTindakan.style.display = "inline-block";
+                    setTimeout(() => { if (typeof window.kunciUIKhususDiagnosa === "function") window.kunciUIKhususDiagnosa(false); }, 400);
+
+                    const btnConsent = document.getElementById('btnBuatConsent');
+                    const savedTTD = localStorage.getItem('ttd_consent_' + String(noRM).trim());
+                    
+                    if (btnConsent) {
+                        btnConsent.style.display = "inline-block";
+                        if (savedTTD && savedTTD !== "-" && savedTTD !== "undefined") {
+                            btnConsent.disabled = false;
+                            btnConsent.style.backgroundColor = "#27ae60";
+                            btnConsent.innerHTML = "✅ Informed Consent Tersimpan";
+                        } else {
+                            btnConsent.disabled = false;
+                            btnConsent.style.backgroundColor = "#e74c3c";
+                            btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
+                            btnConsent.onclick = function(e) { e.preventDefault(); if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME(); };
+                        }
+                    }
+
                     if (btnSubmit) { btnSubmit.innerText = "💾 Simpan Catatan Medis Baru"; btnSubmit.style.background = "#9b59b6"; }
                     const kontainerTindakan = getVisibleContainer();
                     if (kontainerTindakan) kontainerTindakan.innerHTML = "";
