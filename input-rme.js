@@ -884,16 +884,23 @@
         }
         // =====================================================================
 
-        // 🔥 TAMBAHKAN PENANGKAP ELEMEN ALTERNATIF AGAR PASTI KENA
-        const btnSimpan = document.getElementById('btnSimpanRME') || document.querySelector('button[type="submit"]');
-        
-        if (!isMasaLalu) {
-            if(btnSimpan) btnSimpan.innerHTML = "🔄 Update Catatan Medis"; 
-            alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
-        } else {
-            if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
-            alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU.\n\nCatatan: Form Tindakan, Diagnosa, dan Consent TERKUNCI sesuai aturan medikolegal dan akuntansi. Anda bebas menyempurnakan Anamnesa, Objektif, dan Plan/Obat.");
-        }
+       // 🔥 TARGET SUPER AKURAT: Masuk ke dalam form dan tembak tombol submit-nya!
+       const formTarget = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
+       const btnSimpan = formTarget ? formTarget.querySelector('button[type="submit"]') : (document.getElementById('btnSimpanRME') || document.getElementById('btnSubmitRME'));
+       
+       if (!isMasaLalu) {
+           if(btnSimpan) {
+               btnSimpan.innerHTML = "🔄 Update Catatan Medis";
+               btnSimpan.style.backgroundColor = "#e67e22"; // Ubah warna jadi oranye
+           }
+           alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
+       } else {
+           if(btnSimpan) {
+               btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
+               btnSimpan.style.backgroundColor = "#d35400"; // Ubah warna jadi oranye tua
+           }
+           alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU.\n\nCatatan: Form Tindakan, Diagnosa, dan Consent TERKUNCI sesuai aturan medikolegal dan akuntansi. Anda bebas menyempurnakan Anamnesa, Objektif, dan Plan/Obat.");
+       }
 
         const btnBatal = document.getElementById('btnBatalEdit');
         if(btnBatal) btnBatal.style.display = 'block';
@@ -938,8 +945,14 @@
         const btnBatal = document.getElementById('btnBatalEdit');
         if (btnBatal) btnBatal.style.setProperty('display', 'none', 'important');
         
-        const btnSimpan = document.getElementById('btnSimpanRME');
-        if (btnSimpan) btnSimpan.innerHTML = "💾 Simpan & Selesaikan Kunjungan";
+        // 🔥 KEMBALIKAN KE POSISI NETRAL
+        const formBatal = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
+        const btnSimpan = formBatal ? formBatal.querySelector('button[type="submit"]') : (document.getElementById('btnSimpanRME') || document.getElementById('btnSubmitRME'));
+        
+        if (btnSimpan) {
+            btnSimpan.innerHTML = "💾 Simpan & Selesaikan Kunjungan";
+            btnSimpan.style.backgroundColor = ""; // Reset ke warna asli CSS
+        }
         
         const kolomInput = document.getElementById('kolomInputRME');
         if (kolomInput) kolomInput.style.setProperty('display', 'none', 'important');
