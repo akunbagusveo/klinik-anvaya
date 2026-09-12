@@ -755,7 +755,6 @@
         };
 
         setNilaiAman('modalAnamnesa', anam); setNilaiAman('txtAnamnesa', anam);
-        // 🔥 BUG 1 FIX: Pasang data Riwayat Sakit ke kotak HTML
         setNilaiAman('modalRiwayatSakit', riwayatSakit); setNilaiAman('txtRiwayatSakit', riwayatSakit);
         
         setNilaiAman('modalObjektif', obj); setNilaiAman('txtObjektif', obj);
@@ -768,18 +767,27 @@
 
         window.barisRekamMedisTarget = barisSheet;
 
+        // =====================================================================
+        // 🔥 LOGIKA KUNCI PARSIAL (PARTIAL LOCK) - MEDIKOLEGAL & AKUNTANSI
+        // =====================================================================
+        const isLunas = (window.isPasienLunasAktif === true);
+        const isMasaLalu = (String(isHariIni) !== "true");
+        const modeTerkunciParsial = (isLunas || isMasaLalu); // Berlaku untuk Keduanya!
+
+        // Paksa variabel global gembok tindakan aktif agar baris tindakan otomatis terkunci
+        window.isTindakanLocked = modeTerkunciParsial; 
+        
         const kontainerTindakan = getVisibleContainer();
         if (kontainerTindakan) {
             kontainerTindakan.innerHTML = ""; 
             try {
                 let arrTindakan = JSON.parse(per);
                 if (Array.isArray(arrTindakan) && arrTindakan.length > 0) {
-                    // 🔥 BUG 2 FIX: Jangan lupakan 'qty' saat merender ulang tindakan!
                     arrTindakan.forEach(t => { 
                         window.tambahBarisTindakan({ 
                             namaTindakan: t.namaTindakan, 
                             hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, 
-                            qty: t.qty || 1, // <- Ini yang kemarin tertinggal!
+                            qty: t.qty || 1, 
                             catatanKlinis: t.catatanKlinis 
                         }); 
                     });
@@ -789,39 +797,72 @@
             }
         }
 
-        // 🔥 BUG 3 FIX: Kunci Tombol Consent jika PDF sudah terbit
         const btnConsent = document.getElementById('btnBuatConsent');
+        const btnTambahTindakan = document.getElementById('btnTambahTindakan');
+
+        // 1. Injeksi CSS Dinamis untuk menyembunyikan tombol silang [X] Diagnosa
+        if (!document.getElementById('styleLockDiagnosa')) {
+            const style = document.createElement('style');
+            style.id = 'styleLockDiagnosa';
+            style.innerHTML = `
+                body.lock-diagnosa-ui .chip-diagnosa span, 
+                body.lock-diagnosa-ui .btn-hapus-diagnosa,
+                body.lock-diagnosa-ui [onclick*="hapusDiagnosa"] {
+                    display: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const kunciUIKhususDiagnosa = (kunci) => {
+            document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => {
+                el.disabled = kunci;
+                el.style.backgroundColor = kunci ? "#e9ecef" : "white";
+                el.placeholder = kunci ? "🔒 Terkunci (Sesuai Medikolegal)" : "Ketik nama penyakit lalu klik hasilnya...";
+            });
+            if (kunci) document.body.classList.add('lock-diagnosa-ui'); // Aktifkan CSS penyembunyi [X]
+            else document.body.classList.remove('lock-diagnosa-ui');
+        };
+
+        // 2. Eksekusi Kunci Informed Consent 
         if (btnConsent) {
             if (pdfUrl && pdfUrl !== "-" && pdfUrl !== "") {
+                btnConsent.style.display = "inline-block";
                 btnConsent.style.backgroundColor = "#2980b9"; 
                 btnConsent.innerHTML = "📄 Lihat PDF Consent";
-                btnConsent.onclick = function(e) { 
-                    e.preventDefault(); 
-                    window.open(pdfUrl, '_blank'); 
-                };
-                // 🔥 GEMBOK AKTIF: Kunci UI Diagnosa & Tindakan!
-                if (typeof window.kunciDiagnosaUI === "function") window.kunciDiagnosaUI(true);
-                if (typeof window.kunciTindakanUI === "function") window.kunciTindakanUI(true); 
+                btnConsent.onclick = function(e) { e.preventDefault(); window.open(pdfUrl, '_blank'); };
             } else {
-                btnConsent.style.backgroundColor = "#e74c3c"; 
-                btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
-                btnConsent.onclick = function(e) {
-                    e.preventDefault();
-                    if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME();
-                };
-                // 🔥 GEMBOK TERBUKA: Buka UI Diagnosa & Tindakan!
-                if (typeof window.kunciDiagnosaUI === "function") window.kunciDiagnosaUI(false);
-                if (typeof window.kunciTindakanUI === "function") window.kunciTindakanUI(false); 
+                if (modeTerkunciParsial) {
+                    btnConsent.style.display = "none"; // Lenyapkan tombol Buat Consent
+                } else {
+                    btnConsent.style.display = "inline-block";
+                    btnConsent.style.backgroundColor = "#e74c3c"; 
+                    btnConsent.innerHTML = "⚠️ Buat Informed Consent (Wajib)";
+                    btnConsent.onclick = function(e) {
+                        e.preventDefault();
+                        if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME();
+                    };
+                }
             }
         }
 
+        // 3. Eksekusi Kunci Diagnosa & Tindakan
+        if (modeTerkunciParsial) {
+            if (btnTambahTindakan) btnTambahTindakan.style.display = "none";
+            kunciUIKhususDiagnosa(true);
+        } else {
+            if (btnTambahTindakan) btnTambahTindakan.style.display = "inline-block";
+            kunciUIKhususDiagnosa(false);
+        }
+        // =====================================================================
+
         const btnSimpan = document.getElementById('btnSimpanRME');
-        if (isHariIni === true || isHariIni === "true") {
+        if (!isMasaLalu) {
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Perubahan Edit"; 
             alert("Mode Edit Aktif: Anda akan memperbarui catatan rekam medis HARI INI secara langsung.");
         } else {
             if(btnSimpan) btnSimpan.innerHTML = "💾 Simpan Koreksi / Revisi"; 
-            alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU.\n\nSistem TIDAK AKAN menghapus data asli, melainkan membuat BARIS KOREKSI BARU sebagai rekam jejak audit.");
+            alert("Mode Revisi Aktif: Anda akan mengoreksi data MASA LALU.\n\nCatatan: Form Tindakan, Diagnosa, dan Consent TERKUNCI sesuai aturan medikolegal dan akuntansi. Anda bebas menyempurnakan Anamnesa, Objektif, dan Plan/Obat.");
         }
 
         const btnBatal = document.getElementById('btnBatalEdit');
@@ -841,12 +882,21 @@
         const formSplit = document.getElementById('formModalMedisSplit') || document.getElementById('formModalMedis');
         if (formSplit) formSplit.reset();
         
+        // 🔥 BUKA KEMBALI GEMBOK DIAGNOSA AGAR PASIEN SELANJUTNYA TIDAK IKUT TERKUNCI
+        document.body.classList.remove('lock-diagnosa-ui');
+        document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => {
+            el.disabled = false;
+            el.style.backgroundColor = "white";
+            el.placeholder = "Ketik nama penyakit lalu klik hasilnya...";
+        });
+        
         document.querySelectorAll('#modalDiagnosa, #txtDiagnosa, [name="diagnosa"]').forEach(el => el.value = "");
         window.triggerSyncDiagnosa();
 
         window.barisRekamMedisTarget = null;
-        window.dokterPemilikRM = null; // Bersihkan memori pemilik
+        window.dokterPemilikRM = null; 
         window.namaDokterPemilikRM = null; 
+        window.isTindakanLocked = false; // Buka gembok tindakan
         
         if (typeof window.resetStatusConsentUI === "function") window.resetStatusConsentUI();
         
