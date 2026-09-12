@@ -988,7 +988,8 @@
             if (isWajib) { adaTindakanBerisiko = true; namaTindakanBerisiko.push(selNama.value.trim()); }
         });
 
-        if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni) {
+        // 🔥 BYPASS CERDAS: Jika Tindakan Terkunci (Mode Edit), abaikan validasi Consent!
+        if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni && !window.isTindakanLocked) {
             alert(`⚠️ TINDAKAN MEDIS BERISIKO TERDETEKSI!\n\nTindakan: "${namaTindakanBerisiko.join(', ')}"\n\nSesuai SOP Medico-Legal Klinik Anvaya, Anda wajib membuat Informed Consent terlebih dahulu sebelum menutup rekam medis ini.`);
             if (typeof window.triggerInformedConsentDariRME === "function") window.triggerInformedConsentDariRME();
             return false; 
