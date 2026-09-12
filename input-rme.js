@@ -778,9 +778,12 @@
         // =====================================================================
         // Sesuai SOP: Karena RME ini SUDAH TERSIMPAN, maka form inti WAJIB DIGEMBOK.
         const modeTerkunciParsial = true;
+        
+        // 🔥 PENYELAMAT NYAWA: Kembalikan variabel ini agar sistem tidak Crash!
+        const isMasaLalu = (String(isHariIni) !== "true" && isHariIni !== true);
 
         // Paksa variabel global gembok tindakan aktif agar baris tindakan otomatis terkunci
-        window.isTindakanLocked = modeTerkunciParsial; 
+        window.isTindakanLocked = modeTerkunciParsial;
         
         const kontainerTindakan = getVisibleContainer();
         if (kontainerTindakan) {
