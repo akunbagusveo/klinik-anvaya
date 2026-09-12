@@ -35,15 +35,15 @@
     };
 
     // Panggil saat elemen HTML selesai dibaca (Lebih cepat dari 'load')
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
-    // });
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
+    });
 
     // =====================================================================
     // 2. FORM PENDAFTARAN PASIEN SUBMIT (DIBUNGKUS AMAN)
     // =====================================================================
     window.addEventListener('load', function() {
-        if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
+        // if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
         const formPasien = document.getElementById('formPasien');
         if (formPasien) {
             formPasien.addEventListener('submit', function(e) {
