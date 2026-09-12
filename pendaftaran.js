@@ -648,7 +648,7 @@
     };
 
     // =====================================================================
-    // 🔥 JURUS AUTO-TRIGGER TANPA AMPUN (ANTI-GAGAL)
+    // 🔥 JURUS AUTO-TRIGGER TANPA AMPUN (ANTI-GAGAL & ANTI-SILUMAN)
     // =====================================================================
     const jalankanMesinJam = function() {
         if (typeof window.renderJamKunjunganDinamis === "function") {
@@ -662,9 +662,25 @@
     // Tembakan 2: Saat seluruh halaman selesai loading
     window.addEventListener('load', jalankanMesinJam);
 
-    // Tembakan 3 & 4: Asuransi penundaan (Delay) jika kotak form HTML telat muncul
-    setTimeout(jalankanMesinJam, 500);  // Tembak lagi di 0.5 detik
-    setTimeout(jalankanMesinJam, 1200); // Tembak lagi di 1.2 detik
+    // Tembakan 3 & 4: Asuransi penundaan (Delay) saat pertama kali buka web
+    setTimeout(jalankanMesinJam, 500);  
+    setTimeout(jalankanMesinJam, 1200); 
+
+    // 🔥 PELINDUNG MUTLAK: Pantau setiap kali Kasir mengubah Tanggal!
+    const pantauPerubahanTanggal = function(idInput) {
+        const elemenTgl = document.getElementById(idInput);
+        if (elemenTgl) {
+            // Ketika tanggal diubah, fungsi siluman bekerja...
+            elemenTgl.addEventListener('change', function() {
+                // ...Lalu kita beri jeda 0.2 detik, dan KITA TIMPA BALIK menjadi 15 menit!
+                setTimeout(jalankanMesinJam, 200);
+            });
+        }
+    };
+
+    // Pasang pelindung di form Pendaftaran Baru dan Pop-up Edit Antrean
+    pantauPerubahanTanggal('tglKunjungan');
+    pantauPerubahanTanggal('editTanggalInput');
 
 
 })();
