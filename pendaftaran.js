@@ -7,9 +7,35 @@
     let cacheMasterPasien = []; // Memori penampung di RAM Browser
 
     // =====================================================================
+    // 1.5 MESIN GENERATOR JAM DINAMIS (AUTO-RENDER)
+    // =====================================================================
+    window.renderJamKunjunganDinamis = function() {
+        const elemenWaktu = document.getElementById('waktuKunjungan');
+        if (!elemenWaktu) return;
+
+        let opsiHtml = '<option value="" disabled selected>-- Pilih Jam Kunjungan --</option>';
+        
+        // Loop Jam Operasional: Jam 11 s.d. Jam 18
+        for (let jam = 11; jam <= 18; jam++) {
+            // Loop Menit: Interval per 15 menit
+            for (let menit = 0; menit < 60; menit += 15) {
+                let strJam = String(jam).padStart(2, '0');
+                let strMenit = String(menit).padStart(2, '0');
+                let waktuFix = `${strJam}:${strMenit}`;
+                
+                opsiHtml += `<option value="${waktuFix}">${waktuFix}</option>`;
+            }
+        }
+        
+        // Memaksa HTML menggunakan daftar jam yang baru dirakit
+        elemenWaktu.innerHTML = opsiHtml;
+    };
+
+    // =====================================================================
     // 2. FORM PENDAFTARAN PASIEN SUBMIT (DIBUNGKUS AMAN)
     // =====================================================================
     window.addEventListener('load', function() {
+        if (typeof window.renderJamKunjunganDinamis === "function") window.renderJamKunjunganDinamis();
         const formPasien = document.getElementById('formPasien');
         if (formPasien) {
             formPasien.addEventListener('submit', function(e) {
@@ -61,12 +87,12 @@
                         let isBatalAtauAbsen = statusPasien.includes("batal") || statusPasien.includes("tidak datang");
                         
                         // Perbaikan Bug Dropdown: Hapus opsi dokter JIKA dokter tsb di-booking di jam itu dan statusnya bukan batal.
-                        if ((tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && !isBatalAtauAbsen) {
-                             let optToRemove = Array.from(selectDokter.options).find(opt => 
-                                 opt.text.toLowerCase().includes(namaDokDb) || opt.value.toLowerCase() === idDokDb
-                             );
-                             if (optToRemove) optToRemove.disabled = true; 
-                        }
+                        // if ((tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && !isBatalAtauAbsen) {
+                        //      let optToRemove = Array.from(selectDokter.options).find(opt => 
+                        //          opt.text.toLowerCase().includes(namaDokDb) || opt.value.toLowerCase() === idDokDb
+                        //      );
+                        //      if (optToRemove) optToRemove.disabled = true; 
+                        // }
 
                         return (tglPasien === formTgl) && (jamPasien === formJam) && isDokterSama && !isBatalAtauAbsen;
                     });
