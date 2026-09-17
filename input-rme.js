@@ -122,6 +122,7 @@
                         
                         listTindakanDipilih.push({
                             namaTindakan: namaTindakanFix,
+                            kategori: selNama.dataset.kategori || "", // 🔥 Amankan Kategori ke Database!
                             hargaBersihPerItem: hargaDasarSebenarnya, // Kirim harga dasar yang sudah dikoreksi
                             qty: qtyInput,                            // Kirim data Qty agar tidak hilang
                             catatanKlinis: inpCatatan ? inpCatatan.value.trim() : "",
@@ -357,9 +358,10 @@
             if (selNama && selNama.value && selNama.value.trim() !== "") {
                 listTindakanDraft.push({
                     namaTindakan: selNama.value,
+                    kategori: selNama.dataset.kategori || "", // 🔥 Simpan kategori ke draft
                     hargaDiinput: inpHarga ? inpHarga.value : "0",
                     catatanKlinis: inpCatatan ? inpCatatan.value : "",
-                    qty: inpQty ? parseInt(inpQty.value) || 1 : 1 // 🔥 Menyimpan nilai Qty ke database
+                    qty: inpQty ? parseInt(inpQty.value) || 1 : 1 
                 });
             }
         });
@@ -480,8 +482,11 @@
                         // Saat opsi diklik
                         optDiv.onclick = () => {
                             elemenTindakan.value = m.nama;
+                            // 🔥 TANGKAP KATEGORI: Simpan ke elemen input agar tidak tertukar!
+                            elemenTindakan.dataset.kategori = m.kategori;
                             dropTindakan.style.display = 'none';
-                            window.pilihTindakanDinamis(rowId, m.nama);
+                            // Lempar Identitas Ganda (Nama & Kategori)
+                            window.pilihTindakanDinamis(rowId, m.nama, m.kategori);
                             window.simpanDraftRME();
                         };
                         dropTindakan.appendChild(optDiv);
@@ -510,13 +515,17 @@
 
         if (dataAwal) {
             elemenTindakan.value = dataAwal.namaTindakan || "";
+            // 🔥 RESTORASI KATEGORI: Ambil kembali dari histori database
+            if (dataAwal.kategori) elemenTindakan.dataset.kategori = dataAwal.kategori; 
+            
             const elemenQty = rowWrapper.querySelector('.inp-qty-tindakan');
             
             // 🔥 BUG 2 FIX (Bagian Tampilan): Pasang Qty dan hitung ulang Harga Total di form
             let qtyInit = dataAwal.qty || 1;
             if (elemenQty) elemenQty.value = qtyInit;
             
-            window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "");
+            // Lempar Identitas Ganda saat memuat ulang
+            window.pilihTindakanDinamis(rowId, dataAwal.namaTindakan || "", dataAwal.kategori || "");
             
             if (elemenHarga) {
                 let hargaDasarMentah = String(dataAwal.hargaDiinput || dataAwal.hargaBersihPerItem || 0).replace(/[^0-9]/g, '');
@@ -548,7 +557,7 @@
         if (typeof window.periksaKebutuhanConsentUI === "function") window.periksaKebutuhanConsentUI();
     };
 
-    window.pilihTindakanDinamis = function(rowId, namaTindakan) {
+    window.pilihTindakanDinamis = function(rowId, namaTindakan, kategoriSpesifik = null) {
         const row = document.getElementById(rowId);
         if (!row) return;
 
@@ -644,7 +653,18 @@
             return;
         }
 
-        const match = (window.masterTindakanGlobal || []).find(t => String(t.nama || "").trim().toLowerCase() === cleanNamaPilihan.toLowerCase());
+        // 🔥 PENCARIAN GANDA (NAMA + KATEGORI) UNTUK NAMA YANG BENTROK
+        let match = null;
+        if (kategoriSpesifik) {
+            match = (window.masterTindakanGlobal || []).find(t => 
+                String(t.nama || "").trim().toLowerCase() === cleanNamaPilihan.toLowerCase() &&
+                String(t.kategori || "").trim().toLowerCase() === String(kategoriSpesifik).trim().toLowerCase()
+            );
+        }
+        // Fallback jika tidak ada kategori (misal: user mengetik manual nama unik)
+        if (!match) {
+            match = (window.masterTindakanGlobal || []).find(t => String(t.nama || "").trim().toLowerCase() === cleanNamaPilihan.toLowerCase());
+        }
         let isWajibConsent = false;
 
         if (!match && cleanNamaPilihan.toUpperCase() !== "KUSTOM") {
@@ -803,6 +823,7 @@
                     arrTindakan.forEach(t => { 
                         window.tambahBarisTindakan({ 
                             namaTindakan: t.namaTindakan, 
+                            kategori: t.kategori || "", // 🔥 Pasok kategori dari database
                             hargaDiinput: t.hargaDiinput || t.hargaBersihPerItem || 0, 
                             qty: t.qty || 1, 
                             catatanKlinis: t.catatanKlinis 
