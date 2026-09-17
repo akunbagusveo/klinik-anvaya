@@ -452,7 +452,16 @@
                     return;
                 }
 
+                // 🔥 FILTER DINAMIS: Hanya tampilkan tindakan yang berstatus AKTIF
                 const matches = (window.masterTindakanGlobal || []).filter(t => {
+                    // 1. Cek status (default 'aktif' jika kosong dari server)
+                    const statusTindakan = String(t.status || "aktif").toLowerCase();
+                    
+                    // 2. Jika statusnya mengandung kata 'non' (nonaktif) atau 'tidak', buang dari daftar!
+                    const isAktif = !statusTindakan.includes("non") && !statusTindakan.includes("tidak");
+                    if (!isAktif) return false; 
+                    
+                    // 3. Jika aktif, lanjutkan pencarian berdasarkan keyword (Nama atau Kategori)
                     return String(t.nama || "").toLowerCase().includes(keyword) || String(t.kategori || "").toLowerCase().includes(keyword);
                 });
 
