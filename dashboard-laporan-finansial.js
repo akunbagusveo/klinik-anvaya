@@ -389,12 +389,25 @@
                 
                 // 2. SIMPAN KE CACHE & PANGGIL MESIN PENCARIAN/PAGINASI
                 if (res.dataTabel && res.dataTabel.length > 0) {
-                    // 🔥 FILTER DINAMIS 2: Bersihkan kata "Diskon" dari rincian tindakan untuk Tabel, PDF, dan CSV!
+                    // 🔥 FILTER DINAMIS 2 (REVISI): Anti-Sapu Bersih! Memecah teks koma/array dengan aman.
                     window.cacheDataFinansial = res.dataTabel.map(nota => {
                         if (nota.tindakan) {
-                            let tindakanBersih = String(nota.tindakan).split(/<br\s*\/?>/i)
-                                .filter(t => !t.toLowerCase().includes("diskon") && !t.toLowerCase().includes("potongan"))
-                                .join("<br>");
+                            let arrTindakan = [];
+                            
+                            // 1. Cek apakah backend mengirim Array atau Teks
+                            if (Array.isArray(nota.tindakan)) {
+                                arrTindakan = nota.tindakan;
+                            } else {
+                                // 2. Jika teks, pecah paksa berdasarkan koma (,), <br>, atau baris baru (\n)
+                                arrTindakan = String(nota.tindakan).split(/<br\s*\/?>|\n|,/i);
+                            }
+                            
+                            // 3. Saring HANYA diskon, pertahankan tindakan aslinya
+                            let tindakanBersih = arrTindakan
+                                .map(t => t.trim()) // Bersihkan sisa spasi
+                                .filter(t => t !== "" && !t.toLowerCase().includes("diskon") && !t.toLowerCase().includes("potongan"))
+                                .join("<br><br>"); // Gabungkan ulang dengan jarak yang rapi
+                                
                             nota.tindakan = tindakanBersih !== "" ? tindakanBersih : "-";
                         }
                         return nota;
