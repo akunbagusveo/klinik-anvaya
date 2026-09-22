@@ -389,26 +389,43 @@
                 
                 // 2. SIMPAN KE CACHE & PANGGIL MESIN PENCARIAN/PAGINASI
                 if (res.dataTabel && res.dataTabel.length > 0) {
-                    // 🔥 FILTER DINAMIS 2 (REVISI): Anti-Sapu Bersih! Memecah teks koma/array dengan aman.
+                    // 🔥 FILTER DINAMIS 2 (REVISI): Cerdas membaca struktur Gelembung HTML/Teks
                     window.cacheDataFinansial = res.dataTabel.map(nota => {
                         if (nota.tindakan) {
-                            let arrTindakan = [];
+                            let tindakanBersih = "";
+                            let teksMentah = String(nota.tindakan);
                             
-                            // 1. Cek apakah backend mengirim Array atau Teks
+                            // A. Jika backend mengirim Array
                             if (Array.isArray(nota.tindakan)) {
-                                arrTindakan = nota.tindakan;
-                            } else {
-                                // 2. Jika teks, pecah paksa berdasarkan koma (,), <br>, atau baris baru (\n)
-                                arrTindakan = String(nota.tindakan).split(/<br\s*\/?>|\n|,/i);
+                                tindakanBersih = nota.tindakan
+                                    .filter(t => typeof t === 'string' && !t.toLowerCase().includes("diskon") && !t.toLowerCase().includes("potongan"))
+                                    .join("<br>");
+                            } 
+                            // B. Jika backend mengirim Gelembung HTML (<span... atau <div...)
+                            else if (teksMentah.includes("<span") || teksMentah.includes("<div")) {
+                                let tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = teksMentah;
+                                
+                                // Deteksi setiap gelembung, letuskan jika itu Diskon!
+                                Array.from(tempDiv.children).forEach(el => {
+                                    let konten = el.textContent || "";
+                                    if (konten.toLowerCase().includes("diskon") || konten.toLowerCase().includes("potongan")) {
+                                        el.remove(); 
+                                    }
+                                });
+                                
+                                // Bersihkan sisa koma atau <br> yang mungkin tertinggal di ujung
+                                tindakanBersih = tempDiv.innerHTML.replace(/^(<br\s*\/?>|\s|,)+|(<br\s*\/?>|\s|,)+$/gi, '').trim();
+                            } 
+                            // C. Jika murni teks biasa (dipisah koma atau <br>)
+                            else {
+                                tindakanBersih = teksMentah.split(/<br\s*\/?>|\n|,/i)
+                                    .map(t => t.trim())
+                                    .filter(t => t !== "" && !t.toLowerCase().includes("diskon") && !t.toLowerCase().includes("potongan"))
+                                    .join("<br>"); 
                             }
                             
-                            // 3. Saring HANYA diskon, pertahankan tindakan aslinya
-                            let tindakanBersih = arrTindakan
-                                .map(t => t.trim()) // Bersihkan sisa spasi
-                                .filter(t => t !== "" && !t.toLowerCase().includes("diskon") && !t.toLowerCase().includes("potongan"))
-                                .join("<br><br>"); // Gabungkan ulang dengan jarak yang rapi
-                                
-                            nota.tindakan = tindakanBersih !== "" ? tindakanBersih : "-";
+                            nota.tindakan = (tindakanBersih !== "" && tindakanBersih !== "<br>") ? tindakanBersih : "-";
                         }
                         return nota;
                     });
