@@ -389,7 +389,16 @@
                 
                 // 2. SIMPAN KE CACHE & PANGGIL MESIN PENCARIAN/PAGINASI
                 if (res.dataTabel && res.dataTabel.length > 0) {
-                    window.cacheDataFinansial = res.dataTabel;
+                    // 🔥 FILTER DINAMIS 2: Bersihkan kata "Diskon" dari rincian tindakan untuk Tabel, PDF, dan CSV!
+                    window.cacheDataFinansial = res.dataTabel.map(nota => {
+                        if (nota.tindakan) {
+                            let tindakanBersih = String(nota.tindakan).split(/<br\s*\/?>/i)
+                                .filter(t => !t.toLowerCase().includes("diskon") && !t.toLowerCase().includes("potongan"))
+                                .join("<br>");
+                            nota.tindakan = tindakanBersih !== "" ? tindakanBersih : "-";
+                        }
+                        return nota;
+                    });
                 } else {
                     window.cacheDataFinansial = [];
                 }

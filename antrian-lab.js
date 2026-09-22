@@ -41,6 +41,14 @@
     // 2. FUNGSI RENDER (MENCETAK TABEL UNTUK PC & KARTU UNTUK MOBILE BERSAMAAN)
     // =====================================================================
     window.renderTabelAntreanLab = function(data) {
+        // 🔥 FILTER DINAMIS 1: Cegat dan lenyapkan "Diskon" sebelum masuk ke Antrean Lab
+        if (data && Array.isArray(data)) {
+            data = data.filter(item => {
+                let namaT = String(item.namaTindakan || "").toLowerCase();
+                return !namaT.includes("diskon") && !namaT.includes("potongan");
+            });
+        }
+
         const wadahPC = document.getElementById('tbodyAntreanLabPC');
         const wadahMobile = document.getElementById('tbodyAntreanLabMobile');
         
