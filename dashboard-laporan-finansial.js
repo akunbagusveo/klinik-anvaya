@@ -532,6 +532,21 @@
             return matchTeks && matchDokter && matchTindakan && matchPembayaran;
         });
 
+        // 🔥 FITUR BARU: Mengurutkan Transaksi Berdasarkan Tanggal (Terbaru di Atas)
+        window.filteredDataFinansial.sort((a, b) => {
+            // Ubah format DD/MM/YYYY menjadi YYYYMMDD agar bisa diurutkan secara matematis
+            let dateA = (a.tanggal || "").split('/').reverse().join(''); 
+            let dateB = (b.tanggal || "").split('/').reverse().join('');
+            
+            // Jika tanggalnya sama persis, urutkan berdasarkan Nomor Kuitansi terbaru
+            if (dateA === dateB) {
+                return (b.noKuitansi || "").localeCompare(a.noKuitansi || "");
+            }
+            
+            // Urutkan menurun (Descending) - Tanggal paling baru ada di atas
+            return dateB.localeCompare(dateA); 
+        });
+
         // Setel ulang ke Halaman 1, lalu cetak!
         window.currentPageFinansial = 1;
         window.renderHalamanFinansial();
@@ -576,7 +591,9 @@
 
             // 💻 SUNTIKKAN KE TABEL PC
             if (tbody) {
-                let btnPdfPC = nota.linkPdf !== "#" ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
+                // let btnPdfPC = nota.linkPdf !== "#" ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
+                // 🔥 FILTER DINAMIS: Tombol hanya aktif jika URL bukan "#", bukan "-", dan tidak kosong
+                let btnPdfPC = (nota.linkPdf !== "#" && nota.linkPdf !== "-" && nota.linkPdf !== "") ? `<a href="${nota.linkPdf}" target="_blank" style="background:#e74c3c; color:white; padding:5px 12px; border-radius:4px; text-decoration:none; font-size:11px; white-space: nowrap; display: inline-block; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">📄 Buka</a>` : `<span style="color:#bdc3c7; font-size:11px; white-space: nowrap;">Tidak Ada</span>`;
                 tbody.innerHTML += `
                     <tr style="border-bottom: 1px solid #eee; vertical-align: top; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                         <td style="padding: 12px; font-family: monospace; color:#2980b9;"><b>${nota.noKuitansi}</b></td>
@@ -594,7 +611,7 @@
 
             // 📱 SUNTIKKAN KE KARTU MOBILE
             if (tbodyMobile) {
-                let btnPdfMobile = nota.linkPdf !== "#" ? `<button onclick="window.open('${nota.linkPdf}', '_blank')" style="width:100%; background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Buka Arsip PDF</button>` : `<button disabled style="width:100%; background:#e2e8f0; color:#94a3b8; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:13px;">❌ Bukti PDF Tidak Ada</button>`;
+                let btnPdfMobile = (nota.linkPdf !== "#" && nota.linkPdf !== "-" && nota.linkPdf !== "") ? `<button onclick="window.open('${nota.linkPdf}', '_blank')" style="width:100%; background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Buka Arsip PDF</button>` : `<button disabled style="width:100%; background:#e2e8f0; color:#94a3b8; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:13px;">❌ Bukti PDF Tidak Ada</button>`;
                 tbodyMobile.innerHTML += `
                     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.02); overflow:hidden; transition: all 0.3s ease;">
                         <div onclick="window.toggleAccordionFinansial(this)" style="padding:15px; background:#f8fafc; display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; border-bottom:1px solid transparent;">
