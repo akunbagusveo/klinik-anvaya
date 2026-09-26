@@ -1034,11 +1034,17 @@
         const barisTindakan = formPencari.querySelectorAll('.baris-tindakan-item');
         let adaTindakanBerisiko = false;
         let namaTindakanBerisiko = [];
+        
+        // 🔥 SENSOR BARU: Penghitung jumlah tindakan yang sah
+        let jumlahTindakanValid = 0; 
 
         barisTindakan.forEach(row => {
             if (!isVisible(row)) return; 
             const selNama = row.querySelector('.sel-nama-tindakan');
-            if (!selNama || !selNama.value) return;
+            // Cek jika kotak input benar-benar kosong atau hanya berisi spasi
+            if (!selNama || !selNama.value || selNama.value.trim() === "") return;
+
+            jumlahTindakanValid++; // 🔥 Catat! Ada tindakan yang diisi
 
             const namaTerpilih = selNama.value.trim().toLowerCase();
             let isWajib = row.getAttribute('data-butuh-consent') == "1" || (selNama.getAttribute('data-butuh-consent') == "1") || row.querySelector('.badge-consent');
@@ -1053,6 +1059,12 @@
 
             if (isWajib) { adaTindakanBerisiko = true; namaTindakanBerisiko.push(selNama.value.trim()); }
         });
+
+        // 🔥 VALIDASI MUTLAK: Cegah RME tersimpan jika tindakan kosong sama sekali!
+        if (jumlahTindakanValid === 0) {
+            alert("⚠️ KOTAK TINDAKAN MASIH KOSONG!\n\nSetiap rekam medis wajib mencatatkan minimal satu tindakan (misalnya: 'Konsultasi' atau 'Pemeriksaan').\n\nSilakan isi nama tindakan terlebih dahulu sebelum menyimpan.");
+            return false; // Blokir proses simpan!
+        }
 
         // 🔥 BYPASS CERDAS: Jika Tindakan Terkunci (Mode Edit), abaikan validasi Consent!
         if (adaTindakanBerisiko && !window.consentSudahDisimpanHariIni && !window.isTindakanLocked) {
