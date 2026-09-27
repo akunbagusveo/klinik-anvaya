@@ -294,7 +294,9 @@
             let wa     = p.noWA || p.whatsapp || p[5] || "-";
             let alamat = p.alamat || p[8] || "-";
             
-            let amanObj = encodeURIComponent(JSON.stringify(p));
+            // let amanObj = encodeURIComponent(JSON.stringify(p));
+            // 🔥 FILTER DINAMIS: Konversi paksa kutip tunggal (') menjadi %27 agar HTML tidak jebol
+            let amanObj = encodeURIComponent(JSON.stringify(p)).replace(/'/g, "%27");
 
             html += `
                 <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f1f8ff'" onmouseout="this.style.background='transparent'">
