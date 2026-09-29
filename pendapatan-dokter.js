@@ -245,8 +245,9 @@
                     rincianDokter.push({
                         tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, 
                         tindakan: item.namaTindakan, 
-                        qty: item.qty || item.quantity || 1, // 🔥 SUNTIKAN QTY DINAMIS
-                        hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
+                        qty: item.qty || item.quantity || 1, 
+                        hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0,
+                        persentaseFee: item.persentaseFee || 40 // 🔥 TANGKAP PERSENTASE DARI BACKEND
                     });
                 }
             });
@@ -255,14 +256,18 @@
                 if (item.jenis === "LAB" && isNamaMatch(item.dokterPelaksana)) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "");
                     let match = rincianDokter.find(r => r.invoice === item.invoice && r.tindakan === namaTindakanAsli);
-                    if (match) match.hargaLabVendor += (item.bebanPotongan / 0.4);
+                    
+                    // 🔥 MENCARI HARGA ASLI VENDOR DENGAN RUMUS REVERSE DINAMIS
+                    let persenDokter = item.persentaseFee || 40;
+                    if (match) match.hargaLabVendor += (item.bebanPotongan / (persenDokter / 100));
                 }
             });
 
             let totalBagiHasil = 0;
             rincianDokter.forEach(r => {
                 let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
-                r.feeFinal = dasarBagiHasil * 0.4;
+                let persen = r.persentaseFee || 40;
+                r.feeFinal = dasarBagiHasil * (persen / 100); // 🔥 PERKALIAN GAJI DINAMIS!
                 totalBagiHasil += r.feeFinal;
             });
 
@@ -331,7 +336,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="padding:12px; border:1px solid #bdc3c7;"><strong>1. Pokok Fee Tindakan (40%)</strong><br><span style="font-size:12px; color:#7f8c8d;">Berdasarkan tarif bersih setelah potongan lab & diskon.</span></td>
+                                <td style="padding:12px; border:1px solid #bdc3c7;"><strong>1. Pokok Fee Tindakan Medis</strong><br><span style="font-size:12px; color:#7f8c8d;">Berdasarkan tarif bersih setelah potongan lab & diskon.</span></td>
                                 <td style="padding:12px; border:1px solid #bdc3c7; text-align:right; font-weight:bold; color:#2c3e50;">${rp(dataArsip.pokokFee)}</td>
                             </tr>
                             <tr>
@@ -588,8 +593,9 @@
                 doctorMap[docInfo.key].rincian.push({
                     tanggal: item.tanggal, invoice: item.invoice, pasien: item.namaPasien, 
                     tindakan: item.namaTindakan, 
-                    qty: item.qty || item.quantity || 1, // 🔥 SUNTIKAN QTY DINAMIS
-                    hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0 
+                    qty: item.qty || item.quantity || 1, 
+                    hargaAsli: item.hargaAsli, diskonProrata: diskonProrataItem, hargaLabVendor: 0, feeFinal: 0,
+                    persentaseFee: item.persentaseFee || 40 // 🔥 TANGKAP PERSENTASE DARI BACKEND
                 });
             }
         });
@@ -601,20 +607,14 @@
                 if (doc) {
                     let namaTindakanAsli = item.namaTindakan.replace("Potongan Lab Vendor: ", "").trim();
                     
-                    // 🔥 PERBAIKAN BUG CARRY-OVER: Cocokkan lab dengan mengabaikan teks Carry-Over
                     let match = doc.rincian.find(r => {
                         if (r.invoice !== item.invoice) return false;
-                        
-                        // Bersihkan embel-embel Carry Over saat mencocokkan
                         let namaTindakanLayar = r.tindakan.replace(" 🔄 (Carry-Over)", "").trim();
-                        
-                        // Gunakan logika "includes" agar kebal terhadap tambahan catatan
-                        return namaTindakanLayar === namaTindakanAsli || 
-                               namaTindakanLayar.includes(namaTindakanAsli) || 
-                               namaTindakanAsli.includes(namaTindakanLayar);
+                        return namaTindakanLayar === namaTindakanAsli || namaTindakanLayar.includes(namaTindakanAsli) || namaTindakanAsli.includes(namaTindakanLayar);
                     });
                     
-                    if (match) match.hargaLabVendor += (item.bebanPotongan / 0.4);
+                    let persenDokter = item.persentaseFee || 40;
+                    if (match) match.hargaLabVendor += (item.bebanPotongan / (persenDokter / 100)); // 🔥 REVERSE LAB COST DINAMIS
                 }
             }
         });
@@ -622,7 +622,6 @@
         let totalDasarBagiHasil = 0; 
         Object.values(doctorMap).forEach(doc => {
             doc.rincian.forEach(r => {
-                // 🔥 L2: DETEKSI LAB MENGGANTUNG & TANGGUHKAN FEE-NYA JADI Rp 0
                 let isButuhLab = false;
                 let namaTindakanLower = String(r.tindakan).toLowerCase();
                 
@@ -635,12 +634,13 @@
                 if (isButuhLab && (r.hargaLabVendor === 0 || !r.hargaLabVendor)) {
                     r.isPendingLab = true;
                     r.tindakan = r.tindakan + " ⏳ [DITANGGUHKAN]";
-                    r.feeFinal = 0; // Fee dibekukan jadi 0 agar tidak rugi
-                    // Dasar bagi hasil di-skip agar tidak masuk total
+                    r.feeFinal = 0; 
                 } else {
                     let dasarBagiHasil = r.hargaAsli - r.hargaLabVendor - r.diskonProrata;
                     totalDasarBagiHasil += dasarBagiHasil; 
-                    r.feeFinal = dasarBagiHasil * 0.4;
+                    
+                    let persen = r.persentaseFee || 40;
+                    r.feeFinal = dasarBagiHasil * (persen / 100); // 🔥 KALKULASI GAJI DINAMIS!
                     doc.totalBagiHasil += r.feeFinal;
                 }
             });
@@ -665,7 +665,10 @@
                 }
             });
         }
-        window.bh_profitKlinik = (totalDasarBagiHasil * 0.6) - totalBonusTerkunci + totalPotonganTerkunci;
+        
+        // 🔥 LOGIKA PROFIT KLINIK DINAMIS: "Sisa dari Pembagian Dokter"
+        // Jadi kalau dokter dapat 60%, klinik otomatis dapat 40%. Kalau dokter 40%, klinik 60%!
+        window.bh_profitKlinik = (totalDasarBagiHasil - window.bh_totalBagiHasilPeriode) - totalBonusTerkunci + totalPotonganTerkunci;
 
         window.currentPageBagiHasil = 1;
         window.renderHalamanBagiHasil();
@@ -706,12 +709,12 @@
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #2ecc71; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
                     <h4 style="margin:0 0 5px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; font-weight:bold;">Total Gaji Dokter</h4>
                     <h2 style="margin:0; color:#2c3e50; font-size:22px;">Rp ${window.bh_totalBagiHasilPeriode.toLocaleString('id-ID')}</h2>
-                    <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Pokok 40% (Belum termsk bonus)</div>
+                    <div style="font-size:11px; color:#95a5a6; margin-top:5px;">Pokok Sesuai Fee (Belum termsk bonus)</div>
                 </div>
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #9b59b6; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
                     <h4 style="margin:0 0 5px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; font-weight:bold;">Profit Hak Klinik</h4>
                     <h2 style="margin:0; color:#9b59b6; font-size:22px;">Rp ${window.bh_profitKlinik.toLocaleString('id-ID')}</h2>
-                    <div style="font-size:11px; color:#95a5a6; margin-top:5px;">(Hak 60% Klinik - Bonus + Potongan)</div>
+                    <div style="font-size:11px; color:#95a5a6; margin-top:5px;">(Sisa Hak Klinik - Bonus + Potongan)</div>
                 </div>
                 <div style="flex:1; background:#fff; padding:15px; border-radius:8px; border-left:5px solid #3498db; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
                     <h4 style="margin:0 0 5px 0; color:#7f8c8d; font-size:12px; text-transform:uppercase; font-weight:bold;">Dokter Aktif</h4>
@@ -812,7 +815,7 @@
                                     <th style="padding:8px; text-align:right; border:none !important;">Biaya Lab</th>
                                     <th style="padding:8px; text-align:right; border:none !important;">Diskon</th>
                                     <th style="padding:8px; text-align:right; border:none !important; color:#2980b9;">Dasar Fee</th>
-                                    <th style="padding:8px; text-align:right; border:none !important;">Fee Bersih (40%)</th>
+                                    <th style="padding:8px; text-align:right; border:none !important;">Fee Bersih</th>
                                 </tr>
             `;
 
@@ -1108,7 +1111,7 @@
                     <div><div style="font-size: 12px; color: #7f8c8d;">Nama Dokter</div><div style="font-weight: bold; font-size: 16px;">${d.nama}</div></div>
                     <div style="text-align: right;"><div style="font-size: 11px; margin-top: 3px; color:#95a5a6;">Dirender pada: ${new Date().toLocaleString('id-ID')}</div></div>
                 </div>
-                <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE (40%)</div>
+                <div style="font-weight: bold; background: #34495e; color: white; padding: 5px 10px; font-size: 12px;">A. DETAIL TINDAKAN & PERHITUNGAN FEE DOKTER</div>
                 
                 <!-- 🔥 WADAH SCROLL HORIZONTAL BARU -->
                 <div class="tabel-responsif-slip">
