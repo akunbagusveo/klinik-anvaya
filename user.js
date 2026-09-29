@@ -90,7 +90,7 @@
                     <td style="padding: 12px 15px; color:#34495e; font-weight:bold; font-size:13px;">${namaRole}</td>
                     <td style="padding: 12px 15px;">${badgeStatus}</td>
                     <td style="padding: 12px 15px; text-align: center;">
-                        <button onclick="window.bukaFormEdit('${user.username || ''}', '${namaLengkapTampil}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; margin-right:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit</button>
+                        <button onclick="window.bukaFormEdit('${user.username || ''}', '${namaLengkapTampil}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}', '${user.bagiHasil || ''}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; margin-right:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit</button>
                         <button onclick="window.hapusUser('${user.username || ''}', ${user.barisSheet})" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>
                     </td>
                 </tr>`;
@@ -117,7 +117,7 @@
                         </div>
                         <div style="display:flex; gap:10px;">
                             <!-- Tombol Edit & Hapus Menggunakan Parameter Presisi Original -->
-                            <button onclick="window.bukaFormEdit('${user.username || ''}', '${namaLengkapTampil}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}')" style="flex:1; background:#f39c12; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit Akun</button>
+                            <button onclick="window.bukaFormEdit('${user.username || ''}', '${namaLengkapTampil}', '${idRoleRaw}', ${user.barisSheet}, '${statusUser}', '${user.bagiHasil || ''}')" style="flex:1; background:#f39c12; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">✏️ Edit Akun</button>
                             <button onclick="window.hapusUser('${user.username || ''}', ${user.barisSheet})" style="flex:1; background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus Akun</button>
                         </div>
                     </div>
@@ -189,8 +189,9 @@
         const username = document.getElementById('inputUsernameBaru').value.trim();
         const password = document.getElementById('inputPasswordBaru').value.trim();
         const role = document.getElementById('inputRoleBaru').value;
-        // 🔥 TANGKAP NAMA LENGKAP
         const namaLengkap = document.getElementById('inputNamaLengkapBaru') ? document.getElementById('inputNamaLengkapBaru').value.trim() : "";
+        // 🔥 TANGKAP BAGI HASIL
+        const bagiHasil = document.getElementById('inputBagiHasilBaru') ? document.getElementById('inputBagiHasilBaru').value.trim() : "";
 
         if (!username || !password || !role) {
             alert("Kolom Username, Password, dan Role wajib diisi semua!");
@@ -218,6 +219,7 @@
                 namaLengkap: namaLengkap, // 🔥 KIRIM NAMA LENGKAP KE SERVER
                 password: password, 
                 role: role,
+                bagiHasil: bagiHasil,
                 tokenId: window.tokenUserBaru 
             })
         })
@@ -250,18 +252,19 @@
     };
 
     // 3. Membuka form edit dan mengisi datanya otomatis
-    window.bukaFormEdit = function(username, namaLengkap, idRole, barisSheet, status) {
+    window.bukaFormEdit = function(username, namaLengkap, idRole, barisSheet, status, bagiHasil) {
         const formEdit = document.getElementById('formEditUser');
         if (formEdit) formEdit.style.display = 'flex'; 
         
         document.getElementById('lblEditUsername').innerText = username;
         document.getElementById('editUsername').value = username;
         
-        // 🔥 ISI KOTAK EDIT NAMA LENGKAP
         const elEditNama = document.getElementById('editNamaLengkap');
-        if (elEditNama) {
-            elEditNama.value = namaLengkap !== "-" ? namaLengkap : "";
-        }
+        if (elEditNama) elEditNama.value = namaLengkap !== "-" ? namaLengkap : "";
+
+        // 🔥 ISI KOTAK EDIT BAGI HASIL
+        const elEditBagiHasil = document.getElementById('editBagiHasil');
+        if (elEditBagiHasil) elEditBagiHasil.value = (bagiHasil !== "undefined" && bagiHasil !== "null") ? bagiHasil : "";
 
         document.getElementById('editRole').value = idRole;
         document.getElementById('editBarisSheet').value = barisSheet;
@@ -278,12 +281,14 @@
     // 5. Mengirim data perubahan ke server
     window.simpanEditUser = function() {
         const elEditNama = document.getElementById('editNamaLengkap');
+        const elEditBagiHasil = document.getElementById('editBagiHasil');
         
         const payload = {
             action: "updateUser",
             barisSheet: document.getElementById('editBarisSheet').value,
             newUsername: document.getElementById('editUsername').value,
-            newNamaLengkap: elEditNama ? elEditNama.value.trim() : "", // 🔥 KIRIM NAMA BARU
+            newNamaLengkap: elEditNama ? elEditNama.value.trim() : "", 
+            newBagiHasil: elEditBagiHasil ? elEditBagiHasil.value.trim() : "", // 🔥 KIRIM PERSENTASE BARU
             newRole: document.getElementById('editRole').value,
             newStatus: document.getElementById('editStatus').value, 
             newPassword: document.getElementById('editPassword').value,
