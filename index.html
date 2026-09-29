@@ -2266,19 +2266,23 @@
                 <h3>Daftar Pengguna Sistem</h3>
                 
                 <!-- Form Tambah User Baru -->
+                <!-- Form Tambah Pengguna Baru -->
                 <div class="form-v" style="background-color: #e9f5ff; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
                     <h4>+ Tambah Pengguna Baru</h4>
                     <input type="text" id="inputUsernameBaru" placeholder="Username (misal: andi atau dila123)" style="margin-right: 10px;">
                     <input type="text" id="inputNamaLengkapBaru" placeholder="Nama Lengkap" style="margin-right: 10px;">
                     <input type="password" id="inputPasswordBaru" placeholder="Password Default" style="margin-right: 10px;">
-                    <input type="number" id="editBagiHasil" placeholder="Persentase Bagi Hasil (cth: 40)" style="margin-right: 10px;">
+                    
+                    <!-- 🔥 PERBAIKAN DI SINI: Ubah ID menjadi inputBagiHasilBaru -->
+                    <input type="number" id="inputBagiHasilBaru" placeholder="Persentase Bagi Hasil (cth: 40)" style="margin-right: 10px;">
+                    
                     <select id="inputRoleBaru" style="margin-right: 10px;">
                         <option value="">-- Pilih Role --</option>
                     </select>
                     <button onclick="window.tambahUserBaru()" style="background-color: #28a745; color: white;">Simpan User</button>
                 </div>
 
-                <!-- Form Edit User (Awalnya disembunyikan) -->
+                <!-- Form Edit User (SUDAH BENAR 100%) -->
                 <div id="formEditUser" class="modal-popup-container">
                     <div class="modal-popup-content">
                         <h4 style="margin-top: 0; border-bottom: 1px solid #ddc475; padding-bottom: 8px;">
@@ -2299,8 +2303,9 @@
                         <label style="font-size: 13px; font-weight: bold;">Role Akses:</label>
                         <select id="editRole"></select>
 
-                        <label style="font-size: 13px; font-weight: bold;">Persentase Fee Bagi Hasil</label>
-                        <input type="number" id="inputBagiHasilBaru" placeholder="Misal: 40">
+                        <label style="font-size: 13px; font-weight: bold;">Persentase Fee Bagi Hasil:</label>
+                        <!-- Di bawah ini ID-nya editBagiHasil, ini sudah tepat! -->
+                        <input type="number" id="editBagiHasil" placeholder="Misal: 40">
                         
                         <label style="font-size: 13px; font-weight: bold;">Status Akun:</label>
                         <select id="editStatus">
