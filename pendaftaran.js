@@ -60,11 +60,18 @@
                 // Ambil variabel penting untuk Radar
                 const tglKunjunganVal = document.getElementById('tglKunjungan').value;
                 const waktuKunjunganVal = document.getElementById('waktuKunjungan').value;
-                const idDokterVal = document.getElementById('pilihDokter').value;
-                
                 const selectDokter = document.getElementById('pilihDokter');
-                const teksDokterVal = selectDokter.selectedIndex >= 0 ? 
-                                    String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
+                
+                const idDokterVal = selectDokter ? selectDokter.value : "";
+                const teksDokterVal = (selectDokter && selectDokter.selectedIndex >= 0) ? String(selectDokter.options[selectDokter.selectedIndex].text).trim().toLowerCase() : "";
+
+                // 🔥 BENTENG 0: SATPAM PENGUNCI DOKTER 
+                // Mencegah admin memencet tombol Submit jika dropdown dokter belum dipilih,
+                // masih disabled, atau masih tertulis opsi default "-- Pilih Tanggal --"
+                if (!idDokterVal || idDokterVal.trim() === "" || idDokterVal.includes("--")) {
+                    alert("⚠️ HARAP PILIH DOKTER!\n\nSistem mendeteksi Anda belum memilih dokter.\n\nJika daftar dokter belum muncul, pastikan Anda telah memilih 'Tanggal Kunjungan' dan tunggu beberapa saat agar jadwal termuat.");
+                    return; // Blokir proses simpan sepenuhnya!
+                }
 
                 // 🔥 BENTENG 1: BLOKIR KETIK MANUAL TANGGAL MASA LALU
                 const hariIniStr = new Date().toLocaleDateString('en-CA'); 
