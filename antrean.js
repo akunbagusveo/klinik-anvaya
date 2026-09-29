@@ -41,6 +41,22 @@
             return;
         }
 
+        // 🔥 FITUR BARU: Mesin Pengurut Antrean Kronologis (Tanggal -> Jam)
+        dataTerfilter.sort((a, b) => {
+            let tglA = (a.tanggalDaftar || "").trim();
+            let tglB = (b.tanggalDaftar || "").trim();
+            
+            // 1. Urutkan berdasarkan tanggal (Paling awal di urutan atas)
+            if (tglA !== tglB) {
+                return tglA.localeCompare(tglB);
+            }
+            
+            // 2. Jika tanggalnya SAMA, urutkan berdasarkan Jam (Pagi ke Malam)
+            let jamA = (a.waktu || "").trim();
+            let jamB = (b.waktu || "").trim();
+            return jamA.localeCompare(jamB);
+        });
+
         const h = new Date();
         const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
 
