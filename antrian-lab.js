@@ -81,7 +81,7 @@
                         </span>
                     </td>
                     <td style="padding:15px; text-align:center;">
-                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}')" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
+                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}', ${item.bagiHasil || 40})" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
                     </td>
                 `;
                 wadahPC.appendChild(tr);
@@ -114,7 +114,7 @@
                                 ${item.namaTindakan}
                             </div>
                         </div>
-                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}')" style="width:100%; background:#27ae60; color:white; border:none; padding:12px 15px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15); font-size:15px;">
+                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}', ${item.bagiHasil || 40})" style="width:100%; background:#27ae60; color:white; border:none; padding:12px 15px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15); font-size:15px;">
                             💰 Input Harga Vendor
                         </button>
                     </div>
@@ -149,6 +149,16 @@
     window.bukaModalInputLab = function(invoice, pasien, tindakan, dokter) {
         document.getElementById('hdnLabInvoice').value = invoice;
         document.getElementById('hdnLabDokter').value = dokter; 
+
+        // 🔥 SIMPAN PERSENTASE KE MEMORI DOM
+        let hdnPersen = document.getElementById('hdnLabBagiHasil');
+        if (!hdnPersen) {
+            hdnPersen = document.createElement('input');
+            hdnPersen.type = 'hidden';
+            hdnPersen.id = 'hdnLabBagiHasil';
+            document.body.appendChild(hdnPersen);
+        }
+        hdnPersen.value = persentase;
         
         document.getElementById('lblLabPasien').innerText = pasien;
         document.getElementById('lblLabTindakan').innerText = tindakan;
@@ -188,10 +198,15 @@
 
         let strHarga = inpHarga.value.replace(/[^0-9]/g, '');
         let harga = Number(strHarga) || 0;
-        let beban = harga * 0.4; 
+        
+        // 🔥 TARIK PERSENTASE DINAMIS DARI MEMORI
+        let hdnPersen = document.getElementById('hdnLabBagiHasil');
+        let persentase = hdnPersen ? (Number(hdnPersen.value) || 40) : 40;
+        
+        let beban = harga * (persentase / 100); 
         
         let lblPotongan = document.getElementById('lblPotonganDokter');
-        if (lblPotongan) lblPotongan.innerText = "- Rp " + beban.toLocaleString('id-ID');
+        if (lblPotongan) lblPotongan.innerText = "- Rp " + beban.toLocaleString('id-ID') + ` (${persentase}%)`;
     };
 
     // =====================================================================
@@ -215,7 +230,12 @@
             return;
         }
 
-        let beban = harga * 0.4; 
+        // 🔥 TARIK PERSENTASE DINAMIS SAAT DISIMPAN
+        let hdnPersen = document.getElementById('hdnLabBagiHasil');
+        let persentase = hdnPersen ? (Number(hdnPersen.value) || 40) : 40;
+        let beban = harga * (persentase / 100);
+
+        // let beban = harga * 0.4; 
 
         if (btn) {
             btn.disabled = true;
@@ -250,7 +270,7 @@
 
             if(res.result === "success") {
                 window.tutupModalInputLab();
-                window.cetakStrukLabInternal(invoice, pasien, tindakan, dokter, harga, beban);
+                window.cetakStrukLabInternal(invoice, pasien, tindakan, dokter, harga, beban, persentase);
                 window.muatAntreanLab(); 
             } else {
                 alert("❌ Gagal menyimpan: " + res.message);
@@ -274,7 +294,7 @@
         });
     };
 
-    window.cetakStrukLabInternal = function(invoice, pasien, tindakan, dokter, harga, beban) {
+    window.cetakStrukLabInternal = function(invoice, pasien, tindakan, dokter, harga, beban, persentase = 40) {
         const tglCetak = new Date().toLocaleString('id-ID');
         const jendelaCetak = window.open('', '_blank', 'width=400,height=600');
         
@@ -309,7 +329,7 @@
                 <div class="divider"></div>
                 
                 <div class="row"><span>Tagihan Vendor:</span> <span class="bold">Rp ${Number(harga).toLocaleString('id-ID')}</span></div>
-                <div class="row" style="color: #555; font-size: 12px;"><span>(Potongan Gaji Dokter 40%)</span> <span>(- Rp ${beban.toLocaleString('id-ID')})</span></div>
+                <div class="row" style="color: #555; font-size: 12px;"><span>(Potongan Gaji Dokter ${persentase}%)</span> <span>(- Rp ${beban.toLocaleString('id-ID')})</span></div>
                 
                 <div class="divider"></div>
                 
