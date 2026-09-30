@@ -61,6 +61,12 @@
         const formatHariIni = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
 
         dataTerfilter.forEach(pasien => {
+            // 🔥 FILTER ANTI-BUG TANDA PETIK (Mengamankan string dari kerusakan HTML)
+            let amanNama = (pasien.nama || "").replace(/'/g, "\\'");
+            let amanTujuan = (pasien.tujuan || "").replace(/'/g, "\\'");
+            let amanDokter = (pasien.namaDokter || "").replace(/'/g, "\\'");
+            let amanRM = (pasien.noRM || "").replace(/'/g, "\\'");
+
             let statusEfektif = pasien.status;
             if (pasien.status.includes("Sudah Diperiksa") && !pasien.isRmeFilled) {
                 statusEfektif = "Sedang Diperiksa";
@@ -83,15 +89,13 @@
                 let btnMulai = "";
                 if (bolehInputRME) {
                     if (isMasaDepan) {
-                        // Jika pasien masa depan, tombol dilumpuhkan menjadi abu-abu
                         btnMulai = `<button class="btn-action" style="background-color: #bdc3c7; color: white; cursor: not-allowed;" title="Jadwal di masa depan" disabled>⏳ Belum Waktunya</button>`;
                     } else {
-                        // Jika pasien hari ini atau masa lalu, tombol normal
-                        btnMulai = `<button class="btn-action btn-start" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${pasien.noRM}', '${pasien.nama}', '${pasien.tanggalDaftar}')">▶️ Mulai</button>`;
+                        btnMulai = `<button class="btn-action btn-start" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Sedang Diperiksa', '${amanRM}', '${amanNama}', '${pasien.tanggalDaftar}')">▶️ Mulai</button>`;
                     }
                 }
                 
-                let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="window.bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${pasien.tujuan}', '${pasien.namaDokter || ''}')">📝 Edit</button>` : '';
+                let btnEdit  = bolehEditAntrean ? `<button class="btn-action" style="background-color: #f39c12; color: white;" onclick="window.bukaModalEditAntrean(${pasien.rowNumber}, '${pasien.tanggalDaftar}', '${pasien.waktu}', '${amanTujuan}', '${amanDokter}')">📝 Edit</button>` : '';
                 let btnBatal = bolehEditAntrean ? `<button class="btn-action" style="background-color: #e74c3c; color: white;" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Dibatalkan')">❌ Batal</button>` : '';
                 let btnAbsen = bolehEditAntrean ? `<button class="btn-action" style="background-color: #95a5a6; color: white;" onclick="window.gantiStatusPasien(${pasien.rowNumber}, 'Tidak Datang')">🕒 Absen</button>` : '';
 
@@ -102,14 +106,14 @@
                 if (isMasaDepan) {
                     tombolAksi = '<span style="color:#e67e22; font-size:12px; font-weight:bold;">⏳ Terkunci (Masa Depan)</span>';
                 } else {
-                    tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="window.bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'input', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
+                    tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="window.bukaModalRiwayatFull('${amanRM}', '${amanNama}', 'input', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
                 }
                 
             } else if (statusEfektif.includes("Sudah Diperiksa")) {
                 if (pasien.tanggalDaftar === formatHariIni && perms.editRME === 1) {
-                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="window.bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">👁️ Buka RME</button>`;
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #3498db;" onclick="window.bukaModalRiwayatFull('${amanRM}', '${amanNama}', 'view', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">👁️ Buka RME</button>`;
                 } else {
-                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="window.bukaModalRiwayatFull('${pasien.noRM}', '${pasien.nama}', 'view', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">👁️ Lihat RME</button>`;
+                    tombolAksi = `<button class="btn-action btn-rme" style="background-color: #7f8c8d;" onclick="window.bukaModalRiwayatFull('${amanRM}', '${amanNama}', 'view', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">👁️ Lihat RME</button>`;
                 }
                 
             } else if (pasien.status.includes("Tidak Datang")) {
