@@ -81,7 +81,7 @@
                         </span>
                     </td>
                     <td style="padding:15px; text-align:center;">
-                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}', ${item.bagiHasil || 40})" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
+                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}', ${item.persentaseFee || 40})" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);">💰 Input Harga</button>
                     </td>
                 `;
                 wadahPC.appendChild(tr);
@@ -114,7 +114,7 @@
                                 ${item.namaTindakan}
                             </div>
                         </div>
-                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}', ${item.bagiHasil || 40})" style="width:100%; background:#27ae60; color:white; border:none; padding:12px 15px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15); font-size:15px;">
+                        <button onclick="window.bukaModalInputLab('${amanInvoice}', '${amanPasien}', '${amanTindakan}', '${amanDokter}', ${item.persentaseFee || 40})" style="width:100%; background:#27ae60; color:white; border:none; padding:12px 15px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15); font-size:15px;">
                             💰 Input Harga Vendor
                         </button>
                     </div>
@@ -146,11 +146,14 @@
     // =====================================================================
     // 3. FUNGSI KONTROL JENDELA POP-UP (MODAL)
     // =====================================================================
-    window.bukaModalInputLab = function(invoice, pasien, tindakan, dokter) {
+    // 🔥 PERBAIKAN: Menambahkan parameter "persentase" yang aman dari Undefined
+    window.bukaModalInputLab = function(invoice, pasien, tindakan, dokter, persentase) {
+        let persenAktif = persentase || 40; // Fallback angka 40% jika kosong/error
+
         document.getElementById('hdnLabInvoice').value = invoice;
         document.getElementById('hdnLabDokter').value = dokter; 
-
-        // 🔥 SIMPAN PERSENTASE KE MEMORI DOM
+        
+        // 🔥 SIMPAN PERSENTASE KE MEMORI DOM AGAR BISA DIBACA SAAT MENGHITUNG
         let hdnPersen = document.getElementById('hdnLabBagiHasil');
         if (!hdnPersen) {
             hdnPersen = document.createElement('input');
@@ -158,7 +161,7 @@
             hdnPersen.id = 'hdnLabBagiHasil';
             document.body.appendChild(hdnPersen);
         }
-        hdnPersen.value = persentase;
+        hdnPersen.value = persenAktif;
         
         document.getElementById('lblLabPasien').innerText = pasien;
         document.getElementById('lblLabTindakan').innerText = tindakan;
@@ -166,7 +169,8 @@
         const inpHarga = document.getElementById('inpLabHargaDinamis');
         if (inpHarga) inpHarga.value = "";
         
-        document.getElementById('lblPotonganDokter').innerText = "Rp 0";
+        const lblPotongan = document.getElementById('lblPotonganDokter');
+        if (lblPotongan) lblPotongan.innerText = "Rp 0 (" + persenAktif + "%)";
         
         const modal = document.getElementById('modalInputLab');
         if (modal) modal.style.display = 'flex';
