@@ -138,7 +138,17 @@
         const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
         setVal('lblTotalDataMasterRiwayat', totalData);
         setVal('lblTotalDataTampilRiwayat', dataHalaman.length);
-        setVal('lblHalamanRiwayat', `Halaman ${currentRiwayatPage} dari ${totalRiwayatPages}`);
+        
+        // 🔥 UPGRADE: Selectable Pagination (Dropdown) untuk Riwayat Global
+        const lblRiwayat = document.getElementById('lblHalamanRiwayat');
+        if (lblRiwayat) {
+            let selectHtml = `<select onchange="window.lompatHalamanRiwayat(this.value)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #bdc3c7; font-weight: bold; cursor: pointer; font-size: 13px; color: #2c3e50; background-color: #f8f9fa; outline: none;">`;
+            for (let i = 1; i <= totalRiwayatPages; i++) {
+                selectHtml += `<option value="${i}" ${i === currentRiwayatPage ? 'selected' : ''}>Halaman ${i} dari ${totalRiwayatPages}</option>`;
+            }
+            selectHtml += `</select>`;
+            lblRiwayat.innerHTML = selectHtml;
+        }
         
         const btnPrev = document.getElementById('btnPrevRiwayat');
         const btnNext = document.getElementById('btnNextRiwayat');
@@ -204,6 +214,12 @@
             currentRiwayatPage++; 
             window.tampilkanRiwayatGlobal(); 
         }
+    };
+
+    // 🔥 FITUR BARU: Mesin pelompat halaman spesifik (Riwayat)
+    window.lompatHalamanRiwayat = function(targetPage) {
+        currentRiwayatPage = parseInt(targetPage);
+        window.tampilkanRiwayatGlobal();
     };
 
     // =====================================================================
@@ -294,9 +310,19 @@
                 });
 
                 const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-                setVal('lblHalamanPasien', `Halaman ${res.currentPage} dari ${res.totalPages}`);
                 setVal('lblTotalDataTampil', res.data.length);
                 setVal('lblTotalDataMaster', res.totalRecords);
+
+                // 🔥 UPGRADE: Selectable Pagination (Dropdown) untuk Database Utama
+                const lblPasien = document.getElementById('lblHalamanPasien');
+                if (lblPasien) {
+                    let selectHtml = `<select onchange="window.lompatHalamanDatabase(this.value)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #bdc3c7; font-weight: bold; cursor: pointer; font-size: 13px; color: #2c3e50; background-color: #f8f9fa; outline: none;">`;
+                    for (let i = 1; i <= res.totalPages; i++) {
+                        selectHtml += `<option value="${i}" ${i === res.currentPage ? 'selected' : ''}>Halaman ${i} dari ${res.totalPages}</option>`;
+                    }
+                    selectHtml += `</select>`;
+                    lblPasien.innerHTML = selectHtml;
+                }
 
                 const btnPrev = document.getElementById('btnPrevPasien');
                 const btnNext = document.getElementById('btnNextPasien');
@@ -335,6 +361,12 @@
 
     window.halamanBerikutnyaPasien = function() {
         halamanSekarangPasien++;
+        window.cariDaftarPasien(false); 
+    };
+
+    // 🔥 FITUR BARU: Mesin pelompat halaman spesifik (Database)
+    window.lompatHalamanDatabase = function(targetPage) {
+        halamanSekarangPasien = parseInt(targetPage);
         window.cariDaftarPasien(false); 
     };
 
