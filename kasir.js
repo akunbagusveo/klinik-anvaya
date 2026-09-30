@@ -97,11 +97,18 @@
 
                 const serverPdf = p.pdfConsentUrl || ""; 
                 
+                // 🔥 SATPAM PENGAMAN TANDA PETIK UNTUK KASIR
+                let amanNamaPasien = (p.namaPasien || "").replace(/'/g, "\\'");
+                let amanRM = (p.noRM || "").replace(/'/g, "\\'");
+                let amanPdf = (serverPdf || "").replace(/'/g, "\\'");
+                // Khusus JSON pendaftaran, kita amankan petik ganda dan petik tunggal sekaligus:
+                let amanPendaftaranJSON = JSON.stringify(p.barisPendaftaran).replace(/'/g, "\\'").replace(/"/g, '&quot;'); 
+                
                 // 💻 Tombol Cetak untuk PC
                 let btnCetakConsentHtmlPC = "";
                 if (butuhConsent || serverPdf !== "") {
                     btnCetakConsentHtmlPC = `
-                        <button onclick="window.cetakConsentKasir('${p.noRM}', '${serverPdf}')" 
+                        <button onclick="window.cetakConsentKasir('${amanRM}', '${amanPdf}')" 
                                 style="background-color: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Cetak Dokumen Informed Consent Pasien">
                             🖨️ Cetak Consent
                         </button>
@@ -112,7 +119,7 @@
                 let btnCetakConsentHtmlMobile = "";
                 if (butuhConsent || serverPdf !== "") {
                     btnCetakConsentHtmlMobile = `
-                        <button onclick="window.cetakConsentKasir('${p.noRM}', '${serverPdf}')" 
+                        <button onclick="window.cetakConsentKasir('${amanRM}', '${amanPdf}')" 
                                 style="width: 100%; background-color: #3498db; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Cetak Dokumen Informed Consent Pasien">
                             🖨️ Cetak Consent
                         </button>
@@ -124,7 +131,7 @@
                     namaDokterTampil = "dr. " + namaDokterTampil;
                 }
 
-                let amanNamaPasien = (p.namaPasien || "").replace(/'/g, "\\'");
+                // let amanNamaPasien = (p.namaPasien || "").replace(/'/g, "\\'");
 
                 // 💻 SUNTIKKAN KE TABEL PC
                 if (wadahPC) {
@@ -150,7 +157,7 @@
                                         style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;" title="Ingatkan dokter/asisten untuk input RME">
                                     🔔 Ping
                                 </button>
-                                <button onclick="window.bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran).replace(/"/g, '&quot;')}')" 
+                                <button onclick="window.bukaModalProsesBilling('${amanRM}', '${amanPendaftaranJSON}')" 
                                         style="background-color: #2ecc71; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                     💰 Proses Bayar
                                 </button>
@@ -197,7 +204,7 @@
                                 <button onclick="window.kirimPingAsisten('${amanNamaPasien}')" style="width: 100%; background-color: #f39c12; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                     🔔 Ping Dokter/Asisten
                                 </button>
-                                <button onclick="window.bukaModalProsesBilling('${p.noRM}', '${JSON.stringify(p.barisPendaftaran).replace(/"/g, '&quot;')}')" style="width: 100%; background-color: #2ecc71; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <button onclick="window.bukaModalProsesBilling('${amanRM}', '${amanPendaftaranJSON}')"
                                     💰 Proses Pembayaran
                                 </button>
                             </div>
