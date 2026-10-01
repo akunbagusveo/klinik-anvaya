@@ -103,12 +103,15 @@
                 badgeStatus = `<span style="background:#f39c12; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">⏳ Menunggu</span>`;
                 let amanPesan = (item.pesan || "").replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
                 let amanNama = (item.namaPasien || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                tombolAksi = `<button onclick="window.kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i style="font-style:normal;">📲</i> Hubungi via WA</button>`;
+                // Tambahkan parameter '${amanDokter}' di ujungnya (Tanda kutip penting!)
+                let amanDokter = (item.namaDokter || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                tombolAksi = `<button onclick="window.kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row}, '${amanDokter}')" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i style="font-style:normal;">📲</i> Hubungi via WA</button>`;
             } else {
                 badgeStatus = `<span style="background:#27ae60; color:#fff; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Di-WA</span>`;
                 let amanPesan = (item.pesan || "").replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
                 let amanNama = (item.namaPasien || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                tombolAksi = `<button onclick="window.kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row})" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i style="font-style:normal;">📲</i> Hubungi via WA</button>`;
+                let amanDokter = (item.namaDokter || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                tombolAksi = `<button onclick="window.kirimWaKontrol('${item.noWA}', '${amanNama}', '${item.tanggal}', '${amanPesan}', ${item.row}, '${amanDokter}')" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i style="font-style:normal;">📲</i> Hubungi via WA</button>`;
             }
 
             let pesanTabel = (item.pesan || "").replace(/\n/g, '<br>');
@@ -132,7 +135,8 @@
     // =====================================================================
     // 4. EKSEKUTOR MAGIC WHATSAPP & UPDATE STATUS 
     // =====================================================================
-    window.kirimWaKontrol = function(noWA, namaPasien, tanggal, pesan, rowSheet) {
+    // 🔥 UPGRADE: Menambahkan parameter "namaDokter"
+    window.kirimWaKontrol = function(noWA, namaPasien, tanggal, pesan, rowSheet, namaDokter) {
         if (!noWA || noWA === "-" || noWA === "") {
             alert("⚠️ Nomor WhatsApp pasien tidak ditemukan di database!");
             return;
@@ -146,8 +150,16 @@
             noWaBersih = '62' + noWaBersih;
         }
 
-        // 2. Merakit Template 
-        let teksPesan = `Halo Kak ${namaPasien}, 👋\n\nIni dari *Klinik Anvaya*. Mengingatkan bahwa jadwal kontrol gigi kakak sudah dekat.\n\n${pesan}\n\nApakah kakak ingin dibantu reservasi jam kedatangannya? 😊`;
+        // 🔥 2. Template Personalization
+        // Jika nama dokter ditemukan di database, gunakan nama tersebut. Jika tidak ada, sebut "Dokter" saja.
+        let drTeks = "Dokter";
+        if (namaDokter && namaDokter !== "-" && namaDokter !== "undefined") {
+            let namaBersih = namaDokter.replace(/👨‍⚕️/g, "").trim(); // Buang emoji jika ada
+            // Pastikan gelar dr. / drg. terbawa secara estetik
+            drTeks = (!namaBersih.toLowerCase().startsWith("dr")) ? `drg. ${namaBersih}` : namaBersih;
+        }
+        
+        let teksPesan = `Halo Kak ${namaPasien}, 👋\n\nKami dari *Klinik Anvaya* ingin mengingatkan bahwa jadwal kontrol gigi lanjutan kakak dengan ${drTeks} sudah dekat.\n\nApakah kakak berkenan kami bantu untuk reservasi Tanggal dan Jam kedatangan kontrol selanjutnya? 😊`;
         
         // 3. Eksekusi Buka WhatsApp Web
         let linkWA = `https://api.whatsapp.com/send?phone=${noWaBersih}&text=${encodeURIComponent(teksPesan)}`;
