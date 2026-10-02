@@ -165,10 +165,6 @@
                         <td style="padding: 12px 10px; text-align: center; vertical-align: middle;">
                             <div style="display: flex; gap: 6px; justify-content: center; align-items: stretch; flex-wrap: wrap;">
                                 ${btnCetakConsentHtmlPC}
-                                <button onclick="window.kirimPingAsisten('${amanNamaPasien}')" 
-                                        style="background-color: #f39c12; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;" title="Ingatkan dokter/asisten untuk input RME">
-                                    🔔 Ping
-                                </button>
                                 <button onclick="window.bukaModalProsesBilling('${amanRM}', '${amanPendaftaranJSON}')" 
                                         style="background-color: #2ecc71; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                     💰 Proses Bayar
@@ -213,9 +209,7 @@
                             <!-- Area Tombol Aksi HP (Sangat nyaman buat jempol) -->
                             <div style="display: flex; gap: 8px; flex-direction: column;">
                                 ${btnCetakConsentHtmlMobile}
-                                <button onclick="window.kirimPingAsisten('${amanNamaPasien}')" style="width: 100%; background-color: #f39c12; color: white; border: none; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                    🔔 Ping Dokter/Asisten
-                                </button>
+                                
                                 <button onclick="window.bukaModalProsesBilling('${amanRM}', '${amanPendaftaranJSON}')"
                                     💰 Proses Pembayaran
                                 </button>

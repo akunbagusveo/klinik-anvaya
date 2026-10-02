@@ -106,7 +106,12 @@
                 if (isMasaDepan) {
                     tombolAksi = '<span style="color:#e67e22; font-size:12px; font-weight:bold;">⏳ Terkunci (Masa Depan)</span>';
                 } else {
-                    tombolAksi = bolehInputRME ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="window.bukaModalRiwayatFull('${amanRM}', '${amanNama}', 'input', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">✍️ Lanjut Input RME</button>` : '<span style="color:#7f8c8d; font-size:12px;">Menunggu Dokter</span>';
+                    // 🔥 LOGIKA PING CERDAS: Muncul khusus untuk Staf Non-Medis (Admin) jika RME belum diisi
+                    let btnPing = `<button class="btn-action" style="background-color: #f39c12; color: white; font-weight: bold;" onclick="window.kirimPingAsisten('${amanNama}')">🔔 Ping Dokter</button>`;
+                    
+                    tombolAksi = bolehInputRME 
+                        ? `<button class="btn-action" style="background-color: #3498db; color: white; font-weight: bold;" onclick="window.bukaModalRiwayatFull('${amanRM}', '${amanNama}', 'input', '${pasien.tanggalDaftar}', '${pasien.rowNumber}')">✍️ Lanjut Input RME</button>` 
+                        : btnPing;
                 }
                 
             } else if (statusEfektif.includes("Sudah Diperiksa")) {
