@@ -43,6 +43,18 @@
                 return;
             }
 
+            // 🔥 MESIN PENGURUTAN OTOMATIS (SORTING BY TANGGAL DAFTAR)
+            res.data.sort((a, b) => {
+                let tglA = a.tanggalDaftar || "";
+                let tglB = b.tanggalDaftar || "";
+                
+                // Urutkan dari Terlama ke Terbaru (Ascending)
+                return tglA.localeCompare(tglB);
+                
+                // TIPS: Jika Anda ingin sebaliknya (Terbaru di atas), 
+                // ubah kode di atas menjadi: return tglB.localeCompare(tglA);
+            });
+
             window.currentKasirQueueData = res.data;
 
             res.data.forEach(p => {
